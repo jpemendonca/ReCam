@@ -1,10 +1,9 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
+using Recam.Server.Tests.Support;
 
 namespace Recam.Server.Tests.Features.Health;
 
-public sealed class HealthEndpointsTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public sealed class HealthEndpointsTests(RecamApiFactory factory) : IClassFixture<RecamApiFactory>
 {
     [Fact(DisplayName = "Health endpoint answers ok")]
     public async Task Health_WhenCalled_ReturnsOk()
@@ -19,5 +18,18 @@ public sealed class HealthEndpointsTests(WebApplicationFactory<Program> factory)
         // assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("ok", body);
+    }
+
+    [Fact(DisplayName = "Starting the server creates the TLS certificate in the data directory")]
+    public void Startup_WithEmptyDataDirectory_CreatesCertificate()
+    {
+        // arrange
+        var pfxPath = Path.Combine(factory.DataDirectory, "tls", "server.pfx");
+
+        // act
+        _ = factory.Services;
+
+        // assert
+        Assert.True(File.Exists(pfxPath));
     }
 }

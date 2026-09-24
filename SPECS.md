@@ -65,6 +65,7 @@ server/src/Recam.Server/
   Program.cs
   Domain/                 entidades ricas, enums, erros de domínio, Result<T>
   Infrastructure/
+    Hosting/              ServerSettings (RECAM_DATA_DIR, porta 8443)
     Http/                 conversão de Error para ProblemDetails
     Persistence/          RecamDbContext, Migrations/
     Auth/                 DeviceAuthenticationHandler, políticas

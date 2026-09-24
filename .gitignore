@@ -45,3 +45,6 @@ Thumbs.db
 
 # Generated localization
 app/lib/l10n/generated/
+
+# Local server data during development
+.data/

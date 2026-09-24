@@ -94,7 +94,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > `lib/core/` fica para o primeiro bullet que colocar código lá. `HomeShell` foi para
   > `lib/home_shell.dart` (um widget público por arquivo).
 
-- [ ] **0.5 [junto] HTTPS com certificado autoassinado**
+- [x] **0.5 [junto] HTTPS com certificado autoassinado**
   - Origem: `SPECS.md` 5.3.
   - Escopo: `Infrastructure/Tls/CertificateStore.cs` gera o certificado em
     `{RECAM_DATA_DIR}/tls/server.pfx` no primeiro start (RSA 2048, 10 anos) e o reaproveita nos
@@ -103,6 +103,11 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     `healthcheck` do binário faz `GET https://localhost:8443/health` e sai com 0 ou 1.
   - Aceite: testes `GetOrCreate_OnFirstRun_CreatesPfx`, `GetOrCreate_OnSecondRun_ReusesSameFingerprint`.
     Rodando local, `curl -k https://localhost:8443/health` responde `ok`.
+  > Validação (2026-09-24): código escrito e servidor rodado localmente. Gate verde com 9 testes.
+  > `dotnet run` criou `.data/tls/server.pfx` e `curl -k https://localhost:8443/health`
+  > respondeu `ok`. `Recam.Server healthcheck` saiu com 0 com o servidor no ar e 1 com ele
+  > parado. O healthcheck confere o fingerprint do certificado salvo em vez de aceitar qualquer
+  > certificado. Testes usam `RecamApiFactory` com pasta de dados temporária.
 
 - [ ] **0.6 Docker e compose**
   - Origem: `SPECS.md` 7.
