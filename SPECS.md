@@ -1,0 +1,408 @@
+# Recam: especificação
+
+## 1. Produto
+
+Recam reaproveita celulares Android antigos como câmeras de monitoramento. Três papéis:
+
+- **Celular câmera**: captura e transmite. Não guarda nada, não decide nada.
+- **Servidor**: roda em Docker na casa do usuário ou numa VPS. Pareia aparelhos, autentica,
+  repassa comandos e distribui o vídeo.
+- **Celular visualizador**: lista as câmeras, assiste ao vivo, manda comandos.
+
+Um único app Flutter faz os dois papéis de celular, em duas abas: **Câmera** e **Assistir**.
+
+### 1.1 Dentro do escopo (MVP)
+
+- Instalação com `docker compose up -d` em Linux. Windows via Docker Desktop/WSL como caso
+  secundário.
+- Pareamento por QR code: primeiro o dono, depois as câmeras.
+- Vídeo ao vivo na rede local, com atraso abaixo de 1 s.
+- Transmissão sob demanda: a câmera só transmite enquanto alguém assiste.
+- Lanterna liga/desliga durante o vídeo ao vivo.
+- Telemetria de bateria (nível e se está carregando) e status online/offline.
+- App em PT-BR e inglês.
+- Android 9 (API 28) ou mais novo. Aparelhos de referência: Samsung Galaxy A10 e Xiaomi
+  Redmi 7A.
+
+### 1.2 Fora do escopo (anotado para depois)
+
+- Gravação, com cota de disco escolhida numa barrinha e apagando o mais antigo quando enche.
+  Quando entrar: gravação só no servidor, nunca no celular câmera.
+- Acesso de fora da rede local (porta aberta, Tailscale, Cloudflare Tunnel em modo rede
+  privada). Responsabilidade do usuário. O Cloudflare Tunnel com hostname público não transporta
+  UDP, então não serve para o WebRTC.
+- Detecção de movimento e notificações.
+- iOS (compilar exige macOS).
+- Áudio e conversa bidirecional.
+- Fallback de WebRTC por TCP e fallback por HLS.
+- Contas com usuário e senha.
+
+## 2. Arquitetura
+
+```
+[App: aba Câmera] ──HTTPS: REST, SignalR, WHIP──> [Recam.Server :8443] ──HTTP interno──> [MediaMTX :8889]
+        │                                                 ▲                                     │
+        └──────────── RTP/SRTP via UDP :8189 ──────────────┼────────────────────────────────────>│
+                                                          │                                     │
+[App: aba Assistir] ──HTTPS: REST, SignalR, WHEP──────────┘         RTP/SRTP via UDP :8189 <────┘
+```
+
+- **Recam.Server (.NET 10, ASP.NET Core)**: plano de controle. Única porta TCP pública (8443,
+  HTTPS). Serve a API REST, o hub SignalR, a página `/setup` e um proxy de sinalização para o
+  WHIP/WHEP do MediaMTX. Não toca em RTP.
+- **MediaMTX (container oficial, versão fixada)**: plano de mídia. Recebe WHIP, entrega WHEP.
+  A interface HTTP escuta só na rede interna (127.0.0.1 no modo host, rede do compose no modo
+  bridge). Só a porta UDP 8189 fica exposta. RTSP, RTMP, HLS, SRT, API e métricas desligados.
+- **SQLite** em `/data/recam.db`, via EF Core. Migrações aplicadas no startup.
+- **Volume `/data`**: banco, certificado TLS. Bind mount em `deploy/data/`.
+
+### 2.1 Servidor: organização do código
+
+Um projeto só, organizado por feature (fatias verticais):
+
+```
+server/src/Recam.Server/
+  Program.cs
+  Domain/                 entidades ricas, enums, erros de domínio, Result<T>
+  Infrastructure/
+    Http/                 conversão de Error para ProblemDetails
+    Persistence/          RecamDbContext, Migrations/
+    Auth/                 DeviceAuthenticationHandler, políticas
+    Tls/                  CertificateStore
+    Network/              PublicUrlResolver
+  Features/
+    Health/               GET /health
+    Setup/                token do dono, QR no log, página /setup
+    Pairing/              POST /api/pair, POST /api/pairing-tokens
+    Devices/              GET /api/me, GET /api/cameras
+    Realtime/             DeviceHub, presença, telemetria, leases, lanterna
+    Media/                proxy WHIP/WHEP
+```
+
+Regras de dependência, fiscalizadas por teste de arquitetura (NetArchTest):
+- `Domain` não depende de `Infrastructure` nem de `Features`.
+- `Infrastructure` não depende de `Features`.
+- `Features.X` não depende de `Features.Y`. Se duas features precisam da mesma coisa, ela vai
+  para `Domain` ou `Infrastructure`.
+
+Padrões do servidor:
+
+- **Minimal APIs.** Cada feature expõe `MapXxxEndpoints()` e `AddXxx()`. O `Program.cs` só
+  chama essas extensões.
+- **Domínio rico.** A regra de negócio mora na entidade. `PairingToken.Consume(now)` decide se
+  o token pode ser usado. `Device.Revoke(now)` e `Device.ReportTelemetry(...)` protegem o
+  próprio estado. Setters são privados. Os endpoints orquestram (carregam, chamam o método da
+  entidade, salvam) e não decidem regra.
+- **`Result<T>` para erro esperado.** Métodos que podem falhar por motivo de usuário ou de
+  entrada devolvem `Result<T>` ou `Result`, com um `Error` tipado (código, mensagem, tipo:
+  `Validation`, `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`). Um erro de `Validation`
+  carrega todos os campos inválidos (campo → mensagens) e vira `ValidationProblem`. Os erros de cada área
+  ficam numa classe estática, ex.: `PairingErrors.TokenExpired`. O tipo `Result` é escrito no
+  projeto, sem biblioteca.
+- **Um ponto de tradução.** `Infrastructure/Http/ResultExtensions.ToHttpResult()` converte
+  `Error` em `ProblemDetails` com o status certo. Handler não tem try/catch.
+- **Exceção só para bug.** Um middleware registra exceções não tratadas e devolve 500 sem
+  detalhe interno.
+- **Sem MediatR, CQRS com bancos separados, microserviços ou event sourcing.** O domínio é
+  pequeno, e esses padrões só adicionariam indireção.
+
+### 2.2 App: organização do código
+
+```
+app/lib/
+  main.dart               bootstrap: HttpOverrides, localização, runApp
+  app.dart                MaterialApp com NavigationBar de duas abas
+  core/
+    network/              PinnedHttpOverrides, ApiClient, HubConnectionFactory
+    pairing/              QrPayload (parse), PairingService
+    storage/              CredentialStore (flutter_secure_storage)
+    media/                interfaces WebRtcPublisher, WebRtcViewer e implementações
+    device/               interfaces de bateria, lanterna, tela
+  camera/                 aba Câmera: pareamento, modo câmera
+  viewer/                 aba Assistir: pareamento do dono, lista, ao vivo, adicionar câmera
+  l10n/                   app_en.arb, app_pt.arb
+```
+
+- Estado: `ChangeNotifier` + `ListenableBuilder`, do próprio Flutter. Sem pacote de gerência de
+  estado.
+- Dependências passadas por construtor. Sem service locator.
+- Plugins de plataforma (câmera, WebRTC, bateria, lanterna) ficam atrás de interfaces em
+  `core/`. Os controllers dependem das interfaces, e os testes usam fakes escritos à mão.
+- Regras de import, fiscalizadas por `test/architecture_test.dart` (lê os imports dos arquivos):
+  - `camera/` não importa `viewer/`, e vice-versa.
+  - `core/` não importa `camera/` nem `viewer/`.
+
+Cada aba guarda a própria credencial. Um mesmo celular pode estar pareado como câmera e como
+visualizador, mas no uso normal cada celular usa uma aba só.
+
+### 2.3 Modo câmera no celular
+
+Para rodar num celular fraco e não ser morto pelo Android:
+
+- Ocioso: só a conexão SignalR aberta. Nenhuma câmera aberta, nenhum encoder rodando.
+- Ao receber `StartPublishing`: abre a câmera traseira a 1280x720, 15 fps, via `flutter_webrtc`.
+  H.264 preferido via `setCodecPreferences`, sem trilha de áudio, `maxBitrate` 700 kbps no
+  sender. Publica por WHIP.
+- Ao receber `StopPublishing`: fecha a conexão e libera a câmera.
+- O vídeo nunca passa pelo Dart. Câmera, encoder de hardware e rede ficam no código nativo do
+  libwebrtc.
+- Sem preview local enquanto transmite. A tela fica preta, com brilho mínimo e wakelock ligado.
+  Um toque mostra por 10 s um overlay com status e botão de sair.
+- Foreground service do tipo `camera` enquanto o modo câmera está ativo, para manter a
+  prioridade do processo. A lógica roda no isolate principal.
+- Reconexão ao servidor com backoff exponencial: 1, 2, 4, 8, 16, 30 s, e depois 30 s fixo.
+
+## 3. Modelo de dados
+
+```
+Device
+  Id              Guid (PK)
+  Name            string, 1..40 caracteres
+  Role            DeviceRole: Owner | Viewer | Camera
+  CredentialHash  byte[32], SHA-256 do segredo
+  CreatedAt       DateTimeOffset
+  LastSeenAt      DateTimeOffset?
+  RevokedAt       DateTimeOffset?
+  BatteryLevel    int?, 0..100 (só câmera)
+  IsCharging      bool? (só câmera)
+  TelemetryAt     DateTimeOffset? (só câmera)
+
+PairingToken
+  Id              Guid (PK)
+  TokenHash       byte[32], SHA-256 do token
+  GrantsRole      DeviceRole
+  CreatedAt       DateTimeOffset
+  ExpiresAt       DateTimeOffset
+  UsedAt          DateTimeOffset?
+  CreatedByDeviceId Guid? (null para o token do dono)
+```
+
+Estado que não vai para o banco, em memória no servidor: conexões SignalR online, leases de
+visualização e se a câmera está publicando.
+
+Hora sempre via `TimeProvider` injetado.
+
+## 4. Dados no primeiro uso
+
+O servidor sobe vazio. No primeiro start ele cria:
+- o certificado TLS autoassinado em `/data/tls/server.pfx` (RSA 2048, validade de 10 anos);
+- o banco em `/data/recam.db`;
+- um token de pareamento do dono, válido por 10 minutos e renovado enquanto não existir dono.
+
+Nada depende de internet. Todo o caminho principal funciona numa rede local sem acesso externo.
+
+## 5. Protocolo
+
+### 5.1 Endereços do servidor
+
+- `RECAM_PUBLIC_URLS` (lista separada por vírgula, ex.: `https://192.168.0.10:8443`), quando
+  definida, é a lista usada no QR.
+- Sem ela, o servidor detecta os IPv4 das interfaces de rede ativas que não são loopback, em
+  faixas privadas (10/8, 172.16/12, 192.168/16), e monta `https://<ip>:8443`. Isso só funciona
+  no modo host (Linux).
+- No `compose.bridge.yaml`, `RECAM_HOST` é obrigatória. Ela alimenta `RECAM_PUBLIC_URLS` do
+  servidor e `webrtcAdditionalHosts` do MediaMTX.
+
+### 5.2 QR de pareamento
+
+URI:
+
+```
+recam://pair?v=1&t=<token>&f=<fingerprint>&u=<url>&u=<url>
+```
+
+- `v`: versão do formato. Hoje `1`.
+- `t`: token de pareamento, 32 bytes aleatórios em base64url sem padding.
+- `f`: SHA-256 do certificado DER do servidor, hexadecimal minúsculo, 64 caracteres. Opcional.
+  Sem `f`, o app valida o certificado pelas CAs do sistema.
+- `u`: URL base do servidor, percent-encoded. Uma ou mais, em ordem de preferência. O app tenta
+  cada uma e fica com a primeira que responder `GET /health`.
+
+O app rejeita o QR se `v` for diferente de `1`, se faltar `t`, se não houver `u` válida ou se
+`f` estiver presente sem ter 64 caracteres hexadecimais. O parse devolve todos os erros de uma
+vez.
+
+### 5.3 TLS e pinning
+
+- O Kestrel serve HTTPS em 8443 com o certificado de `/data/tls/server.pfx`.
+- O app instala um `HttpOverrides` global. Para um host pareado com fingerprint, o
+  `badCertificateCallback` aceita o certificado só se o SHA-256 do DER bater com o fingerprint
+  salvo. Para qualquer outro caso, vale a validação padrão. Isso cobre `package:http`, o cliente
+  SignalR e os WebSockets, porque todos usam o `HttpClient` do `dart:io`.
+
+### 5.4 Credencial de dispositivo
+
+- O pareamento devolve `credential = "<deviceId N-format>.<secret base64url>"`, com o segredo
+  de 32 bytes aleatórios.
+- O cliente manda `Authorization: Bearer <credential>` no REST, no WHIP e no WHEP. No SignalR,
+  vai como `access_token` na query.
+- O servidor guarda só o SHA-256 do segredo e compara em tempo constante.
+- Dispositivo com `RevokedAt` preenchido recebe 401.
+
+### 5.5 REST
+
+| Método e rota | Quem pode | Entrada | Saída |
+|---|---|---|---|
+| `GET /health` | qualquer um | — | `200 "ok"` |
+| `GET /setup` | só IP privado, sem header `X-Forwarded-For`, só enquanto não há dono | — | HTML com o QR em SVG e o texto em inglês e português. Com dono já pareado: página "already configured" |
+| `POST /api/pair` | qualquer um, com limite de 5 por minuto por IP | `{ token, name, role? }` | `201 { deviceId, credential, role, serverName }` |
+| `POST /api/pairing-tokens` | Owner | `{ role: "camera" }` | `201 { qrUri, expiresAt }` |
+| `GET /api/me` | qualquer dispositivo | — | `{ deviceId, name, role }` |
+| `GET /api/cameras` | Owner, Viewer | — | `[{ id, name, online, publishing, batteryLevel, isCharging, telemetryAt }]` |
+| `POST /whip/{cameraId}` | Camera, só com `cameraId` igual ao próprio id | SDP offer | proxy para `/cam-{cameraId}/whip` no MediaMTX |
+| `PATCH`, `DELETE /whip/{cameraId}/{session}` | a mesma câmera | trickle ICE / encerrar | proxy |
+| `POST /whep/{cameraId}` | Owner, Viewer | SDP offer | proxy para `/cam-{cameraId}/whep` |
+| `PATCH`, `DELETE /whep/{cameraId}/{session}` | Owner, Viewer | trickle ICE / encerrar | proxy |
+
+- `POST /api/pair`: o `role` do corpo é ignorado. Quem decide o papel é o `GrantsRole` do token.
+  Token inexistente, expirado ou já usado recebe 401 com o mesmo corpo nos três casos. `name` é
+  validado (1..40 caracteres, sem controle). Erros de validação voltam juntos, em
+  `ValidationProblem`.
+- Proxy WHIP/WHEP: repassa corpo, `Content-Type`, `If-Match` e `ETag`. Reescreve o `Location` do
+  MediaMTX para o formato `/whip/{cameraId}/{session}` ou `/whep/{cameraId}/{session}`. Não
+  repassa o `Authorization` do cliente.
+- Path no MediaMTX: `cam-` seguido do `deviceId` em formato `N` (32 hexadecimais).
+
+### 5.6 SignalR: `/hubs/devices`
+
+Cliente → servidor:
+
+| Método | Quem chama | Efeito |
+|---|---|---|
+| `ReportTelemetry(int batteryLevel, bool isCharging)` | Camera | grava no `Device` e avisa os visualizadores |
+| `ReportPublishing(bool publishing)` | Camera | atualiza o estado e avisa os visualizadores |
+| `ReportTorch(bool on)` | Camera | avisa os visualizadores |
+| `WatchCamera(Guid cameraId)` | Owner, Viewer | abre um lease. Se for o primeiro, manda `StartPublishing` à câmera |
+| `UnwatchCamera(Guid cameraId)` | Owner, Viewer | fecha o lease. Se não sobrar nenhum, manda `StopPublishing` depois de 30 s de carência |
+| `SetTorch(Guid cameraId, bool on)` | Owner, Viewer | repassa à câmera. Erro `camera-not-publishing` se ela não estiver transmitindo |
+
+Servidor → cliente:
+
+| Método | Para quem |
+|---|---|
+| `StartPublishing()` | Camera |
+| `StopPublishing()` | Camera |
+| `SetTorch(bool on)` | Camera |
+| `CameraStatusChanged(CameraStatusDto)` | Owner, Viewer |
+| `TorchChanged(Guid cameraId, bool on)` | Owner, Viewer |
+
+- Desconexão de um visualizador fecha os leases dele.
+- Quando a câmera reconecta e existe lease aberto, o servidor manda `StartPublishing` de novo.
+- A câmera manda telemetria ao conectar, a cada 60 s e quando o nível muda.
+- `CameraStatusDto` tem o mesmo formato do item de `GET /api/cameras`.
+
+## 6. Autenticação e autorização
+
+- Sem usuário e senha. Cada celular pareado é um `Device` com credencial própria.
+- O primeiro pareamento cria o `Owner`. Só existe um dono.
+- Só o dono gera tokens de pareamento.
+- `DeviceAuthenticationHandler` autentica o bearer. Políticas: `OwnerOnly`, `ViewerOrOwner`,
+  `CameraOnly`.
+- A página `/setup` entrega o token do dono. Por isso ela só responde a conexões vindas
+  diretamente de IP privado ou loopback, e recusa requisições com `X-Forwarded-For`. Quem roda
+  atrás de proxy ou numa VPS usa o QR do log.
+
+## 7. Deploy
+
+- `deploy/compose.yaml`: Linux, `network_mode: host` nos dois serviços. O MediaMTX escuta HTTP
+  em `127.0.0.1:8889`. Os IPs são detectados automaticamente.
+- `deploy/compose.bridge.yaml`: Docker Desktop no Windows/macOS. Rede do compose, porta
+  `8443:8443/tcp` e `8189:8189/udp` publicadas. `RECAM_HOST` obrigatória no `.env`. O firewall
+  do Windows precisa liberar as duas portas.
+- Imagem do servidor: multi-stage (`mcr.microsoft.com/dotnet/sdk:10.0` →
+  `mcr.microsoft.com/dotnet/aspnet:10.0`), usuário não-root.
+- Healthcheck: o próprio binário com o argumento `healthcheck` faz `GET https://localhost:8443/health`
+  aceitando o certificado local e sai com código 0 ou 1. A imagem `aspnet` não tem `curl`.
+- MediaMTX: imagem `bluenviron/mediamtx` com tag exata. Nunca `latest`.
+
+## 8. Testes
+
+Política: meio-termo.
+
+- **Servidor: cobertura ampla, com dependência real isolada.**
+  - `WebApplicationFactory` com SQLite real num arquivo temporário por teste.
+  - Testes da feature `Media` sobem o MediaMTX real via Testcontainers, com a mesma tag do
+    compose.
+  - `FakeTimeProvider` para tempo. Fakes escritos à mão para o resto. Sem biblioteca de mock.
+  - Casos cobertos: caminho feliz e os casos ruins de segurança (token expirado, token reusado,
+    dispositivo revogado, papel errado, câmera publicando no path de outra).
+  - Nunca contra um servidor ou banco de desenvolvimento compartilhado.
+- **App: caminho feliz.**
+  - Testes unitários de controllers, parse do QR, backoff de reconexão e pinning.
+  - Plugins substituídos por fakes das interfaces de `core/`.
+  - Widget test do shell de abas.
+- **Aparelho real:** vídeo, lanterna, foreground service e comportamento de bateria só se
+  provam no A10 e no 7A. O ROADMAP tem bullets de validação no aparelho para isso.
+
+## 9. Segredos e configuração
+
+Esquema formal. Hoje o servidor não tem segredo configurado por humano: o certificado e o banco
+são gerados em `/data`.
+
+| Dado | Onde fica | Versionado? | Quem preenche |
+|---|---|---|---|
+| `RECAM_HOST`, `RECAM_PUBLIC_URLS` | `deploy/.env` | não. `deploy/.env.example` com valor vazio, sim | usuário |
+| Certificado TLS, banco | `deploy/data/` (volume `/data`) | não | gerado pelo servidor |
+| Keystore de release do Android | fora do repositório, `app/android/key.properties` aponta para ele | não | usuário |
+| Segredos de CI (registry, keystore) | GitHub Actions secrets | não | usuário |
+
+O agente nunca escreve valor real de segredo em arquivo nenhum.
+
+## 10. Licença e contribuição
+
+- AGPL-3.0 para todo o repositório público.
+- Toda contribuição externa exige aceite de um CLA (via CLA Assistant no GitHub), que dá ao
+  mantenedor o direito de relicenciar e de publicar o app oficial nas lojas.
+- `applicationId` do Android: `io.recam.app`, provisório. Precisa ser confirmado antes da
+  primeira publicação em loja, porque não muda depois.
+
+## 11. Riscos conhecidos
+
+- **Encoder H.264 de hardware**: o libwebrtc só usa H.264 em hardware em alguns fabricantes de
+  chip, e o Android não tem H.264 por software no libwebrtc. Exynos (A10) e Snapdragon (7A)
+  devem funcionar. MediaTek antigo pode não ter. Tratado na fase 2.
+- **Android matando o app**: MIUI e One UI encerram processos em segundo plano de forma
+  agressiva. Mitigação: foreground service, wakelock, tela guiada de otimização de bateria
+  (fase 2).
+- **Docker no Windows**: sem rede host de verdade. O IP do PC precisa ser informado em
+  `RECAM_HOST`.
+- **Aquecimento**: celular ligado na tomada por dias. Telemetria de temperatura e redução de
+  qualidade na fase 2.
+
+## 12. Log de decisões
+
+Decisões iniciais (2026-09-24):
+
+- **MediaMTX como plano de mídia.** Implementar WebRTC dentro do .NET (SIPSorcery) custaria meses
+  em problemas de mídia. O MediaMTX fala WHIP/WHEP e grava em fMP4 quando a gravação entrar.
+- **WebRTC com WHIP/WHEP.** Atraso abaixo de 1 s, controle de congestionamento embutido. RTMP
+  teria de 1 a 3 s e RTSP não tem biblioteca madura em Flutter.
+- **.NET como proxy da sinalização WHIP/WHEP.** Uma só porta TCP pública, um só certificado,
+  autorização num lugar só. O MediaMTX fica sem porta TCP exposta e sem hook de autenticação.
+- **Transmissão sob demanda.** Sem gravação no MVP, a câmera só precisa transmitir enquanto
+  alguém assiste. Menos calor e menos bateria no celular fraco.
+- **EF Core em vez de Dapper.** O ganho de performance do Dapper não aparece num banco deste
+  tamanho, e as migrações automáticas no startup importam quando o usuário atualiza a imagem.
+- **SQLite.** Nó único, sem terceiro container.
+- **Pareamento sem conta.** Cada celular é um dispositivo com credencial. O dono pareia os
+  demais.
+- **Primeiro QR no log e em `/setup`.** Não existe dashboard web. O celular novo vira o dono e
+  passa a gerar os QRs das câmeras.
+- **Um app com duas abas.** Leveza e simplicidade, ao contrário do Alfred.
+- **Só Android no MVP.** O desenvolvimento é em Windows, e iOS exige macOS. iOS também não
+  permite câmera em segundo plano.
+- **Android 9 como mínimo (`minSdk 28`).** Os aparelhos de referência são de 2019.
+- **AGPL-3.0 com CLA.** Open source oficial, afasta quem quer fechar e revender, e o CLA
+  mantém a licença ajustável no futuro.
+- **Vertical slices, sem Clean Architecture em vários projetos.** O domínio é pequeno. As
+  fronteiras são garantidas por teste de arquitetura, não pela quantidade de projetos.
+- **Domínio rico e `Result<T>`.** Erro esperado (token expirado, nome inválido) não é exceção.
+  Exceção fica para bug.
+- **O projeto também é portfólio .NET do autor.** Os primeiros slices do servidor são feitos
+  junto com ele para fixar o padrão. Depois, os bullets podem ir para um modelo mais barato em
+  loop.
+- **Gravação e acesso remoto adiados.** Gravação é a parte mais cara do projeto. Acesso remoto
+  é responsabilidade do usuário.
+
+Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
+`> Revisão (AAAA-MM-DD): o que mudou e por quê.`

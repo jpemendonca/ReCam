@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec bash "$(git rev-parse --show-toplevel)/scripts/gate.sh"

@@ -1,0 +1,44 @@
+# Secrets and local config
+.env
+*.env.local
+key.properties
+*.jks
+*.keystore
+
+# Runtime data (database, TLS certificate)
+deploy/data/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+TestResults/
+*.trx
+coverage*.xml
+*.coverage
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+app/android/.gradle/
+app/android/local.properties
+app/android/captures/
+app/android/app/debug/
+app/android/app/profile/
+app/android/app/release/
+*.iml
+.metadata
+
+# OS and editors
+.DS_Store
+Thumbs.db
+.vscode/
+*.swp
