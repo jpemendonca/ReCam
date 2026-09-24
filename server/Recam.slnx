@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Recam.Server/Recam.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Recam.Server.Tests/Recam.Server.Tests.csproj" />
+  </Folder>
+</Solution>

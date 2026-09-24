@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Recam.Server.Tests" />
+  </ItemGroup>
+
+</Project>

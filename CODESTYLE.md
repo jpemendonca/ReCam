@@ -106,7 +106,7 @@ Conforme `SPECS.md` 2.1. Fiscalizado em `tests/Recam.Server.Tests/Architecture/`
 - `Recam.Server.Infrastructure` não referencia `Recam.Server.Features`.
 - `Recam.Server.Features.<X>` não referencia `Recam.Server.Features.<Y>`.
 
-Uma feature nova ganha uma linha no teste de arquitetura no mesmo commit.
+O teste descobre as features pelo namespace. Feature nova é coberta sem mudar o teste.
 
 ## 4. Dart e Flutter (app/)
 
@@ -182,6 +182,10 @@ final class QrParseFailed extends QrParseResult { QrParseFailed(this.errors); fi
 
 Nome no padrão `Metodo_Cenario_Comportamento`, em inglês. Corpo com `// arrange`, `// act`,
 `// assert`, nessa ordem. Descrição legível em inglês.
+
+O `.editorconfig` desliga o CA1707 (sublinhado em nome de membro) só em `server/tests/`, porque
+ele contradiz este padrão. É a única regra de analisador desligada no projeto. Não serve de
+precedente para desligar outras.
 
 C# (xUnit):
 

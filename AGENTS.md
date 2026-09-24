@@ -59,7 +59,7 @@ bash scripts/gate.sh
 ```
 
 Roda, para cada área que já existe:
-- `server/`: `dotnet format --verify-no-changes`, `dotnet build -warnaserror`, `dotnet test`.
+- `server/`: `dotnet format --verify-no-changes`, `dotnet build -warnaserror`, `dotnet test --solution` (Microsoft Testing Platform, ligado no `global.json`).
   Os testes de integração sobem o MediaMTX com Testcontainers, então o Docker precisa estar
   rodando.
 - `app/`: `dart format --set-exit-if-changed`, `flutter analyze`, `flutter test`.

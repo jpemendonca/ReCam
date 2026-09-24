@@ -56,7 +56,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > `deploy/data/x`. `LICENSE` baixado de gnu.org, 661 linhas, cabeçalho conferido. O
   > `.editorconfig` também fixa namespace com escopo de arquivo e `_camelCase` em campo privado.
 
-- [ ] **0.3 [junto] Esqueleto do servidor**
+- [x] **0.3 [junto] Esqueleto do servidor**
   - Origem: fundação.
   - Escopo: `server/Recam.slnx`, `server/Directory.Build.props` (conforme `CODESTYLE.md` 3),
     `server/src/Recam.Server/` (ASP.NET Core vazio, `Program.cs` com `GET /health` retornando
@@ -67,6 +67,13 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Fora: TLS, banco, Docker.
   - Aceite: `Health_WhenCalled_ReturnsOk` passa. Os testes de arquitetura existem e passam. O
     gate roda a área `server/`.
+  > Validação (2026-09-24): só código escrito. Gate verde com 4 testes. O teste de arquitetura
+  > foi conferido criando uma feature temporária que dependia de `Features.Health`: ele falhou
+  > apontando o tipo, e a feature foi removida. Ajustes feitos no caminho: `global.json` liga o
+  > Microsoft Testing Platform (exigido pelo xUnit v3 no .NET 10), o gate usa
+  > `dotnet test --solution`, e os pacotes `Microsoft.NET.Test.Sdk` e
+  > `xunit.runner.visualstudio` saíram. O CA1707 foi desligado só em `server/tests/`
+  > (`CODESTYLE.md` 8.1).
 
 - [ ] **0.4 Esqueleto do app**
   - Origem: fundação.

@@ -33,7 +33,6 @@ dotnet_style_qualification_for_property = false:warning
 dotnet_style_qualification_for_method = false:warning
 dotnet_style_qualification_for_event = false:warning
 dotnet_style_readonly_field = true:warning
-dotnet_diagnostic.IDE0005.severity = warning
 
 dotnet_naming_rule.constants_pascal.symbols = constants
 dotnet_naming_rule.constants_pascal.style = pascal
@@ -42,6 +41,17 @@ dotnet_naming_symbols.constants.applicable_kinds = field
 dotnet_naming_symbols.constants.required_modifiers = const
 dotnet_naming_style.pascal.capitalization = pascal_case
 
+dotnet_naming_rule.static_readonly_pascal.symbols = static_readonly_fields
+dotnet_naming_rule.static_readonly_pascal.style = pascal
+dotnet_naming_rule.static_readonly_pascal.severity = warning
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static, readonly
+
+[server/tests/**.cs]
+# Test names follow Method_Scenario_Behavior (CODESTYLE.md 8.1).
+dotnet_diagnostic.CA1707.severity = none
+
+[*.cs]
 dotnet_naming_rule.private_fields_underscore.symbols = private_fields
 dotnet_naming_rule.private_fields_underscore.style = underscore_camel
 dotnet_naming_rule.private_fields_underscore.severity = warning

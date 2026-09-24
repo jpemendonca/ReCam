@@ -8,7 +8,7 @@ if [ -f "$root/server/Recam.slnx" ]; then
   echo "== server =="
   dotnet format "$root/server/Recam.slnx" --verify-no-changes
   dotnet build "$root/server/Recam.slnx" -warnaserror
-  dotnet test "$root/server/Recam.slnx" --no-build
+  dotnet test --solution "$root/server/Recam.slnx" --no-build
   ran=1
 fi
 
