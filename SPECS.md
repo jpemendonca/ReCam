@@ -54,7 +54,7 @@ Um único app Flutter faz os dois papéis de celular, em duas abas: **Câmera** 
   A interface HTTP escuta só na rede interna (127.0.0.1 no modo host, rede do compose no modo
   bridge). Só a porta UDP 8189 fica exposta. RTSP, RTMP, HLS, SRT, API e métricas desligados.
 - **SQLite** em `/data/recam.db`, via EF Core. Migrações aplicadas no startup.
-- **Volume `/data`**: banco, certificado TLS. Bind mount em `deploy/data/`.
+- **Volume `/data`**: banco, certificado TLS. Volume nomeado `recam-data`.
 
 ### 2.1 Servidor: organização do código
 
@@ -198,11 +198,12 @@ Nada depende de internet. Todo o caminho principal funciona numa rede local sem 
 
 - `RECAM_PUBLIC_URLS` (lista separada por vírgula, ex.: `https://192.168.0.10:8443`), quando
   definida, é a lista usada no QR.
-- Sem ela, o servidor detecta os IPv4 das interfaces de rede ativas que não são loopback, em
+- Sem ela, e com `RECAM_HOST` definida, a lista é `https://<RECAM_HOST>:8443`.
+- Sem nenhuma das duas, o servidor detecta os IPv4 das interfaces de rede ativas que não são loopback, em
   faixas privadas (10/8, 172.16/12, 192.168/16), e monta `https://<ip>:8443`. Isso só funciona
   no modo host (Linux).
-- No `compose.bridge.yaml`, `RECAM_HOST` é obrigatória. Ela alimenta `RECAM_PUBLIC_URLS` do
-  servidor e `webrtcAdditionalHosts` do MediaMTX.
+- No `compose.bridge.yaml`, `RECAM_HOST` é obrigatória. Ela vai para o servidor e para o
+  `webrtcAdditionalHosts` do MediaMTX.
 
 ### 5.2 QR de pareamento
 
@@ -314,7 +315,10 @@ Servidor → cliente:
   `mcr.microsoft.com/dotnet/aspnet:10.0`), usuário não-root.
 - Healthcheck: o próprio binário com o argumento `healthcheck` faz `GET https://localhost:8443/health`
   aceitando o certificado local e sai com código 0 ou 1. A imagem `aspnet` não tem `curl`.
-- MediaMTX: imagem `bluenviron/mediamtx` com tag exata. Nunca `latest`.
+- MediaMTX: imagem `bluenviron/mediamtx` com tag exata. Nunca `latest`. Só aceita paths no
+  formato `cam-<32 hexadecimais>`.
+- Dados em volume nomeado `recam-data`. O Dockerfile cria `/data` com dono não-root, e o
+  Docker copia essa permissão para o volume no primeiro uso.
 
 ## 8. Testes
 
@@ -407,3 +411,8 @@ Decisões iniciais (2026-09-24):
 
 Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 `> Revisão (AAAA-MM-DD): o que mudou e por quê.`
+
+> Revisão (2026-09-24): `/data` passou de bind mount em `deploy/data/` para volume nomeado
+> `recam-data`. No Linux, o Docker cria a pasta do bind mount como root, e o servidor roda como
+> usuário não-root, sem permissão de escrita. O volume nomeado herda a permissão da imagem.
+> Quando a gravação entrar, a escolha de pasta no host volta a ser discutida.

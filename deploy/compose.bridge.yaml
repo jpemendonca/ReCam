@@ -1,0 +1,29 @@
+# Docker Desktop (Windows, macOS). There is no real host networking, so the containers
+# cannot see the machine's LAN address: set RECAM_HOST in deploy/.env.
+name: recam
+
+services:
+  server:
+    build: ../server
+    image: recam-server:local
+    ports:
+      - "8443:8443/tcp"
+    environment:
+      RECAM_PUBLIC_URLS: ${RECAM_PUBLIC_URLS:-}
+      RECAM_HOST: ${RECAM_HOST:?Set RECAM_HOST in deploy/.env to this machine's LAN IP}
+    volumes:
+      - recam-data:/data
+    restart: unless-stopped
+
+  mediamtx:
+    image: bluenviron/mediamtx:1.21.1
+    ports:
+      - "8189:8189/udp"
+    environment:
+      MTX_WEBRTCADDITIONALHOSTS: ${RECAM_HOST:?Set RECAM_HOST in deploy/.env to this machine's LAN IP}
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+    restart: unless-stopped
+
+volumes:
+  recam-data:

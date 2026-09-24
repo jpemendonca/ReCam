@@ -1,0 +1,26 @@
+# Linux. Host networking lets both services see the machine's LAN addresses directly.
+name: recam
+
+services:
+  server:
+    build: ../server
+    image: recam-server:local
+    network_mode: host
+    environment:
+      RECAM_PUBLIC_URLS: ${RECAM_PUBLIC_URLS:-}
+      RECAM_HOST: ${RECAM_HOST:-}
+    volumes:
+      - recam-data:/data
+    restart: unless-stopped
+
+  mediamtx:
+    image: bluenviron/mediamtx:1.21.1
+    network_mode: host
+    environment:
+      MTX_WEBRTCADDRESS: 127.0.0.1:8889
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+    restart: unless-stopped
+
+volumes:
+  recam-data:

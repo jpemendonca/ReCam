@@ -1,0 +1,37 @@
+# Recam uses MediaMTX only as a WebRTC relay (WHIP in, WHEP out).
+# Every other protocol is off. The HTTP listener is never exposed:
+# Recam.Server proxies WHIP/WHEP to it and enforces authorization.
+
+logLevel: info
+logDestinations: [stdout]
+
+authMethod: internal
+authInternalUsers:
+  - user: any
+    pass:
+    ips: ["127.0.0.1", "::1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+    permissions:
+      - action: publish
+      - action: read
+
+api: false
+metrics: false
+pprof: false
+playback: false
+rtsp: false
+rtmp: false
+hls: false
+srt: false
+moq: false
+
+webrtc: true
+webrtcAddress: :8889
+webrtcEncryption: false
+webrtcLocalUDPAddress: :8189
+webrtcLocalTCPAddress: ""
+webrtcIPsFromInterfaces: true
+webrtcAdditionalHosts: []
+webrtcICEServers2: []
+
+paths:
+  "~^cam-[0-9a-f]{32}$":

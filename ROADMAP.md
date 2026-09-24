@@ -109,7 +109,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > parado. O healthcheck confere o fingerprint do certificado salvo em vez de aceitar qualquer
   > certificado. Testes usam `RecamApiFactory` com pasta de dados temporária.
 
-- [ ] **0.6 Docker e compose**
+- [x] **0.6 Docker e compose**
   - Origem: `SPECS.md` 7.
   - Escopo: `server/Dockerfile` (multi-stage, não-root, `EXPOSE 8443`, `HEALTHCHECK` com o
     argumento `healthcheck`). `deploy/mediamtx.yml` só com WebRTC ligado (`webrtcLocalUDPAddress
@@ -123,6 +123,13 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Aceite: nesta máquina (Windows), `docker compose -f deploy/compose.bridge.yaml up -d
     --build` sobe os dois containers. `docker compose ps` mostra o servidor `healthy`.
     `curl -k https://localhost:8443/health` responde `ok`.
+  > Validação (2026-09-24): containers rodados nesta máquina. `compose.bridge.yaml` com
+  > `RECAM_HOST=192.168.100.15` subiu os dois serviços, o servidor ficou `healthy` e
+  > `curl -k https://localhost:8443/health` respondeu `ok`. MediaMTX 1.21.1 carregou a
+  > configuração e só abriu WebRTC (8889 TCP interno, 8189 UDP). `compose.yaml` (host) foi
+  > validado com `docker compose config`, mas não rodado: Docker Desktop não tem rede host real.
+  > Mudança em relação ao escopo: volume nomeado `recam-data` no lugar de `./data` (revisão no
+  > `SPECS.md` 12). Paths do MediaMTX restritos a `cam-<32 hex>`.
 
 ## Fase 1: caminho principal, ponta a ponta, na rede local
 

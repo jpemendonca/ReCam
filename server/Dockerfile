@@ -1,0 +1,20 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY Directory.Build.props ./
+COPY src/Recam.Server/Recam.Server.csproj src/Recam.Server/
+RUN dotnet restore src/Recam.Server/Recam.Server.csproj
+COPY src/ src/
+RUN dotnet publish src/Recam.Server/Recam.Server.csproj -c Release -o /app --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+WORKDIR /app
+COPY --from=build /app .
+ENV ASPNETCORE_ENVIRONMENT=Production \
+    RECAM_DATA_DIR=/data
+# A named volume copies this ownership on first use, so the non-root user can write to it.
+RUN mkdir /data && chown "$APP_UID" /data
+USER $APP_UID
+EXPOSE 8443
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD ["dotnet", "Recam.Server.dll", "healthcheck"]
+ENTRYPOINT ["dotnet", "Recam.Server.dll"]
