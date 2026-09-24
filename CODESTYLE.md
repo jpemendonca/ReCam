@@ -65,10 +65,12 @@ app.MapPost("/api/pair", async (PairRequest req, RecamDbContext db) => { /* ... 
 app.MapPairingEndpoints();
 ```
 
-- Dependências por construtor (primary constructor permitido). Proibido
-  `IServiceProvider.GetService` fora do `Program.cs`.
-- Log estruturado com template. Proibido interpolar string no log e proibido logar token,
-  credencial ou `Authorization`.
+- Dependências por construtor (primary constructor permitido). `IServiceProvider.GetService` e
+  `GetRequiredService` só no `Program.cs` e nas extensões de composição (`AddXxx`, `MapXxx`,
+  `ApplyMigrationsAsync`). Serviço singleton que precisa de banco recebe
+  `IDbContextFactory<RecamDbContext>`.
+- Log estruturado com template, de preferência via `[LoggerMessage]`. Proibido interpolar string
+  no log e proibido logar token, credencial ou `Authorization` (exceção única em `AGENTS.md`).
 
 ```csharp
 // errado
@@ -107,6 +109,11 @@ Conforme `SPECS.md` 2.1. Fiscalizado em `tests/Recam.Server.Tests/Architecture/`
 - `Recam.Server.Features.<X>` não referencia `Recam.Server.Features.<Y>`.
 
 O teste descobre as features pelo namespace. Feature nova é coberta sem mudar o teste.
+
+- Migrações ficam em `Infrastructure/Persistence/Migrations/`, geradas por
+  `dotnet ef migrations add <Nome> --project src/Recam.Server --output-dir Infrastructure/Persistence/Migrations`
+  (rodar em `server/` com `RECAM_DATA_DIR=.data`). O `.editorconfig` marca a pasta como código
+  gerado. Nunca editar migração à mão.
 
 ## 4. Dart e Flutter (app/)
 

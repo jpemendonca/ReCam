@@ -10,6 +10,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app .
 ENV ASPNETCORE_ENVIRONMENT=Production \
+    ASPNETCORE_HTTP_PORTS= \
     RECAM_DATA_DIR=/data
 # A named volume copies this ownership on first use, so the non-root user can write to it.
 RUN mkdir /data && chown "$APP_UID" /data

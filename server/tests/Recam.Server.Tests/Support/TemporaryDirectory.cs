@@ -10,5 +10,11 @@ public sealed class TemporaryDirectory : IDisposable
 
     public string Path { get; }
 
-    public void Dispose() => Directory.Delete(Path, recursive: true);
+    public void Dispose()
+    {
+        if (Directory.Exists(Path))
+        {
+            Directory.Delete(Path, recursive: true);
+        }
+    }
 }

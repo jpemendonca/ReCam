@@ -133,7 +133,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
 
 ## Fase 1: caminho principal, ponta a ponta, na rede local
 
-- [ ] **1.1 [junto] Servidor: setup do dono**
+- [x] **1.1 [junto] Servidor: setup do dono**
   - Origem: caminho principal, passo 2.
   - Escopo: EF Core com SQLite (`Microsoft.EntityFrameworkCore.Sqlite`, ferramenta
     `dotnet-ef` como tool local em `server/.config/dotnet-tools.json`). `Domain/Device.cs`,
@@ -148,6 +148,16 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     (com `FakeTimeProvider`), `SetupPage_FromForwardedRequest_Returns403`,
     `SetupPage_WithOwner_ShowsAlreadyConfigured`, `Resolve_WithEnvVar_UsesEnvVarUrls`. No
     container, `docker compose logs server` mostra o QR.
+  > Validação (2026-09-24): código escrito e container rodado. Gate verde com 22 testes. Com
+  > `compose.bridge.yaml`, `docker compose logs server` mostra o QR em ASCII e a URL
+  > `https://192.168.100.15:8443`. `curl -k https://localhost:8443/setup` devolveu a página com o
+  > QR em SVG. Não lido por um celular ainda (isso é o 1.4). Decisões no caminho: o token vive
+  > só em memória e no banco fica o hash; ao renovar, os tokens de dono não usados são apagados;
+  > `OwnerSetup` usa `IDbContextFactory` por ser singleton; `DateTimeOffset` gravado como binário
+  > porque o SQLite não compara `DateTimeOffset`; o log do QR é a única exceção à regra de token
+  > em log. O teste `SetupPage_WithOwner_ShowsAlreadyConfigured` foi para o 1.2, porque criar um
+  > dono depende de `Device.Pair`. O manifesto do `dotnet-ef` ficou em `server/dotnet-tools.json`
+  > (local padrão do SDK 10).
 
 - [ ] **1.2 [junto] Servidor: pareamento e autenticação**
   - Origem: caminho principal, passo 2.
@@ -158,7 +168,8 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     `Infrastructure/Auth/DeviceAuthenticationHandler.cs` e as políticas `OwnerOnly`,
     `ViewerOrOwner`, `CameraOnly`. Rate limiter nativo do ASP.NET Core em `/api/pair` (5 por
     minuto por IP).
-  - Aceite: testes `Pair_WithOwnerToken_CreatesOwner`, `Pair_WithUsedToken_Returns401`,
+  - Aceite: testes `SetupPage_WithOwner_ShowsAlreadyConfigured` (vindo do 1.1),
+    `Pair_WithOwnerToken_CreatesOwner`, `Pair_WithUsedToken_Returns401`,
     `Pair_WithExpiredToken_Returns401`, `Pair_WithInvalidName_ReturnsAllValidationErrors`,
     `Pair_AboveRateLimit_Returns429`, `Me_WithRevokedDevice_Returns401`,
     `Me_WithValidCredential_ReturnsDevice`. Testes de unidade da entidade sem banco nem HTTP:

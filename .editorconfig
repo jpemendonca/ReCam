@@ -59,3 +59,7 @@ dotnet_naming_symbols.private_fields.applicable_kinds = field
 dotnet_naming_symbols.private_fields.applicable_accessibilities = private
 dotnet_naming_style.underscore_camel.capitalization = camel_case
 dotnet_naming_style.underscore_camel.required_prefix = _
+
+[server/src/Recam.Server/Infrastructure/Persistence/Migrations/**.cs]
+# Written by dotnet-ef; regenerated, never edited by hand.
+generated_code = true

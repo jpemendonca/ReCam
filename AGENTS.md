@@ -95,7 +95,9 @@ Regras do domínio:
 - Portas expostas pelo servidor: `8443/tcp` e `8189/udp`. Porta nova exige bullet e revisão do
   `SPECS.md`.
 - Vídeo em H.264, teto de 1280x720 a 15 fps e 700 kbps. Nada de áudio no MVP.
-- Token e credencial nunca aparecem em log, nem truncados. No banco, só o hash.
+- Token e credencial nunca aparecem em log, nem truncados. No banco, só o hash. Única exceção:
+  o QR do token do dono, que o servidor imprime no log enquanto ninguém é dono
+  (`Features/Setup/OwnerSetup.cs`).
 - Todo texto que o usuário vê no app vem dos arquivos ARB, em `en` e `pt`. Nunca string literal
   em widget.
 
