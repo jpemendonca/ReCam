@@ -1,0 +1,8 @@
+{
+  "@@locale": "en",
+  "appTitle": "Recam",
+  "cameraTab": "Camera",
+  "watchTab": "Watch",
+  "cameraPlaceholder": "Use this phone as a camera.",
+  "watchPlaceholder": "Watch your cameras from this phone."
+}

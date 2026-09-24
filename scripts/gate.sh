@@ -16,7 +16,8 @@ if [ -f "$root/app/pubspec.yaml" ]; then
   echo "== app =="
   (
     cd "$root/app"
-    dart format --output=none --set-exit-if-changed .
+    flutter gen-l10n
+    dart format --output=none --set-exit-if-changed lib test
     flutter analyze
     flutter test
   )

@@ -42,3 +42,6 @@ app/android/app/release/
 Thumbs.db
 .vscode/
 *.swp
+
+# Generated localization
+app/lib/l10n/generated/

@@ -75,7 +75,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > `xunit.runner.visualstudio` saíram. O CA1707 foi desligado só em `server/tests/`
   > (`CODESTYLE.md` 8.1).
 
-- [ ] **0.4 Esqueleto do app**
+- [x] **0.4 Esqueleto do app**
   - Origem: fundação.
   - Escopo: `flutter create --org io.recam --project-name recam --platforms android app`.
     `applicationId` `io.recam.app`, `minSdk 28`. `analysis_options.yaml` conforme
@@ -86,6 +86,13 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     regras do `CODESTYLE.md` 4.1. Remover o contador de exemplo do template.
   - Aceite: widget test `App_WhenTappingWatchTab_ShowsWatchPlaceholder` passa. O teste de
     arquitetura passa. `flutter build apk --debug` termina sem erro. O gate roda a área `app/`.
+  > Validação (2026-09-24): só código escrito. Não aberto num aparelho. Gate verde com 5
+  > testes (`RecamApp` / `whenTappingWatchTab_showsWatchPlaceholder`, no formato Dart do
+  > `CODESTYLE.md` 8.1). O teste de arquitetura falhou como esperado com um import temporário
+  > de `viewer/` dentro de `camera/`. `flutter build apk --debug` gerou o APK. Localização
+  > gerada em `lib/l10n/generated/` (fora do git, o gate roda `flutter gen-l10n` antes).
+  > `lib/core/` fica para o primeiro bullet que colocar código lá. `HomeShell` foi para
+  > `lib/home_shell.dart` (um widget público por arquivo).
 
 - [ ] **0.5 [junto] HTTPS com certificado autoassinado**
   - Origem: `SPECS.md` 5.3.
