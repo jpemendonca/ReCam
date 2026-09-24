@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -7,6 +9,8 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
+using Recam.Server.Domain;
+using Recam.Server.Features.Pairing;
 using Recam.Server.Infrastructure.Hosting;
 using Recam.Server.Infrastructure.Persistence;
 
@@ -30,6 +34,33 @@ public sealed class RecamApiFactory : WebApplicationFactory<Program>
     {
         var factory = Services.GetRequiredService<IDbContextFactory<RecamDbContext>>();
         return await factory.CreateDbContextAsync();
+    }
+
+    /// <summary>Stores a fresh pairing token and returns its secret, as a QR code would carry it.</summary>
+    public async Task<string> CreatePairingTokenAsync(DeviceRole role)
+    {
+        var issued = PairingToken.Issue(role, Time.GetUtcNow());
+        await using var database = await CreateDatabaseAsync();
+        database.PairingTokens.Add(issued.Token);
+        await database.SaveChangesAsync();
+        return issued.Secret;
+    }
+
+    /// <summary>Pairs a new device through the API and returns its credential.</summary>
+    public async Task<PairResponse> PairDeviceAsync(DeviceRole role, string name = "Test device")
+    {
+        var token = await CreatePairingTokenAsync(role);
+        using var client = CreateClient();
+        using var response = await client.PairAsync(token, name);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<PairResponse>(ApiJson.Options))!;
+    }
+
+    public HttpClient CreateDeviceClient(string credential)
+    {
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", credential);
+        return client;
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

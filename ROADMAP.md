@@ -159,7 +159,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > dono depende de `Device.Pair`. O manifesto do `dotnet-ef` ficou em `server/dotnet-tools.json`
   > (local padrão do SDK 10).
 
-- [ ] **1.2 [junto] Servidor: pareamento e autenticação**
+- [x] **1.2 [junto] Servidor: pareamento e autenticação**
   - Origem: caminho principal, passo 2.
   - Escopo: `POST /api/pair` e `GET /api/me` conforme `SPECS.md` 5.5. Introduz os padrões do
     `SPECS.md` 2.1: `Domain/Result.cs` e `Domain/Error.cs` (escritos no projeto),
@@ -175,6 +175,15 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     `Me_WithValidCredential_ReturnsDevice`. Testes de unidade da entidade sem banco nem HTTP:
     `Consume_WhenExpired_ReturnsTokenExpired`, `Consume_WhenUsed_ReturnsTokenAlreadyUsed`,
     `Consume_WhenValid_MarksUsed`.
+  > Validação (2026-09-24): código escrito e container rodado. Gate verde com 39 testes. No
+  > container, via HTTPS: token desconhecido → 401 com `pairing.invalid_token`; campos vazios →
+  > 400 com os dois campos no mesmo `ValidationProblem`; `/api/me` sem credencial → 401. Não
+  > pareado por um celular ainda (1.4). Decisões no caminho: o tipo de erro virou `DomainError`
+  > (o analisador CA1716 proíbe `Error`, palavra reservada no VB); token desconhecido, expirado e
+  > usado respondem igual, e o motivo real vai só para o log; `UsedAt` é token de concorrência;
+  > o handler de exceção é o nativo (`UseExceptionHandler` + `AddProblemDetails`); `serverName`
+  > é a constante `"Recam"`. Testes extras: `Pair_WithUnknownToken_Returns401`,
+  > `Me_WithWrongSecret_Returns401`, `Me_WithoutCredential_Returns401`, `DevicePairTests`.
 
 - [ ] **1.3 App: pareamento do dono na aba Assistir**
   - Origem: caminho principal, passo 2.

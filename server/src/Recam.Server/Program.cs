@@ -1,6 +1,10 @@
+using Recam.Server.Features.Devices;
 using Recam.Server.Features.Health;
+using Recam.Server.Features.Pairing;
 using Recam.Server.Features.Setup;
+using Recam.Server.Infrastructure.Auth;
 using Recam.Server.Infrastructure.Hosting;
+using Recam.Server.Infrastructure.Http;
 using Recam.Server.Infrastructure.Persistence;
 using Recam.Server.Infrastructure.Tls;
 
@@ -15,15 +19,22 @@ var settings = ServerSettings.From(builder.Configuration, builder.Environment.Co
 builder.AddRecamTls(settings);
 builder.Services
     .AddRecamHosting(settings)
+    .AddRecamHttp()
     .AddRecamPersistence(settings)
-    .AddSetup();
+    .AddRecamAuth()
+    .AddSetup()
+    .AddPairing();
 
 var app = builder.Build();
 
 await app.ApplyMigrationsAsync();
 
+app.UseRecamHttp();
+
 app.MapHealthEndpoints();
 app.MapSetupEndpoints();
+app.MapPairingEndpoints();
+app.MapDeviceEndpoints();
 
 await app.RunAsync();
 return 0;

@@ -31,6 +31,9 @@ public sealed class RecamDbContext(DbContextOptions<RecamDbContext> options) : D
             token.HasKey(t => t.Id);
             token.Property(t => t.TokenHash).HasMaxLength(32);
             token.HasIndex(t => t.TokenHash).IsUnique();
+
+            // Two requests racing with the same token: only the first save wins, the other fails.
+            token.Property(t => t.UsedAt).IsConcurrencyToken();
         });
     }
 }

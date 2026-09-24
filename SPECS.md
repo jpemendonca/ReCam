@@ -95,15 +95,19 @@ Padrões do servidor:
   próprio estado. Setters são privados. Os endpoints orquestram (carregam, chamam o método da
   entidade, salvam) e não decidem regra.
 - **`Result<T>` para erro esperado.** Métodos que podem falhar por motivo de usuário ou de
-  entrada devolvem `Result<T>` ou `Result`, com um `Error` tipado (código, mensagem, tipo:
+  entrada devolvem `Result<T>` ou `Result`, com um `DomainError` tipado (código, mensagem, tipo:
   `Validation`, `Unauthorized`, `Forbidden`, `NotFound`, `Conflict`). Um erro de `Validation`
   carrega todos os campos inválidos (campo → mensagens) e vira `ValidationProblem`. Os erros de cada área
   ficam numa classe estática, ex.: `PairingErrors.TokenExpired`. O tipo `Result` é escrito no
   projeto, sem biblioteca.
 - **Um ponto de tradução.** `Infrastructure/Http/ResultExtensions.ToHttpResult()` converte
-  `Error` em `ProblemDetails` com o status certo. Handler não tem try/catch.
-- **Exceção só para bug.** Um middleware registra exceções não tratadas e devolve 500 sem
-  detalhe interno.
+  `DomainError` em `ProblemDetails` com o status certo. Handler não tem try/catch.
+- **Exceção só para bug.** `UseExceptionHandler` com `AddProblemDetails` registra exceções não
+  tratadas e devolve 500 sem detalhe interno.
+- **Token usado por duas requisições ao mesmo tempo.** `PairingToken.UsedAt` é token de
+  concorrência do EF. A segunda gravação falha com exceção (500) e nenhum segundo dispositivo é
+  criado. É tratado como estado excepcional, porque exige alguém com o token em mãos disputando
+  com o dono dele.
 - **Sem MediatR, CQRS com bancos separados, microserviços ou event sourcing.** O domínio é
   pequeno, e esses padrões só adicionariam indireção.
 
@@ -256,7 +260,7 @@ vez.
 | `POST /whep/{cameraId}` | Owner, Viewer | SDP offer | proxy para `/cam-{cameraId}/whep` |
 | `PATCH`, `DELETE /whep/{cameraId}/{session}` | Owner, Viewer | trickle ICE / encerrar | proxy |
 
-- `POST /api/pair`: o `role` do corpo é ignorado. Quem decide o papel é o `GrantsRole` do token.
+- `POST /api/pair`: `serverName` é a constante `"Recam"` por enquanto. O `role` do corpo é ignorado. Quem decide o papel é o `GrantsRole` do token.
   Token inexistente, expirado ou já usado recebe 401 com o mesmo corpo nos três casos. `name` é
   validado (1..40 caracteres, sem controle). Erros de validação voltam juntos, em
   `ValidationProblem`.

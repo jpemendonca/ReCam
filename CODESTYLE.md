@@ -94,7 +94,7 @@ var consumed = token.Consume(timeProvider.GetUtcNow());
 if (consumed.IsFailure) return consumed.Error.ToHttpResult();
 ```
 
-- Erro esperado é `Result`/`Result<T>` com `Error` declarado numa classe estática da área
+- Erro esperado é `Result`/`Result<T>` com `DomainError` declarado numa classe estática da área
   (`PairingErrors`, `DeviceErrors`). Proibido `throw` para erro de usuário e proibido
   `try`/`catch` em endpoint.
 - Proibido MediatR, AutoMapper e bibliotecas de Result (FluentResults, ErrorOr). O `Result` é

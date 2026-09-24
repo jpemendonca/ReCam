@@ -1,4 +1,5 @@
 using System.Net;
+using Recam.Server.Domain;
 using Recam.Server.Tests.Support;
 
 namespace Recam.Server.Tests.Features.Setup;
@@ -22,6 +23,24 @@ public sealed class SetupEndpointsTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
         Assert.Contains("<svg", body, StringComparison.Ordinal);
+    }
+
+    [Fact(DisplayName = "Once an owner is paired, the setup page no longer hands out a token")]
+    public async Task SetupPage_WithOwner_ShowsAlreadyConfigured()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        await factory.PairDeviceAsync(DeviceRole.Owner);
+        using var client = factory.CreateClient();
+
+        // act
+        using var response = await client.GetAsync(SetupUri, TestContext.Current.CancellationToken);
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("already configured", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("<svg", body, StringComparison.Ordinal);
     }
 
     [Fact(DisplayName = "Setup page refuses requests that came through a proxy")]

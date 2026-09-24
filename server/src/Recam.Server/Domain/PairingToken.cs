@@ -41,4 +41,20 @@ public sealed class PairingToken
         };
         return new IssuedPairingToken(token, secret);
     }
+
+    public Result Consume(DateTimeOffset now)
+    {
+        if (UsedAt is not null)
+        {
+            return PairingErrors.TokenAlreadyUsed;
+        }
+
+        if (now >= ExpiresAt)
+        {
+            return PairingErrors.TokenExpired;
+        }
+
+        UsedAt = now;
+        return Result.Success();
+    }
 }
