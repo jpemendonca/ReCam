@@ -38,14 +38,15 @@ public sealed partial class DeviceHub(
             await Groups.AddToGroupAsync(Context.ConnectionId, ViewersGroup, Context.ConnectionAborted);
         }
 
-        if (presence.Connect(deviceId))
+        var isCamera = user.IsInRole(nameof(DeviceRole.Camera));
+        if (presence.Connect(deviceId, isCamera))
         {
             await PresenceChangedAsync(deviceId, Context.ConnectionAborted);
         }
 
         // A camera that reconnects while someone watches, or that records, resumes publishing
         // on its own.
-        if (user.IsInRole(nameof(DeviceRole.Camera)))
+        if (isCamera)
         {
             await using var database = await databaseFactory.CreateDbContextAsync(Context.ConnectionAborted);
             var recording = await database.Devices

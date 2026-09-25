@@ -12,6 +12,7 @@ services:
       RECAM_PUBLIC_URLS: ${RECAM_PUBLIC_URLS:-}
       RECAM_TLS: ${RECAM_TLS:-}
       RECAM_TRUSTED_PROXIES: ${RECAM_TRUSTED_PROXIES:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       RECAM_HOST: ${RECAM_HOST:?Set RECAM_HOST in deploy/.env to this machine's LAN IP}
       RECAM_MEDIAMTX_URL: http://mediamtx:8889
     volumes:

@@ -84,6 +84,7 @@ server/src/Recam.Server/
     Network/              PublicUrlResolver
     Presence/             DevicePresence (conexões ativas por aparelho, em memória)
     Realtime/             HubResult (retorno de erro esperado dos métodos do hub)
+    Observability/        OpenTelemetry (traces, métricas, OTLP opcional), RecamMetrics
   Features/
     Health/               GET /health
     Setup/                token do dono, QR no log, página /setup
@@ -380,6 +381,10 @@ Servidor → cliente:
 - Dados em volume nomeado `recam-data`. O Dockerfile cria `/data` com dono não-root, e o
   Docker copia essa permissão para o volume no primeiro uso. As gravações ficam no volume
   `recam-recordings`, em `/recordings`, pelo mesmo mecanismo.
+- Observabilidade opcional: `deploy/compose.observability.yaml` soma ao compose escolhido o
+  Aspire Dashboard (`mcr.microsoft.com/dotnet/aspire-dashboard`, tag exata), com o painel em
+  `127.0.0.1:18888` e o OTLP gRPC em `127.0.0.1:4317`, os dois só no loopback. Sem ele, o servidor
+  não exporta nada.
 
 ## 8. Testes
 
@@ -408,6 +413,7 @@ são gerados em `/data`.
 | Dado | Onde fica | Versionado? | Quem preenche |
 |---|---|---|---|
 | `RECAM_HOST`, `RECAM_PUBLIC_URLS` | `deploy/.env` | não. `deploy/.env.example` com valor vazio, sim | usuário |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `deploy/.env` (vazio: não exporta) | não. Chave vazia no `.env.example`, sim | usuário |
 | Certificado TLS, banco | `deploy/data/` (volume `/data`) | não | gerado pelo servidor |
 | Keystore de release do Android | fora do repositório, `app/android/key.properties` aponta para ele | não | usuário |
 | Segredos de CI (registry, keystore) | GitHub Actions secrets | não | usuário |
@@ -621,3 +627,15 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > ignorados, e o `/setup` continua recusando a requisição que os traz. As duas chaves estão no
 > `.env.example` e nos dois composes. O WebRTC continua precisando da UDP 8189 alcançável direto:
 > o proxy só leva o HTTP.
+
+> Revisão (2026-09-25): observabilidade com OpenTelemetry (bullet 5.2.1). O servidor gera traces
+> das requisições (ASP.NET Core) e das chamadas de saída (o proxy WHIP/WHEP para o MediaMTX, via
+> HttpClient), as métricas dessas duas instrumentações e três medidores próprios no meter
+> `Recam.Server`, lidos do `DevicePresence` a cada coleta: `recam.cameras.online`,
+> `recam.cameras.publishing` e `recam.views.active` (um Monitor vendo duas câmeras conta duas). O
+> `DevicePresence` passou a saber quais aparelhos online são câmeras. A exportação OTLP só liga com
+> `OTEL_EXPORTER_OTLP_ENDPOINT` definida, e vai para onde o operador apontar: nada sai para
+> terceiros por padrão. A query string sai redigida nos traces (padrão das instrumentações), então
+> o `access_token` do WebSocket do SignalR não vaza; cabeçalhos não são gravados. As portas 18888 e
+> 4317 do Aspire Dashboard só existem com o compose opcional e ficam presas ao loopback, porque o
+> painel roda sem login; as portas expostas à rede continuam só a 8443/tcp e a 8189/udp.

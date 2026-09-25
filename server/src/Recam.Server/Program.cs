@@ -8,6 +8,7 @@ using Recam.Server.Features.Setup;
 using Recam.Server.Infrastructure.Auth;
 using Recam.Server.Infrastructure.Hosting;
 using Recam.Server.Infrastructure.Http;
+using Recam.Server.Infrastructure.Observability;
 using Recam.Server.Infrastructure.Persistence;
 using Recam.Server.Infrastructure.Tls;
 
@@ -28,6 +29,7 @@ builder.AddRecamTls(settings);
 builder.Services
     .AddRecamHosting(settings)
     .AddRecamHttp(settings)
+    .AddRecamObservability(builder.Configuration)
     .AddRecamPersistence(settings)
     .AddRecamAuth()
     .AddSetup()
@@ -39,6 +41,7 @@ builder.Services
 var app = builder.Build();
 
 await app.ApplyMigrationsAsync();
+app.StartRecamMetrics();
 
 app.UseRecamHttp(settings);
 

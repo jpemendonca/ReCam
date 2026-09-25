@@ -10,11 +10,21 @@ namespace Recam.Server.Infrastructure.Presence;
 public sealed class DevicePresence
 {
     private readonly ConcurrentDictionary<Guid, int> _connections = new();
+    private readonly ConcurrentDictionary<Guid, bool> _onlineCameras = new();
     private readonly ConcurrentDictionary<Guid, bool> _publishing = new();
     private readonly ConcurrentDictionary<Guid, int> _watchers = new();
 
     /// <summary>Returns true when this is the device's first connection (it just came online).</summary>
-    public bool Connect(Guid deviceId) => _connections.AddOrUpdate(deviceId, 1, (_, count) => count + 1) == 1;
+    public bool Connect(Guid deviceId, bool isCamera)
+    {
+        var cameOnline = _connections.AddOrUpdate(deviceId, 1, (_, count) => count + 1) == 1;
+        if (cameOnline && isCamera)
+        {
+            _onlineCameras[deviceId] = true;
+        }
+
+        return cameOnline;
+    }
 
     /// <summary>Returns true when this was the device's last connection (it just went offline).</summary>
     public bool Disconnect(Guid deviceId)
@@ -26,6 +36,7 @@ public sealed class DevicePresence
                 if (_connections.TryRemove(new KeyValuePair<Guid, int>(deviceId, count)))
                 {
                     _publishing.TryRemove(deviceId, out _);
+                    _onlineCameras.TryRemove(deviceId, out _);
                     return true;
                 }
             }
@@ -69,4 +80,13 @@ public sealed class DevicePresence
     }
 
     public int Watchers(Guid cameraId) => _watchers.GetValueOrDefault(cameraId);
+
+    /// <summary>Cameras with at least one live hub connection.</summary>
+    public int OnlineCameras => _onlineCameras.Count;
+
+    /// <summary>Cameras that last reported they are sending video.</summary>
+    public int PublishingCameras => _publishing.Count;
+
+    /// <summary>Live views across all cameras; one viewer watching two cameras counts twice.</summary>
+    public int ActiveViews => _watchers.Values.Sum();
 }

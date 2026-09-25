@@ -1152,7 +1152,7 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   > acesso enquanto o repositório for privado. Para fechar: abrir qualquer PR, conferir o check
   > `CI / gate` verde e os dois selos na página do repositório.
 
-- [ ] **5.2.1 Observabilidade com OpenTelemetry**
+- [x] **5.2.1 Observabilidade com OpenTelemetry**
   - Origem: vitrine de portfólio.
   - Escopo: pacotes `OpenTelemetry.Extensions.Hosting` e instrumentações de ASP.NET Core e
     HttpClient. Métricas próprias: câmeras online, câmeras publicando, visualizações ativas.
@@ -1160,6 +1160,22 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
     `.env.example`). Serviço opcional do Aspire Dashboard num `deploy/compose.observability.yaml`.
   - Aceite: teste das métricas com `MeterListener`. Com o compose de observabilidade, o painel
     mostra traces de `/api/cameras` e a métrica de câmeras online.
+  > Validação (2026-09-25): código escrito e caminho percorrido no PC, sem celular.
+  > `Infrastructure/Observability` liga traces e métricas de ASP.NET Core e HttpClient (o proxy
+  > WHIP/WHEP) e o meter `Recam.Server` com três medidores observáveis lidos do `DevicePresence`:
+  > `recam.cameras.online`, `recam.cameras.publishing`, `recam.views.active`. O `DevicePresence`
+  > passou a separar as câmeras dos Monitores online. OTLP só com `OTEL_EXPORTER_OTLP_ENDPOINT`
+  > (chave vazia no `.env.example`, repassada pelos dois composes). `deploy/compose.observability.yaml`
+  > soma o Aspire Dashboard 9.5.2 (tag exata mais nova no MCR), painel e OTLP presos ao loopback.
+  > Testes: `RecamMetricsTests` (com `MeterListener`, filtrando o meter pelo `IMeterFactory` do
+  > servidor do teste: câmera online, publicando e assistida dá 1/1/1, uma câmera offline pareada não
+  > conta, e tudo volta a 0 quando a câmera cai) e o contador no `DevicePresenceTests`. Observado:
+  > com o dashboard em container e o servidor rodando com a variável, o painel listou os traces de
+  > `GET /api/cameras` e `/hubs/devices`, e o gráfico de `recam.cameras.online` subiu de 0 para 1
+  > quando uma câmera pareada pela API abriu a conexão do hub. O compose completo não foi subido
+  > aqui (a imagem do servidor não compila neste ambiente); o `docker compose config` com os dois
+  > arquivos resolve o endpoint para `http://aspire-dashboard:18889`. Gate verde (190 testes no
+  > servidor, 223 no app).
 
 - [ ] **5.2.2 ADRs**
   - Origem: vitrine de portfólio.

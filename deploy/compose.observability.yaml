@@ -1,0 +1,20 @@
+# Optional. Adds the Aspire Dashboard, which shows the server's traces and metrics.
+#   docker compose -f compose.bridge.yaml -f compose.observability.yaml up -d
+#   docker compose -f compose.yaml -f compose.observability.yaml up -d   (Linux: see .env.example)
+# Dashboard: http://localhost:18888, only from this machine.
+name: recam
+
+services:
+  server:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://aspire-dashboard:18889}
+
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:9.5.2
+    ports:
+      # Both bound to loopback: the dashboard has no login here, so it never leaves this machine.
+      - "127.0.0.1:18888:18888"
+      - "127.0.0.1:4317:18889"
+    environment:
+      ASPIRE_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: "true"
+    restart: unless-stopped
