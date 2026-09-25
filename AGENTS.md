@@ -1,6 +1,6 @@
 # Recam: guia do agente
 
-Recam transforma celulares Android antigos em câmeras de monitoramento. Um servidor self-hosted
+Recam transforma celulares Android parados em câmeras de monitoramento. Um servidor self-hosted
 em Docker recebe o vídeo, e um celular visualizador assiste ao vivo. Open source (AGPL-3.0),
 sem anúncio, sem telemetria para terceiros, leve o bastante para rodar num celular de 2019 com
 2 GB de RAM.
@@ -10,14 +10,14 @@ sem anúncio, sem telemetria para terceiros, leve o bastante para rodar num celu
 É a régua para decidir se um bullet importa. Tudo no MVP existe para este percurso funcionar:
 
 1. A pessoa sobe o servidor com `docker compose up -d`.
-2. No celular novo, abre o Recam na aba **Assistir** e lê o QR que o servidor mostra (no
+2. No celular que vai assistir, abre o Recam na aba **Assistir** e lê o QR que o servidor mostra (no
    `docker compose logs` ou na página `https://<ip>:8443/setup`). Esse celular vira o dono.
-3. No celular novo, toca em **Adicionar câmera**. Aparece um QR.
-4. No celular velho, abre o Recam na aba **Câmera**, lê esse QR e dá um nome à câmera. O celular
-   velho fica em modo câmera, com a tela preta.
-5. No celular novo, a câmera aparece na lista, online, com o nível de bateria.
+3. Nesse mesmo celular, toca em **Adicionar câmera**. Aparece um QR.
+4. No celular câmera, abre o Recam na aba **Câmera**, lê esse QR e dá um nome à câmera. Ele fica
+   em modo câmera, com a tela preta.
+5. No celular que assiste, a câmera aparece na lista, online, com o nível de bateria.
 6. Toca na câmera e vê o vídeo ao vivo, com atraso abaixo de 1 segundo na rede local.
-7. Na tela do vídeo ao vivo, liga e desliga a lanterna do celular velho.
+7. Na tela do vídeo ao vivo, liga e desliga a lanterna do celular câmera.
 
 ## Áreas do repositório
 

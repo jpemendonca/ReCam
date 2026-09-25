@@ -2,7 +2,7 @@
 
 ## 1. Produto
 
-Recam reaproveita celulares Android antigos como câmeras de monitoramento. Três papéis:
+Recam reaproveita celulares Android parados como câmeras de monitoramento. Três papéis:
 
 - **Celular câmera**: captura e transmite. Não guarda nada, não decide nada.
 - **Servidor**: roda em Docker na casa do usuário ou numa VPS. Pareia aparelhos, autentica,
@@ -401,7 +401,7 @@ Decisões iniciais (2026-09-24):
 - **SQLite.** Nó único, sem terceiro container.
 - **Pareamento sem conta.** Cada celular é um dispositivo com credencial. O dono pareia os
   demais.
-- **Primeiro QR no log e em `/setup`.** Não existe dashboard web. O celular novo vira o dono e
+- **Primeiro QR no log e em `/setup`.** Não existe dashboard web. O celular que assiste vira o dono e
   passa a gerar os QRs das câmeras.
 - **Um app com duas abas.** Leveza e simplicidade, ao contrário do Alfred.
 - **Só Android no MVP.** O desenvolvimento é em Windows, e iOS exige macOS. iOS também não

@@ -1,11 +1,11 @@
 # Recam
 
-Turn old Android phones into security cameras. Self-hosted, open source, no ads, no
+Turn spare Android phones into security cameras. Self-hosted, open source, no ads, no
 subscriptions required.
 
 Recam has three parts:
 
-- **Camera phone**: an old Android phone that captures and streams video.
+- **Camera phone**: any Android phone that captures and streams video.
 - **Server**: a Docker container on your own machine or VPS that pairs devices and relays video.
 - **Viewer phone**: your everyday phone, where you watch the cameras live.
 
@@ -17,7 +17,7 @@ One app does both phone roles, in two tabs: **Camera** and **Watch**.
 
 1. Run the server with `docker compose up -d`.
 2. On your phone, open the **Watch** tab and scan the QR code the server shows.
-3. Tap **Add camera**. On the old phone, open the **Camera** tab and scan that QR code.
+3. Tap **Add camera**. On the camera phone, open the **Camera** tab and scan that QR code.
 4. Watch it live from your phone, and toggle the camera phone's flashlight remotely.
 
 Requirements: Android 9 or newer. Tested on a Samsung Galaxy A10 and a Xiaomi Redmi 7A.

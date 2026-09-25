@@ -324,6 +324,15 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > Com `-Reset` o script roda `pm clear` nos aparelhos, porque o servidor zerado invalida as
   > credenciais salvas.
 
+- [x] **1.6.6 Textos sem "celular velho" e "celular novo"**
+  - Origem: pedido do autor (2026-09-25). O app não sabe a idade do aparelho; alguém pode usar
+    dois celulares novos.
+  - Escopo: trocar por "celular câmera" e "celular que assiste" nos ARB, no `README.md`, no
+    caminho principal do `AGENTS.md`, no `SPECS.md`, na descrição do `pubspec.yaml` e nos nomes
+    usados nos testes. A frase do produto passa a falar em celulares parados, não antigos.
+  - Aceite: `git grep -i -E "old phone|celular velho|celular novo"` não encontra nada.
+  > Validação (2026-09-25): só código escrito. Busca vazia, gate verde.
+
 - [ ] **1.6.2 [aparelho] Validar pareamento com emulador como dono e celular como câmera**
   - Origem: nova forma de teste (1.6.1).
   - Escopo: `./scripts/dev.ps1 -Reset` (1.6.5) deixa o emulador pareado como dono. O emulador abre

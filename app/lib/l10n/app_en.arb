@@ -23,7 +23,7 @@
   "scannerUnavailable": "Could not open the camera. Allow camera access and try again.",
   "addCameraButton": "Add camera",
   "addCameraTitle": "Add camera",
-  "addCameraInstructions": "On the old phone, open Recam, go to the Camera tab and scan this QR code.",
+  "addCameraInstructions": "On the camera phone, open Recam, go to the Camera tab and scan this QR code.",
   "addCameraExpiresIn": "Expires in {time}",
   "@addCameraExpiresIn": {
     "placeholders": {

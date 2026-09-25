@@ -1,5 +1,5 @@
 name: recam
-description: "Turn old Android phones into security cameras."
+description: "Turn spare Android phones into security cameras."
 publish_to: 'none'
 
 version: 0.1.0+1

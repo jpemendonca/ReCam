@@ -16,7 +16,7 @@
   "scannerUnavailable": "Não deu para abrir a câmera. Permita o acesso à câmera e tente de novo.",
   "addCameraButton": "Adicionar câmera",
   "addCameraTitle": "Adicionar câmera",
-  "addCameraInstructions": "No celular velho, abra o Recam, vá na aba Câmera e leia este QR code.",
+  "addCameraInstructions": "No celular câmera, abra o Recam, vá na aba Câmera e leia este QR code.",
   "addCameraExpiresIn": "Expira em {time}",
   "addCameraError": "Não deu para criar o QR code. Confira a conexão com o servidor.",
   "retryButton": "Tentar de novo",

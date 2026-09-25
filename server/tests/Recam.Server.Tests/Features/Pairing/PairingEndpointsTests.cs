@@ -61,8 +61,8 @@ public sealed class PairingEndpointsTests
         using var client = factory.CreateClient();
 
         // act
-        using var wrongTab = await client.PairAsync(token, "Old phone", [DeviceRole.Camera]);
-        using var rightTab = await client.PairAsync(token, "New phone", [DeviceRole.Owner, DeviceRole.Viewer]);
+        using var wrongTab = await client.PairAsync(token, "Camera phone", [DeviceRole.Camera]);
+        using var rightTab = await client.PairAsync(token, "Viewer phone", [DeviceRole.Owner, DeviceRole.Viewer]);
 
         // assert
         Assert.Equal(HttpStatusCode.Conflict, wrongTab.StatusCode);
@@ -70,7 +70,7 @@ public sealed class PairingEndpointsTests
         Assert.Equal(PairingErrors.WrongRole.Code, problem?.Extensions["code"]?.ToString());
         Assert.Equal(HttpStatusCode.Created, rightTab.StatusCode);
         await using var database = await factory.CreateDatabaseAsync();
-        Assert.Equal("New phone", (await database.Devices.SingleAsync(TestContext.Current.CancellationToken)).Name);
+        Assert.Equal("Viewer phone", (await database.Devices.SingleAsync(TestContext.Current.CancellationToken)).Name);
     }
 
     [Fact(DisplayName = "Pairing with an expired token is rejected with the same answer as any bad token")]
