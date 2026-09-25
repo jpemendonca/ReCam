@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'camera/camera_mode_controller.dart';
 import 'camera/camera_pairing_controller.dart';
 import 'core/network/api_client.dart';
 import 'core/pairing/pairing_link.dart';
@@ -12,6 +13,7 @@ class RecamApp extends StatelessWidget {
     required this.cameraPairing,
     required this.viewerPairing,
     required this.api,
+    required this.cameraMode,
     required this.links,
     required this.ready,
     super.key,
@@ -20,6 +22,7 @@ class RecamApp extends StatelessWidget {
   final CameraPairingController cameraPairing;
   final ViewerPairingController viewerPairing;
   final ApiClient api;
+  final CameraModeFactory cameraMode;
   final LinkSource links;
   final Future<void> ready;
 
@@ -39,6 +42,7 @@ class RecamApp extends StatelessWidget {
         cameraPairing: cameraPairing,
         viewerPairing: viewerPairing,
         api: api,
+        cameraMode: cameraMode,
         links: links,
         ready: ready,
       ),

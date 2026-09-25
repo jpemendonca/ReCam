@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'camera/camera_mode_controller.dart';
 import 'camera/camera_pairing_controller.dart';
 import 'camera/camera_tab.dart';
 import 'core/network/api_client.dart';
@@ -15,6 +16,7 @@ class HomeShell extends StatefulWidget {
     required this.cameraPairing,
     required this.viewerPairing,
     required this.api,
+    required this.cameraMode,
     required this.links,
     required this.ready,
     super.key,
@@ -23,6 +25,7 @@ class HomeShell extends StatefulWidget {
   final CameraPairingController cameraPairing;
   final ViewerPairingController viewerPairing;
   final ApiClient api;
+  final CameraModeFactory cameraMode;
   final LinkSource links;
 
   /// Completes when both tabs have loaded their saved pairing.
@@ -87,7 +90,10 @@ class _HomeShellState extends State<HomeShell> {
         child: IndexedStack(
           index: _selectedIndex,
           children: [
-            CameraTab(pairing: widget.cameraPairing),
+            CameraTab(
+              pairing: widget.cameraPairing,
+              cameraMode: widget.cameraMode,
+            ),
             WatchTab(pairing: widget.viewerPairing, api: widget.api),
           ],
         ),

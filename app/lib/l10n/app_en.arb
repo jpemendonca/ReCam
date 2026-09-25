@@ -65,5 +65,19 @@
   "pasteCodeConfirm": "Pair",
   "cancelButton": "Cancel",
   "copyCodeButton": "Copy code",
-  "codeCopied": "Pairing code copied."
+  "codeCopied": "Pairing code copied.",
+  "cameraModeConnected": "Connected. This phone is a camera.",
+  "cameraModeConnecting": "Connecting to the server…",
+  "batteryLevel": "Battery {level}%",
+  "@batteryLevel": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "cameraModeHint": "The screen stays dark to save battery. Tap it to see this again.",
+  "cameraModeExit": "Stop camera",
+  "cameraModeNotificationTitle": "ReCam camera is on",
+  "cameraModeNotificationText": "This phone is working as a camera."
 }

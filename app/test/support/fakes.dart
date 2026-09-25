@@ -1,9 +1,15 @@
 import 'dart:async';
 
+import 'package:recam/core/device/battery_reader.dart';
+import 'package:recam/core/device/keep_alive.dart';
+import 'package:recam/core/device/screen_controller.dart';
 import 'package:recam/core/network/api_client.dart';
+import 'package:recam/core/network/hub_client.dart';
 import 'package:recam/core/pairing/device_role.dart';
 import 'package:recam/core/pairing/pairing_link.dart';
 import 'package:recam/core/storage/credential_store.dart';
+
+part 'device_fakes.dart';
 
 class FakeApiClient implements ApiClient {
   Set<String> healthyHosts = {};

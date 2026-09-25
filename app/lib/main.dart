@@ -4,7 +4,13 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 
 import 'app.dart';
+import 'camera/camera_mode_controller.dart';
 import 'camera/camera_pairing_controller.dart';
+import 'core/device/battery_reader.dart';
+import 'core/device/keep_alive.dart';
+import 'core/device/screen_controller.dart';
+import 'core/network/hub_client.dart';
+import 'core/network/hub_session.dart';
 import 'core/network/http_api_client.dart';
 import 'core/network/pinned_http_overrides.dart';
 import 'core/pairing/pairing_link.dart';
@@ -32,6 +38,12 @@ Future<void> main() async {
       cameraPairing: cameraPairing,
       viewerPairing: viewerPairing,
       api: api,
+      cameraMode: (session) => CameraModeController(
+        hub: HubSession(client: SignalRHubClient(session)),
+        battery: PluginBatteryReader(),
+        screen: PluginScreenController(),
+        keepAlive: ForegroundServiceKeepAlive(),
+      ),
       links: AppLinkSource(),
       ready: ready,
     ),

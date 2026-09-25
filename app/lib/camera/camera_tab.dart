@@ -4,12 +4,15 @@ import '../core/pairing/pairing_labels.dart';
 import '../core/scanner/qr_scanner_screen.dart';
 import '../core/storage/credential_store.dart';
 import '../l10n/generated/app_localizations.dart';
+import 'camera_mode_controller.dart';
+import 'camera_mode_screen.dart';
 import 'camera_pairing_controller.dart';
 
 class CameraTab extends StatefulWidget {
-  const CameraTab({required this.pairing, super.key});
+  const CameraTab({required this.pairing, required this.cameraMode, super.key});
 
   final CameraPairingController pairing;
+  final CameraModeFactory cameraMode;
 
   @override
   State<CameraTab> createState() => _CameraTabState();
@@ -45,7 +48,10 @@ class _CameraTabState extends State<CameraTab> {
           state: state,
           nameController: _nameController,
         ),
-        CameraPaired(:final session) => _Paired(session: session),
+        CameraPaired(:final session) => _Paired(
+          session: session,
+          cameraMode: widget.cameraMode,
+        ),
       },
     );
   }
@@ -118,9 +124,10 @@ class _NotPaired extends StatelessWidget {
 }
 
 class _Paired extends StatelessWidget {
-  const _Paired({required this.session});
+  const _Paired({required this.session, required this.cameraMode});
 
   final PairedSession session;
+  final CameraModeFactory cameraMode;
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +146,12 @@ class _Paired extends StatelessWidget {
           Text(l10n.watchPairedRole(deviceRoleText(l10n, session.role))),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: null,
+            onPressed: () => Navigator.of(context).push<void>(
+              MaterialPageRoute(
+                builder: (_) =>
+                    CameraModeScreen(controller: cameraMode(session)),
+              ),
+            ),
             icon: const Icon(Icons.videocam),
             label: Text(l10n.startCameraMode),
           ),

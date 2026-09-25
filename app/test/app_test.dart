@@ -44,6 +44,7 @@ void main() {
         cameraPairing: cameraPairing,
         viewerPairing: viewerPairing,
         api: api,
+        cameraMode: (_) => throw StateError('camera mode is not opened here'),
         links: links,
         ready: Future.value(),
       ),

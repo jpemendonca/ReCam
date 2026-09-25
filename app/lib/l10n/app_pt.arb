@@ -37,5 +37,12 @@
   "pasteCodeConfirm": "Parear",
   "cancelButton": "Cancelar",
   "copyCodeButton": "Copiar código",
-  "codeCopied": "Código de pareamento copiado."
+  "codeCopied": "Código de pareamento copiado.",
+  "cameraModeConnected": "Conectado. Este celular é uma câmera.",
+  "cameraModeConnecting": "Conectando ao servidor…",
+  "batteryLevel": "Bateria {level}%",
+  "cameraModeHint": "A tela fica escura para economizar bateria. Toque nela para ver isto de novo.",
+  "cameraModeExit": "Parar câmera",
+  "cameraModeNotificationTitle": "Câmera ReCam ligada",
+  "cameraModeNotificationText": "Este celular está funcionando como câmera."
 }

@@ -366,7 +366,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > teste agora espera o setup do dono antes de criar tokens, porque o worker apagava o token de
   > dono do teste numa corrida.
 
-- [ ] **1.8 App: modo câmera ocioso**
+- [x] **1.8 App: modo câmera ocioso**
   - Origem: caminho principal, passo 4.
   - Escopo: dependências `signalr_netcore`, `battery_plus`, `wakelock_plus`,
     `screen_brightness`, `flutter_foreground_task`. `core/network/hub_connection_factory.dart`.
@@ -377,6 +377,11 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     `AndroidManifest.xml`.
   - Aceite: testes `ReconnectBackoff` (sequência 1, 2, 4, 8, 16, 30, 30) e
     `CameraModeController` (manda telemetria ao conectar e quando o nível muda, com fakes).
+  > Validação (2026-09-25): código escrito, gate verde (79 testes no app), APK compila. Entrou
+  > também `permission_handler` (fixado em `^12.0.1`, porque a 13 exige compilar contra a API 37):
+  > o Android 14+ recusa foreground service de câmera sem a permissão de câmera concedida antes.
+  > A reconexão fica em `core/network/hub_session.dart` e será reusada pela aba Assistir. O
+  > overlay começa visível e some em 10 s.
 
 - [ ] **1.9 App: lista de câmeras na aba Assistir**
   - Origem: caminho principal, passo 5.
