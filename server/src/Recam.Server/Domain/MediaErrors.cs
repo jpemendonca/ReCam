@@ -10,4 +10,7 @@ public static class MediaErrors
 
     public static readonly DomainError CameraNotFound =
         new("media.camera_not_found", "There is no such camera.", ErrorType.NotFound);
+
+    public static readonly DomainError CameraNotPublishing =
+        new("media.camera_not_publishing", "The camera is not sending video right now.", ErrorType.Conflict);
 }

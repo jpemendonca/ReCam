@@ -109,6 +109,107 @@ public sealed class DeviceHubTests
         Assert.False(Assert.Single(cameras!).Online);
     }
 
+    [Fact(DisplayName = "The torch cannot be switched while the camera is not sending video")]
+    public async Task SetTorch_WhenCameraNotPublishing_ReturnsError()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        await using var cameraConnection = await factory.ConnectAsync(camera.Credential);
+        using var torch = new TorchInbox(cameraConnection, "SetTorch");
+        await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
+
+        // act
+        var result = await viewerConnection.InvokeAsync<HubResult>(
+            "SetTorch", camera.DeviceId, true, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.False(result.Ok);
+        Assert.Equal(MediaErrors.CameraNotPublishing.Code, result.Code);
+        Assert.True(await torch.StaysSilentAsync());
+    }
+
+    [Fact(DisplayName = "A viewer's torch command reaches the publishing camera")]
+    public async Task SetTorch_WhenPublishing_ForwardsToCamera()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        await using var cameraConnection = await factory.ConnectAsync(camera.Credential);
+        using var torch = new TorchInbox(cameraConnection, "SetTorch");
+        await cameraConnection.InvokeAsync<HubResult>("ReportPublishing", true, TestContext.Current.CancellationToken);
+        await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
+
+        // act
+        var result = await viewerConnection.InvokeAsync<HubResult>(
+            "SetTorch", camera.DeviceId, true, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.True(result.Ok);
+        Assert.True(await torch.WaitForAsync());
+    }
+
+    [Fact(DisplayName = "A torch command for an unknown camera is refused")]
+    public async Task SetTorch_ForUnknownCamera_ReturnsNotFound()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
+
+        // act
+        var result = await viewerConnection.InvokeAsync<HubResult>(
+            "SetTorch", Guid.NewGuid(), true, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.False(result.Ok);
+        Assert.Equal(MediaErrors.CameraNotFound.Code, result.Code);
+    }
+
+    [Fact(DisplayName = "Only viewers switch the torch")]
+    public async Task SetTorch_FromCamera_IsRejected()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        await using var connection = await factory.ConnectAsync(camera.Credential);
+
+        // act
+        var exception = await Record.ExceptionAsync(() => connection.InvokeAsync<HubResult>(
+            "SetTorch", camera.DeviceId, true, TestContext.Current.CancellationToken));
+
+        // assert
+        Assert.IsType<HubException>(exception);
+    }
+
+    [Fact(DisplayName = "What the camera reports about its torch reaches the viewers")]
+    public async Task ReportTorch_FromCamera_NotifiesViewers()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
+        var changes = new List<(Guid CameraId, bool On)>();
+        using var received = new SemaphoreSlim(0);
+        viewerConnection.On<Guid, bool>("TorchChanged", (cameraId, on) =>
+        {
+            changes.Add((cameraId, on));
+            received.Release();
+        });
+        await using var cameraConnection = await factory.ConnectAsync(camera.Credential);
+
+        // act
+        var result = await cameraConnection.InvokeAsync<HubResult>("ReportTorch", true, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.True(result.Ok);
+        Assert.True(await received.WaitAsync(Wait, TestContext.Current.CancellationToken));
+        Assert.Equal((camera.DeviceId, true), Assert.Single(changes));
+    }
+
     [Fact(DisplayName = "A camera cannot list cameras")]
     public async Task Cameras_AsCamera_Returns403()
     {
@@ -156,6 +257,32 @@ public sealed class DeviceHubTests
 
         // assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    /// <summary>Records the value of a one-argument bool message a client receives.</summary>
+    private sealed class TorchInbox : IDisposable
+    {
+        private readonly SemaphoreSlim _signal = new(0);
+        private bool _last;
+
+        public TorchInbox(HubConnection connection, string method) =>
+            connection.On<bool>(method, on =>
+            {
+                Volatile.Write(ref _last, on);
+                _signal.Release();
+            });
+
+        public void Dispose() => _signal.Dispose();
+
+        /// <summary>Waits for the next message and returns its value.</summary>
+        public async Task<bool> WaitForAsync()
+        {
+            using var timeout = new CancellationTokenSource(Wait);
+            await _signal.WaitAsync(timeout.Token);
+            return Volatile.Read(ref _last);
+        }
+
+        public async Task<bool> StaysSilentAsync() => !await _signal.WaitAsync(TimeSpan.FromMilliseconds(500));
     }
 
     /// <summary>Collects CameraStatusChanged messages and waits for one that matches.</summary>

@@ -37,12 +37,39 @@ class _LiveViewScreenState extends State<LiveViewScreen> {
     super.dispose();
   }
 
+  Future<void> _switchTorch(bool on) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final failed = AppLocalizations.of(context).torchFailed;
+    if (!await _controller.setTorch(on)) {
+      messenger.showSnackBar(SnackBar(content: Text(failed)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(title: Text(widget.cameraName)),
+      appBar: AppBar(
+        title: Text(widget.cameraName),
+        actions: [
+          ListenableBuilder(
+            listenable: _controller,
+            builder: (context, _) {
+              final on = _controller.torchOn;
+              return IconButton(
+                tooltip: on ? l10n.torchTurnOff : l10n.torchTurnOn,
+                isSelected: on,
+                onPressed: _controller.state is LivePlaying
+                    ? () => _switchTorch(!on)
+                    : null,
+                icon: const Icon(Icons.flashlight_off_outlined),
+                selectedIcon: const Icon(Icons.flashlight_on),
+              );
+            },
+          ),
+        ],
+      ),
       body: ListenableBuilder(
         listenable: _controller,
         builder: (context, _) => Stack(

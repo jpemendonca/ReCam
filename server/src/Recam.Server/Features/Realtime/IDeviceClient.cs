@@ -10,4 +10,8 @@ public interface IDeviceClient
     Task StartPublishing();
 
     Task StopPublishing();
+
+    Task SetTorch(bool torchOn);
+
+    Task TorchChanged(Guid cameraId, bool torchOn);
 }

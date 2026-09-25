@@ -100,6 +100,25 @@ public sealed class Device
         return Result.Success();
     }
 
+    /// <summary>
+    /// Checks that a viewer may switch this camera's torch. The torch belongs to the camera's
+    /// video track, so it can only be switched while the camera publishes.
+    /// </summary>
+    public Result AcceptTorchCommand(bool publishing)
+    {
+        if (Role != DeviceRole.Camera || IsRevoked)
+        {
+            return MediaErrors.CameraNotFound;
+        }
+
+        if (!publishing)
+        {
+            return MediaErrors.CameraNotPublishing;
+        }
+
+        return Result.Success();
+    }
+
     public void MarkSeen(DateTimeOffset now) => LastSeenAt = now;
 
     public CameraStatus ToCameraStatus(bool online, bool publishing) =>

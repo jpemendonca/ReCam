@@ -28,6 +28,71 @@ void main() {
       '${call.method}(${call.args.join(',')})',
   ];
 
+  group('LiveViewController torch', () {
+    test('setTorch_sendsCommandForThisCamera', () async {
+      // arrange
+      hubClient.invokeResult = <String, Object?>{'ok': true};
+      viewer.startResults.add(true);
+      await controller.start();
+
+      // act
+      final accepted = await controller.setTorch(true);
+
+      // assert
+      expect(accepted, isTrue);
+      expect(hubCalls().last, 'SetTorch(cam-1,true)');
+    });
+
+    test('setTorch_whenServerRefuses_returnsFalse', () async {
+      // arrange
+      hubClient.invokeResult = <String, Object?>{
+        'ok': false,
+        'code': 'media.camera_not_publishing',
+      };
+      await controller.start();
+
+      // act
+      final accepted = await controller.setTorch(true);
+
+      // assert
+      expect(accepted, isFalse);
+      expect(controller.torchOn, isFalse);
+    });
+
+    test('onTorchChanged_forThisCamera_showsReportedState', () async {
+      // arrange
+      await controller.start();
+
+      // act
+      hubClient.receive('TorchChanged', ['CAM-1', true]);
+
+      // assert
+      expect(controller.torchOn, isTrue);
+    });
+
+    test('onTorchChanged_forOtherCamera_isIgnored', () async {
+      // arrange
+      await controller.start();
+
+      // act
+      hubClient.receive('TorchChanged', ['cam-2', true]);
+
+      // assert
+      expect(controller.torchOn, isFalse);
+    });
+
+    test('close_stopsListeningToTorch', () async {
+      // arrange
+      await controller.start();
+
+      // act
+      await controller.close();
+
+      // assert
+      expect(hubClient.handlers, isNot(contains('TorchChanged')));
+    });
+  });
+
   group('LiveViewController', () {
     test('start_opensLeaseAndRetriesUntilCameraPublishes', () async {
       // arrange

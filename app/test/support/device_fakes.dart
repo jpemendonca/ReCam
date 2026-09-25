@@ -34,6 +34,9 @@ class FakeHubClient implements HubClient {
       handlers[method] = handler;
 
   @override
+  void off(String method) => handlers.remove(method);
+
+  @override
   Future<bool> heartbeat() async => heartbeatResult;
 
   @override
@@ -73,8 +76,16 @@ class FakeKeepAlive implements KeepAlive {
 
 class FakePublisher implements WebRtcPublisher {
   bool startResult = true;
+  bool torchResult = true;
   int starts = 0;
   int stops = 0;
+  final List<bool> torchCalls = [];
+
+  @override
+  Future<bool> setTorch(bool on) async {
+    torchCalls.add(on);
+    return torchResult;
+  }
 
   @override
   Future<bool> start() async {

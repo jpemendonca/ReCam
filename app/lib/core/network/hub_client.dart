@@ -14,12 +14,19 @@ abstract interface class HubClient {
 
   void on(String method, void Function(List<Object?> args) handler);
 
+  /// Removes every handler of [method].
+  void off(String method);
+
   /// Calls a hub method. Returns null when the call could not complete.
   Future<Object?> invoke(String method, [List<Object> args = const []]);
 
   /// Proves the connection works end to end. False when the server does not answer.
   Future<bool> heartbeat();
 }
+
+/// Whether a hub call returned a successful `HubResult` (SPECS.md 5.6).
+bool isHubSuccess(Object? result) =>
+    result is Map<String, Object?> && result['ok'] == true;
 
 typedef HubClientFactory = HubClient Function(PairedSession session);
 
@@ -59,6 +66,9 @@ class SignalRHubClient implements HubClient {
   @override
   void on(String method, void Function(List<Object?> args) handler) =>
       _connection.on(method, (args) => handler(args ?? const []));
+
+  @override
+  void off(String method) => _connection.off(method);
 
   @override
   Future<bool> heartbeat() async => await invoke('Heartbeat') != null;

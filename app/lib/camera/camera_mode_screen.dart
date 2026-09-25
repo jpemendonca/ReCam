@@ -79,6 +79,10 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
                     textAlign: TextAlign.center,
                     style: theme.textTheme.titleMedium,
                   ),
+                  if (_controller.torchOn) ...[
+                    const SizedBox(height: 8),
+                    Text(l10n.cameraModeTorchOn),
+                  ],
                   if (reading != null) ...[
                     const SizedBox(height: 8),
                     Text(l10n.batteryLevel(reading.level)),

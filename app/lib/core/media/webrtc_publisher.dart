@@ -13,6 +13,10 @@ abstract interface class WebRtcPublisher {
 
   /// Stops publishing and releases the camera.
   Future<void> stop();
+
+  /// Switches the torch of the camera being published. Returns false when there is no
+  /// publishing camera or it has no torch.
+  Future<bool> setTorch(bool on);
 }
 
 /// Publishes with WHIP through the server proxy: 1280x720, 15 fps, no audio, H.264 first,
@@ -116,6 +120,21 @@ class WhipPublisher implements WebRtcPublisher {
       ...codecs.where(isH264),
       ...codecs.where((codec) => !isH264(codec)),
     ]);
+  }
+
+  // The torch belongs to the capture session, so it only exists while publishing.
+  @override
+  Future<bool> setTorch(bool on) async {
+    final track = videoTrack;
+    if (track == null) return false;
+    // The plugin reports a camera without a torch, or one busy elsewhere, as exceptions.
+    try {
+      if (!await track.hasTorch()) return false;
+      await track.setTorch(on);
+      return true;
+    } on Object {
+      return false;
+    }
   }
 
   @override

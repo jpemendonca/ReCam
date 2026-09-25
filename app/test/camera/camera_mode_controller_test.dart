@@ -132,6 +132,84 @@ void main() {
     });
   });
 
+  group('CameraModeController torch', () {
+    List<List<Object>> torchReports() => [
+      for (final call in client.invocations)
+        if (call.method == 'ReportTorch') call.args,
+    ];
+
+    Future<void> startPublishing() async {
+      await start();
+      client.receive('StartPublishing', []);
+      await settle();
+    }
+
+    test('onSetTorch_whilePublishing_appliesAndReportsOn', () async {
+      // arrange
+      await startPublishing();
+
+      // act
+      client.receive('SetTorch', [true]);
+      await settle();
+
+      // assert
+      expect(publisher.torchCalls, [true]);
+      expect(controller.torchOn, isTrue);
+      expect(torchReports(), [
+        [true],
+      ]);
+    });
+
+    test(
+      'onSetTorch_whenNotPublishing_reportsOffWithoutTouchingCamera',
+      () async {
+        // arrange
+        await start();
+
+        // act
+        client.receive('SetTorch', [true]);
+        await settle();
+
+        // assert
+        expect(publisher.torchCalls, isEmpty);
+        expect(torchReports(), [
+          [false],
+        ]);
+      },
+    );
+
+    test('onSetTorch_whenCameraHasNoTorch_reportsCurrentState', () async {
+      // arrange
+      publisher.torchResult = false;
+      await startPublishing();
+
+      // act
+      client.receive('SetTorch', [true]);
+      await settle();
+
+      // assert
+      expect(controller.torchOn, isFalse);
+      expect(torchReports(), [
+        [false],
+      ]);
+    });
+
+    test('onStopPublishing_withTorchOn_reportsTorchOff', () async {
+      // arrange
+      await startPublishing();
+      client.receive('SetTorch', [true]);
+      await settle();
+
+      // act
+      client.receive('StopPublishing', []);
+      await settle();
+
+      // assert
+      expect(controller.torchOn, isFalse);
+      expect(torchReports().last, [false]);
+    });
+  });
+
   group('CameraModeController', () {
     test('start_keepsProcessAliveDimsScreenAndReportsOnConnect', () async {
       // arrange

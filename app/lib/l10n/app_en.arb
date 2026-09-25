@@ -87,5 +87,9 @@
   "cameraOffline": "Offline",
   "liveConnecting": "Waking up the camera…",
   "liveFailed": "Could not show the video. Check that the camera is online.",
-  "cameraModeWatched": "Someone is watching this camera now."
+  "cameraModeWatched": "Someone is watching this camera now.",
+  "cameraModeTorchOn": "Flashlight on.",
+  "torchTurnOn": "Turn on flashlight",
+  "torchTurnOff": "Turn off flashlight",
+  "torchFailed": "Could not switch the flashlight. Wait for the video to start."
 }

@@ -121,6 +121,38 @@ public sealed partial class DeviceHub(
         return HubResult.Success;
     }
 
+    [Authorize(Policy = AuthExtensions.ViewerOrOwner)]
+    public async Task<HubResult> SetTorch(Guid cameraId, bool torchOn)
+    {
+        await using var database = await databaseFactory.CreateDbContextAsync(Context.ConnectionAborted);
+        var camera = await database.Devices.AsNoTracking()
+            .SingleOrDefaultAsync(device => device.Id == cameraId, Context.ConnectionAborted);
+        if (camera is null)
+        {
+            return MediaErrors.CameraNotFound.ToHubResult();
+        }
+
+        var accepted = camera.AcceptTorchCommand(presence.IsPublishing(cameraId));
+        if (accepted.IsFailure)
+        {
+            return accepted.Error.ToHubResult();
+        }
+
+        await Clients.User(UserId(cameraId)).SetTorch(torchOn);
+        return HubResult.Success;
+    }
+
+    /// <summary>The camera tells what its torch really did; viewers show that, not what they asked.</summary>
+    [Authorize(Policy = AuthExtensions.CameraOnly)]
+    public async Task<HubResult> ReportTorch(bool torchOn)
+    {
+        await Clients.Group(ViewersGroup).TorchChanged(Context.User!.GetDeviceId(), torchOn);
+        return HubResult.Success;
+    }
+
+    /// <summary>The SignalR user id of a device: the id claim, in N format.</summary>
+    internal static string UserId(Guid deviceId) => deviceId.ToString("N");
+
     private async Task PresenceChangedAsync(Guid deviceId, CancellationToken cancellationToken)
     {
         await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);

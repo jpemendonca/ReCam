@@ -488,7 +488,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > Validação (2026-09-25): só código escrito, gate verde (96 testes no app). A dependência
   > `screen_brightness` saiu, porque não é mais usada.
 
-- [ ] **1.13 Lanterna**
+- [x] **1.13 Lanterna**
   - Origem: caminho principal, passo 7.
   - Escopo: hub: `SetTorch` e `ReportTorch` conforme `SPECS.md` 5.6. App câmera: aplica com
     `Helper.setTorch` na trilha de vídeo ativa e reporta. App visualizador: botão de lanterna na
@@ -496,6 +496,20 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Aceite: testes `SetTorch_WhenCameraNotPublishing_ReturnsError`,
     `SetTorch_WhenPublishing_ForwardsToCamera` e o controller da câmera aplicando a lanterna
     via fake.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (83 testes
+  > no servidor, com MediaMTX real via Testcontainers; 105 no app). A regra fica na entidade:
+  > `Device.AcceptTorchCommand(publishing)` recusa quem não é câmera (`media.camera_not_found`) e
+  > câmera parada (`media.camera_not_publishing`, código no padrão dos outros erros, revisão no
+  > `SPECS.md` 12); o hub só carrega, pergunta à presença se está publicando e repassa. O
+  > `flutter_webrtc` 1.6 não tem `Helper.setTorch`: a câmera usa `MediaStreamTrack.hasTorch` e
+  > `setTorch` na trilha publicada. A câmera sempre responde com `ReportTorch` do estado real (sem
+  > lanterna ou parada, reporta desligada) e reporta desligada ao parar de transmitir. O botão no
+  > ao vivo só fica ativo com o vídeo tocando e mostra o que a câmera reportou, não o que foi
+  > pedido. Limitação: o estado da lanterna não fica guardado no servidor; quem abre o ao vivo
+  > com a lanterna já ligada vê o botão desligado até a próxima mudança. Extras:
+  > `SetTorch_ForUnknownCamera_ReturnsNotFound`, `SetTorch_FromCamera_IsRejected`,
+  > `ReportTorch_FromCamera_NotifiesViewers`, `DeviceTorchTests`, testes da lanterna no
+  > `LiveViewController`.
 
 - [ ] **1.12.3 Pareamento que não vale mais volta para a tela de pareamento**
   - Origem: teste no A10 em 2026-09-25. Depois de zerar o servidor, o A10 ficou em "Conectando ao

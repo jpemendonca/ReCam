@@ -33,7 +33,7 @@ public sealed class WatchLeases(IHubContext<DeviceHub, IDeviceClient> hub, TimeP
 
         if (startNeeded)
         {
-            await hub.Clients.User(UserId(cameraId)).StartPublishing();
+            await hub.Clients.User(DeviceHub.UserId(cameraId)).StartPublishing();
         }
     }
 
@@ -63,8 +63,6 @@ public sealed class WatchLeases(IHubContext<DeviceHub, IDeviceClient> hub, TimeP
             return _watchers.ContainsKey(cameraId);
         }
     }
-
-    private static string UserId(Guid cameraId) => cameraId.ToString("N");
 
     private void ReleaseLease(string connectionId, Guid cameraId)
     {
@@ -114,7 +112,7 @@ public sealed class WatchLeases(IHubContext<DeviceHub, IDeviceClient> hub, TimeP
         cancellation.Dispose();
         if (stillPending)
         {
-            await hub.Clients.User(UserId(cameraId)).StopPublishing();
+            await hub.Clients.User(DeviceHub.UserId(cameraId)).StopPublishing();
         }
     }
 }

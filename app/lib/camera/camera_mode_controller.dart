@@ -41,11 +41,14 @@ class CameraModeController extends ChangeNotifier {
   BatteryReading? _lastSent;
   DateTime? _lastSentAt;
   bool _publishing = false;
+  bool _torchOn = false;
   Future<void> _publishingChange = Future.value();
 
   bool get connected => _hub.connected;
 
   bool get publishing => _publishing;
+
+  bool get torchOn => _torchOn;
 
   BatteryReading? get lastReading => _lastSent;
 
@@ -57,6 +60,10 @@ class CameraModeController extends ChangeNotifier {
     _hub.onConnected = () => unawaited(_report(force: true));
     _hub.client.on('StartPublishing', (_) => _queue(_startPublishing));
     _hub.client.on('StopPublishing', (_) => _queue(_stopPublishing));
+    _hub.client.on(
+      'SetTorch',
+      (args) => _queue(() => _setTorch(args.firstOrNull == true)),
+    );
     await _keepAlive.start(title: notificationTitle, text: notificationText);
     await _screen.enterCameraMode();
     _hub.start();
@@ -96,8 +103,21 @@ class CameraModeController extends ChangeNotifier {
     if (!_publishing) return;
     await _publisher.stop();
     _publishing = false;
+    final torchWasOn = _torchOn;
+    _torchOn = false;
     notifyListeners();
     await _hub.client.invoke('ReportPublishing', [false]);
+    // Releasing the camera turns the torch off with it.
+    if (torchWasOn) await _hub.client.invoke('ReportTorch', [false]);
+  }
+
+  // Reports what the torch really is, so viewers never show a state the camera did not reach.
+  Future<void> _setTorch(bool on) async {
+    if (_publishing && await _publisher.setTorch(on)) {
+      _torchOn = on;
+      notifyListeners();
+    }
+    await _hub.client.invoke('ReportTorch', [_torchOn]);
   }
 
   Future<void> _report({required bool force}) async {

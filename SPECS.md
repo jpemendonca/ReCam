@@ -455,3 +455,7 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > - A primeira abertura pergunta "câmera ou para assistir"; o app não mostra o conceito de dono.
 > - O `/setup` vira um painel de acompanhamento só leitura na rede local. Continua não existindo
 >   dashboard de gestão; ações como revogar seguem no celular do dono.
+
+> Revisão (2026-09-25): o erro de `SetTorch` com a câmera parada tem o código
+> `media.camera_not_publishing`, no mesmo formato `área.nome` dos outros erros de domínio (a tabela
+> da seção 5.6 dizia `camera-not-publishing`). Câmera inexistente devolve `media.camera_not_found`.

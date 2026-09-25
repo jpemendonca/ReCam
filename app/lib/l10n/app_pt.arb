@@ -52,5 +52,9 @@
   "cameraOffline": "Offline",
   "liveConnecting": "Acordando a câmera…",
   "liveFailed": "Não deu para mostrar o vídeo. Confira se a câmera está online.",
-  "cameraModeWatched": "Alguém está assistindo esta câmera agora."
+  "cameraModeWatched": "Alguém está assistindo esta câmera agora.",
+  "cameraModeTorchOn": "Lanterna ligada.",
+  "torchTurnOn": "Ligar lanterna",
+  "torchTurnOff": "Desligar lanterna",
+  "torchFailed": "Não deu para mudar a lanterna. Espere o vídeo começar."
 }
