@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -14,11 +15,12 @@ namespace Recam.Server.Features.Realtime;
 /// Method names are the wire protocol, so they carry no Async suffix.
 /// </summary>
 [Authorize]
-public sealed class DeviceHub(
+public sealed partial class DeviceHub(
     IDbContextFactory<RecamDbContext> databaseFactory,
     DevicePresence presence,
     WatchLeases leases,
-    TimeProvider timeProvider) : Hub<IDeviceClient>
+    TimeProvider timeProvider,
+    ILogger<DeviceHub> logger) : Hub<IDeviceClient>
 {
     public const string Path = "/hubs/devices";
     public const string ViewersGroup = "viewers";
@@ -26,18 +28,21 @@ public sealed class DeviceHub(
     public override async Task OnConnectedAsync()
     {
         var user = Context.User!;
+        var deviceId = user.GetDeviceId();
+        var role = user.FindFirstValue(ClaimTypes.Role);
+        LogConnected(logger, deviceId, role, Context.ConnectionId);
         if (user.IsInRole(nameof(DeviceRole.Owner)) || user.IsInRole(nameof(DeviceRole.Viewer)))
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, ViewersGroup, Context.ConnectionAborted);
         }
 
-        if (presence.Connect(user.GetDeviceId()))
+        if (presence.Connect(deviceId))
         {
-            await PresenceChangedAsync(user.GetDeviceId(), Context.ConnectionAborted);
+            await PresenceChangedAsync(deviceId, Context.ConnectionAborted);
         }
 
         // A camera that reconnects while someone watches resumes publishing on its own.
-        if (user.IsInRole(nameof(DeviceRole.Camera)) && leases.HasWatchers(user.GetDeviceId()))
+        if (user.IsInRole(nameof(DeviceRole.Camera)) && leases.HasWatchers(deviceId))
         {
             await Clients.Caller.StartPublishing();
         }
@@ -49,6 +54,8 @@ public sealed class DeviceHub(
     {
         leases.RemoveConnection(Context.ConnectionId);
         var deviceId = Context.User!.GetDeviceId();
+        var reason = exception?.Message;
+        LogDisconnected(logger, deviceId, Context.ConnectionId, reason);
         if (presence.Disconnect(deviceId))
         {
             await PresenceChangedAsync(deviceId, CancellationToken.None);
@@ -56,6 +63,12 @@ public sealed class DeviceHub(
 
         await base.OnDisconnectedAsync(exception);
     }
+
+    /// <summary>
+    /// Lets a client prove its connection still works end to end. Some clients do not notice a
+    /// dropped socket on their own.
+    /// </summary>
+    public HubResult Heartbeat() => HubResult.Success;
 
     [Authorize(Policy = AuthExtensions.CameraOnly)]
     public async Task<HubResult> ReportTelemetry(int batteryLevel, bool isCharging)
@@ -122,4 +135,10 @@ public sealed class DeviceHub(
 
     private Task NotifyViewersAsync(Device camera) =>
         Clients.Group(ViewersGroup).CameraStatusChanged(camera.ToCameraStatus(presence.IsOnline(camera.Id), presence.IsPublishing(camera.Id)));
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Device {DeviceId} ({Role}) connected on {ConnectionId}")]
+    private static partial void LogConnected(ILogger logger, Guid deviceId, string? role, string connectionId);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Device {DeviceId} disconnected from {ConnectionId}: {Reason}")]
+    private static partial void LogDisconnected(ILogger logger, Guid deviceId, string connectionId, string? reason);
 }

@@ -457,7 +457,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > tela não importa o plugin. O teste com dois emuladores achou a queda silenciosa do hub; a
   > correção é o 1.12.1, e a imagem ao vivo será conferida depois dele.
 
-- [ ] **1.12.1 Conexão com o hub que percebe queda silenciosa**
+- [x] **1.12.1 Conexão com o hub que percebe queda silenciosa**
   - Origem: teste com dois emuladores em 2026-09-25. Depois de um restart do servidor, o
     visualizador continuou mostrando "connected" por minutos sem reconectar: o cliente SignalR do
     Dart não disparou `onclose`. A lista ficou com a câmera "Offline" enquanto ela estava online.
@@ -468,6 +468,11 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     controller no `initState`, não no `builder` da rota (o Flutter pode chamar o builder de novo).
   - Aceite: `Heartbeat_FromAnyDevice_ReturnsOk` no servidor; no app,
     `whenHeartbeatFails_reconnects` e `whenConnectionClosesRightAway_reconnects`.
+  > Validação (2026-09-25): código escrito, gate verde (75 no servidor, 95 no app). Com dois
+  > emuladores ligados, o log do app mostrou o servidor fechando a conexão aos 15 s sem o cliente
+  > saber, e o batimento detectando a queda (`alive=false`) e reconectando. A causa dos 15 s
+  > ainda não está provada (suspeita: NAT dos emuladores com o Docker Desktop); o teste com o A10
+  > no 1.14 decide. O hub passou a registrar em log a conexão e a desconexão de cada aparelho.
 
 - [ ] **1.13 Lanterna**
   - Origem: caminho principal, passo 7.

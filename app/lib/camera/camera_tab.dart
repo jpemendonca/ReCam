@@ -149,7 +149,7 @@ class _Paired extends StatelessWidget {
             onPressed: () => Navigator.of(context).push<void>(
               MaterialPageRoute(
                 builder: (_) =>
-                    CameraModeScreen(controller: cameraMode(session)),
+                    CameraModeScreen(create: () => cameraMode(session)),
               ),
             ),
             icon: const Icon(Icons.videocam),

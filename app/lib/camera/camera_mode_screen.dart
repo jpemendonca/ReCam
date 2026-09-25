@@ -8,9 +8,10 @@ import 'camera_mode_controller.dart';
 /// Black full screen while the phone works as a camera. A tap shows the status and the
 /// exit button for a few seconds.
 class CameraModeScreen extends StatefulWidget {
-  const CameraModeScreen({required this.controller, super.key});
+  const CameraModeScreen({required this.create, super.key});
 
-  final CameraModeController controller;
+  /// Builds the controller once, in initState; the route builder may run again.
+  final CameraModeController Function() create;
 
   @override
   State<CameraModeScreen> createState() => _CameraModeScreenState();
@@ -18,6 +19,8 @@ class CameraModeScreen extends StatefulWidget {
 
 class _CameraModeScreenState extends State<CameraModeScreen> {
   static const _overlayDuration = Duration(seconds: 10);
+
+  late final CameraModeController _controller = widget.create();
 
   Timer? _overlayTimer;
   bool _overlayVisible = true;
@@ -30,7 +33,7 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
     _started = true;
     final l10n = AppLocalizations.of(context);
     unawaited(
-      widget.controller.start(
+      _controller.start(
         notificationTitle: l10n.cameraModeNotificationTitle,
         notificationText: l10n.cameraModeNotificationText,
       ),
@@ -41,8 +44,8 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
   @override
   void dispose() {
     _overlayTimer?.cancel();
-    unawaited(widget.controller.stop());
-    widget.controller.dispose();
+    unawaited(_controller.stop());
+    _controller.dispose();
     super.dispose();
   }
 
@@ -70,15 +73,15 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
           child: !_overlayVisible
               ? const SizedBox.shrink()
               : ListenableBuilder(
-                  listenable: widget.controller,
+                  listenable: _controller,
                   builder: (context, _) {
-                    final reading = widget.controller.lastReading;
+                    final reading = _controller.lastReading;
                     return Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            widget.controller.connected
+                            _controller.connected
                                 ? Icons.cloud_done_outlined
                                 : Icons.cloud_off_outlined,
                             color: Colors.white70,
@@ -86,7 +89,7 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            widget.controller.connected
+                            _controller.connected
                                 ? l10n.cameraModeConnected
                                 : l10n.cameraModeConnecting,
                             style: const TextStyle(color: Colors.white70),

@@ -16,6 +16,9 @@ abstract interface class HubClient {
 
   /// Calls a hub method. Returns null when the call could not complete.
   Future<Object?> invoke(String method, [List<Object> args = const []]);
+
+  /// Proves the connection works end to end. False when the server does not answer.
+  Future<bool> heartbeat();
 }
 
 typedef HubClientFactory = HubClient Function(PairedSession session);
@@ -56,6 +59,9 @@ class SignalRHubClient implements HubClient {
   @override
   void on(String method, void Function(List<Object?> args) handler) =>
       _connection.on(method, (args) => handler(args ?? const []));
+
+  @override
+  Future<bool> heartbeat() async => await invoke('Heartbeat') != null;
 
   // A call can fail when the connection drops mid-flight; the session reconnects and the
   // caller sends again later, so the failure is reported as null.

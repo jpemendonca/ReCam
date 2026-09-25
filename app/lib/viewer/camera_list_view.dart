@@ -49,7 +49,7 @@ class _CameraListViewState extends State<CameraListView> {
     MaterialPageRoute(
       builder: (_) => LiveViewScreen(
         cameraName: camera.name,
-        controller: _controller.openLive(camera.id),
+        create: () => _controller.openLive(camera.id),
       ),
     ),
   );

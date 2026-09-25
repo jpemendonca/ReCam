@@ -8,6 +8,7 @@ class FakeHubClient implements HubClient {
   int connectCalls = 0;
   bool disconnected = false;
   Object? invokeResult;
+  bool heartbeatResult = true;
   void Function()? _onClosed;
 
   @override
@@ -31,6 +32,9 @@ class FakeHubClient implements HubClient {
   @override
   void on(String method, void Function(List<Object?> args) handler) =>
       handlers[method] = handler;
+
+  @override
+  Future<bool> heartbeat() async => heartbeatResult;
 
   @override
   Future<Object?> invoke(String method, [List<Object> args = const []]) async {

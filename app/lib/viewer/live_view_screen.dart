@@ -8,28 +8,32 @@ import 'live_view_controller.dart';
 class LiveViewScreen extends StatefulWidget {
   const LiveViewScreen({
     required this.cameraName,
-    required this.controller,
+    required this.create,
     super.key,
   });
 
   final String cameraName;
-  final LiveViewController controller;
+
+  /// Builds the controller once, in initState; the route builder may run again.
+  final LiveViewController Function() create;
 
   @override
   State<LiveViewScreen> createState() => _LiveViewScreenState();
 }
 
 class _LiveViewScreenState extends State<LiveViewScreen> {
+  late final LiveViewController _controller = widget.create();
+
   @override
   void initState() {
     super.initState();
-    unawaited(widget.controller.start());
+    unawaited(_controller.start());
   }
 
   @override
   void dispose() {
-    unawaited(widget.controller.close());
-    widget.controller.dispose();
+    unawaited(_controller.close());
+    _controller.dispose();
     super.dispose();
   }
 
@@ -40,12 +44,12 @@ class _LiveViewScreenState extends State<LiveViewScreen> {
       backgroundColor: Colors.black,
       appBar: AppBar(title: Text(widget.cameraName)),
       body: ListenableBuilder(
-        listenable: widget.controller,
+        listenable: _controller,
         builder: (context, _) => Stack(
           fit: StackFit.expand,
           children: [
-            widget.controller.viewer.buildVideo(),
-            switch (widget.controller.state) {
+            _controller.viewer.buildVideo(),
+            switch (_controller.state) {
               LivePlaying() => const SizedBox.shrink(),
               LiveConnecting() => Center(
                 child: Column(
@@ -73,7 +77,7 @@ class _LiveViewScreenState extends State<LiveViewScreen> {
                       ),
                       const SizedBox(height: 16),
                       FilledButton(
-                        onPressed: widget.controller.retry,
+                        onPressed: _controller.retry,
                         child: Text(l10n.retryButton),
                       ),
                     ],

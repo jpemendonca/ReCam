@@ -39,6 +39,21 @@ public sealed class DeviceHubTests
         Assert.Equal(42, Assert.Single(cameras!).BatteryLevel);
     }
 
+    [Fact(DisplayName = "Any device can check its connection with a heartbeat")]
+    public async Task Heartbeat_FromAnyDevice_ReturnsOk()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        await using var connection = await factory.ConnectAsync(camera.Credential);
+
+        // act
+        var result = await connection.InvokeAsync<HubResult>("Heartbeat", TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.True(result.Ok);
+    }
+
     [Fact(DisplayName = "An out of range battery level is refused as data, not as an exception")]
     public async Task ReportTelemetry_WithInvalidLevel_ReturnsFailure()
     {
