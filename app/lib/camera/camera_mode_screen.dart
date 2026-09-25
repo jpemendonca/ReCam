@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'camera_mode_controller.dart';
 
-/// Black full screen while the phone works as a camera. A tap shows the status and the
-/// exit button for a few seconds.
+/// Shown while the phone works as a camera: connection, battery and whether someone is
+/// watching, plus the button to stop.
 class CameraModeScreen extends StatefulWidget {
   const CameraModeScreen({required this.create, super.key});
 
@@ -18,12 +18,7 @@ class CameraModeScreen extends StatefulWidget {
 }
 
 class _CameraModeScreenState extends State<CameraModeScreen> {
-  static const _overlayDuration = Duration(seconds: 10);
-
   late final CameraModeController _controller = widget.create();
-
-  Timer? _overlayTimer;
-  bool _overlayVisible = true;
   bool _started = false;
 
   @override
@@ -38,85 +33,66 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
         notificationText: l10n.cameraModeNotificationText,
       ),
     );
-    _scheduleHide();
   }
 
   @override
   void dispose() {
-    _overlayTimer?.cancel();
     unawaited(_controller.stop());
     _controller.dispose();
     super.dispose();
   }
 
-  void _showOverlay() {
-    setState(() => _overlayVisible = true);
-    _scheduleHide();
-  }
-
-  void _scheduleHide() {
-    _overlayTimer?.cancel();
-    _overlayTimer = Timer(_overlayDuration, () {
-      if (mounted) setState(() => _overlayVisible = false);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: _showOverlay,
-        child: SizedBox.expand(
-          child: !_overlayVisible
-              ? const SizedBox.shrink()
-              : ListenableBuilder(
-                  listenable: _controller,
-                  builder: (context, _) {
-                    final reading = _controller.lastReading;
-                    return Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _controller.connected
-                                ? Icons.cloud_done_outlined
-                                : Icons.cloud_off_outlined,
-                            color: Colors.white70,
-                            size: 48,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            _controller.connected
-                                ? l10n.cameraModeConnected
-                                : l10n.cameraModeConnecting,
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                          if (reading != null) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              l10n.batteryLevel(reading.level),
-                              style: const TextStyle(color: Colors.white70),
-                            ),
-                          ],
-                          const SizedBox(height: 16),
-                          Text(
-                            l10n.cameraModeHint,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.white38),
-                          ),
-                          const SizedBox(height: 24),
-                          OutlinedButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            child: Text(l10n.cameraModeExit),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+      appBar: AppBar(title: Text(l10n.cameraTab)),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: ListenableBuilder(
+            listenable: _controller,
+            builder: (context, _) {
+              final reading = _controller.lastReading;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _controller.publishing
+                        ? Icons.videocam
+                        : _controller.connected
+                        ? Icons.cloud_done_outlined
+                        : Icons.cloud_off_outlined,
+                    size: 64,
+                    color: _controller.publishing
+                        ? theme.colorScheme.error
+                        : theme.colorScheme.primary,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    _controller.publishing
+                        ? l10n.cameraModeWatched
+                        : _controller.connected
+                        ? l10n.cameraModeConnected
+                        : l10n.cameraModeConnecting,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  if (reading != null) ...[
+                    const SizedBox(height: 8),
+                    Text(l10n.batteryLevel(reading.level)),
+                  ],
+                  const SizedBox(height: 32),
+                  FilledButton.tonalIcon(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.stop),
+                    label: Text(l10n.cameraModeExit),
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );

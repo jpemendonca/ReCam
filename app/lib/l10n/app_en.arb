@@ -76,7 +76,6 @@
       }
     }
   },
-  "cameraModeHint": "The screen stays dark to save battery. Tap it to see this again.",
   "cameraModeExit": "Stop camera",
   "cameraModeNotificationTitle": "ReCam camera is on",
   "cameraModeNotificationText": "This phone is working as a camera.",
@@ -87,5 +86,6 @@
   "cameraOnline": "Online",
   "cameraOffline": "Offline",
   "liveConnecting": "Waking up the camera…",
-  "liveFailed": "Could not show the video. Check that the camera is online."
+  "liveFailed": "Could not show the video. Check that the camera is online.",
+  "cameraModeWatched": "Someone is watching this camera now."
 }

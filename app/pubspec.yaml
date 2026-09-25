@@ -23,7 +23,6 @@ dependencies:
   mobile_scanner: ^7.4.2
   permission_handler: ^12.0.1
   qr_flutter: ^4.1.0
-  screen_brightness: ^2.1.11
   signalr_netcore: ^1.4.4
   wakelock_plus: ^1.8.0
 

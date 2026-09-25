@@ -474,6 +474,17 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > ainda não está provada (suspeita: NAT dos emuladores com o Docker Desktop); o teste com o A10
   > no 1.14 decide. O hub passou a registrar em log a conexão e a desconexão de cada aparelho.
 
+- [x] **1.12.2 Modo câmera sem tela escura**
+  - Origem: pedido do autor ao testar no A10 (2026-09-25): a tela preta com brilho mínimo não deixa
+    ver nada.
+  - Escopo: o modo câmera deixa o brilho e as barras do sistema como estão, e mostra o status o
+    tempo todo (conectado, bateria, transmitindo, botão de parar). A tela continua sempre ligada
+    (wakelock). Some o overlay que aparecia e sumia. `SPECS.md` 2.3 revisado.
+  - Aceite: `ScreenController` só liga e desliga o wakelock; widget test da tela mostrando o status
+    sem toque.
+  > Validação (2026-09-25): só código escrito, gate verde (96 testes no app). A dependência
+  > `screen_brightness` saiu, porque não é mais usada.
+
 - [ ] **1.13 Lanterna**
   - Origem: caminho principal, passo 7.
   - Escopo: hub: `SetTorch` e `ReportTorch` conforme `SPECS.md` 5.6. App câmera: aplica com

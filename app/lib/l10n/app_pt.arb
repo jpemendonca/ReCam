@@ -41,7 +41,6 @@
   "cameraModeConnected": "Conectado. Este celular é uma câmera.",
   "cameraModeConnecting": "Conectando ao servidor…",
   "batteryLevel": "Bateria {level}%",
-  "cameraModeHint": "A tela fica escura para economizar bateria. Toque nela para ver isto de novo.",
   "cameraModeExit": "Parar câmera",
   "cameraModeNotificationTitle": "Câmera ReCam ligada",
   "cameraModeNotificationText": "Este celular está funcionando como câmera.",
@@ -52,5 +51,6 @@
   "cameraOnline": "Online",
   "cameraOffline": "Offline",
   "liveConnecting": "Acordando a câmera…",
-  "liveFailed": "Não deu para mostrar o vídeo. Confira se a câmera está online."
+  "liveFailed": "Não deu para mostrar o vídeo. Confira se a câmera está online.",
+  "cameraModeWatched": "Alguém está assistindo esta câmera agora."
 }

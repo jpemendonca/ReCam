@@ -14,7 +14,7 @@ sem anúncio, sem telemetria para terceiros, leve o bastante para rodar num celu
    `docker compose logs` ou na página `https://<ip>:8443/setup`). Esse celular vira o dono.
 3. Nesse mesmo celular, toca em **Adicionar câmera**. Aparece um QR.
 4. No celular câmera, abre o ReCam na aba **Câmera**, lê esse QR e dá um nome à câmera. Ele fica
-   em modo câmera, com a tela preta.
+   em modo câmera, mostrando o status na tela.
 5. No celular que assiste, a câmera aparece na lista, online, com o nível de bateria.
 6. Toca na câmera e vê o vídeo ao vivo, com atraso abaixo de 1 segundo na rede local.
 7. Na tela do vídeo ao vivo, liga e desliga a lanterna do celular câmera.

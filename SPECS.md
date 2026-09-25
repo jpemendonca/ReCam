@@ -153,8 +153,9 @@ Para rodar num celular fraco e não ser morto pelo Android:
 - Ao receber `StopPublishing`: fecha a conexão e libera a câmera.
 - O vídeo nunca passa pelo Dart. Câmera, encoder de hardware e rede ficam no código nativo do
   libwebrtc.
-- Sem preview local enquanto transmite. A tela fica preta, com brilho mínimo e wakelock ligado.
-  Um toque mostra por 10 s um overlay com status e botão de sair.
+- Sem preview local enquanto transmite. A tela mostra o status (conectado, bateria, alguém
+  assistindo) e o botão de parar, com wakelock ligado. Revisado em 2026-09-25: a tela preta com
+  brilho mínimo foi retirada a pedido do autor.
 - Foreground service do tipo `camera` enquanto o modo câmera está ativo, para manter a
   prioridade do processo. A lógica roda no isolate principal.
 - Reconexão ao servidor com backoff exponencial: 1, 2, 4, 8, 16, 30 s, e depois 30 s fixo.

@@ -1,8 +1,6 @@
-import 'package:flutter/services.dart';
-import 'package:screen_brightness/screen_brightness.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-/// The screen while the phone works as a camera: always on, as dark as possible.
+/// The screen while the phone works as a camera: it stays on, so Android does not sleep.
 abstract interface class ScreenController {
   Future<void> enterCameraMode();
 
@@ -11,16 +9,8 @@ abstract interface class ScreenController {
 
 class PluginScreenController implements ScreenController {
   @override
-  Future<void> enterCameraMode() async {
-    await WakelockPlus.enable();
-    await ScreenBrightness.instance.setApplicationScreenBrightness(0);
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-  }
+  Future<void> enterCameraMode() => WakelockPlus.enable();
 
   @override
-  Future<void> exitCameraMode() async {
-    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    await ScreenBrightness.instance.resetApplicationScreenBrightness();
-    await WakelockPlus.disable();
-  }
+  Future<void> exitCameraMode() => WakelockPlus.disable();
 }
