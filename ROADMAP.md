@@ -34,6 +34,10 @@ avisa o autor para trocar de modelo. Depois do 1.12, nenhum bullet tem essas mar
 Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o que fica fora),
 **Aceite** (quando ganha `[x]`).
 
+A fila segue a ordem do arquivo, não o número da fase. Desde 2026-09-25 as Fases 6 (Monitor no
+navegador) e 7 (clarear e movimento) ficam antes da Fase 5 (distribuição), porque mudam o primeiro
+uso que a distribuição vai ensinar.
+
 ---
 
 ## Fase 0: fundação
@@ -806,7 +810,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > `StartPublishing` com a miniatura aberta, parar com lanterna, sair do modo câmera, câmera
   > indisponível) e widget test do botão.
 
-- [ ] **1.14 [aparelho] Validar o caminho principal completo**
+- [ ] **1.14 [aparelho] Validar o caminho principal completo** (substituído pelo 6.10 em 2026-09-25; não executar)
   - Origem: definição do MVP.
   - Escopo: servidor no PC. A10 ou 6A como câmera, emulador Android no PC como visualizador
     (revisado em 2026-09-25; antes era um segundo celular). Percorrer os passos 1 a 7 do caminho
@@ -1059,45 +1063,6 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   > Bloqueado (2026-09-25): aguardando aparelho. São 2 h de gravação com o Samsung A10 e o Redmi 6A e
   > o servidor no PC; o agente não tem os celulares.
 
-- [ ] **3.7 Clarear a imagem no Monitor**
-  - Origem: pedido do autor em 2026-09-25 (ver melhor com pouca luz).
-  - Escopo: botão "Clarear" no vídeo ao vivo e no player da linha do tempo. Liga um filtro de
-    brilho e contraste só na tela de quem assiste (`ColorFiltered` com matriz de cor), com dois
-    controles deslizantes e um "Voltar ao normal". Não muda a câmera, o envio nem a gravação; cada
-    Monitor tem o seu. O ajuste fica guardado por câmera no próprio Monitor. Textos nos ARB.
-    Sem servidor e sem dependência nova.
-  - Aceite: teste do controller (ligar, ajustar, voltar ao normal, lembrar por câmera) e widget
-    test do filtro aplicado no vídeo ao vivo.
-
-- [ ] **3.8 Detectar movimento nas gravações**
-  - Origem: pedido do autor em 2026-09-25 (achar os momentos importantes sem assistir horas).
-  - Escopo: só câmeras com "Gravar sempre". Desenho, sem o .NET processar vídeo:
-    - Serviço `motion` novo nos dois composes, com a imagem FFmpeg que os testes já usam
-      (`linuxserver/ffmpeg`, mesma tag exata), montando `recam-recordings`. Um script em loop
-      pega cada segmento já fechado (nunca o mais novo de cada câmera, a mesma regra da limpeza),
-      roda o FFmpeg a 2 quadros por segundo em 160 px de largura com a nota de mudança de cena
-      (`scene`) e grava ao lado do `.mp4` um arquivo pequeno com a nota de cada quadro.
-    - O servidor lê essas notas e monta os eventos (início, fim, pico) com a sensibilidade da
-      câmera (baixa, média, alta; padrão média), emendando mudanças a menos de 10 s. Mudar a
-      sensibilidade vale também para o que já foi gravado, sem reprocessar. Os segundos logo
-      depois de ligar ou desligar a lanterna são ignorados.
-    - `GET /api/cameras/{id}/motion?day=` (Monitores) e a sensibilidade no `Device`, trocada por
-      um Monitor. A limpeza da cota apaga as notas junto com o segmento.
-    - Atraso esperado: o evento aparece quando o segmento de 60 s fecha, não na hora.
-  - Fora: pessoas e carros com IA, zonas e notificação.
-  - Aceite: teste do domínio (notas para eventos em cada sensibilidade, lanterna ignorada),
-    teste do endpoint e teste com Testcontainers rodando o script do `motion` num segmento gravado
-    com movimento e noutro parado. Revisão do `SPECS.md` (seções 2.4 e 7) e ADR.
-
-- [ ] **3.9 Movimento na linha do tempo**
-  - Origem: continuação do 3.8.
-  - Escopo: na tela de gravações, os eventos de movimento aparecem destacados na barra das 24 h,
-    com botões "Movimento anterior" e "Próximo movimento" que tocam a partir de alguns segundos
-    antes do evento. Um filtro "Só movimento" e a escolha da sensibilidade da câmera na mesma
-    tela. Textos nos ARB.
-  - Aceite: testes do controller (navegar entre eventos, filtro, trocar sensibilidade) e widget
-    test das marcas na barra.
-
 ## Fase 4: gestão de aparelhos
 
 - [x] **4.1 Revogar aparelhos**
@@ -1151,6 +1116,162 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   > Monitores revogados vivem no processo do servidor e só caem na próxima reconexão, que recebe 401.
   > Testes: `ResetOwner_WithOwner_RevokesAndCreatesSetupToken` (dono e visualizador revogados, câmera
   > mantida, `OwnerSetup` volta a `Pending` e a página mostra o QR) e servidor sem Monitor.
+
+## Fase 6: Monitor no navegador
+
+Desenho em `SPECS.md` 2.5 e no caminho principal do `AGENTS.md`, decidido pelo autor em 2026-09-25
+(ADRs 0038 a 0040). O navegador vira o primeiro Monitor com o código do log, e o primeiro celular é
+sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho novo só fecha no 6.8.
+
+- [ ] **6.1 Esqueleto do Monitor web**
+  - Origem: ADR 0039.
+  - Escopo: projeto `server/src/Recam.Web` (Blazor WebAssembly) e `server/tests/Recam.Web.Tests`
+    (bUnit), na `Recam.slnx`. O `Recam.Server` serve o `Recam.Web` na raiz (feature `Web`), com
+    `Content-Security-Policy` restrita à própria origem, `X-Content-Type-Options` e
+    `Referrer-Policy`. Idioma `en`/`pt` por `.resx` e
+    `IStringLocalizer`, escolhido pelo navegador. Layout com tema claro e escuro e a página
+    inicial "Este navegador ainda não é um Monitor", sem ações. O Dockerfile publica os dois.
+    Dependências novas pedidas por este bullet: `Microsoft.AspNetCore.Components.WebAssembly`,
+    `Microsoft.AspNetCore.Components.WebAssembly.Server` e `bunit`.
+  - Fora: entrar, câmeras, vídeo. O `/setup` continua como está até o 6.2.
+  - Aceite: teste de integração (a raiz entrega o app com a CSP) e teste
+    bUnit da página inicial em `en` e `pt`. Gate rodando os dois projetos de teste.
+
+- [ ] **6.2 Primeira abertura: o navegador vira Monitor**
+  - Origem: ADR 0038.
+  - Escopo:
+    - Servidor: o código de primeira abertura (`SPECS.md` 6) substitui o token do dono. Regra no
+      domínio (gerar, conferir em tempo constante, contar erros, trocar depois de 5). Impresso no
+      log com o endereço enquanto não há Monitor ativo; o QR e o token do dono saem do log, a página
+      `/setup` sai (`GET /setup` redireciona para `/`), e a exceção de log do `AGENTS.md` passa a
+      valer para o código.
+      `POST /api/web/first-open` (só rede local, só sem Monitor, limite por IP) cria o `Owner`
+      com o nome "Navegador · <navegador> no <sistema>" e grava o cookie `recam_device`.
+      `DeviceAuthenticationHandler` aceita o cookie. Método que muda estado com cookie exige
+      `X-Recam-Web: 1`. `POST /api/web/sign-out` revoga e apaga o cookie. O `reset-owner` passa a
+      imprimir o código novo.
+    - Navegador: tela do código com "Lembrar neste computador"; depois de entrar, uma tela
+      provisória "Você é o Monitor" com **Sair**. `IRecamApi` com `HttpClient` e o cabeçalho.
+  - Fora: o QR de câmera (6.4).
+  - Aceite: testes do domínio do código; testes de integração (código certo cria o `Owner` e o
+    cookie, código errado 5 vezes troca o código, com Monitor ativo recusa, fora da rede local
+    recusa, cookie sem `X-Recam-Web` num `POST` recusa, sair revoga, o log mostra o código e
+    nunca a credencial, `/setup` redireciona); bUnit da tela do código.
+
+- [ ] **6.3 Câmeras e vídeo ao vivo no navegador**
+  - Origem: caminho principal, passos 4 e 5.
+  - Escopo: lista de câmeras (online, transmitindo ou parada, bateria, temperatura, gravando) ao
+    vivo pelo hub, com o cliente SignalR para .NET no navegador (dependência nova pedida por este
+    bullet: `Microsoft.AspNetCore.SignalR.Client` no `Recam.Web`). Tela do vídeo ao vivo com o
+    módulo `wwwroot/js/whep.js` próprio (só recepção), lease pelo hub, lanterna e a chave
+    **Gravar sempre**. O servidor aceita o cookie no hub e no WHEP.
+  - Aceite: testes dos controllers (lista reage ao hub, abrir e fechar o vídeo abre e fecha o lease,
+    lanterna com e sem vídeo), bUnit das telas e teste de integração do hub e do `POST /whep` com o
+    cookie.
+
+- [ ] **6.4 Adicionar câmera no navegador e primeiro uso guiado**
+  - Origem: caminho principal, passos 2 e 3.
+  - Escopo: **Adicionar câmera** no navegador, com o QR em SVG pelo QRCoder (a mesma dependência
+    do servidor, agora também no `Recam.Web`), o tempo que falta e a espera pelo uso do token
+    (`GET /api/pairing-tokens/{id}`). Sem nenhuma câmera, a tela inicial é esse QR com o passo a
+    passo (baixar o app, abrir, tocar em Ler QR code, ler, dar um nome). Quando a primeira câmera
+    pareia, o vídeo ao vivo dela abre sozinho. O QR sai com `r=camera`.
+  - Aceite: testes do controller (espera, expiração, abrir o vídeo da primeira câmera) e bUnit do
+    passo a passo em `en` e `pt`.
+
+- [ ] **6.5 Gravações no navegador**
+  - Origem: Monitor completo (ADR 0038).
+  - Escopo: dias, barra das 24 h e reprodução com `<video>` direto nos segmentos (com `Range` e
+    o cookie), passando para o próximo sozinho; **Espaço para gravações** com a mesma regra do
+    app. Usa as rotas da Fase 3, sem mudar o servidor.
+  - Aceite: testes do controller (dias locais a partir dos UTC, tocar a partir de um ponto,
+    próximo segmento, cota) e bUnit da barra.
+
+- [ ] **6.6 Aparelhos e Adicionar Monitor no navegador**
+  - Origem: Monitor completo (ADR 0038).
+  - Escopo: **Aparelhos** (câmeras e Monitores, "Este navegador", remover com confirmação) e
+    **Adicionar Monitor**, com o QR `r=viewer` para um celular virar Monitor. Usa as rotas da
+    Fase 4.
+  - Aceite: testes dos controllers e bUnit das duas telas.
+
+- [ ] **6.7 Conectar navegador pelo celular**
+  - Origem: ADR 0038 (segundo navegador, cookie apagado).
+  - Escopo: servidor com a entidade `BrowserLink` e as rotas `POST /api/browser-links`,
+    `/approve` e `/claim` (`SPECS.md` 3 e 5.5): o QR leva o segredo de aprovação, o navegador guarda
+    o de resgate, uso único, 10 minutos; o aparelho criado é `Viewer` com o nome do navegador.
+    Navegador: sem cookie e com Monitor existente, a raiz mostra o QR de "Conectar navegador" e
+    espera. App: item **Conectar navegador** no menu do Monitor, que lê o QR e aprova.
+  - Aceite: testes do domínio e de integração (aprovar só Monitor, resgate só com o segredo certo,
+    expirado, usado duas vezes), teste do controller no app e bUnit da espera.
+
+- [ ] **6.8 App abre em "Ler QR code"**
+  - Origem: ADR 0040.
+  - Escopo: a primeira tela do app troca "Filmar"/"Assistir" por **Ler QR code** e **Colar
+    código**. O `r` passa a ser obrigatório no parse (`camera` ou `viewer`). QR de câmera pede o
+    nome e entra no modo câmera; QR de Monitor pareia com "Monitor". Textos do app que falam do
+    `/setup` e do QR do servidor passam a falar do navegador. ARB em `en` e `pt`.
+  - Aceite: testes do parse (sem `r`, `r=owner`), do roteamento pelo papel e widget test da
+    primeira tela.
+
+- [ ] **6.9 README e mensagens do servidor**
+  - Origem: caminho principal novo.
+  - Escopo: README com a instalação do novo jeito (aceitar o certificado uma vez, o código do
+    log), mensagem do log e do `reset-owner` revisadas, e o `SPECS.md` 5.5 e 5.6 conferidos com o
+    que ficou.
+  - Aceite: o passo a passo do README bate com o caminho principal do `AGENTS.md`.
+
+- [ ] **6.10 [aparelho] Validar o novo caminho principal**
+  - Origem: substitui o 1.14.
+  - Escopo: servidor no PC, navegador no PC, Samsung A10 como câmera. Percorrer os passos 1 a 5 do
+    caminho principal do `AGENTS.md`. Depois o Redmi 6A pelo **Adicionar Monitor**, e o
+    **Conectar navegador** num segundo navegador.
+  - Aceite: os passos funcionam. Anotar o atraso percebido no navegador, a temperatura da câmera
+    depois de 30 min e qualquer falha, que vira bullet novo.
+
+## Fase 7: ver melhor e achar movimento
+
+Decidido com o autor em 2026-09-25, logo depois da Fase 6. Vale no app e no navegador.
+
+- [ ] **7.1 Clarear a imagem no Monitor**
+  - Origem: pedido do autor em 2026-09-25 (ver melhor com pouca luz).
+  - Escopo: botão "Clarear" no vídeo ao vivo e no player da linha do tempo, no app e no
+    navegador (no navegador, filtro CSS no `<video>`). Liga um filtro de
+    brilho e contraste só na tela de quem assiste (`ColorFiltered` com matriz de cor), com dois
+    controles deslizantes e um "Voltar ao normal". Não muda a câmera, o envio nem a gravação; cada
+    Monitor tem o seu. O ajuste fica guardado por câmera no próprio Monitor. Textos nos ARB e nos
+    `.resx`.
+    Sem servidor e sem dependência nova.
+  - Aceite: teste do controller (ligar, ajustar, voltar ao normal, lembrar por câmera) e widget
+    test do filtro aplicado no vídeo ao vivo, no app e no navegador (bUnit).
+
+- [ ] **7.2 Detectar movimento nas gravações**
+  - Origem: pedido do autor em 2026-09-25 (achar os momentos importantes sem assistir horas).
+  - Escopo: só câmeras com "Gravar sempre". Desenho, sem o .NET processar vídeo:
+    - Serviço `motion` novo nos dois composes, com a imagem FFmpeg que os testes já usam
+      (`linuxserver/ffmpeg`, mesma tag exata), montando `recam-recordings`. Um script em loop
+      pega cada segmento já fechado (nunca o mais novo de cada câmera, a mesma regra da limpeza),
+      roda o FFmpeg a 2 quadros por segundo em 160 px de largura com a nota de mudança de cena
+      (`scene`) e grava ao lado do `.mp4` um arquivo pequeno com a nota de cada quadro.
+    - O servidor lê essas notas e monta os eventos (início, fim, pico) com a sensibilidade da
+      câmera (baixa, média, alta; padrão média), emendando mudanças a menos de 10 s. Mudar a
+      sensibilidade vale também para o que já foi gravado, sem reprocessar. Os segundos logo
+      depois de ligar ou desligar a lanterna são ignorados.
+    - `GET /api/cameras/{id}/motion?day=` (Monitores) e a sensibilidade no `Device`, trocada por
+      um Monitor. A limpeza da cota apaga as notas junto com o segmento.
+    - Atraso esperado: o evento aparece quando o segmento de 60 s fecha, não na hora.
+  - Fora: pessoas e carros com IA, zonas e notificação.
+  - Aceite: teste do domínio (notas para eventos em cada sensibilidade, lanterna ignorada),
+    teste do endpoint e teste com Testcontainers rodando o script do `motion` num segmento gravado
+    com movimento e noutro parado. Revisão do `SPECS.md` (seções 2.4 e 7) e ADR.
+
+- [ ] **7.3 Movimento na linha do tempo**
+  - Origem: continuação do 7.2.
+  - Escopo: na tela de gravações, os eventos de movimento aparecem destacados na barra das 24 h,
+    com botões "Movimento anterior" e "Próximo movimento" que tocam a partir de alguns segundos
+    antes do evento. Um filtro "Só movimento" e a escolha da sensibilidade da câmera na mesma
+    tela, no app e no navegador. Textos nos ARB e nos `.resx`.
+  - Aceite: testes dos controllers (navegar entre eventos, filtro, trocar sensibilidade) e testes
+    das marcas na barra (widget test no app, bUnit no navegador).
 
 ## Fase 5: distribuição
 
@@ -1232,8 +1353,9 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
 
 - [ ] **5.2.3 [aparelho] Vitrine do README**
   - Origem: vitrine de portfólio.
-  - Escopo: GIF curto do caminho principal (parear, ver ao vivo, lanterna) e diagrama da
-    arquitetura no `README.md`.
+  - Escopo: GIF curto do caminho principal (código no navegador, ler o QR com o celular, vídeo
+    ao vivo no navegador, lanterna) e diagrama da arquitetura no `README.md`. Revisado em
+    2026-09-25 para o caminho novo da Fase 6.
   - Aceite: README mostra o GIF gravado nos aparelhos reais.
 
 - [ ] **5.3 Imagem publicada no GHCR e instalação em um comando**
@@ -1266,7 +1388,7 @@ Itens que dependem de decisão futura. O loop para antes daqui.
 - Detecção de pessoas e carros com IA, marcada na linha do tempo (conversa de 2026-09-25).
   Opcional na instalação, num compose à parte como o de observabilidade, porque pesa no PC:
   quem não quiser não sobe. Rodaria no PC (nunca no celular), num container próprio com um modelo
-  pequeno (via ONNX Runtime, possivelmente em .NET), só nos momentos que o 3.8 já marcou como
+  pequeno (via ONNX Runtime, possivelmente em .NET), só nos momentos que o 7.2 já marcou como
   movimento. Precisa revisar a regra "o .NET não processa vídeo" para valer só no servidor
   principal. Zonas (ignorar rua e calçada) entram junto ou logo depois.
 - Modo noturno (conversa de 2026-09-25): botão no Monitor que manda a câmera aceitar de 5 a 15

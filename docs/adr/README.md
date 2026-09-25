@@ -43,3 +43,6 @@ no log do `SPECS.md` e ganha o próximo número aqui.
 | [0035](0035-modo-proxy-reverso.md) | Modo atrás de proxy reverso | 2026-09-25 |
 | [0036](0036-opentelemetry.md) | Observabilidade com OpenTelemetry | 2026-09-25 |
 | [0037](0037-redmi-6a-como-referencia.md) | Redmi 6A como aparelho de referência | 2026-09-25 |
+| [0038](0038-navegador-primeiro-monitor.md) | Navegador como primeiro Monitor e primeiro celular como câmera | 2026-09-25 |
+| [0039](0039-monitor-web-blazor-webassembly.md) | Monitor web em Blazor WebAssembly, cliente do mesmo protocolo | 2026-09-25 |
+| [0040](0040-app-abre-em-ler-qr.md) | App abre em "Ler QR code" e o QR decide o papel | 2026-09-25 |

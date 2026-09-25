@@ -6,24 +6,25 @@
 Turn spare Android phones into security cameras. Self-hosted, open source, no ads, no
 subscriptions required.
 
-You install two things:
+You need one phone and one computer to start:
 
-- **The ReCam server**, a Docker container on your own machine or VPS. It pairs your phones
-  and relays the video.
-- **The ReCam app**, on every phone. Each phone picks what it does in the app:
-  - **Camera** tab: the phone becomes a camera and streams video.
-  - **Monitor** tab: the phone shows your cameras live.
+- **The ReCam server**, a Docker container on your own machine or VPS. It pairs your phones,
+  relays the video and serves the Monitor you open in the browser.
+- **The ReCam app**, on the phone that will film. Later you can add more phones, as cameras or as
+  Monitors that watch.
 
 > Status: pre-alpha. Nothing works yet. Follow progress in [ROADMAP.md](ROADMAP.md).
 
 ## How it will work
 
 1. Run the server with `docker compose up -d`.
-2. On your phone, open ReCam, choose **Watch** and scan the QR code the server shows. It becomes a
-   Monitor.
-3. On the Monitor, tap **Add camera**. On the phone that will film, open ReCam, choose **Film** and
-   scan that QR code.
-4. Watch it live from your phone, and toggle the camera phone's flashlight remotely.
+2. On your computer, open `https://<server-ip>:8443` and type the first-time code from
+   `docker compose logs`. Your browser becomes the Monitor and shows an **Add camera** QR code.
+   The certificate is self-signed, so the browser asks you to accept it once.
+3. On the phone that will film, open ReCam, tap **Scan QR code**, scan it and name the camera.
+4. The live video opens in the browser. Toggle the phone's flashlight from there.
+5. Liked it? Add more phones from the browser: **Add camera** for another camera, **Add Monitor**
+   to watch from your main phone.
 
 Requirements: Android 9 or newer. Reference devices: Samsung Galaxy A10 and Xiaomi Redmi 6A.
 

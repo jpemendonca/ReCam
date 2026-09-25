@@ -7,26 +7,38 @@ ReCam reaproveita celulares Android parados como câmeras de monitoramento. Trê
 - **Câmera** (celular câmera): captura e transmite. Não guarda nada, não decide nada.
 - **Servidor**: roda em Docker na casa do usuário ou numa VPS. Pareia aparelhos, autentica,
   repassa comandos e distribui o vídeo.
-- **Monitor** (celular que assiste): lista as câmeras, assiste ao vivo, manda comandos.
+- **Monitor** (quem assiste): lista as câmeras, assiste ao vivo, manda comandos e administra. O
+  primeiro Monitor é sempre o navegador do computador; celulares podem virar Monitor depois.
 
-Um único app Flutter faz os dois papéis de celular, em duas abas: **Câmera** e **Monitor**.
+Um único app Flutter faz os dois papéis de celular, em duas abas: **Câmera** e **Monitor**. O
+servidor serve o Monitor no navegador (seção 2.5), com as mesmas funções do Monitor no app.
+
+Primeiro uso (revisado em 2026-09-25, seção 12): o navegador vira o primeiro Monitor com o código
+de primeira abertura do log, e o primeiro celular pareado é uma câmera, lendo o QR que o navegador
+mostra. A pessoa já vê o produto funcionando no primeiro minuto. Outros celulares, como câmera ou
+como Monitor, entram depois pelo navegador.
 
 Glossário das telas (revisado em 2026-09-25):
 
 | Onde | Texto | Papel |
 |---|---|---|
-| Primeira abertura, "Este celular vai ser usado para:" | **Filmar** / Film | vira Câmera |
-| Primeira abertura | **Assistir** / Watch | vira Monitor |
-| Abas, textos do app, página do servidor, log do QR | **Câmera** / Camera e **Monitor** / Monitor | — |
+| Primeira abertura do app | **Ler QR code** / Scan QR code | o QR decide: Câmera ou Monitor |
+| Navegador, primeira abertura | **Código de primeira abertura** / First-time code | o navegador vira Monitor |
+| Navegador e app | **Adicionar câmera** / Add camera, **Adicionar Monitor** / Add Monitor | geram o QR |
+| Abas, textos do app e do navegador, log | **Câmera** / Camera e **Monitor** / Monitor | — |
 
 No código e no protocolo, o Monitor é `Viewer` (ou `Owner`, o primeiro, que as telas não mostram)
-e a Câmera é `Camera`. O Monitor pareia com o nome padrão "Monitor".
+e a Câmera é `Camera`. O celular Monitor pareia com o nome padrão "Monitor"; o navegador, com
+"Navegador" seguido do navegador e do sistema (ex.: "Navegador · Chrome no Windows").
 
 ### 1.1 Dentro do escopo (MVP)
 
 - Instalação com `docker compose up -d` em Linux. Windows via Docker Desktop/WSL como caso
   secundário.
-- Pareamento por QR code: primeiro o dono, depois as câmeras.
+- Primeiro Monitor no navegador, com o código de primeira abertura do log. Depois, câmeras e
+  outros Monitores por QR code mostrado no navegador ou num celular Monitor.
+- Monitor no navegador completo: câmeras ao vivo, lanterna, gravações, aparelhos, espaço das
+  gravações, adicionar câmera e Monitor (seção 2.5). Entrou em 2026-09-25.
 - Vídeo ao vivo na rede local, com atraso abaixo de 1 s.
 - Transmissão sob demanda: a câmera só transmite enquanto alguém assiste.
 - Lanterna liga/desliga durante o vídeo ao vivo.
@@ -42,7 +54,8 @@ e a Câmera é `Camera`. O Monitor pareia com o nome padrão "Monitor".
 - Acesso de fora da rede local (porta aberta, Tailscale, Cloudflare Tunnel em modo rede
   privada). Responsabilidade do usuário. O Cloudflare Tunnel com hostname público não transporta
   UDP, então não serve para o WebRTC.
-- Detecção de movimento e notificações.
+- Notificações e detecção de pessoas e carros com IA. A detecção de movimento simples, marcada
+  na linha do tempo, entrou na Fase 7 do ROADMAP em 2026-09-25.
 - iOS (compilar exige macOS).
 - Áudio e conversa bidirecional.
 - Fallback de WebRTC por TCP e fallback por HLS.
@@ -55,12 +68,15 @@ e a Câmera é `Camera`. O Monitor pareia com o nome padrão "Monitor".
         │                                                 ▲                                     │
         └──────────── RTP/SRTP via UDP :8189 ──────────────┼────────────────────────────────────>│
                                                           │                                     │
-[App: aba Assistir] ──HTTPS: REST, SignalR, WHEP──────────┘         RTP/SRTP via UDP :8189 <────┘
+[App: aba Assistir] ──HTTPS: REST, SignalR, WHEP──────────┤         RTP/SRTP via UDP :8189 <────┤
+                                                          │                                     │
+[Navegador: Recam.Web] ──HTTPS: REST, SignalR, WHEP───────┘         RTP/SRTP via UDP :8189 <────┘
 ```
 
 - **Recam.Server (.NET 10, ASP.NET Core)**: plano de controle. Única porta TCP pública (8443,
-  HTTPS). Serve a API REST, o hub SignalR, a página `/setup` e um proxy de sinalização para o
-  WHIP/WHEP do MediaMTX. Não toca em RTP.
+  HTTPS). Serve a API REST, o hub SignalR, o Monitor no navegador (os arquivos do `Recam.Web`) e
+  um proxy de sinalização para o WHIP/WHEP do MediaMTX. Não toca em RTP. Até a fase 6, servia a
+  página `/setup`, que passa a redirecionar para a raiz.
 - **MediaMTX (container oficial, versão fixada)**: plano de mídia. Recebe WHIP, entrega WHEP.
   A interface HTTP escuta só na rede interna (127.0.0.1 no modo host, rede do compose no modo
   bridge). Só a porta UDP 8189 fica exposta. RTSP, RTMP, HLS, SRT, API e métricas desligados.
@@ -87,7 +103,8 @@ server/src/Recam.Server/
     Observability/        OpenTelemetry (traces, métricas, OTLP opcional), RecamMetrics
   Features/
     Health/               GET /health
-    Setup/                token do dono, QR no log, página /setup
+    Setup/                código de primeira abertura, entrar e sair do navegador
+    Web/                  hospeda o Recam.Web na raiz (arquivos, cabeçalhos de segurança)
     Pairing/              POST /api/pair, POST /api/pairing-tokens
     Devices/              GET /api/me, GET /api/cameras
     Realtime/             DeviceHub, presença, telemetria, leases, lanterna
@@ -138,7 +155,7 @@ app/lib/
     media/                interfaces WebRtcPublisher, WebRtcViewer e implementações
     device/               interfaces de bateria, lanterna, tela
   camera/                 aba Câmera: pareamento, modo câmera
-  viewer/                 aba Assistir: pareamento do dono, lista, ao vivo, adicionar câmera
+  viewer/                 aba Monitor: lista, ao vivo, adicionar câmera e Monitor, conectar navegador
   l10n/                   app_en.arb, app_pt.arb
 ```
 
@@ -196,6 +213,47 @@ Desenho combinado com o autor em 2026-09-25 (Fase 3 do ROADMAP):
 - **Codec.** O MediaMTX 1.21.1 grava H.264 em fMP4, mas não grava VP8: com VP8 ele registra "no
   supported tracks found, skipping recording" e só repassa (seção 11).
 
+### 2.5 Monitor no navegador
+
+Desenho combinado com o autor em 2026-09-25 (Fase 6 do ROADMAP):
+
+- **Cliente do mesmo protocolo.** O `Recam.Web` é um app Blazor WebAssembly que roda no navegador e
+  fala com o servidor pela mesma API REST, pelo mesmo hub SignalR e pelo mesmo WHEP que o app
+  Flutter usa. Ele tem os próprios tipos do protocolo, como o app. O `Recam.Server` só serve os
+  arquivos na raiz. Assim nenhuma feature do servidor precisa conhecer outra, e o navegador não
+  ganha atalho que o app não tenha.
+- **Projetos.** `server/src/Recam.Web` (o cliente) e `server/tests/Recam.Web.Tests` (bUnit, com
+  fakes escritos à mão da API, do hub e do vídeo). O `Recam.Server` referencia o `Recam.Web` para
+  servir os arquivos publicados.
+- **Organização do cliente.** Componentes finos; a lógica fica em classes C# comuns (um
+  controller por tela, como no app), testáveis sem navegador. Acesso a rede atrás de interfaces
+  (`IRecamApi`, `IDeviceHub`, `ILiveVideo`), com as implementações reais usando `HttpClient`, o
+  cliente SignalR para .NET e um módulo JavaScript próprio para o WebRTC.
+- **Vídeo ao vivo.** Um módulo JavaScript próprio (`wwwroot/js/whep.js`, sem biblioteca) cria o
+  `RTCPeerConnection` só de recepção, manda a oferta para `POST /whep/{cameraId}` e mostra a trilha
+  num `<video>`. O Blazor chama o módulo por interop. O lease de visualização e a lanterna vão pelo
+  hub, como no app.
+- **Gravações.** O `<video>` toca o segmento direto de `GET /api/recordings/{cameraId}/{segmento}`,
+  com `Range` e o cookie. Não há relay, porque o navegador manda o cookie sozinho.
+- **QR na tela.** O QR de "Adicionar câmera" e "Adicionar Monitor" é desenhado no navegador, em
+  SVG, com o QRCoder (a mesma biblioteca do servidor).
+- **Idioma.** `en` e `pt`, escolhidos pelo idioma do navegador (sem `pt`, inglês), em arquivos de
+  recurso (`.resx`) com `IStringLocalizer`.
+- **Nada de fora.** Tudo o que o navegador baixa sai da porta 8443: sem CDN, sem fonte externa,
+  sem script de terceiros. Cabeçalho `Content-Security-Policy` restrito à própria origem (com o
+  mínimo que o WebAssembly exige), `X-Content-Type-Options: nosniff` e `Referrer-Policy:
+  no-referrer`.
+- **Primeira abertura.** Sem Monitor ativo, a raiz mostra só o campo do código de primeira
+  abertura (seção 6) e a caixa "Lembrar neste computador". Com o código certo, o navegador vira o
+  `Owner` e vai direto para "Adicionar câmera", com o passo a passo (baixar o app, abrir, tocar em
+  Ler QR code, ler o QR). Quando a primeira câmera pareia, o vídeo ao vivo dela abre sozinho.
+- **Navegador que não é Monitor, com Monitor já existente.** A raiz mostra um QR de "Conectar
+  navegador". Um celular Monitor lê pelo menu **Conectar navegador** e aprova; o navegador vira
+  um `Viewer` (seção 5.4). É o caminho para um segundo navegador e para quem limpou os cookies.
+- **Sair.** O botão **Sair** revoga o aparelho no servidor, não só apaga o cookie.
+- **Painel antigo.** O painel só leitura do `/setup` (bullets 1.12.11 e 1.12.16) sai: o Monitor
+  web mostra o mesmo e mais. `GET /setup` redireciona para `/`.
+
 ## 3. Modelo de dados
 
 ```
@@ -219,10 +277,19 @@ PairingToken
   ExpiresAt       DateTimeOffset
   UsedAt          DateTimeOffset?
   CreatedByDeviceId Guid? (null para o token do dono)
+
+BrowserLink (fase 6, "Conectar navegador")
+  Id              Guid (PK)
+  ClaimHash       byte[32], SHA-256 do segredo que só o navegador tem
+  ApprovalHash    byte[32], SHA-256 do segredo que vai no QR
+  CreatedAt       DateTimeOffset
+  ExpiresAt       DateTimeOffset (10 minutos)
+  ApprovedBy      Guid? (o Monitor que aprovou)
+  DeviceId        Guid? (o aparelho criado para o navegador, depois de aprovado)
 ```
 
 Estado que não vai para o banco, em memória no servidor: conexões SignalR online, leases de
-visualização e se a câmera está publicando.
+visualização, se a câmera está publicando e o código de primeira abertura.
 
 Hora sempre via `TimeProvider` injetado.
 
@@ -232,6 +299,8 @@ O servidor sobe vazio. No primeiro start ele cria:
 - o certificado TLS autoassinado em `/data/tls/server.pfx` (RSA 2048, validade de 10 anos);
 - o banco em `/data/recam.db`;
 - um token de pareamento do dono, válido por 10 minutos e renovado enquanto não existir dono.
+  Revisado em 2026-09-25 (fase 6): no lugar do token do dono, um código de primeira abertura,
+  só em memória, impresso no log enquanto não existe Monitor ativo (seção 6).
 
 Nada depende de internet. Todo o caminho principal funciona numa rede local sem acesso externo.
 
@@ -259,7 +328,9 @@ recam://pair?v=1&t=<token>&r=<role>&f=<fingerprint>&u=<url>&u=<url>
 - `v`: versão do formato. Hoje `1`.
 - `t`: token de pareamento, 32 bytes aleatórios em base64url sem padding.
 - `r`: papel que o token concede (`owner`, `viewer`, `camera`). Opcional para o app. Serve só para
-  escolher a aba; quem decide é o servidor.
+  escolher a aba; quem decide é o servidor. Revisado em 2026-09-25 (fase 6): `r` passa a ser
+  obrigatório e só vale `camera` ou `viewer`; o app abre em "Ler QR code" e usa o `r` para saber o
+  que fazer (câmera: pedir o nome e entrar no modo câmera; Monitor: parear com o nome "Monitor").
 - O app registra o esquema `recam://pair` no Android. Abrir o link abre o app na aba do papel e
   pareia, se aquela aba ainda não estiver pareada.
 - `f`: SHA-256 do certificado DER do servidor, hexadecimal minúsculo, 64 caracteres. Opcional.
@@ -287,13 +358,26 @@ vez.
   vai como `access_token` na query.
 - O servidor guarda só o SHA-256 do segredo e compara em tempo constante.
 - Dispositivo com `RevokedAt` preenchido recebe 401.
+- **Navegador (fase 6).** A mesma credencial fica no cookie `recam_device` (`HttpOnly`, `Secure`,
+  `SameSite=Strict`, `Path=/`). Com "Lembrar neste computador", o cookie dura 180 dias; sem, só até
+  fechar o navegador. O `DeviceAuthenticationHandler` aceita o bearer ou o cookie. O navegador
+  manda o cookie sozinho no REST, no WHEP, nos segmentos gravados e no WebSocket do SignalR.
+- **Proteção contra CSRF.** Requisição autenticada pelo cookie com método que muda estado (`POST`,
+  `PUT`, `PATCH`, `DELETE`) só passa com o cabeçalho `X-Recam-Web: 1`, que outro site não consegue
+  mandar sem CORS (e o servidor não libera CORS). Junto com o `SameSite=Strict`.
 
 ### 5.5 REST
 
 | Método e rota | Quem pode | Entrada | Saída |
 |---|---|---|---|
 | `GET /health` | qualquer um | — | `200 "ok"` |
-| `GET /setup` | só IP privado, sem header `X-Forwarded-For`, só enquanto não há dono | — | HTML com o QR em SVG e o texto em inglês e português. Com dono já pareado: página "already configured" |
+| `GET /setup` | só IP privado, sem header `X-Forwarded-For`, só enquanto não há dono | — | HTML com o QR em SVG e o texto em inglês e português. Com dono já pareado: página "already configured". Revisado (fase 6): redireciona para `/` |
+| `GET /` e arquivos do `Recam.Web` | qualquer um | — | o Monitor no navegador (fase 6) |
+| `POST /api/web/first-open` | só da rede local (mesma regra do `/setup`), só sem Monitor ativo, limite de 5 por minuto por IP | `{ code, remember }` | `204` e o cookie; o navegador vira `Owner` (fase 6) |
+| `POST /api/web/sign-out` | o próprio navegador | — | `204`, revoga o aparelho e apaga o cookie (fase 6) |
+| `POST /api/browser-links` | qualquer um, com limite por IP | — | `201 { id, qrUri, claim, expiresAt }`; o `claim` fica só no navegador (fase 6) |
+| `POST /api/browser-links/{id}/approve` | Owner, Viewer (celular) | `{ secret }` do QR | `204` (fase 6) |
+| `POST /api/browser-links/{id}/claim` | quem tem o `claim` | `{ claim, remember }` | `204` e o cookie depois de aprovado; `409` enquanto não (fase 6) |
 | `POST /api/pair` | qualquer um, com limite de 5 por minuto por IP | `{ token, name, expectedRoles }` | `201 { deviceId, credential, role, serverName }` |
 | `POST /api/pairing-tokens` | Owner, Viewer | `{ role: "camera" \| "viewer" }` | `201 { qrUri, expiresAt }` |
 | `GET /api/me` | qualquer dispositivo | — | `{ deviceId, name, role }` |
@@ -354,7 +438,15 @@ Servidor → cliente:
 
 ## 6. Autenticação e autorização
 
-- Sem usuário e senha. Cada celular pareado é um `Device` com credencial própria.
+- Sem usuário e senha. Cada celular pareado, e cada navegador, é um `Device` com credencial
+  própria. Revisado em 2026-09-25 (fase 6): o navegador entra pelo código de primeira abertura ou
+  pelo "Conectar navegador"; não existe login.
+- **Código de primeira abertura (fase 6).** Enquanto não há Monitor ativo, o servidor mantém em
+  memória um código curto (8 caracteres de um alfabeto sem letras parecidas, mostrado como
+  `XXXX-XXXX`) e o imprime no log com o endereço. É a única exceção à regra de não logar segredo.
+  Ele não é credencial: só serve para `POST /api/web/first-open`, só da rede local, e só enquanto
+  não há Monitor. Um código novo sai a cada start e depois de 5 tentativas erradas. Quem abrir
+  primeiro na rede local com o código vira o dono; o `reset-owner` desfaz.
 - O primeiro pareamento cria o `Owner`. Só existe um dono. O app não mostra esse conceito; ele
   existe para a segurança (revogar aparelhos fica na fase 4).
 - Dono e visualizadores geram tokens de câmera e de visualizador. Ninguém gera token de dono.
@@ -362,7 +454,8 @@ Servidor → cliente:
   `CameraOnly`.
 - A página `/setup` entrega o token do dono. Por isso ela só responde a conexões vindas
   diretamente de IP privado ou loopback, e recusa requisições com `X-Forwarded-For`. Quem roda
-  atrás de proxy ou numa VPS usa o QR do log.
+  atrás de proxy ou numa VPS usa o QR do log. Revisado (fase 6): a mesma regra de rede vale para
+  `POST /api/web/first-open`; o token do dono e o QR no log deixam de existir.
 
 ## 7. Deploy
 
@@ -398,6 +491,10 @@ Política: meio-termo.
   - Casos cobertos: caminho feliz e os casos ruins de segurança (token expirado, token reusado,
     dispositivo revogado, papel errado, câmera publicando no path de outra).
   - Nunca contra um servidor ou banco de desenvolvimento compartilhado.
+- **Monitor web: caminho feliz.** bUnit para componentes e testes de unidade dos controllers do
+  `Recam.Web`, com fakes escritos à mão de `IRecamApi`, `IDeviceHub` e `ILiveVideo`. O servidor
+  testa o que protege o navegador: código de primeira abertura, cookie, `X-Recam-Web`, CSP e
+  "Conectar navegador". O WebRTC no navegador só se prova abrindo o navegador de verdade.
 - **App: caminho feliz.**
   - Testes unitários de controllers, parse do QR, backoff de reconexão e pinning.
   - Plugins substituídos por fakes das interfaces de `core/`.
@@ -440,6 +537,11 @@ O agente nunca escreve valor real de segredo em arquivo nenhum.
 - **Android matando o app**: MIUI e One UI encerram processos em segundo plano de forma
   agressiva. Mitigação: foreground service, wakelock, tela guiada de otimização de bateria
   (fase 2).
+- **Aviso de certificado no navegador**: o certificado é autoassinado, então o navegador avisa
+  "não seguro" na primeira abertura, e a pessoa aceita uma vez. Atrás de proxy reverso com
+  certificado público (bullet 5.1), o aviso some. O README precisa ensinar esse passo.
+- **Tamanho do Monitor web**: o Blazor WebAssembly baixa alguns MB na primeira abertura. Na rede
+  local é rápido, e o navegador guarda em cache. Publicado com trimming e compressão.
 - **Docker no Windows**: sem rede host de verdade. O IP do PC precisa ser informado em
   `RECAM_HOST`.
 - **Aquecimento**: celular ligado na tomada por dias. Telemetria de temperatura e redução de
@@ -449,7 +551,7 @@ O agente nunca escreve valor real de segredo em arquivo nenhum.
 
 Cada item deste log tem um ADR em `docs/adr/` (índice em [`docs/adr/README.md`](docs/adr/README.md)),
 na ordem em que aparece aqui: as 16 decisões iniciais são os ADRs 0001 a 0016, e as revisões
-datadas, de cima para baixo, os ADRs 0017 a 0037. O ADR traz contexto, decisão e consequências; o
+datadas, de cima para baixo, os ADRs 0017 a 0040. O ADR traz contexto, decisão e consequências; o
 log continua sendo o resumo.
 
 Decisões iniciais (2026-09-24):
@@ -650,3 +752,25 @@ seguinte em `docs/adr/`:
 > Revisão (2026-09-25): o segundo aparelho de referência é o Xiaomi Redmi 6A (MediaTek Helio A22),
 > não o Redmi 7A (Snapdragon), porque é o que o autor tem. O risco de H.264 da seção 11 passa a
 > valer para ele: se o 6A não expuser H.264, transmite em VP8 e não grava.
+
+> Revisão (2026-09-25): novo caminho principal, decidido pelo autor. O primeiro Monitor é o
+> navegador do computador, que entra com um código de primeira abertura impresso no log (só da rede
+> local, só enquanto não há Monitor, novo a cada start e depois de 5 erros). O navegador mostra o
+> QR de "Adicionar câmera", e o primeiro celular pareado é sempre uma câmera: a pessoa já vê o
+> produto funcionando no primeiro minuto e, se gostar, adiciona outro celular pelo navegador, como
+> câmera ou como Monitor. O navegador é um Monitor completo. O token do dono, o QR no log e a página
+> `/setup` (QR e painel) saem; `/setup` redireciona para `/`. O navegador guarda a credencial no
+> cookie `recam_device` e prova a origem com `X-Recam-Web: 1` nos métodos que mudam estado. Um
+> navegador novo, com Monitor já existente, entra pelo "Conectar navegador", aprovado por um
+> celular Monitor. Seções 1, 2, 2.5, 3, 4, 5 e 6. Caminho principal do `AGENTS.md` reescrito.
+
+> Revisão (2026-09-25): o Monitor web é um cliente Blazor WebAssembly (`Recam.Web`) do mesmo
+> protocolo do app (REST, hub e WHEP), e não componentes Blazor rodando no servidor. Assim nenhuma
+> feature do servidor precisa chamar outra, e o navegador não ganha atalho que o app não tenha.
+> Vídeo por um módulo JavaScript próprio, sem biblioteca. Testes com bUnit. Nada carregado de fora
+> do servidor. Seção 2.5.
+
+> Revisão (2026-09-25): o app deixa de perguntar "Filmar" ou "Assistir". A primeira abertura mostra
+> "Ler QR code" (e "Colar código"), e o papel que o QR traz decide: câmera pede o nome e entra no
+> modo câmera; Monitor pareia com o nome "Monitor". O `r` do QR passa a ser obrigatório, com
+> `camera` ou `viewer`. O celular Monitor ganha no menu "Conectar navegador". Seções 1 e 5.2.

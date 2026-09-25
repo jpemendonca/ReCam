@@ -152,6 +152,19 @@ Conforme `SPECS.md` 2.2. Fiscalizado por `test/architecture_test.dart`:
 - `lib/camera/` não importa nada de `lib/viewer/`, e vice-versa.
 - `lib/core/` não importa `lib/camera/` nem `lib/viewer/`.
 
+## 4.2 Monitor web (server/src/Recam.Web)
+
+- Conforme `SPECS.md` 2.5. Componente `.razor` fino: mostra estado e repassa eventos. A lógica
+  fica num controller C# comum por tela, testado sem navegador.
+- Rede atrás de interfaces (`IRecamApi`, `IDeviceHub`, `ILiveVideo`). Componentes e controllers
+  dependem das interfaces; os testes usam fakes escritos à mão.
+- Texto visível só por `IStringLocalizer`, com as chaves em `.resx` de `en` e `pt`. Proibido
+  string literal em componente.
+- JavaScript só em módulo próprio em `wwwroot/js/`, chamado por `IJSRuntime`. Proibido `<script>`
+  inline, `eval` e script ou fonte de fora do servidor (a CSP bloqueia).
+- CSS isolado por componente (`.razor.css`), com tema claro e escuro por `prefers-color-scheme`.
+- O mesmo `.editorconfig`, `dotnet format` e `-warnaserror` do servidor.
+
 ## 5. Erros
 
 - Entrada de usuário ou de rede (QR, corpo de requisição) é validada por função pura que

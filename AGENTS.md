@@ -1,31 +1,37 @@
 # ReCam: guia do agente
 
 ReCam transforma celulares Android parados em câmeras de monitoramento. Um servidor self-hosted
-em Docker recebe o vídeo, e um celular visualizador assiste ao vivo. Open source (AGPL-3.0),
+em Docker recebe o vídeo, e o navegador do computador assiste ao vivo (outros celulares também
+podem assistir, se a pessoa quiser). Open source (AGPL-3.0),
 sem anúncio, sem telemetria para terceiros, leve o bastante para rodar num celular de 2019 com
 2 GB de RAM.
 
 ## Caminho principal
 
-É a régua para decidir se um bullet importa. Tudo no MVP existe para este percurso funcionar:
+É a régua para decidir se um bullet importa. Tudo no MVP existe para este percurso funcionar.
+Revisado em 2026-09-25: o primeiro Monitor é o navegador, e o primeiro celular é sempre uma câmera.
 
 1. A pessoa sobe o servidor com `docker compose up -d`.
-2. No celular que vai assistir, abre o ReCam, escolhe **Assistir** na primeira tela e lê o QR que o
-   servidor mostra (no `docker compose logs` ou na página `https://<ip>:8443/setup`). Esse celular
-   vira um **Monitor** (o primeiro Monitor também é o dono, conceito que não aparece nas telas).
-3. No Monitor, toca em **Adicionar câmera**. Aparece um QR.
-4. No celular que vai filmar, abre o ReCam, escolhe **Filmar** na primeira tela, dá um nome à
-   câmera e lê esse QR. Ele vira uma **Câmera** e entra direto no modo câmera, mostrando o status na
+2. No computador, abre `https://<ip>:8443` no navegador e digita o código de primeira abertura que
+   o servidor mostra no `docker compose logs`. O navegador vira o **Monitor** (o primeiro Monitor
+   também é o dono, conceito que não aparece nas telas) e mostra o QR de **Adicionar câmera**, com
+   o passo a passo.
+3. No celular que vai filmar, abre o ReCam, toca em **Ler QR code**, lê o QR da tela, dá um nome à
+   câmera e confirma. Ele vira uma **Câmera** e entra direto no modo câmera, mostrando o status na
    tela.
-5. No Monitor, a câmera aparece na lista, online, com o nível de bateria.
-6. Toca na câmera e vê o vídeo ao vivo, com atraso abaixo de 1 segundo na rede local.
-7. Na tela do vídeo ao vivo, liga e desliga a lanterna da Câmera.
+4. No navegador, a câmera aparece online, com o nível de bateria, e o vídeo ao vivo abre sozinho,
+   com atraso abaixo de 1 segundo na rede local.
+5. Na tela do vídeo ao vivo, liga e desliga a lanterna da Câmera.
+
+Depois disso, se a pessoa gostar, adiciona outros celulares pelo navegador: **Adicionar câmera**
+para mais uma câmera, **Adicionar Monitor** para assistir pelo celular principal. O celular lê o
+QR do mesmo jeito, pelo **Ler QR code**, e o QR decide o papel.
 
 ## Áreas do repositório
 
 | Pasta | O que é | Estado |
 |---|---|---|
-| `server/` | Servidor .NET 10: pareamento, autenticação, hub em tempo real, proxy de sinalização WebRTC | ativa (criada na fase 0) |
+| `server/` | Servidor .NET 10: pareamento, autenticação, hub em tempo real, proxy de sinalização WebRTC, e o Monitor no navegador (Blazor WebAssembly, `src/Recam.Web`) | ativa (criada na fase 0; Monitor web na fase 6) |
 | `app/` | App Flutter, Android: abas Câmera e Monitor | ativa (criada na fase 0) |
 | `deploy/` | `compose.yaml`, `compose.bridge.yaml`, configuração do MediaMTX, `.env.example` | ativa (criada na fase 0) |
 | `scripts/`, `.githooks/` | Gate de qualidade e hook de pre-commit | ativa |
@@ -65,6 +71,7 @@ bash scripts/gate.sh
 
 Roda, para cada área que já existe:
 - `server/`: `dotnet format --verify-no-changes`, `dotnet build -warnaserror`, `dotnet test --solution` (Microsoft Testing Platform, ligado no `global.json`).
+  Inclui o Monitor web (`src/Recam.Web`) e os testes dele, que ficam na mesma solução.
   Os testes de integração sobem o MediaMTX com Testcontainers, então o Docker precisa estar
   rodando.
 - `app/`: `dart format --set-exit-if-changed`, `flutter analyze`, `flutter test`.
@@ -102,10 +109,15 @@ Regras do domínio:
 - Vídeo com H.264 preferido (VP8 como reserva), teto de 1280x720 a 15 fps e 700 kbps. Nada de
   áudio no MVP.
 - Token e credencial nunca aparecem em log, nem truncados. No banco, só o hash. Única exceção:
-  o QR do token do dono, que o servidor imprime no log enquanto ninguém é dono
-  (`Features/Setup/OwnerSetup.cs`).
+  o código de primeira abertura, que o servidor imprime no log enquanto não existe Monitor ativo
+  (`Features/Setup/`). Ele só serve para o primeiro navegador virar Monitor, e só na rede local.
+  Até a fase 6 terminar, a exceção era o QR do token do dono, no mesmo lugar.
 - Todo texto que o usuário vê no app vem dos arquivos ARB, em `en` e `pt`. Nunca string literal
   em widget.
+- Todo texto que o usuário vê no navegador vem dos arquivos de recurso do `Recam.Web`, em `en` e
+  `pt`. Nunca string literal em componente.
+- O Monitor web não carrega nada de fora do servidor: sem CDN, sem fonte do Google, sem script de
+  terceiros. Tudo o que o navegador baixa sai da porta 8443.
 
 ## Mapa do repositório
 
@@ -127,7 +139,9 @@ server/
   Recam.slnx
   Directory.Build.props
   src/Recam.Server/  Program.cs, Domain/, Infrastructure/, Features/<Feature>/
+  src/Recam.Web/     Monitor no navegador (Blazor WebAssembly), servido pelo Recam.Server
   tests/Recam.Server.Tests/
+  tests/Recam.Web.Tests/
 app/
   lib/core/          rede, pareamento, armazenamento, abstrações de plugin
   lib/camera/        aba Câmera
