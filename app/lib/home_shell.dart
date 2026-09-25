@@ -11,7 +11,9 @@ import 'core/pairing/pairing_link.dart';
 import 'core/scanner/qr_scanner_screen.dart';
 import 'first_run_screen.dart';
 import 'l10n/generated/app_localizations.dart';
+import 'core/pairing/device_role.dart';
 import 'pairing_router.dart';
+import 'viewer/add_device_screen.dart';
 import 'viewer/camera_list_controller.dart';
 import 'viewer/viewer_pairing_controller.dart';
 import 'viewer/watch_tab.dart';
@@ -109,6 +111,16 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
+  void _addMonitor(ViewerPaired paired) => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) => AddDeviceScreen(
+        api: widget.api,
+        session: paired.session,
+        role: DeviceRole.viewer,
+      ),
+    ),
+  );
+
   Future<void> _confirmReset() async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
@@ -154,10 +166,18 @@ class _HomeShellState extends State<HomeShell> {
         actions: [
           if (!firstRun)
             PopupMenuButton<_MenuAction>(
-              onSelected: (action) => switch (action) {
-                _MenuAction.reset => unawaited(_confirmReset()),
+              onSelected: (action) => switch ((action, viewerState)) {
+                (_MenuAction.addMonitor, final ViewerPaired paired) =>
+                  _addMonitor(paired),
+                (_MenuAction.addMonitor, _) => null,
+                (_MenuAction.reset, _) => unawaited(_confirmReset()),
               },
               itemBuilder: (context) => [
+                if (viewerState is ViewerPaired)
+                  PopupMenuItem(
+                    value: _MenuAction.addMonitor,
+                    child: Text(l10n.addMonitorButton),
+                  ),
                 PopupMenuItem(
                   value: _MenuAction.reset,
                   child: Text(l10n.resetAppButton),
@@ -228,4 +248,4 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
-enum _MenuAction { reset }
+enum _MenuAction { addMonitor, reset }

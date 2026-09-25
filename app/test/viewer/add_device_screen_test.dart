@@ -17,7 +17,10 @@ void main() {
 
   setUp(() => api = FakeApiClient());
 
-  Future<void> openScreen(WidgetTester tester) async {
+  Future<void> openScreen(
+    WidgetTester tester, {
+    DeviceRole role = DeviceRole.camera,
+  }) async {
     await tester.pumpWidget(
       MaterialApp(
         localizationsDelegates: const [
@@ -29,6 +32,7 @@ void main() {
         home: AddDeviceScreen(
           api: api,
           session: pairedSession(role: DeviceRole.viewer),
+          role: role,
         ),
       ),
     );
@@ -36,7 +40,7 @@ void main() {
   }
 
   group('AddDeviceScreen', () {
-    testWidgets('onOpen_showsACameraQr', (tester) async {
+    testWidgets('forCamera_showsTheCameraQrWithoutAChoice', (tester) async {
       // arrange
       api.tokenResults.add(ApiSuccess(_token('recam://pair?r=camera')));
 
@@ -45,36 +49,31 @@ void main() {
 
       // assert
       expect(api.tokenRoles, [DeviceRole.camera]);
+      expect(find.text('Add camera'), findsOneWidget);
       expect(
         find.text(
           'On the phone that will film, open ReCam, choose Film and scan this QR code.',
         ),
         findsOneWidget,
       );
+      expect(find.byType(SegmentedButton<DeviceRole>), findsNothing);
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('whenChoosingAnotherPhoneToWatch_showsAViewerQr', (
-      tester,
-    ) async {
+    testWidgets('forMonitor_showsTheMonitorQr', (tester) async {
       // arrange
-      api.tokenResults.addAll([
-        ApiSuccess(_token('recam://pair?r=camera')),
-        ApiSuccess(_token('recam://pair?r=viewer')),
-      ]);
-      await openScreen(tester);
+      api.tokenResults.add(ApiSuccess(_token('recam://pair?r=viewer')));
 
       // act
-      await tester.tap(find.text('Another Monitor'));
-      await tester.pump();
+      await openScreen(tester, role: DeviceRole.viewer);
 
       // assert
-      expect(api.tokenRoles, [DeviceRole.camera, DeviceRole.viewer]);
+      expect(api.tokenRoles, [DeviceRole.viewer]);
+      expect(find.text('Add Monitor'), findsOneWidget);
       expect(
         find.textContaining('It becomes a Monitor of these cameras.'),
-        findsOne,
+        findsOneWidget,
       );
-      expect(find.text('Copy code'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
 

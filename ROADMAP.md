@@ -694,13 +694,19 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > `Setup_WithoutOwner_LogsQrThatSpeaksOfWatchAndMonitor`,
   > `SetupPage_WithoutOwner_SpeaksOfWatchAndMonitor`, `FirstRunScreen` em pt e en.
 
-- [ ] **1.12.13 O "+" do Monitor abre direto o QR da câmera**
+- [x] **1.12.13 O "+" do Monitor abre direto o QR da câmera**
   - Origem: teste do autor em 2026-09-25: a escolha "Outra câmera" / "Outro celular para assistir"
     confunde, e adicionar câmera é o caso comum.
   - Escopo: no Monitor, o "+" e o "Adicionar câmera" da lista vazia mostram direto o QR de câmera,
     sem seletor. "Adicionar monitor" vai para o menu ⋮ do app, só com o Monitor pareado, e mostra o
     QR de monitor.
   - Aceite: widget tests do "+" sem seletor e do menu ⋮ abrindo o QR de monitor.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (95 no
+  > servidor, 151 no app). A `AddDeviceScreen` perdeu o seletor e recebe o papel pronto; o título é
+  > "Adicionar câmera" ou "Adicionar monitor". O "+" da lista e o "Adicionar câmera" da lista
+  > vazia abrem o QR de câmera. O menu ⋮ do `HomeShell` ganhou "Adicionar monitor", que só aparece
+  > com o Monitor pareado e abre o QR de monitor com a sessão do Monitor. Testes: "+" sem seletor,
+  > menu abrindo o QR de monitor, menu sem Monitor sem a opção, e a tela nos dois papéis.
 
 - [ ] **1.12.14 A tela do QR fecha sozinha quando o aparelho pareia**
   - Origem: teste do autor em 2026-09-25: depois de parear a câmera, o Monitor continuava no QR.

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/network/api_client.dart';
+import '../core/pairing/device_role.dart';
 import '../core/storage/credential_store.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'add_device_screen.dart';
@@ -67,9 +68,13 @@ class _CameraListViewState extends State<CameraListView> {
     ),
   );
 
-  void _addDevice() => Navigator.of(context).push<void>(
+  void _addCamera() => Navigator.of(context).push<void>(
     MaterialPageRoute(
-      builder: (_) => AddDeviceScreen(api: widget.api, session: widget.session),
+      builder: (_) => AddDeviceScreen(
+        api: widget.api,
+        session: widget.session,
+        role: DeviceRole.camera,
+      ),
     ),
   );
 
@@ -97,8 +102,8 @@ class _CameraListViewState extends State<CameraListView> {
                   icon: const Icon(Icons.refresh),
                 ),
                 IconButton(
-                  tooltip: l10n.addDeviceButton,
-                  onPressed: _addDevice,
+                  tooltip: l10n.addCameraButton,
+                  onPressed: _addCamera,
                   icon: const Icon(Icons.add),
                 ),
               ],
@@ -133,7 +138,7 @@ class _CameraListViewState extends State<CameraListView> {
                         Text(l10n.cameraListEmpty, textAlign: TextAlign.center),
                         const SizedBox(height: 16),
                         FilledButton.icon(
-                          onPressed: _addDevice,
+                          onPressed: _addCamera,
                           icon: const Icon(Icons.add_a_photo_outlined),
                           label: Text(l10n.addCameraButton),
                         ),

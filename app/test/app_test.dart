@@ -10,6 +10,7 @@ import 'package:recam/core/pairing/device_role.dart';
 import 'package:recam/core/pairing/pairing_service.dart';
 import 'package:recam/core/storage/credential_store.dart';
 import 'package:recam/core/network/hub_session.dart';
+import 'package:recam/viewer/add_device_screen.dart';
 import 'package:recam/viewer/camera_list_controller.dart';
 import 'package:recam/viewer/viewer_pairing_controller.dart';
 
@@ -329,6 +330,68 @@ void main() {
       // assert
       expect(find.text('This phone will be used to:'), findsOneWidget);
       expect(find.text('This is not a ReCam pairing QR code.'), findsOneWidget);
+    });
+  });
+
+  group('RecamApp adding devices', () {
+    PairingTokenResult token(String qrUri) =>
+        PairingTokenResult(qrUri: qrUri, validFor: const Duration(minutes: 10));
+
+    testWidgets('plusOnMonitor_opensTheCameraQrRightAway', (tester) async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      api.tokenResults.add(ApiSuccess(token('recam://pair?r=camera')));
+      await openApp(tester);
+      await tester.tap(find.byIcon(Icons.live_tv_outlined));
+      await tester.pumpAndSettle();
+
+      // act
+      await tester.tap(find.byTooltip('Add camera'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(api.tokenRoles, [DeviceRole.camera]);
+      expect(find.byType(AddDeviceScreen), findsOneWidget);
+      expect(find.byType(SegmentedButton<DeviceRole>), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('menuAddMonitor_opensTheMonitorQr', (tester) async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      api.tokenResults.add(ApiSuccess(token('recam://pair?r=viewer')));
+      await openApp(tester);
+      await tester.tap(find.byTooltip('Show menu'));
+      await tester.pumpAndSettle();
+
+      // act
+      await tester.tap(find.text('Add Monitor'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(api.tokenRoles, [DeviceRole.viewer]);
+      expect(
+        find.textContaining('It becomes a Monitor of these cameras.'),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('menuWithoutMonitor_hasNoAddMonitor', (tester) async {
+      // arrange
+      await store.write(
+        PairingSlot.camera,
+        pairedSession(role: DeviceRole.camera),
+      );
+      await openApp(tester);
+
+      // act
+      await tester.tap(find.byTooltip('Show menu'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(find.text('Add Monitor'), findsNothing);
+      expect(find.text('Reset app'), findsOneWidget);
     });
   });
 }
