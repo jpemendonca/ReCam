@@ -996,7 +996,7 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   > o disco, abaixo do mínimo, câmera 403), worker com pasta temporária e `FakeTimeProvider`
   > (arquivos esparsos de 60 MB), página nos dois idiomas e, no app, controller, cliente HTTP e menu.
 
-- [ ] **3.4 Listar e servir as gravações**
+- [x] **3.4 Listar e servir as gravações**
   - Origem: combinado com o autor em 2026-09-25.
   - Escopo: `GET /api/cameras/{id}/recordings?day=AAAA-MM-DD` (Monitores) devolve os trechos do dia
     (início, fim, url), montados a partir dos nomes dos arquivos, com trechos seguidos emendados. O
@@ -1005,6 +1005,20 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
     `..`, só nomes no formato do MediaMTX). Horários em UTC no protocolo.
   - Aceite: testes de listagem (dia vazio, trechos emendados, segmento em andamento), de `Range` e
     de caminho malicioso recusado.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (167 no
+  > servidor, 204 no app). A regra é `RecordingTimeline` (Domain, função pura): cada segmento dura
+  > 60 s ou até o próximo começar, segmentos com folga de até 1 s são emendados num trecho, o dia é
+  > em UTC e o segmento mais novo sai quando `newestInProgress` (a câmera tem a gravação ligada e
+  > está transmitindo). Decisão fora do bullet: cada trecho traz a lista de segmentos, cada um com
+  > sua url, porque o player toca arquivo por arquivo; e entrou `GET
+  > /api/cameras/{id}/recording-days` para o 3.5 saber quais dias têm gravação sem pedir dia a dia.
+  > O arquivo sai por `TypedResults.PhysicalFile(..., enableRangeProcessing: true)`. O caminho vem
+  > de `RecordingStore.PathOf`, que só aceita o formato de nome do MediaMTX, então `..`, `%2E%2E`,
+  > nomes de outros arquivos ou extensões a mais dão 404 sem tocar no disco. Revisão no `SPECS.md`
+  > 12. Testes: linha do tempo (dia vazio, emenda e intervalo, segmento cortado, em andamento, outros
+  > dias, dias com gravação) e endpoints (dia vazio, trechos emendados com url, em andamento com a
+  > câmera gravando pelo hub, dia inválido, `Range` 206 com os bytes certos, quatro nomes maliciosos,
+  > câmera 403).
 
 - [ ] **3.5 Linha do tempo no Monitor**
   - Origem: combinado com o autor em 2026-09-25.

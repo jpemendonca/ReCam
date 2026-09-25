@@ -582,3 +582,14 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > estar escrevendo nele). O servidor lê as gravações em `RECAM_RECORDINGS_DIR` (padrão
 > `/recordings`, configuração interna como `RECAM_MEDIAMTX_URL`). A página do servidor mostra
 > "1,2 de 2 GB em uso".
+
+> Revisão (2026-09-25): listar e servir gravações (bullet 3.4), todas para Monitores, horários em UTC.
+> - `GET /api/cameras/{id}/recordings?day=AAAA-MM-DD` devolve `[{ start, end, segments: [{ start,
+>   end, url }] }]`: os trechos do dia UTC, com segmentos seguidos (folga de 1 s) emendados. Cada
+>   segmento termina 60 s depois de começar ou quando o próximo começa. O segmento mais novo fica de
+>   fora enquanto a câmera grava e transmite. Dia em outro formato: 400 `recording.invalid_day`.
+> - `GET /api/cameras/{id}/recording-days` devolve os dias UTC com gravação, do mais novo ao mais
+>   antigo (acrescentado para a tela de dias do 3.5).
+> - `GET /api/recordings/{cameraId}/{segmento}` serve o arquivo `video/mp4` com `Range`. Só um nome
+>   no formato do MediaMTX (`AAAA-MM-DD_HH-MM-SS-ffffff.mp4`) vira caminho no disco; qualquer outro
+>   nome dá 404.
