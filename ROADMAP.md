@@ -488,6 +488,15 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > Validação (2026-09-25): só código escrito, gate verde (96 testes no app). A dependência
   > `screen_brightness` saiu, porque não é mais usada.
 
+- [ ] **1.13 Lanterna**
+  - Origem: caminho principal, passo 7.
+  - Escopo: hub: `SetTorch` e `ReportTorch` conforme `SPECS.md` 5.6. App câmera: aplica com
+    `Helper.setTorch` na trilha de vídeo ativa e reporta. App visualizador: botão de lanterna na
+    tela ao vivo, refletindo `TorchChanged`.
+  - Aceite: testes `SetTorch_WhenCameraNotPublishing_ReturnsError`,
+    `SetTorch_WhenPublishing_ForwardsToCamera` e o controller da câmera aplicando a lanterna
+    via fake.
+
 - [ ] **1.12.3 Pareamento que não vale mais volta para a tela de pareamento**
   - Origem: teste no A10 em 2026-09-25. Depois de zerar o servidor, o A10 ficou em "Conectando ao
     servidor…" para sempre, mesmo fechando e abrindo o app. O servidor novo tem outro certificado;
@@ -532,14 +541,41 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Aceite: testes do controller da lista recarregando e da tela da câmera mostrando quantos
     assistem.
 
-- [ ] **1.13 Lanterna**
-  - Origem: caminho principal, passo 7.
-  - Escopo: hub: `SetTorch` e `ReportTorch` conforme `SPECS.md` 5.6. App câmera: aplica com
-    `Helper.setTorch` na trilha de vídeo ativa e reporta. App visualizador: botão de lanterna na
-    tela ao vivo, refletindo `TorchChanged`.
-  - Aceite: testes `SetTorch_WhenCameraNotPublishing_ReturnsError`,
-    `SetTorch_WhenPublishing_ForwardsToCamera` e o controller da câmera aplicando a lanterna
-    via fake.
+- [ ] **1.12.8 Um só "Ler QR" que decide o papel do celular**
+  - Origem: conversa com o autor em 2026-09-25: trocar entre câmera e visualizador está confuso.
+  - Escopo: ler qualquer QR do ReCam, em qualquer aba, usa o `r=` para decidir: QR de câmera pareia
+    a aba Câmera e abre o modo câmera (1.12.5); QR de visualizador ou de dono pareia a aba Assistir
+    e abre a lista. O leitor e o roteamento ficam num lugar só, reusado pelas duas abas e pelo link
+    `recam://pair` (1.6.4).
+  - Aceite: testes do roteamento pelo papel do QR a partir de cada aba.
+
+- [ ] **1.12.9 Qualquer celular que assiste adiciona câmeras e visualizadores**
+  - Origem: conversa com o autor em 2026-09-25: não dava para inverter os papéis dos celulares.
+    Traz para agora o que era o bullet 3.2.
+  - Escopo: `POST /api/pairing-tokens` aceita `role: "camera"` e `role: "viewer"` e passa a valer para
+    `Owner` e `Viewer` (a regra fica em `Device.IssuePairingToken`; dono continua não sendo
+    concedível). No app, "Adicionar" oferece "Outra câmera" e "Outro celular para assistir", cada um
+    com seu QR e "Copiar código".
+  - Aceite: `CreatePairingToken_AsViewer_ForCamera_ReturnsQrUri`,
+    `CreatePairingToken_ForViewer_PairsAsViewer`, `CreatePairingToken_AsCamera_Returns403`, e o
+    teste da tela de adicionar com os dois tipos.
+
+- [ ] **1.12.10 Primeira abertura pergunta o uso do celular**
+  - Origem: conversa com o autor em 2026-09-25.
+  - Escopo: com as duas abas sem pareamento, o app abre numa tela "Este celular vai ser: [Câmera]
+    [Para assistir]". Cada opção explica em uma frase onde achar o QR e abre o leitor. Depois do
+    pareamento, o app segue com as duas abas como hoje. O conceito de "dono" não aparece em
+    nenhuma tela.
+  - Aceite: widget test da primeira abertura levando ao leitor e, pareado, sumindo.
+
+- [ ] **1.12.11 Painel de acompanhamento no servidor (só leitura)**
+  - Origem: conversa com o autor em 2026-09-25: o PC serve para instalar e acompanhar; o resto é
+    pelo celular.
+  - Escopo: a página `/setup` vira o painel, na mesma regra de acesso (só IP local, sem
+    `X-Forwarded-For`). Sem dono: mostra o QR do primeiro celular, como hoje. Com dono: lista os
+    aparelhos (nome, câmera ou visualizador, online, transmitindo, quantos assistem, bateria) e se
+    atualiza sozinha a cada 5 s. HTML gerado no servidor, sem framework de front-end e sem ações.
+  - Aceite: testes da página com e sem dono e da lista refletindo presença e transmissão.
 
 - [ ] **1.14 [aparelho] Validar o caminho principal completo**
   - Origem: definição do MVP.
@@ -590,7 +626,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     hub). Tela de aparelhos na aba Assistir.
   - Aceite: `DeleteDevice_AsOwner_RevokesAndDisconnects` e o teste do controller.
 
-- [ ] **3.2 Parear outro celular visualizador**
+- [ ] **3.2 Parear outro celular visualizador** (movido para o 1.12.9 em 2026-09-25; não executar)
   - Escopo: `POST /api/pairing-tokens` aceita `role: "viewer"`. Botão "Adicionar visualizador".
   - Aceite: `CreatePairingToken_ForViewer_PairsAsViewer`.
 

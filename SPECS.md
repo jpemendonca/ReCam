@@ -259,7 +259,7 @@ vez.
 | `GET /health` | qualquer um | — | `200 "ok"` |
 | `GET /setup` | só IP privado, sem header `X-Forwarded-For`, só enquanto não há dono | — | HTML com o QR em SVG e o texto em inglês e português. Com dono já pareado: página "already configured" |
 | `POST /api/pair` | qualquer um, com limite de 5 por minuto por IP | `{ token, name, expectedRoles }` | `201 { deviceId, credential, role, serverName }` |
-| `POST /api/pairing-tokens` | Owner | `{ role: "camera" }` | `201 { qrUri, expiresAt }` |
+| `POST /api/pairing-tokens` | Owner, Viewer | `{ role: "camera" \| "viewer" }` | `201 { qrUri, expiresAt }` |
 | `GET /api/me` | qualquer dispositivo | — | `{ deviceId, name, role }` |
 | `GET /api/cameras` | Owner, Viewer | — | `[{ id, name, online, publishing, batteryLevel, isCharging, telemetryAt }]` |
 | `POST /whip/{cameraId}` | Camera, só com `cameraId` igual ao próprio id | SDP offer | proxy para `/cam-{cameraId}/whip` no MediaMTX |
@@ -319,8 +319,9 @@ Servidor → cliente:
 ## 6. Autenticação e autorização
 
 - Sem usuário e senha. Cada celular pareado é um `Device` com credencial própria.
-- O primeiro pareamento cria o `Owner`. Só existe um dono.
-- Só o dono gera tokens de pareamento.
+- O primeiro pareamento cria o `Owner`. Só existe um dono. O app não mostra esse conceito; ele
+  existe para a segurança (só o dono revoga aparelhos, fase 3).
+- Dono e visualizadores geram tokens de câmera e de visualizador. Ninguém gera token de dono.
 - `DeviceAuthenticationHandler` autentica o bearer. Políticas: `OwnerOnly`, `ViewerOrOwner`,
   `CameraOnly`.
 - A página `/setup` entrega o token do dono. Por isso ela só responde a conexões vindas
@@ -444,3 +445,13 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > deixa os outros como reserva; aparelho sem encoder H.264 (o emulador, por exemplo) publica em
 > VP8, que o MediaMTX aceita. O bullet 2.1 (recusar aparelho sem H.264) deve ser revisto quando a
 > gravação entrar, porque é ela que exige H.264.
+
+> Revisão (2026-09-25): o uso ficou confuso no teste com dois celulares (não dava para inverter os
+> papéis). Novo desenho, combinado com o autor: o PC serve para instalar e acompanhar; todo o resto
+> é pelo celular.
+> - Um só "Ler QR": o papel do QR (`r=`) decide se o celular vira câmera ou visualizador.
+> - Qualquer celular que assiste gera QR de câmera e de visualizador (antes só o dono gerava, e só
+>   de câmera).
+> - A primeira abertura pergunta "câmera ou para assistir"; o app não mostra o conceito de dono.
+> - O `/setup` vira um painel de acompanhamento só leitura na rede local. Continua não existindo
+>   dashboard de gestão; ações como revogar seguem no celular do dono.
