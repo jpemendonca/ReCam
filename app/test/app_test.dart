@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/app.dart';
+import 'package:recam/camera/camera_mode_controller.dart';
+import 'package:recam/camera/camera_mode_screen.dart';
 import 'package:recam/camera/camera_pairing_controller.dart';
 import 'package:recam/core/network/api_client.dart';
 import 'package:recam/core/network/pinned_http_overrides.dart';
@@ -46,7 +48,13 @@ void main() {
         cameraPairing: cameraPairing,
         viewerPairing: viewerPairing,
         api: api,
-        cameraMode: (_) => throw StateError('camera mode is not opened here'),
+        cameraMode: (_) => CameraModeController(
+          hub: HubSession(client: FakeHubClient(), delay: (_) async {}),
+          battery: FakeBatteryReader(),
+          screen: FakeScreenController(),
+          keepAlive: FakeKeepAlive(),
+          publisher: FakePublisher(),
+        ),
         cameraList: (session) => CameraListController(
           api: api,
           session: session,
@@ -80,7 +88,7 @@ void main() {
       });
     });
 
-    testWidgets('withCameraLink_opensCameraTabAndPairsWithDefaultName', (
+    testWidgets('withCameraLink_pairsWithDefaultNameAndOpensCameraMode', (
       tester,
     ) async {
       // arrange
@@ -96,6 +104,8 @@ void main() {
       // assert
       expect(api.pairCalls.single.name, 'Camera');
       expect(api.pairCalls.single.expectedRoles, {DeviceRole.camera});
+      expect(find.byType(CameraModeScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
     });
 
     testWidgets('withLinkForAlreadyPairedTab_doesNotPairAgain', (tester) async {

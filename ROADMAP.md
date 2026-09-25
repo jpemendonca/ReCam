@@ -545,11 +545,18 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > estava errada: o emulador falhava pelo mesmo motivo. Isso valida os passos 1 a 6 do caminho
   > principal com dois celulares.
 
-- [ ] **1.12.5 Depois de ler o QR, ir direto para o modo câmera**
+- [x] **1.12.5 Depois de ler o QR, ir direto para o modo câmera**
   - Origem: feedback do autor no teste de 2026-09-25.
   - Escopo: na aba Câmera, quando o pareamento pelo QR (ou pelo link) dá certo, o app abre o modo
     câmera na hora, sem parar na tela "Pareado".
   - Aceite: teste do fluxo de pareamento abrindo o modo câmera.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (83 no
+  > servidor, 120 no app). A aba Câmera observa o próprio controller de pareamento e abre o modo
+  > câmera na passagem de "pareando" para "pareado", então vale para o leitor, para o código
+  > colado e para o link `recam://pair`. Abrir o app já pareado continua mostrando "Iniciar modo
+  > câmera" (não entra sozinho). Testes: `CameraTab` (abre depois do QR, não abre com falha, não
+  > abre com pareamento salvo) e o teste do link de câmera no `app_test` agora confere a tela do
+  > modo câmera.
 
 - [ ] **1.12.6 Botão de reiniciar o app**
   - Origem: pedido do autor no teste de 2026-09-25.

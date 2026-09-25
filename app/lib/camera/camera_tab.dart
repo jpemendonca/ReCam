@@ -23,6 +23,32 @@ class CameraTab extends StatefulWidget {
 class _CameraTabState extends State<CameraTab> {
   final _nameController = TextEditingController();
   bool _nameInitialized = false;
+  late CameraPairingState _previousState;
+
+  @override
+  void initState() {
+    super.initState();
+    _previousState = widget.pairing.state;
+    widget.pairing.addListener(_openCameraModeWhenJustPaired);
+  }
+
+  // A phone paired from the Camera tab is there to be a camera: skip the "Paired" screen.
+  void _openCameraModeWhenJustPaired() {
+    final state = widget.pairing.state;
+    final justPaired = _previousState is CameraPairing && state is CameraPaired;
+    _previousState = state;
+    if (justPaired && mounted) _openCameraMode(state.session);
+  }
+
+  void _openCameraMode(PairedSession session) =>
+      Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => CameraModeScreen(
+            create: () => widget.cameraMode(session),
+            onPairingLost: () => unawaited(widget.pairing.forget()),
+          ),
+        ),
+      );
 
   @override
   void didChangeDependencies() {
@@ -34,6 +60,7 @@ class _CameraTabState extends State<CameraTab> {
 
   @override
   void dispose() {
+    widget.pairing.removeListener(_openCameraModeWhenJustPaired);
     _nameController.dispose();
     super.dispose();
   }
@@ -52,8 +79,7 @@ class _CameraTabState extends State<CameraTab> {
         ),
         CameraPaired(:final session) => _Paired(
           session: session,
-          cameraMode: widget.cameraMode,
-          onPairingLost: widget.pairing.forget,
+          onStart: () => _openCameraMode(session),
         ),
       },
     );
@@ -127,15 +153,10 @@ class _NotPaired extends StatelessWidget {
 }
 
 class _Paired extends StatelessWidget {
-  const _Paired({
-    required this.session,
-    required this.cameraMode,
-    required this.onPairingLost,
-  });
+  const _Paired({required this.session, required this.onStart});
 
   final PairedSession session;
-  final CameraModeFactory cameraMode;
-  final Future<void> Function() onPairingLost;
+  final VoidCallback onStart;
 
   @override
   Widget build(BuildContext context) {
@@ -154,14 +175,7 @@ class _Paired extends StatelessWidget {
           Text(l10n.watchPairedRole(deviceRoleText(l10n, session.role))),
           const SizedBox(height: 24),
           FilledButton.icon(
-            onPressed: () => Navigator.of(context).push<void>(
-              MaterialPageRoute(
-                builder: (_) => CameraModeScreen(
-                  create: () => cameraMode(session),
-                  onPairingLost: () => unawaited(onPairingLost()),
-                ),
-              ),
-            ),
+            onPressed: onStart,
             icon: const Icon(Icons.videocam),
             label: Text(l10n.startCameraMode),
           ),
