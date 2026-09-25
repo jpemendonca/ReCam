@@ -57,6 +57,7 @@ void main() {
           screen: FakeScreenController(),
           keepAlive: FakeKeepAlive(),
           publisher: FakePublisher(),
+          capture: FakeCapture(),
         ),
         cameraList: (session) => CameraListController(
           api: api,

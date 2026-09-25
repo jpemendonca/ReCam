@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:io' show X509Certificate;
 import 'dart:typed_data';
 
-import 'package:flutter/widgets.dart' show SizedBox, Widget;
+import 'package:flutter/widgets.dart' show Key, SizedBox, Widget;
 
 import 'package:recam/core/device/battery_reader.dart';
 import 'package:recam/core/device/keep_alive.dart';
 import 'package:recam/core/device/screen_controller.dart';
+import 'package:recam/core/media/camera_capture.dart';
 import 'package:recam/core/media/webrtc_publisher.dart';
 import 'package:recam/core/media/webrtc_viewer.dart';
 import 'package:recam/core/network/api_client.dart';

@@ -780,7 +780,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > câmera, no celular que for assistir." (en: "Then scan the QR code from Add camera on the phone
   > that will watch."). Testes: ordem das seções pela posição na tela e o texto novo em pt e en.
 
-- [ ] **1.12.18 Miniatura opcional da própria imagem no modo câmera**
+- [x] **1.12.18 Miniatura opcional da própria imagem no modo câmera**
   - Origem: pedido do autor no teste de 2026-09-25.
   - Escopo: no modo câmera, um botão "Ver imagem" abre, embaixo do status, uma miniatura do que a
     câmera está filmando; tocar de novo ("Esconder imagem") fecha. Fechada por padrão, e fecha ao
@@ -791,6 +791,20 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Aceite: testes do controller (abrir sem transmitir, abrir transmitindo reaproveita a trilha,
     fechar solta a câmera quando ninguém assiste, `StartPublishing` com a miniatura aberta) e widget
     test do botão mostrando e escondendo a miniatura.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (114 no
+  > servidor, 170 no app). A câmera virou um recurso compartilhado: `CameraCapture` (em
+  > `core/media`) abre a câmera traseira e entrega um `CameraFeed` opaco, que só sabe se mostrar
+  > como miniatura (`RTCVideoView` com renderer próprio, criado e descartado com o widget). O
+  > `CameraModeController` segura a câmera enquanto a transmissão ou a miniatura a usam e solta
+  > quando nenhuma usa; o `WhipPublisher` deixou de abrir a câmera e passou a receber o feed em
+  > `start(feed)`. Por isso a miniatura aberta durante a transmissão mostra a mesma trilha enviada,
+  > e um `StartPublishing` com a miniatura aberta publica essa mesma câmera. Ao parar de
+  > transmitir com a miniatura aberta, a lanterna é desligada explicitamente, porque a câmera
+  > continua aberta. A tela ganhou "Ver imagem"/"Esconder imagem" e a miniatura 16:9 abaixo do
+  > status; a tela agora rola, para caber em celular pequeno. Nada é gravado. Testes do controller
+  > (abrir sem transmitir, reaproveitar a trilha, fechar solta a câmera, fechar transmitindo mantém,
+  > `StartPublishing` com a miniatura aberta, parar com lanterna, sair do modo câmera, câmera
+  > indisponível) e widget test do botão.
 
 - [ ] **1.14 [aparelho] Validar o caminho principal completo**
   - Origem: definição do MVP.

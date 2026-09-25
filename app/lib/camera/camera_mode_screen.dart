@@ -71,12 +71,13 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.cameraTab)),
       body: Center(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: ListenableBuilder(
             listenable: _controller,
             builder: (context, _) {
               final reading = _controller.lastReading;
+              final preview = _controller.preview;
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -116,7 +117,34 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
                     const SizedBox(height: 8),
                     Text(l10n.batteryLevel(reading.level)),
                   ],
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
+                  TextButton.icon(
+                    onPressed: preview == null
+                        ? _controller.openPreview
+                        : _controller.closePreview,
+                    icon: Icon(
+                      preview == null
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
+                    label: Text(
+                      preview == null
+                          ? l10n.cameraModeShowImage
+                          : l10n.cameraModeHideImage,
+                    ),
+                  ),
+                  if (preview != null)
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 320),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: preview.buildPreview(),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 24),
                   FilledButton.tonalIcon(
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.stop),

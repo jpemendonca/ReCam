@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../core/device/battery_reader.dart';
 import '../core/device/keep_alive.dart';
 import '../core/device/screen_controller.dart';
+import '../core/media/camera_capture.dart';
 import '../core/media/webrtc_publisher.dart';
 import '../core/network/hub_session.dart';
 import '../core/storage/credential_store.dart';
@@ -16,6 +17,9 @@ typedef CameraModeFactory = CameraModeController Function(
 /// Camera mode: stays connected to the hub, reports the battery, and publishes video only
 /// while the server asks (someone is watching). Sends a battery report when the connection
 /// opens, when the reading changes and at least every [reportInterval].
+///
+/// The camera is open while something uses it: publishing, the on-screen thumbnail, or both
+/// sharing the same track. It is released when neither needs it.
 class CameraModeController extends ChangeNotifier {
   CameraModeController({
     required this._hub,
@@ -23,6 +27,7 @@ class CameraModeController extends ChangeNotifier {
     required this._screen,
     required this._keepAlive,
     required this._publisher,
+    required this._capture,
     DateTime Function()? now,
     this.reportInterval = const Duration(seconds: 60),
     this.checkInterval = const Duration(seconds: 15),
@@ -33,6 +38,7 @@ class CameraModeController extends ChangeNotifier {
   final ScreenController _screen;
   final KeepAlive _keepAlive;
   final WebRtcPublisher _publisher;
+  final CameraCapture _capture;
   final DateTime Function() _now;
   final Duration reportInterval;
   final Duration checkInterval;
@@ -41,6 +47,8 @@ class CameraModeController extends ChangeNotifier {
   BatteryReading? _lastSent;
   DateTime? _lastSentAt;
   bool _publishing = false;
+  bool _previewOpen = false;
+  CameraFeed? _feed;
   bool _torchOn = false;
   int _watchers = 0;
   Future<void> _publishingChange = Future.value();
@@ -51,6 +59,9 @@ class CameraModeController extends ChangeNotifier {
   bool get pairingLost => _hub.rejected;
 
   bool get publishing => _publishing;
+
+  /// The camera to show as a thumbnail, or null while the thumbnail is closed.
+  CameraFeed? get preview => _previewOpen ? _feed : null;
 
   bool get torchOn => _torchOn;
 
@@ -81,10 +92,23 @@ class CameraModeController extends ChangeNotifier {
   /// Sends the battery if it changed or the last report is older than [reportInterval].
   Future<void> checkBattery() => _report(force: false);
 
+  /// Opens the thumbnail. Reuses the camera when it is already publishing.
+  Future<void> openPreview() {
+    _queue(_openPreview);
+    return _publishingChange;
+  }
+
+  /// Closes the thumbnail, and the camera too when nobody watches.
+  Future<void> closePreview() {
+    _queue(_closePreview);
+    return _publishingChange;
+  }
+
   Future<void> stop() async {
     _checkTimer?.cancel();
     _checkTimer = null;
     _hub.removeListener(notifyListeners);
+    _queue(_closePreview);
     _queue(_stopPublishing);
     await _publishingChange;
     await _hub.stop();
@@ -92,8 +116,8 @@ class CameraModeController extends ChangeNotifier {
     await _keepAlive.stop();
   }
 
-  // Start and stop run one at a time, in arrival order, so a quick stop-start pair from the
-  // server never overlaps two camera sessions.
+  // Start, stop and the thumbnail run one at a time, in arrival order, so a quick stop-start
+  // pair from the server never overlaps two camera sessions.
   void _queue(Future<void> Function() change) {
     _publishingChange = _publishingChange.then((_) => change());
   }
@@ -101,7 +125,9 @@ class CameraModeController extends ChangeNotifier {
   // The server may repeat StartPublishing (SPECS.md 5.6); a repeat only re-reports the state.
   Future<void> _startPublishing() async {
     if (!_publishing) {
-      _publishing = await _publisher.start();
+      final feed = await _openCamera();
+      _publishing = feed != null && await _publisher.start(feed);
+      if (!_publishing) await _releaseCameraIfUnused();
       notifyListeners();
     }
     await _hub.client.invoke('ReportPublishing', [_publishing]);
@@ -109,14 +135,37 @@ class CameraModeController extends ChangeNotifier {
 
   Future<void> _stopPublishing() async {
     if (!_publishing) return;
+    final torchWasOn = _torchOn;
+    // The thumbnail may keep the camera open, so the torch is switched off explicitly.
+    if (torchWasOn) await _publisher.setTorch(false);
     await _publisher.stop();
     _publishing = false;
-    final torchWasOn = _torchOn;
     _torchOn = false;
+    await _releaseCameraIfUnused();
     notifyListeners();
     await _hub.client.invoke('ReportPublishing', [false]);
-    // Releasing the camera turns the torch off with it.
     if (torchWasOn) await _hub.client.invoke('ReportTorch', [false]);
+  }
+
+  Future<void> _openPreview() async {
+    if (_previewOpen) return;
+    _previewOpen = await _openCamera() != null;
+    notifyListeners();
+  }
+
+  Future<void> _closePreview() async {
+    if (!_previewOpen) return;
+    _previewOpen = false;
+    notifyListeners();
+    await _releaseCameraIfUnused();
+  }
+
+  Future<CameraFeed?> _openCamera() async => _feed ??= await _capture.open();
+
+  Future<void> _releaseCameraIfUnused() async {
+    if (_publishing || _previewOpen || _feed == null) return;
+    _feed = null;
+    await _capture.close();
   }
 
   // Reports what the torch really is, so viewers never show a state the camera did not reach.

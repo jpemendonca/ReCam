@@ -14,6 +14,7 @@ void main() {
   late FakeScreenController screen;
   late FakeKeepAlive keepAlive;
   late FakePublisher publisher;
+  late FakeCapture capture;
   late DateTime now;
   late CameraModeController controller;
 
@@ -23,6 +24,7 @@ void main() {
     screen = FakeScreenController();
     keepAlive = FakeKeepAlive();
     publisher = FakePublisher();
+    capture = FakeCapture();
     now = DateTime(2026, 9, 25, 12);
     controller = CameraModeController(
       hub: HubSession(client: client, delay: (_) async {}),
@@ -30,6 +32,7 @@ void main() {
       screen: screen,
       keepAlive: keepAlive,
       publisher: publisher,
+      capture: capture,
       now: () => now,
     );
   });
@@ -135,6 +138,133 @@ void main() {
     });
   });
 
+  group('CameraModeController thumbnail', () {
+    test(
+      'openPreview_withNobodyWatching_opensCameraWithoutPublishing',
+      () async {
+        // arrange
+        await start();
+
+        // act
+        await controller.openPreview();
+
+        // assert
+        expect(controller.preview, isNotNull);
+        expect(capture.opens, 1);
+        expect(publisher.starts, 0);
+        expect(publishingReports(), isEmpty);
+      },
+    );
+
+    test('openPreview_whilePublishing_reusesThePublishedTrack', () async {
+      // arrange
+      await start();
+      client.receive('StartPublishing', []);
+      await settle();
+
+      // act
+      await controller.openPreview();
+
+      // assert
+      expect(capture.opens, 1);
+      expect(controller.preview, same(publisher.publishedFeed));
+    });
+
+    test('closePreview_withNobodyWatching_releasesTheCamera', () async {
+      // arrange
+      await start();
+      await controller.openPreview();
+
+      // act
+      await controller.closePreview();
+
+      // assert
+      expect(controller.preview, isNull);
+      expect(capture.isOpen, isFalse);
+      expect(capture.closes, 1);
+    });
+
+    test('closePreview_whilePublishing_keepsTheCameraOpen', () async {
+      // arrange
+      await start();
+      client.receive('StartPublishing', []);
+      await settle();
+      await controller.openPreview();
+
+      // act
+      await controller.closePreview();
+
+      // assert
+      expect(capture.isOpen, isTrue);
+      expect(controller.publishing, isTrue);
+    });
+
+    test('startPublishing_withPreviewOpen_publishesTheSameCamera', () async {
+      // arrange
+      await start();
+      await controller.openPreview();
+      final previewFeed = controller.preview;
+
+      // act
+      client.receive('StartPublishing', []);
+      await settle();
+
+      // assert
+      expect(capture.opens, 1);
+      expect(publisher.publishedFeed, same(previewFeed));
+      expect(publishingReports(), [
+        [true],
+      ]);
+    });
+
+    test(
+      'stopPublishing_withPreviewOpen_keepsTheCameraAndTurnsTheTorchOff',
+      () async {
+        // arrange
+        await start();
+        await controller.openPreview();
+        client
+          ..receive('StartPublishing', [])
+          ..receive('SetTorch', [true]);
+        await settle();
+
+        // act
+        client.receive('StopPublishing', []);
+        await settle();
+
+        // assert
+        expect(capture.isOpen, isTrue);
+        expect(controller.preview, isNotNull);
+        expect(publisher.torchCalls, [true, false]);
+      },
+    );
+
+    test('stop_withPreviewOpen_releasesTheCamera', () async {
+      // arrange
+      await start();
+      await controller.openPreview();
+
+      // act
+      await controller.stop();
+
+      // assert
+      expect(capture.isOpen, isFalse);
+      expect(controller.preview, isNull);
+    });
+
+    test('whenCameraCannotOpen_keepsThePreviewClosed', () async {
+      // arrange
+      capture.available = false;
+      await start();
+
+      // act
+      await controller.openPreview();
+
+      // assert
+      expect(controller.preview, isNull);
+    });
+  });
+
   group('CameraModeController torch', () {
     List<List<Object>> torchReports() => [
       for (final call in client.invocations)
@@ -233,6 +363,7 @@ void main() {
         screen: screen,
         keepAlive: keepAlive,
         publisher: publisher,
+        capture: capture,
       );
       await offline.start(notificationTitle: 't', notificationText: 'x');
       await settle();

@@ -83,6 +83,9 @@ class FakePublisher implements WebRtcPublisher {
   int stops = 0;
   final List<bool> torchCalls = [];
 
+  /// The feed the last successful start published.
+  CameraFeed? publishedFeed;
+
   @override
   Future<bool> setTorch(bool on) async {
     torchCalls.add(on);
@@ -90,13 +93,44 @@ class FakePublisher implements WebRtcPublisher {
   }
 
   @override
-  Future<bool> start() async {
+  Future<bool> start(CameraFeed feed) async {
     starts++;
+    if (startResult) publishedFeed = feed;
     return startResult;
   }
 
   @override
-  Future<void> stop() async => stops++;
+  Future<void> stop() async {
+    stops++;
+    publishedFeed = null;
+  }
+}
+
+class FakeFeed implements CameraFeed {
+  @override
+  Widget buildPreview() => const SizedBox(key: Key('camera-preview'));
+}
+
+class FakeCapture implements CameraCapture {
+  bool available = true;
+  int opens = 0;
+  int closes = 0;
+  FakeFeed? feed;
+
+  bool get isOpen => feed != null;
+
+  @override
+  Future<CameraFeed?> open() async {
+    if (!available) return null;
+    opens++;
+    return feed = FakeFeed();
+  }
+
+  @override
+  Future<void> close() async {
+    closes++;
+    feed = null;
+  }
 }
 
 class FakeViewer implements WebRtcViewer {

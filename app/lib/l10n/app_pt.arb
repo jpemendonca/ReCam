@@ -69,5 +69,7 @@
   "firstRunWatchHint": "Depois leia o QR code que o servidor ReCam mostra (no log ou em https://<ip-do-servidor>:8443/setup), ou o do Adicionar em outro Monitor. Este celular vira um Monitor.",
   "addCameraTitle": "Adicionar câmera",
   "addMonitorButton": "Adicionar monitor",
-  "addMonitorTitle": "Adicionar monitor"
+  "addMonitorTitle": "Adicionar monitor",
+  "cameraModeShowImage": "Ver imagem",
+  "cameraModeHideImage": "Esconder imagem"
 }

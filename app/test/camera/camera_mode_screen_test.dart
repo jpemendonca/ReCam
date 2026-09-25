@@ -24,6 +24,7 @@ void main() {
         screen: FakeScreenController(),
         keepAlive: FakeKeepAlive(),
         publisher: FakePublisher(),
+        capture: FakeCapture(),
       );
 
       // act
@@ -58,6 +59,7 @@ void main() {
         screen: FakeScreenController(),
         keepAlive: FakeKeepAlive(),
         publisher: FakePublisher(),
+        capture: FakeCapture(),
       );
       await tester.pumpWidget(
         MaterialApp(
@@ -92,6 +94,7 @@ void main() {
         screen: FakeScreenController(),
         keepAlive: FakeKeepAlive(),
         publisher: FakePublisher(),
+        capture: FakeCapture(),
       );
       await tester.pumpWidget(
         MaterialApp(
@@ -126,6 +129,52 @@ void main() {
       // assert
       expect(lost, 1);
       expect(find.byType(CameraModeScreen), findsNothing);
+    });
+
+    testWidgets('showImage_opensAndHidesTheThumbnail', (tester) async {
+      // arrange
+      final capture = FakeCapture();
+      CameraModeController create() => CameraModeController(
+        hub: HubSession(client: FakeHubClient(), delay: (_) async {}),
+        battery: FakeBatteryReader(),
+        screen: FakeScreenController(),
+        keepAlive: FakeKeepAlive(),
+        publisher: FakePublisher(),
+        capture: capture,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: CameraModeScreen(create: create, onPairingLost: () {}),
+        ),
+      );
+      await tester.runAsync(settle);
+      await tester.pump();
+      final closedAtStart = find
+          .byKey(const Key('camera-preview'))
+          .evaluate()
+          .length;
+
+      // act
+      await tester.tap(find.text('Show image'));
+      await tester.runAsync(settle);
+      await tester.pump();
+      final shownCount = find
+          .byKey(const Key('camera-preview'))
+          .evaluate()
+          .length;
+      await tester.tap(find.text('Hide image'));
+      await tester.runAsync(settle);
+      await tester.pump();
+
+      // assert
+      expect(closedAtStart, 0);
+      expect(shownCount, 1);
+      expect(find.byKey(const Key('camera-preview')), findsNothing);
+      expect(find.text('Show image'), findsOneWidget);
+      expect(capture.isOpen, isFalse);
+      await tester.pumpWidget(const SizedBox());
     });
   });
 }
