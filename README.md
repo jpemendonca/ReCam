@@ -1,13 +1,13 @@
-# Recam
+# ReCam
 
 Turn spare Android phones into security cameras. Self-hosted, open source, no ads, no
 subscriptions required.
 
 You install two things:
 
-- **The Recam server**, a Docker container on your own machine or VPS. It pairs your phones
+- **The ReCam server**, a Docker container on your own machine or VPS. It pairs your phones
   and relays the video.
-- **The Recam app**, on every phone. Each phone picks what it does in the app:
+- **The ReCam app**, on every phone. Each phone picks what it does in the app:
   - **Camera** tab: the phone becomes a camera and streams video.
   - **Watch** tab: the phone shows your cameras live.
 

@@ -13,7 +13,7 @@ namespace Recam.Server.Features.Pairing;
 
 public static partial class PairingEndpoints
 {
-    public const string ServerName = "Recam";
+    public const string ServerName = "ReCam";
 
     private const string RateLimitPolicy = "pairing";
     private const string LogCategory = "Recam.Server.Features.Pairing";

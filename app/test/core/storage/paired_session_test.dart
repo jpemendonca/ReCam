@@ -16,7 +16,7 @@ void main() {
       expect(session.serverUrl, Uri.parse('https://192.168.0.10:8443'));
       expect(session.fingerprint, fingerprint);
       expect(session.credential, '0123456789abcdef0123456789abcdef.secret');
-      expect(session.serverName, 'Recam');
+      expect(session.serverName, 'ReCam');
     });
 
     test('withCorruptedData_returnsNull', () {

@@ -1,4 +1,4 @@
-# Recam: regras de código
+# ReCam: regras de código
 
 Só entra aqui o que dá para checar lendo um diff.
 
@@ -7,6 +7,8 @@ Só entra aqui o que dá para checar lendo um diff.
 - Código, identificadores, comentários, mensagens de log e commits: inglês.
 - Documentos do repositório para agentes (`AGENTS.md`, `SPECS.md`, `CODESTYLE.md`,
   `ROADMAP.md`): português. `README.md`: inglês.
+- Nome do produto em texto lido por pessoas: **ReCam**. Em identificador técnico (esquema de
+  URI, pacote Android, imagem Docker, namespace .NET) fica como já está: `recam`, `Recam`.
 - Texto que o usuário vê no app: só via ARB, com a chave presente em `app_en.arb` e
   `app_pt.arb` no mesmo commit.
 

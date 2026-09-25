@@ -1,8 +1,8 @@
-# Recam: especificação
+# ReCam: especificação
 
 ## 1. Produto
 
-Recam reaproveita celulares Android parados como câmeras de monitoramento. Três papéis:
+ReCam reaproveita celulares Android parados como câmeras de monitoramento. Três papéis:
 
 - **Celular câmera**: captura e transmite. Não guarda nada, não decide nada.
 - **Servidor**: roda em Docker na casa do usuário ou numa VPS. Pareia aparelhos, autentica,
@@ -264,7 +264,7 @@ vez.
 | `POST /whep/{cameraId}` | Owner, Viewer | SDP offer | proxy para `/cam-{cameraId}/whep` |
 | `PATCH`, `DELETE /whep/{cameraId}/{session}` | Owner, Viewer | trickle ICE / encerrar | proxy |
 
-- `POST /api/pair`: `serverName` é a constante `"Recam"` por enquanto. Quem decide o papel é o `GrantsRole` do token. `expectedRoles` (obrigatório) diz que papéis a aba
+- `POST /api/pair`: `serverName` é a constante `"ReCam"` por enquanto. Quem decide o papel é o `GrantsRole` do token. `expectedRoles` (obrigatório) diz que papéis a aba
   aceita; se o token for de outro papel, a resposta é 409 `pairing.wrong_role` e o token continua
   sem uso.
   Token inexistente, expirado ou já usado recebe 401 com o mesmo corpo nos três casos. `name` é

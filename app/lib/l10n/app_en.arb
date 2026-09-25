@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "Recam",
+  "appTitle": "ReCam",
   "cameraTab": "Camera",
   "watchTab": "Watch",
   "cameraNotPaired": "Scan the QR code shown by Add camera on your other phone to use this phone as a camera.",
@@ -17,13 +17,13 @@
     }
   },
   "deviceNameInvalidCharacters": "The name has characters that are not allowed.",
-  "watchNotPaired": "Scan the QR code your Recam server shows to make this phone the owner.",
+  "watchNotPaired": "Scan the QR code your ReCam server shows to make this phone the owner.",
   "scanQrButton": "Scan QR code",
   "scanQrTitle": "Scan QR code",
   "scannerUnavailable": "Could not open the camera. Allow camera access and try again.",
   "addCameraButton": "Add camera",
   "addCameraTitle": "Add camera",
-  "addCameraInstructions": "On the camera phone, open Recam, go to the Camera tab and scan this QR code.",
+  "addCameraInstructions": "On the camera phone, open ReCam, go to the Camera tab and scan this QR code.",
   "addCameraExpiresIn": "Expires in {time}",
   "@addCameraExpiresIn": {
     "placeholders": {
@@ -54,7 +54,7 @@
   "roleOwner": "owner",
   "roleViewer": "viewer",
   "roleCamera": "camera",
-  "pairingErrorInvalidQr": "This is not a Recam pairing QR code.",
+  "pairingErrorInvalidQr": "This is not a ReCam pairing QR code.",
   "pairingErrorUnreachable": "Could not reach the server. Check that this phone is on the same network.",
   "pairingErrorTokenRejected": "This QR code has expired or was already used. Generate a new one.",
   "pairingErrorWrongRole": "This QR code is for another kind of device.",

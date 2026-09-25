@@ -95,7 +95,7 @@ PairResult pairResult({DeviceRole role = DeviceRole.owner}) => PairResult(
   deviceId: '0123456789abcdef0123456789abcdef',
   credential: '0123456789abcdef0123456789abcdef.secret',
   role: role,
-  serverName: 'Recam',
+  serverName: 'ReCam',
 );
 
 PairedSession pairedSession({DeviceRole role = DeviceRole.owner}) =>
@@ -105,7 +105,7 @@ PairedSession pairedSession({DeviceRole role = DeviceRole.owner}) =>
       credential: '0123456789abcdef0123456789abcdef.secret',
       deviceId: '0123456789abcdef0123456789abcdef',
       role: role,
-      serverName: 'Recam',
+      serverName: 'ReCam',
     );
 
 class FakeLinkSource implements LinkSource {

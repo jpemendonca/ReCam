@@ -1,4 +1,4 @@
-# Recam uses MediaMTX only as a WebRTC relay (WHIP in, WHEP out).
+# ReCam uses MediaMTX only as a WebRTC relay (WHIP in, WHEP out).
 # Every other protocol is off. The HTTP listener is never exposed:
 # Recam.Server proxies WHIP/WHEP to it and enforces authorization.
 

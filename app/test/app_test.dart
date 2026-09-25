@@ -64,7 +64,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // assert
-      expect(find.text('Paired with Recam'), findsOneWidget);
+      expect(find.text('Paired with ReCam'), findsOneWidget);
       expect(api.pairCalls.single.expectedRoles, {
         DeviceRole.owner,
         DeviceRole.viewer,
@@ -100,7 +100,7 @@ void main() {
 
       // assert
       expect(api.pairCalls, isEmpty);
-      expect(find.text('Paired with Recam'), findsOneWidget);
+      expect(find.text('Paired with ReCam'), findsOneWidget);
     });
   });
 
@@ -177,7 +177,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // assert
-      expect(find.text('Paired with Recam'), findsOneWidget);
+      expect(find.text('Paired with ReCam'), findsOneWidget);
       expect(find.text('Role: owner'), findsOneWidget);
       expect(find.text('Add camera'), findsOneWidget);
     });

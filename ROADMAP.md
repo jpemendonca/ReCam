@@ -1,4 +1,4 @@
-# Recam: roadmap
+# ReCam: roadmap
 
 ## Definição de pronto
 
@@ -332,6 +332,15 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     usados nos testes. A frase do produto passa a falar em celulares parados, não antigos.
   - Aceite: `git grep -i -E "old phone|celular velho|celular novo"` não encontra nada.
   > Validação (2026-09-25): só código escrito. Busca vazia, gate verde.
+
+- [x] **1.6.7 Nome exibido "ReCam"**
+  - Origem: pedido do autor (2026-09-25). O repositório no GitHub passou a se chamar ReCam.
+  - Escopo: "ReCam" em todo texto lido por pessoas: nome e título do app, ARB, página `/setup`,
+    log do dono, `serverName` da API, `README.md` e títulos dos documentos. Identificadores
+    técnicos continuam como estão: `recam://`, `io.recam.app`, `recam-server`, `Recam.Server`.
+  - Aceite: nenhum texto exibido com "Recam"; gate verde.
+  > Validação (2026-09-25): só código escrito. Gate verde. Remote do git atualizado para
+  > `github.com/jpemendonca/ReCam`.
 
 - [ ] **1.6.2 [aparelho] Validar pareamento com emulador como dono e celular como câmera**
   - Origem: nova forma de teste (1.6.1).
