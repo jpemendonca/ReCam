@@ -815,6 +815,9 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > entre eles no meio do teste.
   - Aceite: os 7 passos funcionam. Anotar o atraso percebido, a temperatura do celular câmera
     depois de 30 min assistindo e qualquer falha, que vira bullet novo.
+  > Bloqueado (2026-09-25): aguardando aparelho. Precisa do autor com o Samsung A10 e o Redmi 6A e o
+  > servidor no PC; o agente não tem celular nem emulador. O roteiro de teste está na conversa de
+  > 2026-09-25.
 
 ## Fase 2: câmera que aguenta ficar ligada
 
