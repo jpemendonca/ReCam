@@ -48,3 +48,6 @@ app/lib/l10n/generated/
 
 # Local server data during development
 .data/
+
+# Local test helper, delete before launch
+scripts/dev.ps1

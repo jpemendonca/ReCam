@@ -309,14 +309,20 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > A `HomeShell` espera as duas abas carregarem antes de parear, para o link que abre o app
   > frio não ser ignorado.
 
-- [ ] **1.6.5 Script de desenvolvimento em um comando**
+- [x] **1.6.5 Script de desenvolvimento em um comando**
   - Origem: pedido do autor (2026-09-25): não ficar rodando comando e copiando código.
   - Escopo: `scripts/dev.ps1`. Sobe o servidor (`-Reset` zera os dados antes), espera o código
     do dono no log, liga o emulador se nenhum estiver rodando, compila e instala o APK debug no
     emulador e em todo celular conectado por USB, e manda o link do dono para o emulador com
-    `adb`. No fim, imprime em PT-BR o que fazer no celular câmera. Documentar no `README.md`.
+    `adb`. No fim, imprime em PT-BR o que fazer no celular câmera. O script é só para o autor
+    testar: fica no `.gitignore`, não entra no `README.md` e é apagado antes do lançamento.
   - Aceite: `./scripts/dev.ps1 -Reset` numa máquina com o emulador criado termina com o
     emulador pareado como dono, sem nenhum outro comando.
+  > Validação (2026-09-25): caminho percorrido. `./scripts/dev.ps1 -Reset` zerou o servidor,
+  > instalou o APK no emulador e no A10, mandou o link pelo `adb`, e o emulador mostrou "Paired
+  > with Recam" como dono (log: `paired as Owner`). Isso também valida o 1.6.4 no emulador.
+  > Com `-Reset` o script roda `pm clear` nos aparelhos, porque o servidor zerado invalida as
+  > credenciais salvas.
 
 - [ ] **1.6.2 [aparelho] Validar pareamento com emulador como dono e celular como câmera**
   - Origem: nova forma de teste (1.6.1).
