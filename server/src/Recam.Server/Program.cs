@@ -38,5 +38,3 @@ app.MapDeviceEndpoints();
 
 await app.RunAsync();
 return 0;
-
-public partial class Program;
