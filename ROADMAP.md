@@ -22,7 +22,8 @@ validação no aparelho` e segue para o próximo.
 Quem executa cada bullet:
 
 - **[junto]**: Claude Opus, com o autor na conversa. São os bullets .NET que fixam o padrão
-  que o autor precisa saber defender em entrevista.
+  que o autor precisa saber defender em entrevista. Desde 2026-09-25 o autor não acompanha mais:
+  a marcação só registra a história, e o agente implementa direto.
 - **[opus]**: Claude Opus, sem precisar do autor. São bullets difíceis demais para um modelo
   mais barato (integração WebRTC no celular).
 - Sem marcação: qualquer modelo, inclusive um mais barato rodando em loop.
@@ -672,11 +673,61 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > `SetupPage_WithOwner_FromPublicAddress_Returns403`, `SetWatchers_ThenZero_ForgetsTheCount`; os
   > testes antigos sem dono seguem valendo.
 
+- [ ] **1.12.12 Nomes que não se confundem: Filmar/Assistir, Câmera/Monitor**
+  - Origem: teste do autor em 2026-09-25: "celular que assiste", "celular câmera", "Para assistir"
+    e a aba "Assistir" começam iguais e se confundem.
+  - Escopo: a primeira abertura pergunta "Este celular vai ser usado para:" com "Filmar" (ícone de
+    câmera e campo de nome) e "Assistir" (ícone de TV). Em todo o resto, os dois papéis se chamam
+    **Câmera** e **Monitor**: abas "Câmera" e "Monitor", textos do app (ARB en e pt), página do
+    servidor e log do QR. O celular que assiste pareia com o nome padrão "Monitor". Atualizar o
+    caminho principal do `AGENTS.md` e o glossário do `SPECS.md` 1.
+  - Aceite: widget test da primeira abertura com "Filmar" e "Assistir"; teste do log e da página do
+    servidor falando em "Assistir"/"Monitor".
+
+- [ ] **1.12.13 O "+" do Monitor abre direto o QR da câmera**
+  - Origem: teste do autor em 2026-09-25: a escolha "Outra câmera" / "Outro celular para assistir"
+    confunde, e adicionar câmera é o caso comum.
+  - Escopo: no Monitor, o "+" e o "Adicionar câmera" da lista vazia mostram direto o QR de câmera,
+    sem seletor. "Adicionar monitor" vai para o menu ⋮ do app, só com o Monitor pareado, e mostra o
+    QR de monitor.
+  - Aceite: widget tests do "+" sem seletor e do menu ⋮ abrindo o QR de monitor.
+
+- [ ] **1.12.14 A tela do QR fecha sozinha quando o aparelho pareia**
+  - Origem: teste do autor em 2026-09-25: depois de parear a câmera, o Monitor continuava no QR.
+  - Escopo: `POST /api/pairing-tokens` devolve também o `id` do token. `GET /api/pairing-tokens/{id}`
+    (Owner, Viewer) devolve `{ used }` só para o aparelho que criou o token; para os outros, 404. A
+    regra fica em `PairingToken`. No app, a tela do QR consulta a cada 2 s; quando o token foi
+    usado, fecha e a lista de câmeras recarrega.
+  - Aceite: `GetPairingToken_AfterPair_ReturnsUsed`, `GetPairingToken_FromAnotherDevice_Returns404`
+    e o teste do controller avisando que o aparelho pareou.
+
+- [ ] **1.12.15 "Reiniciar o app" tira o celular do servidor**
+  - Origem: teste do autor em 2026-09-25: depois de reiniciar os dois celulares para trocar os
+    papéis, o servidor continuou com os dois, e ninguém mais conseguia parear.
+  - Escopo: `DELETE /api/me` (qualquer aparelho) revoga o próprio aparelho (`Device.Revoke`). "Reiniciar
+    o app" chama isso para cada aba pareada antes de apagar os dados; sem resposta do servidor, apaga
+    mesmo assim. Quando não sobra nenhum Monitor ativo (dono ou visualizador), o servidor volta a gerar
+    o QR do primeiro celular, e a página do servidor volta a mostrá-lo. Uma câmera removida some da
+    lista dos Monitores na próxima atualização.
+  - Aceite: `DeleteMe_RevokesTheDevice`, `SetupPage_AfterLastMonitorLeaves_ShowsQrAgain` e o teste do
+    `AppReset` avisando o servidor.
+
+- [ ] **1.12.16 Página do servidor com passo a passo e visual cuidado**
+  - Origem: teste do autor em 2026-09-25: a página é feia e não diz o que fazer.
+  - Escopo: um idioma por vez, escolhido pelo `Accept-Language` (pt ou en), no lugar dos dois lado a
+    lado. Sem Monitor: passo a passo numerado ("1. Pegue o celular que vai assistir...") ao lado do QR.
+    Com Monitor: cartões separados para Câmeras e Monitores (online, transmitindo, quantos assistem,
+    bateria) e o passo a passo curto de como adicionar uma câmera. CSS próprio no HTML, com tema claro
+    e escuro, legível no celular. Continua sem script e só leitura.
+  - Aceite: testes da página em pt e en, com e sem Monitor.
+
 - [ ] **1.14 [aparelho] Validar o caminho principal completo**
   - Origem: definição do MVP.
   - Escopo: servidor no PC. A10 ou 7A como câmera, emulador Android no PC como visualizador
     (revisado em 2026-09-25; antes era um segundo celular). Percorrer os passos 1 a 7 do caminho
     principal em `AGENTS.md`.
+  > Revisão (2026-09-25): sem emulador. Servidor no PC, Samsung A10 e Redmi 6A, trocando os papéis
+  > entre eles no meio do teste.
   - Aceite: os 7 passos funcionam. Anotar o atraso percebido, a temperatura do celular câmera
     depois de 30 min assistindo e qualquer falha, que vira bullet novo.
 

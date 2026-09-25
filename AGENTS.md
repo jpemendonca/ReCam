@@ -40,7 +40,7 @@ sem anúncio, sem telemetria para terceiros, leve o bastante para rodar num celu
 
 1. Pegue o primeiro bullet não marcado do `ROADMAP.md`, em ordem. Não pule, não agrupe bullets.
    Se ele for `[junto]` ou `[opus]` e você não for Claude Opus, pare e avise o autor para trocar
-   de modelo. Se for `[junto]` e o autor não estiver na conversa, pare e avise.
+   de modelo. O autor não precisa mais estar na conversa nos bullets `[junto]` (2026-09-25).
 2. Implemente seguindo o `CODESTYLE.md` e os contratos do `SPECS.md`.
 3. Rode o gate: `bash scripts/gate.sh`. Ele precisa passar.
 4. Marque o bullet com `[x]` e escreva embaixo a nota `> Validação (AAAA-MM-DD): ...` dizendo o
