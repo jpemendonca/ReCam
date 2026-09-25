@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'camera/camera_pairing_controller.dart';
 import 'core/network/api_client.dart';
+import 'core/pairing/pairing_link.dart';
 import 'home_shell.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'viewer/viewer_pairing_controller.dart';
@@ -11,12 +12,16 @@ class RecamApp extends StatelessWidget {
     required this.cameraPairing,
     required this.viewerPairing,
     required this.api,
+    required this.links,
+    required this.ready,
     super.key,
   });
 
   final CameraPairingController cameraPairing;
   final ViewerPairingController viewerPairing;
   final ApiClient api;
+  final LinkSource links;
+  final Future<void> ready;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +39,8 @@ class RecamApp extends StatelessWidget {
         cameraPairing: cameraPairing,
         viewerPairing: viewerPairing,
         api: api,
+        links: links,
+        ready: ready,
       ),
     );
   }

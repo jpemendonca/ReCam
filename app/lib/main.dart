@@ -7,6 +7,7 @@ import 'app.dart';
 import 'camera/camera_pairing_controller.dart';
 import 'core/network/http_api_client.dart';
 import 'core/network/pinned_http_overrides.dart';
+import 'core/pairing/pairing_link.dart';
 import 'core/pairing/pairing_service.dart';
 import 'core/storage/secure_credential_store.dart';
 import 'viewer/viewer_pairing_controller.dart';
@@ -25,12 +26,15 @@ Future<void> main() async {
   );
   final cameraPairing = CameraPairingController(pairing: pairing);
   final viewerPairing = ViewerPairingController(pairing: pairing);
+  final ready = Future.wait([cameraPairing.load(), viewerPairing.load()]);
   runApp(
     RecamApp(
       cameraPairing: cameraPairing,
       viewerPairing: viewerPairing,
       api: api,
+      links: AppLinkSource(),
+      ready: ready,
     ),
   );
-  await Future.wait([cameraPairing.load(), viewerPairing.load()]);
+  await ready;
 }

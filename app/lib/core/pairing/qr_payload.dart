@@ -1,3 +1,5 @@
+import 'device_role.dart';
+
 enum QrError {
   notPairingUri,
   unsupportedVersion,
@@ -11,6 +13,7 @@ class QrPayload {
     required this.token,
     required this.serverUrls,
     this.fingerprint,
+    this.role,
   });
 
   static const int supportedVersion = 1;
@@ -18,6 +21,10 @@ class QrPayload {
   final String token;
   final String? fingerprint;
   final List<Uri> serverUrls;
+
+  /// Role the token grants, as announced by the server. Only a hint to pick the tab;
+  /// the server still decides.
+  final DeviceRole? role;
 
   static final _fingerprintPattern = RegExp(r'^[0-9a-f]{64}$');
 
@@ -54,6 +61,7 @@ class QrPayload {
         token: token!,
         fingerprint: fingerprint,
         serverUrls: serverUrls,
+        role: DeviceRole.tryParse(query['r']?.firstOrNull),
       ),
     );
   }

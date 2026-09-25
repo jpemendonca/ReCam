@@ -214,11 +214,15 @@ Nada depende de internet. Todo o caminho principal funciona numa rede local sem 
 URI:
 
 ```
-recam://pair?v=1&t=<token>&f=<fingerprint>&u=<url>&u=<url>
+recam://pair?v=1&t=<token>&r=<role>&f=<fingerprint>&u=<url>&u=<url>
 ```
 
 - `v`: versão do formato. Hoje `1`.
 - `t`: token de pareamento, 32 bytes aleatórios em base64url sem padding.
+- `r`: papel que o token concede (`owner`, `viewer`, `camera`). Opcional para o app. Serve só para
+  escolher a aba; quem decide é o servidor.
+- O app registra o esquema `recam://pair` no Android. Abrir o link abre o app na aba do papel e
+  pareia, se aquela aba ainda não estiver pareada.
 - `f`: SHA-256 do certificado DER do servidor, hexadecimal minúsculo, 64 caracteres. Opcional.
   Sem `f`, o app valida o certificado pelas CAs do sistema.
 - `u`: URL base do servidor, percent-encoded. Uma ou mais, em ordem de preferência. O app tenta

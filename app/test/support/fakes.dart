@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:recam/core/network/api_client.dart';
 import 'package:recam/core/pairing/device_role.dart';
+import 'package:recam/core/pairing/pairing_link.dart';
 import 'package:recam/core/storage/credential_store.dart';
 
 class FakeApiClient implements ApiClient {
@@ -76,10 +79,12 @@ String pairingQr({
   String token = 'tok',
   String? fingerprint = fingerprint,
   List<String> urls = const ['https://192.168.0.10:8443'],
+  String? role,
 }) {
   final query = [
     'v=1',
     't=$token',
+    if (role != null) 'r=$role',
     if (fingerprint != null) 'f=$fingerprint',
     for (final url in urls) 'u=${Uri.encodeQueryComponent(url)}',
   ].join('&');
@@ -102,3 +107,10 @@ PairedSession pairedSession({DeviceRole role = DeviceRole.owner}) =>
       role: role,
       serverName: 'Recam',
     );
+
+class FakeLinkSource implements LinkSource {
+  final controller = StreamController<Uri>.broadcast();
+
+  @override
+  Stream<Uri> get links => controller.stream;
+}

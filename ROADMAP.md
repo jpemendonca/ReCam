@@ -292,7 +292,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > respondendo "inválido". Testes no app: `withExpectedRoles_sendsThemInTheBody` e
   > `withTokenForOtherTab_returnsWrongRoleAndSavesNothing`.
 
-- [ ] **1.6.4 Link `recam://pair` abre o app e pareia na aba certa**
+- [x] **1.6.4 Link `recam://pair` abre o app e pareia na aba certa**
   - Origem: pedido do autor (2026-09-25): testar sem copiar e colar código. Também serve para
     quem lê o QR com a câmera nativa do Android.
   - Escopo: o QR ganha o parâmetro `r` com o papel que o token concede (`owner`, `viewer`,
@@ -303,6 +303,11 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Aceite: teste do roteador de link (papel → aba, aba já pareada é ignorada), teste do parse
     de `r`, teste de servidor do `r` na URI. `adb shell am start -d "recam://pair?..."` abre o
     app no emulador e pareia.
+  > Validação (2026-09-25): só código escrito; o `adb` no emulador é conferido no 1.6.5. Gate
+  > verde (52 no servidor, 68 no app). O Flutter tem roteamento de deep link próprio; ele foi
+  > desligado no manifest (`flutter_deeplinking_enabled=false`) para o `app_links` receber o link.
+  > A `HomeShell` espera as duas abas carregarem antes de parear, para o link que abre o app
+  > frio não ser ignorado.
 
 - [ ] **1.6.5 Script de desenvolvimento em um comando**
   - Origem: pedido do autor (2026-09-25): não ficar rodando comando e copiando código.

@@ -114,7 +114,7 @@ public static partial class PairingEndpoints
         return TypedResults.Created(
             "/api/pairing-tokens",
             new CreatePairingTokenResponse(
-                PairingUri.Build(issued.Value.Secret, certificate.Fingerprint, serverUrls),
+                PairingUri.Build(issued.Value.Secret, grantedRole, certificate.Fingerprint, serverUrls),
                 issued.Value.Token.ExpiresAt));
     }
 

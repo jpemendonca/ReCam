@@ -8,6 +8,7 @@ environment:
   sdk: ^3.13.3
 
 dependencies:
+  app_links: ^7.2.1
   crypto: ^3.0.7
   flutter:
     sdk: flutter

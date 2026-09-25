@@ -64,7 +64,7 @@ public sealed partial class OwnerSetup(
 
         var serverUrls = PublicUrlResolver.Resolve(settings, PublicUrlResolver.DetectLocalAddresses());
         var pending = new OwnerSetupStatus.Pending(
-            PairingUri.Build(issued.Secret, certificate.Fingerprint, serverUrls),
+            PairingUri.Build(issued.Secret, DeviceRole.Owner, certificate.Fingerprint, serverUrls),
             issued.Token.ExpiresAt);
 
         using var qrData = QRCodeGenerator.GenerateQrCode(pending.PairingUri, QRCodeGenerator.ECCLevel.L);

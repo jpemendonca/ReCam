@@ -1,10 +1,33 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:recam/core/pairing/device_role.dart';
 import 'package:recam/core/pairing/qr_payload.dart';
 
 import '../../support/fakes.dart';
 
 void main() {
   group('QrPayload.parse', () {
+    test('withRoleHint_readsRole', () {
+      // arrange
+      final raw = pairingQr(role: 'camera');
+
+      // act
+      final result = QrPayload.parse(raw);
+
+      // assert
+      expect((result as QrParseOk).payload.role, DeviceRole.camera);
+    });
+
+    test('withoutRoleHint_leavesRoleEmpty', () {
+      // arrange
+      final raw = pairingQr();
+
+      // act
+      final result = QrPayload.parse(raw);
+
+      // assert
+      expect((result as QrParseOk).payload.role, isNull);
+    });
+
     test('withValidUri_returnsPayload', () {
       // arrange
       final raw = pairingQr(
