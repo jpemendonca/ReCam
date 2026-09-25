@@ -1144,6 +1144,13 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   > SVG do selo a partir do Cobertura, sem dependência nova) e um job que, em push na `main`, publica
   > o selo sozinho no branch `badges`. Selos de build e de cobertura no topo do `README.md`.
   > Localmente: 94% das linhas do servidor. Falta ver o workflow verde no GitHub.
+  > Bloqueado (2026-09-25): o workflow rodou verde no push da `main` (run 36186027715: gate em 5 min,
+  > cobertura de 94%, e o job `badge` publicou o `coverage.svg` no branch `badges`). Falta a metade
+  > do aceite que não dá para fazer daqui: um PR verde (o autor pediu trabalho direto na `main`,
+  > sem PR) e ver os selos renderizados no README. O selo de cobertura passou a apontar para
+  > `github.com/<dono>/ReCam/raw/badges/coverage.svg`, que redireciona com a sessão de quem tem
+  > acesso enquanto o repositório for privado. Para fechar: abrir qualquer PR, conferir o check
+  > `CI / gate` verde e os dois selos na página do repositório.
 
 - [ ] **5.2.1 Observabilidade com OpenTelemetry**
   - Origem: vitrine de portfólio.
