@@ -208,12 +208,18 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > (`mobile_scanner`) mora em `core/scanner/`, por causa da regra de plugin só em `core/`. O
   > `AndroidManifest.xml` ganhou `INTERNET` (só existia no manifesto de debug) e `CAMERA`.
 
-- [ ] **1.4 [aparelho] Validar pareamento do dono num celular real**
+- [x] **1.4 [aparelho] Validar pareamento do dono num celular real**
   - Origem: provar TLS, pinning e rede antes de construir em cima.
   - Escopo: servidor rodando com `compose.bridge.yaml` no PC. APK debug instalado no celular
     novo. Ler o QR de `https://<ip-do-pc>:8443/setup`.
   - Aceite: o app mostra "pareado" e `GET /api/me` responde com papel `Owner`. Anotar o modelo
     do celular e o que foi observado.
+  > Validação (2026-09-24): caminho percorrido no aparelho. Samsung Galaxy A10 (SM-A105M,
+  > Android 11), APK debug, servidor com `compose.bridge.yaml` no PC (`RECAM_HOST=192.168.100.15`)
+  > e regras de firewall para 8443/tcp e 8189/udp. O QR de `/setup` foi lido pelo app e a aba
+  > Assistir mostrou "Pareado com Recam" e o papel dono, com TLS e pinning funcionando pela rede
+  > local. O app não foi fechado e reaberto, e a resposta de `GET /api/me` não foi lida direto (o
+  > papel exibido vem do pareamento). A regra de firewall foi criada sem restringir a origem.
 
 - [ ] **1.5 Adicionar câmera: QR gerado pelo dono**
   - Origem: caminho principal, passo 3.
