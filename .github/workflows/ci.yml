@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.4
+          cache: true
+
+      # The server tests start MediaMTX and FFmpeg with Testcontainers; the runner has Docker.
+      - name: Gate
+        run: bash scripts/gate.sh
+
+      - name: Server coverage
+        run: >
+          dotnet test --solution server/Recam.slnx --no-build
+          --coverlet --coverlet-output-format cobertura
+          --coverlet-include "[Recam.Server]*"
+          --coverlet-exclude "[Recam.Server]Recam.Server.Infrastructure.Persistence.Migrations.*"
+          --results-directory "$GITHUB_WORKSPACE/coverage"
+
+      - name: Coverage summary
+        run: |
+          report="$(ls coverage/*.cobertura.*.xml coverage/coverage.cobertura*.xml 2>/dev/null | head -1)"
+          mv "$report" coverage/cobertura.xml
+          bash scripts/coverage-badge.sh coverage/cobertura.xml coverage/coverage.svg >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+
+  badge:
+    needs: gate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage
+
+      # The badge lives alone on the badges branch, so main never gets bot commits.
+      - name: Publish coverage badge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir badges && cp coverage.svg badges/
+          cd badges
+          git init -q -b badges
+          git add coverage.svg
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "chore: coverage badge for ${GITHUB_SHA::7}"
+          git push -q --force "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" badges

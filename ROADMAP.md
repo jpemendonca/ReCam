@@ -1137,6 +1137,13 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   - Escopo: workflow rodando `scripts/gate.sh` em pull request e push na `main`, com relatório
     de cobertura do servidor (`coverlet`). Selos de build e cobertura no `README.md`.
   - Aceite: workflow verde num PR e selos aparecendo no README.
+  > Em andamento (2026-09-25): existem `.github/workflows/ci.yml` (gate em pull request e em push na
+  > `main`, com .NET pelo `global.json`, Flutter 3.47.4 e o Docker do runner para os Testcontainers;
+  > depois a cobertura do servidor com `coverlet.MTP` 10.0.1, só do assembly `Recam.Server`, sem as
+  > migrações, em Cobertura, com o percentual no resumo do job), `scripts/coverage-badge.sh` (gera o
+  > SVG do selo a partir do Cobertura, sem dependência nova) e um job que, em push na `main`, publica
+  > o selo sozinho no branch `badges`. Selos de build e de cobertura no topo do `README.md`.
+  > Localmente: 94% das linhas do servidor. Falta ver o workflow verde no GitHub.
 
 - [ ] **5.2.1 Observabilidade com OpenTelemetry**
   - Origem: vitrine de portfólio.

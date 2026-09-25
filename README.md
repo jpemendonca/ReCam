@@ -1,5 +1,8 @@
 # ReCam
 
+[![CI](https://github.com/jpemendonca/ReCam/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jpemendonca/ReCam/actions/workflows/ci.yml)
+![Server coverage](https://raw.githubusercontent.com/jpemendonca/ReCam/badges/coverage.svg)
+
 Turn spare Android phones into security cameras. Self-hosted, open source, no ads, no
 subscriptions required.
 
