@@ -34,6 +34,8 @@ public static partial class PairingEndpoints
             .RequireRateLimiting(RateLimitPolicy);
         endpoints.MapPost("/api/pairing-tokens", CreatePairingTokenAsync)
             .RequireAuthorization(AuthExtensions.ViewerOrOwner);
+        endpoints.MapGet("/api/pairing-tokens/{id:guid}", GetPairingTokenAsync)
+            .RequireAuthorization(AuthExtensions.ViewerOrOwner);
         return endpoints;
     }
 
@@ -114,8 +116,30 @@ public static partial class PairingEndpoints
         return TypedResults.Created(
             "/api/pairing-tokens",
             new CreatePairingTokenResponse(
+                issued.Value.Token.Id,
                 PairingUri.Build(issued.Value.Secret, grantedRole, certificate.Fingerprint, serverUrls),
                 issued.Value.Token.ExpiresAt));
+    }
+
+    /// <summary>Lets the phone showing a QR code close it once another phone has paired.</summary>
+    private static async Task<IResult> GetPairingTokenAsync(
+        Guid id,
+        ClaimsPrincipal user,
+        IDbContextFactory<RecamDbContext> databaseFactory,
+        CancellationToken cancellationToken)
+    {
+        await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
+        var token = await database.PairingTokens.AsNoTracking()
+            .SingleOrDefaultAsync(candidate => candidate.Id == id, cancellationToken);
+        if (token is null)
+        {
+            return PairingErrors.TokenNotFound.ToHttpResult();
+        }
+
+        var usage = token.UsageFor(user.GetDeviceId());
+        return usage.IsFailure
+            ? usage.Error.ToHttpResult()
+            : TypedResults.Ok(new PairingTokenStatusResponse(usage.Value));
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Pairing rejected: {Reason}")]

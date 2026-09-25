@@ -18,6 +18,9 @@ public static class PairingErrors
     public static readonly DomainError InvalidToken =
         new("pairing.invalid_token", "The pairing token is invalid or expired. Generate a new QR code.", ErrorType.Unauthorized);
 
+    public static readonly DomainError TokenNotFound =
+        new("pairing.token_not_found", "There is no such pairing token.", ErrorType.NotFound);
+
     public static readonly DomainError IssuerCannotInvite =
         new("pairing.issuer_cannot_invite", "Only a phone that watches can create pairing tokens.", ErrorType.Forbidden);
 

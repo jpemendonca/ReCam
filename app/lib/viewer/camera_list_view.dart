@@ -68,15 +68,19 @@ class _CameraListViewState extends State<CameraListView> {
     ),
   );
 
-  void _addCamera() => Navigator.of(context).push<void>(
-    MaterialPageRoute(
-      builder: (_) => AddDeviceScreen(
-        api: widget.api,
-        session: widget.session,
-        role: DeviceRole.camera,
+  // The new camera shows up at once: the QR screen closes when it pairs, and the list reloads.
+  Future<void> _addCamera() async {
+    final paired = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => AddDeviceScreen(
+          api: widget.api,
+          session: widget.session,
+          role: DeviceRole.camera,
+        ),
       ),
-    ),
-  );
+    );
+    if (paired == true) await _controller.refresh();
+  }
 
   @override
   Widget build(BuildContext context) {

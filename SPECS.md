@@ -483,3 +483,9 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > também se recarrega, a cada 30 s, para virar o painel depois do primeiro pareamento. A contagem
 > de quem assiste passou a ficar também no `DevicePresence` (Infrastructure), que o `WatchLeases`
 > atualiza, porque `Features.Setup` não pode ler `Features.Realtime`.
+
+> Revisão (2026-09-25): `POST /api/pairing-tokens` devolve `{ id, qrUri, expiresAt }`. Nova rota
+> `GET /api/pairing-tokens/{id}` (Owner, Viewer) devolve `{ used }` só para o aparelho que criou o
+> token; para qualquer outro, e para id inexistente, 404 `pairing.token_not_found`, igual nos dois
+> casos. A regra é `PairingToken.UsageFor(deviceId)`. O app consulta a cada 2 s enquanto mostra o QR
+> e fecha a tela quando o token foi usado (bullet 1.12.14).

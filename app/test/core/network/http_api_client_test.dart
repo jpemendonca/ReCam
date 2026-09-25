@@ -48,6 +48,7 @@ void main() {
           sent = request;
           return http.Response(
             jsonEncode({
+              'id': '0199a1b2-0000-7000-8000-000000000001',
               'qrUri': 'recam://pair?v=1',
               'expiresAt': '2026-09-24T12:10:00+00:00',
             }),
@@ -66,6 +67,7 @@ void main() {
 
       // assert
       final token = (result as ApiSuccess<PairingTokenResult>).value;
+      expect(token.id, '0199a1b2-0000-7000-8000-000000000001');
       expect(token.qrUri, 'recam://pair?v=1');
       expect(token.validFor, const Duration(minutes: 10));
       expect(sent.url.path, '/api/pairing-tokens');
@@ -81,6 +83,7 @@ void main() {
           sent = request;
           return http.Response(
             jsonEncode({
+              'id': '0199a1b2-0000-7000-8000-000000000001',
               'qrUri': 'recam://pair?v=1',
               'expiresAt': '2026-09-24T12:10:00+00:00',
             }),
@@ -114,6 +117,27 @@ void main() {
         (result as ApiFailure<PairingTokenResult>).kind,
         ApiFailureKind.unexpected,
       );
+    });
+  });
+
+  group('HttpApiClient.pairingTokenUsed', () {
+    test('withUsedToken_returnsTrue', () async {
+      // arrange
+      late http.Request sent;
+      final client = HttpApiClient(
+        MockClient((request) async {
+          sent = request;
+          return http.Response(jsonEncode({'used': true}), 200);
+        }),
+      );
+
+      // act
+      final result = await client.pairingTokenUsed(baseUrl, 'id.secret', 'abc');
+
+      // assert
+      expect((result as ApiSuccess<bool>).value, isTrue);
+      expect(sent.url.path, '/api/pairing-tokens/abc');
+      expect(sent.headers['authorization'], 'Bearer id.secret');
     });
   });
 }

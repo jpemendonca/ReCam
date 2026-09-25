@@ -66,4 +66,18 @@ public sealed class PairingToken
         UsedAt = now;
         return Result.Success();
     }
+
+    /// <summary>
+    /// Tells the device that created this token whether someone paired with it. For any other
+    /// device the token does not exist, so token ids reveal nothing.
+    /// </summary>
+    public Result<bool> UsageFor(Guid deviceId)
+    {
+        if (CreatedByDeviceId != deviceId)
+        {
+            return PairingErrors.TokenNotFound;
+        }
+
+        return UsedAt is not null;
+    }
 }

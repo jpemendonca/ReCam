@@ -97,10 +97,12 @@ class HttpApiClient implements ApiClient {
       ),
       expectedStatus: HttpStatus.created,
       parse: (json, headers) {
+        final id = json['id'];
         final qrUri = json['qrUri'];
         final expiresAt = DateTime.tryParse(json['expiresAt'] as String? ?? '');
-        if (qrUri is! String || expiresAt == null) return null;
+        if (id is! String || qrUri is! String || expiresAt == null) return null;
         return PairingTokenResult(
+          id: id,
           qrUri: qrUri,
           validFor: _remainingAt(expiresAt, headers),
         );
@@ -125,6 +127,25 @@ class HttpApiClient implements ApiClient {
     } on HttpException {
       return null;
     }
+  }
+
+  @override
+  Future<ApiResult<bool>> pairingTokenUsed(
+    Uri baseUrl,
+    String credential,
+    String tokenId,
+  ) {
+    return _send(
+      () => _client.get(
+        baseUrl.resolve('/api/pairing-tokens/${Uri.encodeComponent(tokenId)}'),
+        headers: {HttpHeaders.authorizationHeader: 'Bearer $credential'},
+      ),
+      expectedStatus: HttpStatus.ok,
+      parse: (json, _) => switch (json['used']) {
+        final bool used => used,
+        _ => null,
+      },
+    );
   }
 
   @override

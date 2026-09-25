@@ -35,4 +35,34 @@ public sealed class PairingTokenTests
         Assert.NotEqual(first.Secret, second.Secret);
         Assert.Equal(43, second.Secret.Length);
     }
+
+    [Fact(DisplayName = "The creator sees whether the token was used")]
+    public void UsageFor_Creator_TellsWhetherUsed()
+    {
+        // arrange
+        var creatorId = Guid.NewGuid();
+        var token = PairingToken.Issue(DeviceRole.Camera, Now, creatorId).Token;
+        var before = token.UsageFor(creatorId).Value;
+        token.Consume(Now, [DeviceRole.Camera]);
+
+        // act
+        var after = token.UsageFor(creatorId);
+
+        // assert
+        Assert.False(before);
+        Assert.True(after.Value);
+    }
+
+    [Fact(DisplayName = "Any other device is told the token does not exist")]
+    public void UsageFor_OtherDevice_ReturnsTokenNotFound()
+    {
+        // arrange
+        var token = PairingToken.Issue(DeviceRole.Camera, Now, Guid.NewGuid()).Token;
+
+        // act
+        var usage = token.UsageFor(Guid.NewGuid());
+
+        // assert
+        Assert.Equal(PairingErrors.TokenNotFound, usage.Error);
+    }
 }

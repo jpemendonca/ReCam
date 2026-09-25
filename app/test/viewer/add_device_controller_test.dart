@@ -7,6 +7,7 @@ import '../support/fakes.dart';
 
 PairingTokenResult _token(String qrUri, {int seconds = 3}) =>
     PairingTokenResult(
+      id: 'token-$qrUri',
       qrUri: qrUri,
       validFor: Duration(seconds: seconds),
     );
@@ -102,6 +103,44 @@ void main() {
         'recam://pair?r=viewer',
       );
       viewerController.dispose();
+      controller.dispose();
+    });
+
+    testWidgets('whenAnotherPhonePairs_reportsPaired', (tester) async {
+      // arrange
+      api
+        ..tokenResults.add(ApiSuccess(_token('recam://pair?a', seconds: 600)))
+        ..tokenUsedResults.addAll([ApiSuccess(false), ApiSuccess(true)]);
+      await controller.start();
+      await tester.pump(const Duration(seconds: 2));
+      final whileWaiting = controller.state;
+
+      // act
+      await tester.pump(const Duration(seconds: 2));
+
+      // assert
+      expect(whileWaiting, isA<AddDeviceReady>());
+      expect(controller.state, isA<AddDevicePaired>());
+      expect(api.tokenUsedCalls, [
+        'token-recam://pair?a',
+        'token-recam://pair?a',
+      ]);
+      controller.dispose();
+    });
+
+    testWidgets('afterPaired_stopsAsking', (tester) async {
+      // arrange
+      api
+        ..tokenResults.add(ApiSuccess(_token('recam://pair?a', seconds: 600)))
+        ..tokenUsedResults.add(ApiSuccess(true));
+      await controller.start();
+      await tester.pump(const Duration(seconds: 2));
+
+      // act
+      await tester.pump(const Duration(seconds: 10));
+
+      // assert
+      expect(api.tokenUsedCalls, hasLength(1));
       controller.dispose();
     });
   });

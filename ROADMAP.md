@@ -708,7 +708,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > com o Monitor pareado e abre o QR de monitor com a sessão do Monitor. Testes: "+" sem seletor,
   > menu abrindo o QR de monitor, menu sem Monitor sem a opção, e a tela nos dois papéis.
 
-- [ ] **1.12.14 A tela do QR fecha sozinha quando o aparelho pareia**
+- [x] **1.12.14 A tela do QR fecha sozinha quando o aparelho pareia**
   - Origem: teste do autor em 2026-09-25: depois de parear a câmera, o Monitor continuava no QR.
   - Escopo: `POST /api/pairing-tokens` devolve também o `id` do token. `GET /api/pairing-tokens/{id}`
     (Owner, Viewer) devolve `{ used }` só para o aparelho que criou o token; para os outros, 404. A
@@ -716,6 +716,15 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     usado, fecha e a lista de câmeras recarrega.
   - Aceite: `GetPairingToken_AfterPair_ReturnsUsed`, `GetPairingToken_FromAnotherDevice_Returns404`
     e o teste do controller avisando que o aparelho pareou.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (100 no
+  > servidor, 155 no app). A regra é `PairingToken.UsageFor(deviceId)`: devolve `Result<bool>` para
+  > quem criou e `pairing.token_not_found` para qualquer outro; o endpoint também devolve esse
+  > mesmo 404 para id inexistente, então um id não revela se o token existe. Revisão no `SPECS.md`
+  > 12. No app, o `AddDeviceController` consulta a cada 2 s (sem sobrepor consultas) e passa para
+  > `AddDevicePaired`; a tela fecha com `true`, e a lista de câmeras recarrega quando foi o "+" que
+  > a abriu. Uma consulta que falha só espera a próxima. Extras: `GetPairingToken_Unknown_Returns404`,
+  > testes de domínio do `UsageFor`, `pairingTokenUsed` no `HttpApiClient`, controller parando de
+  > consultar depois de pareado e o fluxo no `app_test` (QR fecha e a lista recarrega).
 
 - [ ] **1.12.15 "Reiniciar o app" tira o celular do servidor**
   - Origem: teste do autor em 2026-09-25: depois de reiniciar os dois celulares para trocar os

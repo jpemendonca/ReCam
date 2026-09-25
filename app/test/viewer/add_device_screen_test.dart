@@ -9,8 +9,11 @@ import 'package:recam/viewer/add_device_screen.dart';
 
 import '../support/fakes.dart';
 
-PairingTokenResult _token(String qrUri) =>
-    PairingTokenResult(qrUri: qrUri, validFor: const Duration(minutes: 10));
+PairingTokenResult _token(String qrUri) => PairingTokenResult(
+  id: 'token-1',
+  qrUri: qrUri,
+  validFor: const Duration(minutes: 10),
+);
 
 void main() {
   late FakeApiClient api;

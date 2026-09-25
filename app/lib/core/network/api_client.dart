@@ -19,6 +19,13 @@ abstract interface class ApiClient {
     DeviceRole role,
   );
 
+  /// Whether another phone already paired with a token this phone created.
+  Future<ApiResult<bool>> pairingTokenUsed(
+    Uri baseUrl,
+    String credential,
+    String tokenId,
+  );
+
   Future<ApiResult<List<CameraInfo>>> cameras(Uri baseUrl, String credential);
 }
 
@@ -71,8 +78,14 @@ class MeResult {
 }
 
 class PairingTokenResult {
-  const PairingTokenResult({required this.qrUri, required this.validFor});
+  const PairingTokenResult({
+    required this.id,
+    required this.qrUri,
+    required this.validFor,
+  });
 
+  /// Asks [ApiClient.pairingTokenUsed] about this token.
+  final String id;
   final String qrUri;
 
   /// How long the token stays valid, counted from the moment the server answered.

@@ -71,6 +71,22 @@ class FakeApiClient implements ApiClient {
 
   final List<DeviceRole> tokenRoles = [];
 
+  /// Answers for the next "was it used" questions; when empty, not used yet.
+  final List<ApiResult<bool>> tokenUsedResults = [];
+  final List<String> tokenUsedCalls = [];
+
+  @override
+  Future<ApiResult<bool>> pairingTokenUsed(
+    Uri baseUrl,
+    String credential,
+    String tokenId,
+  ) async {
+    tokenUsedCalls.add(tokenId);
+    return tokenUsedResults.isEmpty
+        ? ApiSuccess(false)
+        : tokenUsedResults.removeAt(0);
+  }
+
   int get tokenCalls => tokenRoles.length;
 
   @override

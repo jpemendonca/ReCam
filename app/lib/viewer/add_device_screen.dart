@@ -11,7 +11,7 @@ import '../l10n/generated/app_localizations.dart';
 import 'add_device_controller.dart';
 
 /// The QR code that pairs another phone as [role]: a camera from the "+", a Monitor from the
-/// app menu.
+/// app menu. Closes with `true` once the other phone has paired.
 class AddDeviceScreen extends StatefulWidget {
   const AddDeviceScreen({
     required this.api,
@@ -39,11 +39,19 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
       session: widget.session,
       role: widget.role,
     );
+    _controller.addListener(_closeWhenPaired);
     unawaited(_controller.start());
+  }
+
+  void _closeWhenPaired() {
+    if (_controller.state is AddDevicePaired && mounted) {
+      Navigator.of(context).pop(true);
+    }
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_closeWhenPaired);
     _controller.dispose();
     super.dispose();
   }
@@ -62,7 +70,8 @@ class _AddDeviceScreenState extends State<AddDeviceScreen> {
           child: ListenableBuilder(
             listenable: _controller,
             builder: (context, _) => switch (_controller.state) {
-              AddDeviceLoading() => const CircularProgressIndicator(),
+              AddDeviceLoading() ||
+              AddDevicePaired() => const CircularProgressIndicator(),
               AddDeviceFailed() => Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [

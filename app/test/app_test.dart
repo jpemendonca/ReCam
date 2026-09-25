@@ -334,8 +334,11 @@ void main() {
   });
 
   group('RecamApp adding devices', () {
-    PairingTokenResult token(String qrUri) =>
-        PairingTokenResult(qrUri: qrUri, validFor: const Duration(minutes: 10));
+    PairingTokenResult token(String qrUri) => PairingTokenResult(
+      id: 'token-1',
+      qrUri: qrUri,
+      validFor: const Duration(minutes: 10),
+    );
 
     testWidgets('plusOnMonitor_opensTheCameraQrRightAway', (tester) async {
       // arrange
@@ -354,6 +357,30 @@ void main() {
       expect(find.byType(AddDeviceScreen), findsOneWidget);
       expect(find.byType(SegmentedButton<DeviceRole>), findsNothing);
       await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('whenTheCameraPairs_closesTheQrAndReloadsTheList', (
+      tester,
+    ) async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      api
+        ..tokenResults.add(ApiSuccess(token('recam://pair?r=camera')))
+        ..tokenUsedResults.add(ApiSuccess(true));
+      await openApp(tester);
+      await tester.tap(find.byIcon(Icons.live_tv_outlined));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Add camera'));
+      await tester.pumpAndSettle();
+      final loadsBefore = api.cameraCalls;
+
+      // act
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(find.byType(AddDeviceScreen), findsNothing);
+      expect(api.cameraCalls, loadsBefore + 1);
     });
 
     testWidgets('menuAddMonitor_opensTheMonitorQr', (tester) async {

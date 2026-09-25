@@ -137,4 +137,61 @@ public sealed class CreatePairingTokenEndpointTests
         var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>(TestContext.Current.CancellationToken);
         Assert.Contains("role", problem!.Errors.Keys);
     }
+
+    [Fact(DisplayName = "The creator of a token learns when another phone paired with it")]
+    public async Task GetPairingToken_AfterPair_ReturnsUsed()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        using var ownerClient = factory.CreateDeviceClient(owner.Credential);
+        using var created = await ownerClient.PostAsJsonAsync(TokensUri, new { role = "camera" }, ApiJson.Options, TestContext.Current.CancellationToken);
+        var token = await created.Content.ReadFromJsonAsync<CreatePairingTokenResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
+        var statusUri = new Uri($"/api/pairing-tokens/{token!.Id}", UriKind.Relative);
+        var before = await ownerClient.GetFromJsonAsync<PairingTokenStatusResponse>(statusUri, ApiJson.Options, TestContext.Current.CancellationToken);
+        using var cameraClient = factory.CreateClient();
+        using var paired = await cameraClient.PairAsync(HttpUtility.ParseQueryString(new Uri(token.QrUri).Query)["t"], "Porch");
+
+        // act
+        var after = await ownerClient.GetFromJsonAsync<PairingTokenStatusResponse>(statusUri, ApiJson.Options, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Equal(HttpStatusCode.Created, paired.StatusCode);
+        Assert.False(before!.Used);
+        Assert.True(after!.Used);
+    }
+
+    [Fact(DisplayName = "Another phone cannot see a token it did not create")]
+    public async Task GetPairingToken_FromAnotherDevice_Returns404()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var viewer = await factory.PairDeviceAsync(DeviceRole.Viewer);
+        using var ownerClient = factory.CreateDeviceClient(owner.Credential);
+        using var created = await ownerClient.PostAsJsonAsync(TokensUri, new { role = "camera" }, ApiJson.Options, TestContext.Current.CancellationToken);
+        var token = await created.Content.ReadFromJsonAsync<CreatePairingTokenResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
+        using var viewerClient = factory.CreateDeviceClient(viewer.Credential);
+
+        // act
+        using var response = await viewerClient.GetAsync(new Uri($"/api/pairing-tokens/{token!.Id}", UriKind.Relative), TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact(DisplayName = "An unknown token id is not found")]
+    public async Task GetPairingToken_Unknown_Returns404()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        using var ownerClient = factory.CreateDeviceClient(owner.Credential);
+
+        // act
+        using var response = await ownerClient.GetAsync(new Uri($"/api/pairing-tokens/{Guid.NewGuid()}", UriKind.Relative), TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
 }
