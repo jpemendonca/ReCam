@@ -68,7 +68,7 @@ public sealed class Device
     /// </summary>
     public Result<IssuedPairingToken> IssuePairingToken(DeviceRole grantsRole, DateTimeOffset now)
     {
-        if (Role is not (DeviceRole.Owner or DeviceRole.Viewer) || IsRevoked)
+        if (!IsMonitor || IsRevoked)
         {
             return PairingErrors.IssuerCannotInvite;
         }
@@ -118,6 +118,15 @@ public sealed class Device
 
         return Result.Success();
     }
+
+    /// <summary>
+    /// Takes the device off the server: its credential stops working. Revoking twice keeps the
+    /// first time.
+    /// </summary>
+    public void Revoke(DateTimeOffset now) => RevokedAt ??= now;
+
+    /// <summary>Owners and viewers are the phones the app calls Monitors.</summary>
+    public bool IsMonitor => Role is DeviceRole.Owner or DeviceRole.Viewer;
 
     public void MarkSeen(DateTimeOffset now) => LastSeenAt = now;
 

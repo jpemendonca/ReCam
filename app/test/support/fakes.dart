@@ -69,6 +69,15 @@ class FakeApiClient implements ApiClient {
   Future<ApiResult<MeResult>> me(Uri baseUrl, String credential) async =>
       meResult;
 
+  bool leaveResult = true;
+  final List<String> leaveCalls = [];
+
+  @override
+  Future<bool> leave(Uri baseUrl, String credential) async {
+    leaveCalls.add(credential);
+    return leaveResult;
+  }
+
   final List<DeviceRole> tokenRoles = [];
 
   /// Answers for the next "was it used" questions; when empty, not used yet.

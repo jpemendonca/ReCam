@@ -113,6 +113,46 @@ public sealed class SetupEndpointsTests
         Assert.Contains("<span class=\"on\">", Row(body, owner.DeviceId), StringComparison.Ordinal);
     }
 
+    [Fact(DisplayName = "When the last Monitor leaves, the page shows the first-phone QR again")]
+    public async Task SetupPage_AfterLastMonitorLeaves_ShowsQrAgain()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        await factory.PairDeviceAsync(DeviceRole.Camera, "Porch");
+        using var client = factory.CreateClient();
+        var withMonitor = await client.GetStringAsync(SetupUri, TestContext.Current.CancellationToken);
+        using var ownerClient = factory.CreateDeviceClient(owner.Credential);
+        using var left = await ownerClient.DeleteAsync(new Uri("/api/me", UriKind.Relative), TestContext.Current.CancellationToken);
+
+        // act
+        var body = await client.GetStringAsync(SetupUri, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.DoesNotContain("<svg", withMonitor, StringComparison.Ordinal);
+        Assert.Contains("<svg", body, StringComparison.Ordinal);
+        Assert.Contains("recam://pair?v=1&amp;t=", body, StringComparison.Ordinal);
+    }
+
+    [Fact(DisplayName = "While a viewer Monitor remains, the owner leaving keeps the panel")]
+    public async Task SetupPage_WhenOwnerLeavesButViewerStays_KeepsPanel()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        await factory.PairDeviceAsync(DeviceRole.Viewer, "Second Monitor");
+        using var ownerClient = factory.CreateDeviceClient(owner.Credential);
+        using var left = await ownerClient.DeleteAsync(new Uri("/api/me", UriKind.Relative), TestContext.Current.CancellationToken);
+        using var client = factory.CreateClient();
+
+        // act
+        var body = await client.GetStringAsync(SetupUri, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.DoesNotContain("<svg", body, StringComparison.Ordinal);
+        Assert.Contains("Second Monitor", body, StringComparison.Ordinal);
+    }
+
     [Fact(DisplayName = "The panel keeps the local-network rule once a phone owns the server")]
     public async Task SetupPage_WithOwner_FromPublicAddress_Returns403()
     {

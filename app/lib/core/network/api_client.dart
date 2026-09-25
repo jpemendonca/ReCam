@@ -12,6 +12,9 @@ abstract interface class ApiClient {
 
   Future<ApiResult<MeResult>> me(Uri baseUrl, String credential);
 
+  /// Takes this device off the server. False when the server could not be told.
+  Future<bool> leave(Uri baseUrl, String credential);
+
   /// Creates a QR code that pairs another phone as [role] (camera or viewer).
   Future<ApiResult<PairingTokenResult>> createPairingToken(
     Uri baseUrl,

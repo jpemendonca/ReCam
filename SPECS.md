@@ -489,3 +489,11 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > token; para qualquer outro, e para id inexistente, 404 `pairing.token_not_found`, igual nos dois
 > casos. A regra é `PairingToken.UsageFor(deviceId)`. O app consulta a cada 2 s enquanto mostra o QR
 > e fecha a tela quando o token foi usado (bullet 1.12.14).
+
+> Revisão (2026-09-25): nova rota `DELETE /api/me` (qualquer aparelho, 204): o aparelho se revoga
+> (`Device.Revoke`, que guarda a primeira hora se chamado de novo). "Reiniciar o app" chama essa rota
+> para cada aba pareada antes de apagar os dados; sem resposta, apaga mesmo assim. O QR do primeiro
+> celular (log e `/setup`) passa a existir sempre que não há Monitor ativo (dono ou visualizador não
+> revogado), e não só quando nunca houve dono. Assim um servidor sem Monitor volta a aceitar um
+> primeiro celular, que vira o novo dono. Se o dono sai e um visualizador fica, não há QR: o
+> visualizador adiciona os demais (bullet 1.12.15).

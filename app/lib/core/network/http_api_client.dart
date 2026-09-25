@@ -80,6 +80,27 @@ class HttpApiClient implements ApiClient {
     );
   }
 
+  // A credential the server already refuses counts as gone.
+  @override
+  Future<bool> leave(Uri baseUrl, String credential) async {
+    try {
+      final response = await _client
+          .delete(
+            baseUrl.resolve('/api/me'),
+            headers: {HttpHeaders.authorizationHeader: 'Bearer $credential'},
+          )
+          .timeout(timeout);
+      return response.statusCode == HttpStatus.noContent ||
+          response.statusCode == HttpStatus.unauthorized;
+    } on IOException {
+      return false;
+    } on http.ClientException {
+      return false;
+    } on TimeoutException {
+      return false;
+    }
+  }
+
   @override
   Future<ApiResult<PairingTokenResult>> createPairingToken(
     Uri baseUrl,

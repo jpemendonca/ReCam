@@ -55,6 +55,7 @@ class _HomeShellState extends State<HomeShell> {
   late final _reset = AppReset(
     camera: widget.cameraPairing,
     viewer: widget.viewerPairing,
+    api: widget.api,
   );
   late final _router = PairingRouter(
     camera: widget.cameraPairing,
@@ -140,8 +141,18 @@ class _HomeShellState extends State<HomeShell> {
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
+    final navigator = Navigator.of(context);
+    // Telling the server can take a few seconds when it does not answer.
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      ),
+    );
     await _reset.reset();
+    navigator.pop();
     if (mounted) setState(() => _selectedIndex = _cameraTab);
   }
 

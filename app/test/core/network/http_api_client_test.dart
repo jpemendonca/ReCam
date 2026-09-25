@@ -140,4 +140,38 @@ void main() {
       expect(sent.headers['authorization'], 'Bearer id.secret');
     });
   });
+
+  group('HttpApiClient.leave', () {
+    test('withNoContent_returnsTrue', () async {
+      // arrange
+      late http.Request sent;
+      final client = HttpApiClient(
+        MockClient((request) async {
+          sent = request;
+          return http.Response('', 204);
+        }),
+      );
+
+      // act
+      final left = await client.leave(baseUrl, 'id.secret');
+
+      // assert
+      expect(left, isTrue);
+      expect(sent.method, 'DELETE');
+      expect(sent.url.path, '/api/me');
+    });
+
+    test('whenServerIsDown_returnsFalse', () async {
+      // arrange
+      final client = HttpApiClient(
+        MockClient((_) async => throw http.ClientException('down')),
+      );
+
+      // act
+      final left = await client.leave(baseUrl, 'id.secret');
+
+      // assert
+      expect(left, isFalse);
+    });
+  });
 }

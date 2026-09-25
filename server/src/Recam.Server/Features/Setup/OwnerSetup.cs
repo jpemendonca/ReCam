@@ -9,8 +9,8 @@ using Recam.Server.Infrastructure.Tls;
 namespace Recam.Server.Features.Setup;
 
 /// <summary>
-/// Keeps exactly one valid owner pairing token while nobody owns the server. The secret lives
-/// only in memory; the database keeps its hash.
+/// Keeps exactly one valid owner pairing token while the server has no active Monitor. The
+/// secret lives only in memory; the database keeps its hash.
 /// </summary>
 public sealed partial class OwnerSetup(
     IDbContextFactory<RecamDbContext> databaseFactory,
@@ -28,9 +28,12 @@ public sealed partial class OwnerSetup(
         try
         {
             await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
-            var hasOwner = await database.Devices
-                .AnyAsync(device => device.Role == DeviceRole.Owner && device.RevokedAt == null, cancellationToken);
-            if (hasOwner)
+            // With no active Monitor left, nobody can add phones any more: the first-phone QR
+            // comes back.
+            var hasMonitor = await database.Devices.AnyAsync(
+                device => (device.Role == DeviceRole.Owner || device.Role == DeviceRole.Viewer) && device.RevokedAt == null,
+                cancellationToken);
+            if (hasMonitor)
             {
                 _current = null;
                 return new OwnerSetupStatus.Configured();

@@ -13,6 +13,7 @@ public static class DeviceEndpoints
     public static IEndpointRouteBuilder MapDeviceEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGet("/api/me", GetMe).RequireAuthorization();
+        endpoints.MapDelete("/api/me", LeaveAsync).RequireAuthorization();
         endpoints.MapGet("/api/cameras", GetCamerasAsync).RequireAuthorization(AuthExtensions.ViewerOrOwner);
         return endpoints;
     }
@@ -22,6 +23,24 @@ public static class DeviceEndpoints
             user.GetDeviceId(),
             user.FindFirstValue(ClaimTypes.Name) ?? string.Empty,
             Enum.Parse<DeviceRole>(user.FindFirstValue(ClaimTypes.Role) ?? string.Empty)));
+
+    /// <summary>
+    /// A phone that resets the app takes itself off the server, so it no longer counts as a
+    /// camera or a Monitor.
+    /// </summary>
+    private static async Task<NoContent> LeaveAsync(
+        ClaimsPrincipal user,
+        IDbContextFactory<RecamDbContext> databaseFactory,
+        TimeProvider timeProvider,
+        CancellationToken cancellationToken)
+    {
+        await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
+        var deviceId = user.GetDeviceId();
+        var device = await database.Devices.SingleAsync(candidate => candidate.Id == deviceId, cancellationToken);
+        device.Revoke(timeProvider.GetUtcNow());
+        await database.SaveChangesAsync(cancellationToken);
+        return TypedResults.NoContent();
+    }
 
     private static async Task<Ok<List<CameraStatus>>> GetCamerasAsync(
         IDbContextFactory<RecamDbContext> databaseFactory, DevicePresence presence, CancellationToken cancellationToken)

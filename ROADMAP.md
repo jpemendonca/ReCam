@@ -726,7 +726,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > testes de domínio do `UsageFor`, `pairingTokenUsed` no `HttpApiClient`, controller parando de
   > consultar depois de pareado e o fluxo no `app_test` (QR fecha e a lista recarrega).
 
-- [ ] **1.12.15 "Reiniciar o app" tira o celular do servidor**
+- [x] **1.12.15 "Reiniciar o app" tira o celular do servidor**
   - Origem: teste do autor em 2026-09-25: depois de reiniciar os dois celulares para trocar os
     papéis, o servidor continuou com os dois, e ninguém mais conseguia parear.
   - Escopo: `DELETE /api/me` (qualquer aparelho) revoga o próprio aparelho (`Device.Revoke`). "Reiniciar
@@ -736,6 +736,17 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     lista dos Monitores na próxima atualização.
   - Aceite: `DeleteMe_RevokesTheDevice`, `SetupPage_AfterLastMonitorLeaves_ShowsQrAgain` e o teste do
     `AppReset` avisando o servidor.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (107 no
+  > servidor, 159 no app). `Device.Revoke(now)` guarda a primeira hora (`RevokedAt ??= now`), e
+  > `Device.IsMonitor` (dono ou visualizador) passou a ser usado também no `IssuePairingToken`.
+  > `DELETE /api/me` carrega o próprio aparelho, revoga e salva (204). O `OwnerSetup` só considera o
+  > servidor configurado enquanto houver Monitor ativo; sem nenhum, volta a gerar o QR do primeiro
+  > celular, que vira o novo dono. Câmeras revogadas já saíam de `GET /api/cameras` e do painel. No
+  > app, `AppReset` chama `ApiClient.leave` para as abas pareadas em paralelo e apaga os dados mesmo
+  > se o servidor não responder (401 conta como já removido); o `HomeShell` mostra um indicador
+  > enquanto isso. O texto da confirmação diz que o celular sai do servidor. Revisão no `SPECS.md`
+  > 12. Extras: `Cameras_AfterCameraLeaves_DoesNotListIt`, `DeleteMe_WithoutCredential_Returns401`,
+  > `SetupPage_WhenOwnerLeavesButViewerStays_KeepsPanel`, `DeviceRevokeTests`, `HttpApiClient.leave`.
 
 - [ ] **1.12.16 Página do servidor com passo a passo e visual cuidado**
   - Origem: teste do autor em 2026-09-25: a página é feia e não diz o que fazer.

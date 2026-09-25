@@ -81,7 +81,7 @@
   "pairingErrorPairingLost": "This server changed or no longer knows this phone. Pair again.",
   "resetAppButton": "Reset app",
   "resetAppTitle": "Reset ReCam on this phone?",
-  "resetAppMessage": "This phone forgets its pairings and starts over, as if just installed. The server keeps the devices until they are removed.",
+  "resetAppMessage": "This phone leaves the server and forgets its pairings, as if just installed. To use it again, pair it again.",
   "resetAppConfirm": "Reset",
   "cameraModeSending": "Sending video.",
   "cameraModeWatchers": "{count, plural, =0{Nobody is watching.} =1{1 person is watching.} other{{count} people are watching.}}",

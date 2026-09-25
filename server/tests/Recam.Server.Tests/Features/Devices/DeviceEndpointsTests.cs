@@ -76,4 +76,57 @@ public sealed class DeviceEndpointsTests
         // assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
+
+    [Fact(DisplayName = "A device that leaves the server is revoked and loses access")]
+    public async Task DeleteMe_RevokesTheDevice()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var paired = await factory.PairDeviceAsync(DeviceRole.Camera, "Porch");
+        using var client = factory.CreateDeviceClient(paired.Credential);
+
+        // act
+        using var response = await client.DeleteAsync(MeUri, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+        using var afterwards = await client.GetAsync(MeUri, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Unauthorized, afterwards.StatusCode);
+        await using var database = await factory.CreateDatabaseAsync();
+        var device = await database.Devices.SingleAsync(candidate => candidate.Id == paired.DeviceId, TestContext.Current.CancellationToken);
+        Assert.Equal(factory.Time.GetUtcNow(), device.RevokedAt);
+    }
+
+    [Fact(DisplayName = "A camera that left no longer shows in the Monitor's list")]
+    public async Task Cameras_AfterCameraLeaves_DoesNotListIt()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera, "Porch");
+        using var cameraClient = factory.CreateDeviceClient(camera.Credential);
+        using var ownerClient = factory.CreateDeviceClient(owner.Credential);
+
+        // act
+        using var left = await cameraClient.DeleteAsync(MeUri, TestContext.Current.CancellationToken);
+
+        // assert
+        var cameras = await ownerClient.GetFromJsonAsync<List<CameraStatus>>(
+            new Uri("/api/cameras", UriKind.Relative), ApiJson.Options, TestContext.Current.CancellationToken);
+        Assert.Empty(cameras!);
+    }
+
+    [Fact(DisplayName = "Leaving the server requires a credential")]
+    public async Task DeleteMe_WithoutCredential_Returns401()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        using var client = factory.CreateClient();
+
+        // act
+        using var response = await client.DeleteAsync(MeUri, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
 }
