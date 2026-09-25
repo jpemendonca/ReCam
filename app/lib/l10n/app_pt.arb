@@ -73,5 +73,15 @@
   "cameraModeShowImage": "Ver imagem",
   "cameraModeHideImage": "Esconder imagem",
   "temperatureC": "{degrees} °C",
-  "cameraModeHot": "O celular esquentou: enviando vídeo em qualidade menor até esfriar."
+  "cameraModeHot": "O celular esquentou: enviando vídeo em qualidade menor até esfriar.",
+  "batteryGuideTitle": "Manter a câmera ligada",
+  "batteryGuideIntro": "O Android pode fechar o ReCam em segundo plano para economizar bateria, e a câmera ficaria offline. Libere o ReCam uma vez:",
+  "batteryGuideSamsung1": "Toque em Liberar, aqui embaixo, e confirme, para o ReCam deixar de ser otimizado.",
+  "batteryGuideSamsung2": "Em Abrir configurações do app, entre em Bateria e escolha Sem restrições. Se o ReCam estiver em Apps em suspensão, em Assistência do aparelho > Bateria, tire ele de lá.",
+  "batteryGuideXiaomi1": "Toque em Liberar, aqui embaixo, e confirme, para o ReCam deixar de ser otimizado.",
+  "batteryGuideXiaomi2": "Em Abrir configurações do app, ligue Início automático e, em Economia de bateria, escolha Sem restrições.",
+  "batteryGuideGeneric1": "Toque em Liberar, aqui embaixo, e confirme, para o ReCam deixar de ser otimizado.",
+  "batteryGuideAllow": "Liberar",
+  "batteryGuideOpenSettings": "Abrir configurações do app",
+  "batteryGuideContinue": "Continuar para o modo câmera"
 }

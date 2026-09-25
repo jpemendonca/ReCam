@@ -3,6 +3,7 @@ package io.recam.recam
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
+import android.os.Build
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -14,6 +15,7 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "batteryTemperature" -> result.success(batteryTemperature())
+                    "manufacturer" -> result.success(Build.MANUFACTURER)
                     else -> result.notImplemented()
                 }
             }

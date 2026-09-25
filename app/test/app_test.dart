@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/app.dart';
+import 'package:recam/camera/battery_guide.dart';
 import 'package:recam/camera/camera_mode_controller.dart';
 import 'package:recam/camera/camera_mode_screen.dart';
 import 'package:recam/camera/camera_pairing_controller.dart';
@@ -51,6 +52,9 @@ void main() {
         cameraPairing: cameraPairing,
         viewerPairing: viewerPairing,
         api: api,
+        batteryGuide: BatteryGuideController(
+          optimization: FakeBatteryOptimization(),
+        ),
         cameraMode: (_) => CameraModeController(
           hub: HubSession(client: FakeHubClient(), delay: (_) async {}),
           battery: FakeBatteryReader(),

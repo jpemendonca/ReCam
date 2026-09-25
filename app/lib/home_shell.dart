@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'app_reset.dart';
+import 'camera/battery_guide.dart';
 import 'camera/camera_mode_controller.dart';
 import 'camera/camera_pairing_controller.dart';
 import 'camera/camera_tab.dart';
@@ -24,6 +25,7 @@ class HomeShell extends StatefulWidget {
     required this.viewerPairing,
     required this.api,
     required this.cameraMode,
+    required this.batteryGuide,
     required this.cameraList,
     required this.links,
     required this.readCode,
@@ -35,6 +37,7 @@ class HomeShell extends StatefulWidget {
   final ViewerPairingController viewerPairing;
   final ApiClient api;
   final CameraModeFactory cameraMode;
+  final BatteryGuideController batteryGuide;
   final CameraListFactory cameraList;
   final LinkSource links;
   final PairingCodeReader readCode;
@@ -210,6 +213,7 @@ class _HomeShellState extends State<HomeShell> {
                   CameraTab(
                     pairing: widget.cameraPairing,
                     cameraMode: widget.cameraMode,
+                    batteryGuide: widget.batteryGuide,
                     onScan: (name) =>
                         _scan(from: PairingLinkTarget.camera, cameraName: name),
                   ),

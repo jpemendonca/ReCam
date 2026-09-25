@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart' show Key, SizedBox, Widget;
 
+import 'package:recam/core/device/battery_optimization.dart';
 import 'package:recam/core/device/battery_reader.dart';
 import 'package:recam/core/device/keep_alive.dart';
 import 'package:recam/core/device/screen_controller.dart';

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:recam/camera/battery_guide.dart';
 import 'package:recam/camera/camera_mode_controller.dart';
 import 'package:recam/camera/camera_mode_screen.dart';
 import 'package:recam/camera/camera_pairing_controller.dart';
@@ -19,10 +20,12 @@ void main() {
   late FakeApiClient api;
   late MemoryCredentialStore store;
   late CameraPairingController pairing;
+  late FakeBatteryOptimization optimization;
 
   setUp(() {
     api = FakeApiClient();
     store = MemoryCredentialStore();
+    optimization = FakeBatteryOptimization();
     pairing = CameraPairingController(
       pairing: PairingService(
         api: api,
@@ -48,6 +51,7 @@ void main() {
           body: CameraTab(
             pairing: pairing,
             onScan: (_) async {},
+            batteryGuide: BatteryGuideController(optimization: optimization),
             cameraMode: (_) => CameraModeController(
               hub: HubSession(client: FakeHubClient(), delay: (_) async {}),
               battery: FakeBatteryReader(),
@@ -109,6 +113,36 @@ void main() {
       // assert
       expect(find.byType(CameraModeScreen), findsNothing);
       expect(find.text('Start camera mode'), findsOneWidget);
+    });
+
+    testWidgets('withBatteryRestricted_showsTheGuideBeforeCameraMode', (
+      tester,
+    ) async {
+      // arrange
+      optimization
+        ..ignored = false
+        ..maker = 'Xiaomi';
+      await store.write(
+        PairingSlot.camera,
+        pairedSession(role: DeviceRole.camera),
+      );
+      await openTab(tester);
+
+      // act
+      await tester.tap(find.text('Start camera mode'));
+      await tester.pumpAndSettle();
+      final guideShown = find.text('Keep the camera running').evaluate().length;
+      await tester.tap(find.text('Allow'));
+      await tester.tap(find.text('Open app settings'));
+      await tester.tap(find.text('Continue to camera mode'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(guideShown, 1);
+      expect(optimization.requests, 1);
+      expect(optimization.settingsOpened, 1);
+      expect(find.byType(CameraModeScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
     });
   });
 }

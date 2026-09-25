@@ -115,5 +115,15 @@
       }
     }
   },
-  "cameraModeHot": "The phone is hot: sending lower quality video until it cools down."
+  "cameraModeHot": "The phone is hot: sending lower quality video until it cools down.",
+  "batteryGuideTitle": "Keep the camera running",
+  "batteryGuideIntro": "Android may close ReCam in the background to save battery, and the camera would go offline. Free ReCam once:",
+  "batteryGuideSamsung1": "Tap Allow below and confirm, so ReCam stops being optimized.",
+  "batteryGuideSamsung2": "In Open app settings, go to Battery and choose Unrestricted. If ReCam is under Sleeping apps in Device care > Battery, remove it from there.",
+  "batteryGuideXiaomi1": "Tap Allow below and confirm, so ReCam stops being optimized.",
+  "batteryGuideXiaomi2": "In Open app settings, turn on Autostart and, under Battery saver, choose No restrictions.",
+  "batteryGuideGeneric1": "Tap Allow below and confirm, so ReCam stops being optimized.",
+  "batteryGuideAllow": "Allow",
+  "batteryGuideOpenSettings": "Open app settings",
+  "batteryGuideContinue": "Continue to camera mode"
 }

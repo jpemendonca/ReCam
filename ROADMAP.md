@@ -864,12 +864,23 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > vídeo em qualidade menor até esfriar." Testes: histerese como função pura (limites 42 e 38,
   > faixa do meio nos dois sentidos, sem leitura) e o controller reduzindo e voltando.
 
-- [ ] **2.4 Tela guiada de otimização de bateria**
+- [x] **2.4 Tela guiada de otimização de bateria**
   - Origem: `SPECS.md` 11.
   - Escopo: ao iniciar o modo câmera pela primeira vez, verificar
     `isIgnoringBatteryOptimizations`. Se não estiver liberado, mostrar passos por fabricante
     (Samsung, Xiaomi, genérico) com botão que abre a tela de configuração certa.
   - Aceite: teste do controller escolhendo as instruções pelo fabricante.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho; o `MainActivity.kt` não foi
+  > compilado aqui. Gate verde (119 no servidor, 188 no app). `BatteryOptimization` em `core/device`
+  > usa o `permission_handler` (`ignoreBatteryOptimizations`, que já estava nas dependências) e o
+  > canal `io.recam.app/device`, que ganhou `manufacturer` (`Build.MANUFACTURER`). O manifesto pede
+  > `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`. O `BatteryGuideController.forManufacturer` escolhe
+  > Samsung, Xiaomi (também "Redmi" e "POCO", que às vezes vêm como fabricante) ou genérico. Decisão:
+  > o guia aparece antes do modo câmera sempre que a otimização ainda não estiver liberada, não só
+  > na primeira vez, porque o Android não guarda "já mostrei" e liberar é o que importa; depois de
+  > liberado, nunca mais aparece. A tela tem os passos, "Liberar" (o diálogo do próprio Android),
+  > "Abrir configurações do app" (Samsung e Xiaomi) e "Continuar para o modo câmera". Testes do
+  > controller por fabricante e widget test do guia antes do modo câmera.
 
 - [ ] **2.5 [aparelho] Validar 24 horas ligado**
   - Origem: robustez.

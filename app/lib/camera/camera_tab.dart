@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../core/pairing/pairing_labels.dart';
 import '../core/storage/credential_store.dart';
 import '../l10n/generated/app_localizations.dart';
+import 'battery_guide.dart';
+import 'battery_guide_screen.dart';
 import 'camera_mode_controller.dart';
 import 'camera_mode_screen.dart';
 import 'camera_pairing_controller.dart';
@@ -13,12 +15,14 @@ class CameraTab extends StatefulWidget {
   const CameraTab({
     required this.pairing,
     required this.cameraMode,
+    required this.batteryGuide,
     required this.onScan,
     super.key,
   });
 
   final CameraPairingController pairing;
   final CameraModeFactory cameraMode;
+  final BatteryGuideController batteryGuide;
 
   /// Opens the app's QR reader; the code read decides which tab pairs.
   final Future<void> Function(String cameraName) onScan;
@@ -44,18 +48,31 @@ class _CameraTabState extends State<CameraTab> {
     final state = widget.pairing.state;
     final justPaired = _previousState is CameraPairing && state is CameraPaired;
     _previousState = state;
-    if (justPaired && mounted) _openCameraMode(state.session);
+    if (justPaired && mounted) unawaited(_openCameraMode(state.session));
   }
 
-  void _openCameraMode(PairedSession session) =>
-      Navigator.of(context).push<void>(
+  // A phone that Android may put to sleep gets the battery guide before camera mode.
+  Future<void> _openCameraMode(PairedSession session) async {
+    final navigator = Navigator.of(context);
+    final guide = await widget.batteryGuide.check();
+    if (guide != null) {
+      await navigator.push<void>(
         MaterialPageRoute(
-          builder: (_) => CameraModeScreen(
-            create: () => widget.cameraMode(session),
-            onPairingLost: () => unawaited(widget.pairing.forget()),
-          ),
+          builder: (_) =>
+              BatteryGuideScreen(guide: guide, controller: widget.batteryGuide),
         ),
       );
+    }
+    if (!mounted) return;
+    await navigator.push<void>(
+      MaterialPageRoute(
+        builder: (_) => CameraModeScreen(
+          create: () => widget.cameraMode(session),
+          onPairingLost: () => unawaited(widget.pairing.forget()),
+        ),
+      ),
+    );
+  }
 
   @override
   void didChangeDependencies() {

@@ -4,8 +4,10 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 
 import 'app.dart';
+import 'camera/battery_guide.dart';
 import 'camera/camera_mode_controller.dart';
 import 'camera/camera_pairing_controller.dart';
+import 'core/device/battery_optimization.dart';
 import 'core/device/battery_reader.dart';
 import 'core/device/keep_alive.dart';
 import 'core/device/screen_controller.dart';
@@ -53,6 +55,9 @@ Future<void> main() async {
           session: session,
           signaling: SignalingClient(http.Client()),
         ),
+      ),
+      batteryGuide: BatteryGuideController(
+        optimization: PluginBatteryOptimization(),
       ),
       cameraList: (session) => CameraListController(
         api: api,

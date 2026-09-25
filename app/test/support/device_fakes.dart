@@ -55,6 +55,25 @@ class FakeBatteryReader implements BatteryReader {
   Future<BatteryReading> read() async => reading;
 }
 
+class FakeBatteryOptimization implements BatteryOptimization {
+  bool ignored = true;
+  String maker = 'samsung';
+  int requests = 0;
+  int settingsOpened = 0;
+
+  @override
+  Future<bool> isIgnored() async => ignored;
+
+  @override
+  Future<String> manufacturer() async => maker;
+
+  @override
+  Future<void> requestIgnore() async => requests++;
+
+  @override
+  Future<void> openAppSettings() async => settingsOpened++;
+}
+
 class FakeScreenController implements ScreenController {
   bool inCameraMode = false;
 
