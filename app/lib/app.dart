@@ -6,6 +6,7 @@ import 'core/network/api_client.dart';
 import 'core/pairing/pairing_link.dart';
 import 'home_shell.dart';
 import 'l10n/generated/app_localizations.dart';
+import 'viewer/camera_list_controller.dart';
 import 'viewer/viewer_pairing_controller.dart';
 
 class RecamApp extends StatelessWidget {
@@ -14,6 +15,7 @@ class RecamApp extends StatelessWidget {
     required this.viewerPairing,
     required this.api,
     required this.cameraMode,
+    required this.cameraList,
     required this.links,
     required this.ready,
     super.key,
@@ -23,6 +25,7 @@ class RecamApp extends StatelessWidget {
   final ViewerPairingController viewerPairing;
   final ApiClient api;
   final CameraModeFactory cameraMode;
+  final CameraListFactory cameraList;
   final LinkSource links;
   final Future<void> ready;
 
@@ -43,6 +46,7 @@ class RecamApp extends StatelessWidget {
         viewerPairing: viewerPairing,
         api: api,
         cameraMode: cameraMode,
+        cameraList: cameraList,
         links: links,
         ready: ready,
       ),

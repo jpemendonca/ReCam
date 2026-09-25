@@ -126,11 +126,38 @@ class HttpApiClient implements ApiClient {
     }
   }
 
+  @override
+  Future<ApiResult<List<CameraInfo>>> cameras(Uri baseUrl, String credential) {
+    return _sendJson(
+      () => _client.get(
+        baseUrl.resolve('/api/cameras'),
+        headers: {HttpHeaders.authorizationHeader: 'Bearer $credential'},
+      ),
+      expectedStatus: HttpStatus.ok,
+      parse: (json, _) {
+        if (json is! List<Object?>) return null;
+        final cameras = [for (final item in json) CameraInfo.tryParse(item)];
+        return cameras.contains(null) ? null : cameras.nonNulls.toList();
+      },
+    );
+  }
+
   Future<ApiResult<T>> _send<T>(
     Future<http.Response> Function() request, {
     required int expectedStatus,
     required T? Function(Map<String, Object?> json, Map<String, String> headers)
     parse,
+  }) => _sendJson(
+    request,
+    expectedStatus: expectedStatus,
+    parse: (json, headers) =>
+        json is Map<String, Object?> ? parse(json, headers) : null,
+  );
+
+  Future<ApiResult<T>> _sendJson<T>(
+    Future<http.Response> Function() request, {
+    required int expectedStatus,
+    required T? Function(Object? json, Map<String, String> headers) parse,
   }) async {
     final http.Response response;
     try {
@@ -150,9 +177,7 @@ class HttpApiClient implements ApiClient {
       } on FormatException {
         return ApiFailure(ApiFailureKind.unexpected);
       }
-      final value = json is Map<String, Object?>
-          ? parse(json, response.headers)
-          : null;
+      final value = parse(json, response.headers);
       return value == null
           ? ApiFailure(ApiFailureKind.unexpected)
           : ApiSuccess(value);

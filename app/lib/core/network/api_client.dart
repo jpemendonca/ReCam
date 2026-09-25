@@ -16,6 +16,8 @@ abstract interface class ApiClient {
     Uri baseUrl,
     String credential,
   );
+
+  Future<ApiResult<List<CameraInfo>>> cameras(Uri baseUrl, String credential);
 }
 
 enum ApiFailureKind {
@@ -73,4 +75,44 @@ class PairingTokenResult {
 
   /// How long the token stays valid, counted from the moment the server answered.
   final Duration validFor;
+}
+
+/// A camera as viewers see it: stored telemetry plus live presence. The same shape comes
+/// from `GET /api/cameras` and the hub message `CameraStatusChanged`.
+class CameraInfo {
+  const CameraInfo({
+    required this.id,
+    required this.name,
+    required this.online,
+    required this.publishing,
+    this.batteryLevel,
+    this.isCharging,
+  });
+
+  final String id;
+  final String name;
+  final bool online;
+  final bool publishing;
+  final int? batteryLevel;
+  final bool? isCharging;
+
+  /// Returns null for data that does not describe a camera.
+  static CameraInfo? tryParse(Object? json) {
+    if (json is! Map<String, Object?>) return null;
+    final id = json['id'];
+    final name = json['name'];
+    final online = json['online'];
+    final publishing = json['publishing'];
+    final batteryLevel = json['batteryLevel'];
+    final isCharging = json['isCharging'];
+    if (id is! String || name is! String || online is! bool) return null;
+    return CameraInfo(
+      id: id,
+      name: name,
+      online: online,
+      publishing: publishing == true,
+      batteryLevel: batteryLevel is num ? batteryLevel.toInt() : null,
+      isCharging: isCharging is bool ? isCharging : null,
+    );
+  }
 }

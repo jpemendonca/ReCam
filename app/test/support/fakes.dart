@@ -12,6 +12,20 @@ import 'package:recam/core/storage/credential_store.dart';
 part 'device_fakes.dart';
 
 class FakeApiClient implements ApiClient {
+  final List<ApiResult<List<CameraInfo>>> cameraResults = [];
+  int cameraCalls = 0;
+
+  @override
+  Future<ApiResult<List<CameraInfo>>> cameras(
+    Uri baseUrl,
+    String credential,
+  ) async {
+    cameraCalls++;
+    return cameraResults.isEmpty
+        ? ApiSuccess(const <CameraInfo>[])
+        : cameraResults.removeAt(0);
+  }
+
   Set<String> healthyHosts = {};
   ApiResult<PairResult> pairResult = ApiFailure(ApiFailureKind.unexpected);
   ApiResult<MeResult> meResult = ApiFailure(ApiFailureKind.unreachable);

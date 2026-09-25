@@ -8,6 +8,7 @@ import 'camera/camera_tab.dart';
 import 'core/network/api_client.dart';
 import 'core/pairing/pairing_link.dart';
 import 'l10n/generated/app_localizations.dart';
+import 'viewer/camera_list_controller.dart';
 import 'viewer/viewer_pairing_controller.dart';
 import 'viewer/watch_tab.dart';
 
@@ -17,6 +18,7 @@ class HomeShell extends StatefulWidget {
     required this.viewerPairing,
     required this.api,
     required this.cameraMode,
+    required this.cameraList,
     required this.links,
     required this.ready,
     super.key,
@@ -26,6 +28,7 @@ class HomeShell extends StatefulWidget {
   final ViewerPairingController viewerPairing;
   final ApiClient api;
   final CameraModeFactory cameraMode;
+  final CameraListFactory cameraList;
   final LinkSource links;
 
   /// Completes when both tabs have loaded their saved pairing.
@@ -94,7 +97,11 @@ class _HomeShellState extends State<HomeShell> {
               pairing: widget.cameraPairing,
               cameraMode: widget.cameraMode,
             ),
-            WatchTab(pairing: widget.viewerPairing, api: widget.api),
+            WatchTab(
+              pairing: widget.viewerPairing,
+              api: widget.api,
+              cameraList: widget.cameraList,
+            ),
           ],
         ),
       ),

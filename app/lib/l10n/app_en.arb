@@ -79,5 +79,11 @@
   "cameraModeHint": "The screen stays dark to save battery. Tap it to see this again.",
   "cameraModeExit": "Stop camera",
   "cameraModeNotificationTitle": "ReCam camera is on",
-  "cameraModeNotificationText": "This phone is working as a camera."
+  "cameraModeNotificationText": "This phone is working as a camera.",
+  "serverOnline": "connected",
+  "serverConnecting": "connecting…",
+  "cameraListError": "Could not load the cameras. Check the connection to the server.",
+  "cameraListEmpty": "No cameras yet.",
+  "cameraOnline": "Online",
+  "cameraOffline": "Offline"
 }

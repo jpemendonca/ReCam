@@ -7,6 +7,8 @@ import 'package:recam/core/network/pinned_http_overrides.dart';
 import 'package:recam/core/pairing/device_role.dart';
 import 'package:recam/core/pairing/pairing_service.dart';
 import 'package:recam/core/storage/credential_store.dart';
+import 'package:recam/core/network/hub_session.dart';
+import 'package:recam/viewer/camera_list_controller.dart';
 import 'package:recam/viewer/viewer_pairing_controller.dart';
 
 import 'support/fakes.dart';
@@ -45,6 +47,11 @@ void main() {
         viewerPairing: viewerPairing,
         api: api,
         cameraMode: (_) => throw StateError('camera mode is not opened here'),
+        cameraList: (session) => CameraListController(
+          api: api,
+          session: session,
+          hub: HubSession(client: FakeHubClient(), delay: (_) async {}),
+        ),
         links: links,
         ready: Future.value(),
       ),
@@ -179,7 +186,7 @@ void main() {
 
       // assert
       expect(find.text('Paired with ReCam'), findsOneWidget);
-      expect(find.text('Role: owner'), findsOneWidget);
+      expect(find.textContaining('Role: owner'), findsOneWidget);
       expect(find.text('Add camera'), findsOneWidget);
     });
   });

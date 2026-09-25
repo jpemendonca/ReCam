@@ -44,5 +44,11 @@
   "cameraModeHint": "A tela fica escura para economizar bateria. Toque nela para ver isto de novo.",
   "cameraModeExit": "Parar câmera",
   "cameraModeNotificationTitle": "Câmera ReCam ligada",
-  "cameraModeNotificationText": "Este celular está funcionando como câmera."
+  "cameraModeNotificationText": "Este celular está funcionando como câmera.",
+  "serverOnline": "conectado",
+  "serverConnecting": "conectando…",
+  "cameraListError": "Não deu para carregar as câmeras. Confira a conexão com o servidor.",
+  "cameraListEmpty": "Nenhuma câmera ainda.",
+  "cameraOnline": "Online",
+  "cameraOffline": "Offline"
 }

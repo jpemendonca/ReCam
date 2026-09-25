@@ -347,6 +347,8 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Escopo: `./scripts/dev.ps1 -Reset` (1.6.5) deixa o emulador pareado como dono. O emulador abre
     "Adicionar câmera". O A10 lê esse QR na tela do PC pela aba Câmera.
   - Aceite: o emulador mostra "pareado" como dono e o A10 mostra "pareado" como câmera.
+  > Bloqueado (2026-09-25): aguardando o autor com o A10 desbloqueado. O link de câmera no A10
+  > já foi conferido pelo agente (log `paired as Camera`).
 
 - [x] **1.7 [junto] Servidor: hub, presença e telemetria**
   - Origem: caminho principal, passo 5.
@@ -382,14 +384,24 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > o Android 14+ recusa foreground service de câmera sem a permissão de câmera concedida antes.
   > A reconexão fica em `core/network/hub_session.dart` e será reusada pela aba Assistir. O
   > overlay começa visível e some em 10 s.
+  > Validação no aparelho (2026-09-25): caminho percorrido no emulador como câmera (dono pareado
+  > pela API com `curl`). O link de câmera pareou o emulador, "Start camera mode" abriu a tela
+  > preta, as permissões de câmera e notificação foram aceitas, e `GET /api/cameras` mostrou a
+  > câmera `online: true` com `batteryLevel: 100`. Isso prova hub, TLS com pinning e foreground
+  > service rodando. O A10 também pareou como câmera pelo link, mas estava bloqueado com senha e
+  > o modo câmera não foi aberto nele.
 
-- [ ] **1.9 App: lista de câmeras na aba Assistir**
+- [x] **1.9 App: lista de câmeras na aba Assistir**
   - Origem: caminho principal, passo 5.
   - Escopo: `viewer/`: lista via `GET /api/cameras`, atualizada por `CameraStatusChanged`.
     Cada item mostra nome, online ou offline e bateria com o ícone de carregando. Lista vazia
     com o botão "Adicionar câmera".
   - Aceite: teste `CameraListController` (aplica `CameraStatusChanged` sobre a lista inicial,
     com fakes).
+  > Validação (2026-09-25): só código escrito, gate verde (83 testes no app). A lista recarrega
+  > pela API a cada (re)conexão do hub, porque mensagens enviadas enquanto offline se perdem. O
+  > botão "Adicionar câmera" foi para o topo da lista (e aparece no meio quando está vazia).
+  > `CameraInfo` é o mesmo formato para a API e para o hub.
 
 - [ ] **1.10 [junto] Servidor: proxy WHIP/WHEP e transmissão sob demanda**
   - Origem: caminho principal, passo 6.
