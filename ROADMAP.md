@@ -240,13 +240,23 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > header `Date` da resposta, para o relógio do celular não encurtar nem esticar o QR; o QR é
   > renovado ao chegar em zero, sem margem.
 
-- [ ] **1.6 App: pareamento da câmera na aba Câmera**
+- [x] **1.6 App: pareamento da câmera na aba Câmera**
   - Origem: caminho principal, passo 4.
   - Escopo: `camera/`: tela "não pareado" (ler QR, campo de nome, 1..40 caracteres, padrão
     "Camera"/"Câmera" vindo do ARB) e tela "pareado" com o botão "Iniciar modo câmera", ainda
     sem ação de vídeo. Reusa `QrPayload`, `ApiClient` e `CredentialStore` de `core/`.
   - Aceite: teste `CameraPairingController` (pareia com fake e salva a credencial da aba
     Câmera, separada da aba Assistir).
+  > Validação (2026-09-24): só código escrito. Não percorrido no aparelho. Gate verde com 49
+  > testes do servidor e 54 do app. `CameraPairingController` (pareia com fake, salva na aba
+  > Câmera sem tocar na aba Assistir, recusa token de dono) e `DeviceNameValidator` (1..40, sem
+  > caractere de controle, todos os erros juntos). Decisões no caminho: o botão "Iniciar modo
+  > câmera" aparece desabilitado, porque o escopo diz "ainda sem ação de vídeo" e um botão ligado
+  > sem efeito enganaria (o 1.8 liga); o nome é validado antes de abrir o leitor de QR, e o texto
+  > digitado sobrevive a uma falha de pareamento; os textos de erro de pareamento e o nome do
+  > papel foram para `core/pairing/pairing_labels.dart`, compartilhados pelas duas abas; a aba
+  > Câmera reusa `PairingService`, e o servidor recusa nome inválido de novo (o app não confia
+  > só na validação local).
 
 - [ ] **1.7 [junto] Servidor: hub, presença e telemetria**
   - Origem: caminho principal, passo 5.

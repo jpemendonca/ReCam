@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 
 import 'app.dart';
+import 'camera/camera_pairing_controller.dart';
 import 'core/network/http_api_client.dart';
 import 'core/network/pinned_http_overrides.dart';
 import 'core/pairing/pairing_service.dart';
@@ -22,7 +23,14 @@ Future<void> main() async {
     store: SecureCredentialStore(),
     pins: pins,
   );
+  final cameraPairing = CameraPairingController(pairing: pairing);
   final viewerPairing = ViewerPairingController(pairing: pairing);
-  runApp(RecamApp(viewerPairing: viewerPairing, api: api));
-  await viewerPairing.load();
+  runApp(
+    RecamApp(
+      cameraPairing: cameraPairing,
+      viewerPairing: viewerPairing,
+      api: api,
+    ),
+  );
+  await Future.wait([cameraPairing.load(), viewerPairing.load()]);
 }

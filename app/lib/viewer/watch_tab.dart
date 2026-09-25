@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/network/api_client.dart';
 import '../core/pairing/device_role.dart';
+import '../core/pairing/pairing_labels.dart';
 import '../core/pairing/pairing_service.dart';
 import '../core/scanner/qr_scanner_screen.dart';
 import '../core/storage/credential_store.dart';
@@ -67,7 +68,7 @@ class _NotPaired extends StatelessWidget {
             if (failure != null) ...[
               const SizedBox(height: 16),
               Text(
-                _failureText(l10n, failure),
+                pairingFailureText(l10n, failure),
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
@@ -77,16 +78,6 @@ class _NotPaired extends StatelessWidget {
       ),
     );
   }
-
-  static String _failureText(AppLocalizations l10n, PairingFailure failure) =>
-      switch (failure) {
-        PairingFailure.invalidQr => l10n.pairingErrorInvalidQr,
-        PairingFailure.serverUnreachable => l10n.pairingErrorUnreachable,
-        PairingFailure.tokenRejected => l10n.pairingErrorTokenRejected,
-        PairingFailure.wrongRole => l10n.pairingErrorWrongRole,
-        PairingFailure.invalidInput ||
-        PairingFailure.unexpected => l10n.pairingErrorUnexpected,
-      };
 }
 
 class _Paired extends StatelessWidget {
@@ -98,11 +89,6 @@ class _Paired extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final roleName = switch (session.role) {
-      DeviceRole.owner => l10n.roleOwner,
-      DeviceRole.viewer => l10n.roleViewer,
-      DeviceRole.camera => l10n.roleCamera,
-    };
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -114,7 +100,7 @@ class _Paired extends StatelessWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
-          Text(l10n.watchPairedRole(roleName)),
+          Text(l10n.watchPairedRole(deviceRoleText(l10n, session.role))),
           if (session.role == DeviceRole.owner) ...[
             const SizedBox(height: 24),
             FilledButton.icon(

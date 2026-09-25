@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'camera/camera_pairing_controller.dart';
 import 'camera/camera_tab.dart';
 import 'core/network/api_client.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -7,8 +8,14 @@ import 'viewer/viewer_pairing_controller.dart';
 import 'viewer/watch_tab.dart';
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({required this.viewerPairing, required this.api, super.key});
+  const HomeShell({
+    required this.cameraPairing,
+    required this.viewerPairing,
+    required this.api,
+    super.key,
+  });
 
+  final CameraPairingController cameraPairing;
   final ViewerPairingController viewerPairing;
   final ApiClient api;
 
@@ -27,7 +34,7 @@ class _HomeShellState extends State<HomeShell> {
         child: IndexedStack(
           index: _selectedIndex,
           children: [
-            const CameraTab(),
+            CameraTab(pairing: widget.cameraPairing),
             WatchTab(pairing: widget.viewerPairing, api: widget.api),
           ],
         ),

@@ -3,7 +3,18 @@
   "appTitle": "Recam",
   "cameraTab": "Camera",
   "watchTab": "Watch",
-  "cameraPlaceholder": "Use this phone as a camera.",
+  "cameraNotPaired": "Scan the QR code shown by Add camera on your other phone to use this phone as a camera.",
+  "cameraNameLabel": "Camera name",
+  "defaultCameraName": "Camera",
+  "startCameraMode": "Start camera mode",
+  "deviceNameEmpty": "Enter a name.",
+  "deviceNameTooLong": "Use at most {max} characters.",
+  "@deviceNameTooLong": {
+    "placeholders": {
+      "max": {"type": "int"}
+    }
+  },
+  "deviceNameInvalidCharacters": "The name has characters that are not allowed.",
   "watchNotPaired": "Scan the QR code your Recam server shows to make this phone the owner.",
   "scanQrButton": "Scan QR code",
   "scanQrTitle": "Scan QR code",
