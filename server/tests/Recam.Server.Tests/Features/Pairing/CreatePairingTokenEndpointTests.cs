@@ -42,6 +42,53 @@ public sealed class CreatePairingTokenEndpointTests
         Assert.Equal(DeviceRole.Camera, token.GrantsRole);
     }
 
+    [Fact(DisplayName = "A viewer gets a QR URI whose token pairs a camera")]
+    public async Task CreatePairingToken_AsViewer_ForCamera_ReturnsQrUri()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var viewer = await factory.PairDeviceAsync(DeviceRole.Viewer);
+        using var viewerClient = factory.CreateDeviceClient(viewer.Credential);
+
+        // act
+        using var response = await viewerClient.PostAsJsonAsync(TokensUri, new { role = "camera" }, ApiJson.Options, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<CreatePairingTokenResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
+        var query = HttpUtility.ParseQueryString(new Uri(body!.QrUri).Query);
+        Assert.Equal("camera", query["r"]);
+        using var cameraClient = factory.CreateClient();
+        using var paired = await cameraClient.PairAsync(query["t"], "Garage");
+        var camera = await paired.Content.ReadFromJsonAsync<PairResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
+        Assert.Equal(DeviceRole.Camera, camera?.Role);
+    }
+
+    [Fact(DisplayName = "A viewer token pairs another phone as a viewer, which can add devices too")]
+    public async Task CreatePairingToken_ForViewer_PairsAsViewer()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        using var ownerClient = factory.CreateDeviceClient(owner.Credential);
+        using var response = await ownerClient.PostAsJsonAsync(TokensUri, new { role = "viewer" }, ApiJson.Options, TestContext.Current.CancellationToken);
+        var body = await response.Content.ReadFromJsonAsync<CreatePairingTokenResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
+        var query = HttpUtility.ParseQueryString(new Uri(body!.QrUri).Query);
+        using var newPhoneClient = factory.CreateClient();
+
+        // act
+        using var paired = await newPhoneClient.PairAsync(query["t"], "Living room phone");
+
+        // assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        Assert.Equal("viewer", query["r"]);
+        var viewer = await paired.Content.ReadFromJsonAsync<PairResponse>(ApiJson.Options, TestContext.Current.CancellationToken);
+        Assert.Equal(DeviceRole.Viewer, viewer?.Role);
+        using var viewerClient = factory.CreateDeviceClient(viewer!.Credential);
+        using var created = await viewerClient.PostAsJsonAsync(TokensUri, new { role = "camera" }, ApiJson.Options, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+    }
+
     [Fact(DisplayName = "A camera cannot create pairing tokens")]
     public async Task CreatePairingToken_AsCamera_Returns403()
     {
@@ -71,7 +118,7 @@ public sealed class CreatePairingTokenEndpointTests
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    [Theory(DisplayName = "Roles other than camera are rejected with a validation problem")]
+    [Theory(DisplayName = "Roles other than camera and viewer are rejected with a validation problem")]
     [InlineData("owner")]
     [InlineData("nonsense")]
     [InlineData(null)]

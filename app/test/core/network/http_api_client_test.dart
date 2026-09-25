@@ -39,7 +39,7 @@ void main() {
     });
   });
 
-  group('HttpApiClient.createCameraPairingToken', () {
+  group('HttpApiClient.createPairingToken', () {
     test('withCreatedResponse_countsValidityFromServerDate', () async {
       // arrange
       late http.Request sent;
@@ -58,9 +58,10 @@ void main() {
       );
 
       // act
-      final result = await client.createCameraPairingToken(
+      final result = await client.createPairingToken(
         baseUrl,
         'id.secret',
+        DeviceRole.camera,
       );
 
       // assert
@@ -72,6 +73,29 @@ void main() {
       expect(jsonDecode(sent.body), {'role': 'camera'});
     });
 
+    test('forViewer_sendsViewerRole', () async {
+      // arrange
+      late http.Request sent;
+      final client = HttpApiClient(
+        MockClient((request) async {
+          sent = request;
+          return http.Response(
+            jsonEncode({
+              'qrUri': 'recam://pair?v=1',
+              'expiresAt': '2026-09-24T12:10:00+00:00',
+            }),
+            201,
+          );
+        }),
+      );
+
+      // act
+      await client.createPairingToken(baseUrl, 'id.secret', DeviceRole.viewer);
+
+      // assert
+      expect(jsonDecode(sent.body), {'role': 'viewer'});
+    });
+
     test('withForbiddenResponse_returnsUnexpectedFailure', () async {
       // arrange
       final client = HttpApiClient(
@@ -79,9 +103,10 @@ void main() {
       );
 
       // act
-      final result = await client.createCameraPairingToken(
+      final result = await client.createPairingToken(
         baseUrl,
         'id.secret',
+        DeviceRole.camera,
       );
 
       // assert

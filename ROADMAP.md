@@ -608,7 +608,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > (câmera a partir da aba Assistir, visualizador e dono a partir da aba Câmera, código inválido,
   > aba já pareada, link estranho).
 
-- [ ] **1.12.9 Qualquer celular que assiste adiciona câmeras e visualizadores**
+- [x] **1.12.9 Qualquer celular que assiste adiciona câmeras e visualizadores**
   - Origem: conversa com o autor em 2026-09-25: não dava para inverter os papéis dos celulares.
     Traz para agora o que era o bullet 3.2.
   - Escopo: `POST /api/pairing-tokens` aceita `role: "camera"` e `role: "viewer"` e passa a valer para
@@ -618,6 +618,17 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Aceite: `CreatePairingToken_AsViewer_ForCamera_ReturnsQrUri`,
     `CreatePairingToken_ForViewer_PairsAsViewer`, `CreatePairingToken_AsCamera_Returns403`, e o
     teste da tela de adicionar com os dois tipos.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (90 no
+  > servidor, 140 no app). No servidor, a regra ficou em `Device.IssuePairingToken`: dono ou
+  > visualizador ativo emite; câmera recebe `pairing.issuer_cannot_invite` (novo nome do antigo
+  > `pairing.issuer_not_owner`); papel de dono continua `pairing.owner_role_not_grantable`. O
+  > validador aceita `camera` e `viewer`, e o endpoint passou de `OwnerOnly` para `ViewerOrOwner`.
+  > A política `OwnerOnly` ficou sem uso por enquanto; ela continua registrada porque o 3.1
+  > (revogar) é só do dono. No app, `createCameraPairingToken` virou `createPairingToken(role)`, e a
+  > tela "Adicionar" (antes "Adicionar câmera") tem a escolha "Outra câmera" / "Outro celular para
+  > assistir", cada uma com seu QR, contagem e "Copiar código". O botão aparece para qualquer
+  > celular da aba Assistir, não só para o dono. Extras: testes de domínio do visualizador emitindo
+  > e da câmera recusada, `forViewer_sendsViewerRole` e `start_forViewer_asksForAViewerQr`.
 
 - [ ] **1.12.10 Primeira abertura pergunta o uso do celular**
   - Origem: conversa com o autor em 2026-09-25.

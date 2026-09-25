@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/core/network/api_client.dart';
-import 'package:recam/viewer/add_camera_controller.dart';
+import 'package:recam/core/pairing/device_role.dart';
+import 'package:recam/viewer/add_device_controller.dart';
 
 import '../support/fakes.dart';
 
@@ -12,14 +13,18 @@ PairingTokenResult _token(String qrUri, {int seconds = 3}) =>
 
 void main() {
   late FakeApiClient api;
-  late AddCameraController controller;
+  late AddDeviceController controller;
 
   setUp(() {
     api = FakeApiClient();
-    controller = AddCameraController(api: api, session: pairedSession());
+    controller = AddDeviceController(
+      api: api,
+      session: pairedSession(),
+      role: DeviceRole.camera,
+    );
   });
 
-  group('AddCameraController', () {
+  group('AddDeviceController', () {
     test('start_withOwnerSession_showsQrUriWithFullValidity', () async {
       // arrange
       api.tokenResults.add(ApiSuccess(_token('recam://pair?a', seconds: 600)));
@@ -28,7 +33,7 @@ void main() {
       await controller.start();
 
       // assert
-      final state = controller.state as AddCameraReady;
+      final state = controller.state as AddDeviceReady;
       expect(state.qrUri, 'recam://pair?a');
       expect(state.remaining, const Duration(minutes: 10));
       controller.dispose();
@@ -42,7 +47,7 @@ void main() {
       await controller.start();
 
       // assert
-      final state = controller.state as AddCameraFailed;
+      final state = controller.state as AddDeviceFailed;
       expect(state.kind, ApiFailureKind.unreachable);
       controller.dispose();
     });
@@ -56,7 +61,7 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       // assert
-      final state = controller.state as AddCameraReady;
+      final state = controller.state as AddDeviceReady;
       expect(state.remaining, const Duration(seconds: 2));
       controller.dispose();
     });
@@ -72,9 +77,31 @@ void main() {
       await tester.pump(const Duration(seconds: 3));
 
       // assert
-      final state = controller.state as AddCameraReady;
+      final state = controller.state as AddDeviceReady;
       expect(state.qrUri, 'recam://pair?b');
       expect(api.tokenCalls, 2);
+      controller.dispose();
+    });
+
+    test('start_forViewer_asksForAViewerQr', () async {
+      // arrange
+      final viewerController = AddDeviceController(
+        api: api,
+        session: pairedSession(role: DeviceRole.viewer),
+        role: DeviceRole.viewer,
+      );
+      api.tokenResults.add(ApiSuccess(_token('recam://pair?r=viewer')));
+
+      // act
+      await viewerController.start();
+
+      // assert
+      expect(api.tokenRoles, [DeviceRole.viewer]);
+      expect(
+        (viewerController.state as AddDeviceReady).qrUri,
+        'recam://pair?r=viewer',
+      );
+      viewerController.dispose();
       controller.dispose();
     });
   });

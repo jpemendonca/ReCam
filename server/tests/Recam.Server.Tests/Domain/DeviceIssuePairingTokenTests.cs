@@ -23,29 +23,45 @@ public sealed class DeviceIssuePairingTokenTests
         Assert.Equal(Now.Add(PairingToken.Lifetime), token.ExpiresAt);
     }
 
-    [Theory(DisplayName = "Devices that are not the owner cannot issue tokens")]
+    [Theory(DisplayName = "A viewer adds cameras and other viewers")]
     [InlineData(DeviceRole.Camera)]
     [InlineData(DeviceRole.Viewer)]
-    public void IssuePairingToken_ByNonOwner_ReturnsIssuerNotOwner(DeviceRole role)
+    public void IssuePairingToken_ByViewer_IssuesTokenForRole(DeviceRole grantsRole)
     {
         // arrange
-        var device = PairDevice(role);
+        var viewer = PairDevice(DeviceRole.Viewer);
 
         // act
-        var result = device.IssuePairingToken(DeviceRole.Camera, Now);
+        var result = viewer.IssuePairingToken(grantsRole, Now);
 
         // assert
-        Assert.Equal(PairingErrors.IssuerNotOwner, result.Error);
+        Assert.Equal(grantsRole, result.Value.Token.GrantsRole);
+        Assert.Equal(viewer.Id, result.Value.Token.CreatedByDeviceId);
     }
 
-    [Fact(DisplayName = "A token can never grant the owner role")]
-    public void IssuePairingToken_ForOwnerRole_ReturnsOwnerRoleNotGrantable()
+    [Fact(DisplayName = "A camera cannot issue tokens")]
+    public void IssuePairingToken_ByCamera_ReturnsIssuerCannotInvite()
     {
         // arrange
-        var owner = PairDevice(DeviceRole.Owner);
+        var camera = PairDevice(DeviceRole.Camera);
 
         // act
-        var result = owner.IssuePairingToken(DeviceRole.Owner, Now);
+        var result = camera.IssuePairingToken(DeviceRole.Camera, Now);
+
+        // assert
+        Assert.Equal(PairingErrors.IssuerCannotInvite, result.Error);
+    }
+
+    [Theory(DisplayName = "A token can never grant the owner role")]
+    [InlineData(DeviceRole.Owner)]
+    [InlineData(DeviceRole.Viewer)]
+    public void IssuePairingToken_ForOwnerRole_ReturnsOwnerRoleNotGrantable(DeviceRole issuerRole)
+    {
+        // arrange
+        var issuer = PairDevice(issuerRole);
+
+        // act
+        var result = issuer.IssuePairingToken(DeviceRole.Owner, Now);
 
         // assert
         Assert.Equal(PairingErrors.OwnerRoleNotGrantable, result.Error);

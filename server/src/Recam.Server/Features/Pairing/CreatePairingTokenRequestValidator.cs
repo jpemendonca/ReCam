@@ -4,17 +4,22 @@ namespace Recam.Server.Features.Pairing;
 
 public static class CreatePairingTokenRequestValidator
 {
-    /// <summary>Only camera tokens can be requested for now.</summary>
+    /// <summary>A token can be asked for a camera or a viewer; the owner role is never on offer.</summary>
     public static Result<DeviceRole> Validate(CreatePairingTokenRequest request)
     {
-        if (!string.Equals(request.Role, nameof(DeviceRole.Camera), StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(request.Role, nameof(DeviceRole.Camera), StringComparison.OrdinalIgnoreCase))
         {
-            return DomainError.Validation(new Dictionary<string, string[]>
-            {
-                ["role"] = ["Role must be 'camera'."],
-            });
+            return DeviceRole.Camera;
         }
 
-        return DeviceRole.Camera;
+        if (string.Equals(request.Role, nameof(DeviceRole.Viewer), StringComparison.OrdinalIgnoreCase))
+        {
+            return DeviceRole.Viewer;
+        }
+
+        return DomainError.Validation(new Dictionary<string, string[]>
+        {
+            ["role"] = ["Role must be 'camera' or 'viewer'."],
+        });
     }
 }

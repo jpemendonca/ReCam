@@ -69,14 +69,17 @@ class FakeApiClient implements ApiClient {
   Future<ApiResult<MeResult>> me(Uri baseUrl, String credential) async =>
       meResult;
 
-  int tokenCalls = 0;
+  final List<DeviceRole> tokenRoles = [];
+
+  int get tokenCalls => tokenRoles.length;
 
   @override
-  Future<ApiResult<PairingTokenResult>> createCameraPairingToken(
+  Future<ApiResult<PairingTokenResult>> createPairingToken(
     Uri baseUrl,
     String credential,
+    DeviceRole role,
   ) async {
-    tokenCalls++;
+    tokenRoles.add(role);
     return tokenResults.removeAt(0);
   }
 }

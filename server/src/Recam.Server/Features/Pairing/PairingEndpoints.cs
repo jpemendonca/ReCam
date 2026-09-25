@@ -33,7 +33,7 @@ public static partial class PairingEndpoints
             .AllowAnonymous()
             .RequireRateLimiting(RateLimitPolicy);
         endpoints.MapPost("/api/pairing-tokens", CreatePairingTokenAsync)
-            .RequireAuthorization(AuthExtensions.OwnerOnly);
+            .RequireAuthorization(AuthExtensions.ViewerOrOwner);
         return endpoints;
     }
 
@@ -96,10 +96,10 @@ public static partial class PairingEndpoints
         }
 
         await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
-        var ownerId = user.GetDeviceId();
-        var owner = await database.Devices.SingleAsync(device => device.Id == ownerId, cancellationToken);
+        var issuerId = user.GetDeviceId();
+        var issuer = await database.Devices.SingleAsync(device => device.Id == issuerId, cancellationToken);
         var grantedRole = validation.Value;
-        var issued = owner.IssuePairingToken(grantedRole, timeProvider.GetUtcNow());
+        var issued = issuer.IssuePairingToken(grantedRole, timeProvider.GetUtcNow());
         if (issued.IsFailure)
         {
             return issued.Error.ToHttpResult();
@@ -108,7 +108,7 @@ public static partial class PairingEndpoints
         database.PairingTokens.Add(issued.Value.Token);
         await database.SaveChangesAsync(cancellationToken);
         var logger = loggerFactory.CreateLogger(LogCategory);
-        LogTokenIssued(logger, owner.Id, grantedRole);
+        LogTokenIssued(logger, issuer.Id, grantedRole);
 
         var serverUrls = PublicUrlResolver.Resolve(settings, PublicUrlResolver.DetectLocalAddresses());
         return TypedResults.Created(

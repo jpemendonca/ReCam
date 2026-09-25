@@ -63,14 +63,14 @@ public sealed class Device
     }
 
     /// <summary>
-    /// Creates a pairing token on behalf of this device. Only an active owner may do it, and
-    /// never for the owner role: the server has a single owner.
+    /// Creates a pairing token on behalf of this device. Any active phone that watches (owner or
+    /// viewer) may add cameras and other viewers, but never an owner: the server has a single one.
     /// </summary>
     public Result<IssuedPairingToken> IssuePairingToken(DeviceRole grantsRole, DateTimeOffset now)
     {
-        if (Role != DeviceRole.Owner || IsRevoked)
+        if (Role is not (DeviceRole.Owner or DeviceRole.Viewer) || IsRevoked)
         {
-            return PairingErrors.IssuerNotOwner;
+            return PairingErrors.IssuerCannotInvite;
         }
 
         if (grantsRole == DeviceRole.Owner)

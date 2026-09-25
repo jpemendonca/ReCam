@@ -81,9 +81,10 @@ class HttpApiClient implements ApiClient {
   }
 
   @override
-  Future<ApiResult<PairingTokenResult>> createCameraPairingToken(
+  Future<ApiResult<PairingTokenResult>> createPairingToken(
     Uri baseUrl,
     String credential,
+    DeviceRole role,
   ) {
     return _send(
       () => _client.post(
@@ -92,7 +93,7 @@ class HttpApiClient implements ApiClient {
           HttpHeaders.contentTypeHeader: 'application/json',
           HttpHeaders.authorizationHeader: 'Bearer $credential',
         },
-        body: jsonEncode({'role': 'camera'}),
+        body: jsonEncode({'role': role.name}),
       ),
       expectedStatus: HttpStatus.created,
       parse: (json, headers) {

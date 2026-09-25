@@ -12,9 +12,11 @@ abstract interface class ApiClient {
 
   Future<ApiResult<MeResult>> me(Uri baseUrl, String credential);
 
-  Future<ApiResult<PairingTokenResult>> createCameraPairingToken(
+  /// Creates a QR code that pairs another phone as [role] (camera or viewer).
+  Future<ApiResult<PairingTokenResult>> createPairingToken(
     Uri baseUrl,
     String credential,
+    DeviceRole role,
   );
 
   Future<ApiResult<List<CameraInfo>>> cameras(Uri baseUrl, String credential);

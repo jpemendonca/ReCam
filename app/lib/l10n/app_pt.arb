@@ -15,8 +15,7 @@
   "scanQrTitle": "Ler QR code",
   "scannerUnavailable": "Não deu para abrir a câmera. Permita o acesso à câmera e tente de novo.",
   "addCameraButton": "Adicionar câmera",
-  "addCameraTitle": "Adicionar câmera",
-  "addCameraInstructions": "No celular câmera, abra o ReCam, vá na aba Câmera e leia este QR code.",
+  "addCameraInstructions": "No celular câmera, abra o ReCam e leia este QR code.",
   "addCameraExpiresIn": "Expira em {time}",
   "addCameraError": "Não deu para criar o QR code. Confira a conexão com o servidor.",
   "retryButton": "Tentar de novo",
@@ -65,5 +64,10 @@
   "cameraModeWatchers": "{count, plural, =0{Ninguém está assistindo.} =1{1 pessoa está assistindo.} other{{count} pessoas estão assistindo.}}",
   "cameraStreaming": "transmitindo",
   "cameraIdle": "parada",
-  "refreshButton": "Atualizar"
+  "refreshButton": "Atualizar",
+  "addDeviceButton": "Adicionar",
+  "addDeviceTitle": "Adicionar",
+  "addDeviceCamera": "Outra câmera",
+  "addDeviceViewer": "Outro celular para assistir",
+  "addViewerInstructions": "No outro celular, abra o ReCam e leia este QR code. Ele também vai poder assistir a estas câmeras."
 }

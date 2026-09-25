@@ -3,11 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/network/api_client.dart';
-import '../core/pairing/device_role.dart';
 import '../core/pairing/pairing_labels.dart';
 import '../core/storage/credential_store.dart';
 import '../l10n/generated/app_localizations.dart';
-import 'add_camera_screen.dart';
+import 'add_device_screen.dart';
 import 'camera_list_controller.dart';
 import 'live_view_screen.dart';
 
@@ -69,16 +68,15 @@ class _CameraListViewState extends State<CameraListView> {
     ),
   );
 
-  void _addCamera() => Navigator.of(context).push<void>(
+  void _addDevice() => Navigator.of(context).push<void>(
     MaterialPageRoute(
-      builder: (_) => AddCameraScreen(api: widget.api, session: widget.session),
+      builder: (_) => AddDeviceScreen(api: widget.api, session: widget.session),
     ),
   );
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final isOwner = widget.session.role == DeviceRole.owner;
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, _) => Column(
@@ -100,12 +98,11 @@ class _CameraListViewState extends State<CameraListView> {
                       : _controller.refresh,
                   icon: const Icon(Icons.refresh),
                 ),
-                if (isOwner)
-                  IconButton(
-                    tooltip: l10n.addCameraButton,
-                    onPressed: _addCamera,
-                    icon: const Icon(Icons.add_a_photo_outlined),
-                  ),
+                IconButton(
+                  tooltip: l10n.addDeviceButton,
+                  onPressed: _addDevice,
+                  icon: const Icon(Icons.add),
+                ),
               ],
             ),
           ),
@@ -136,14 +133,12 @@ class _CameraListViewState extends State<CameraListView> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(l10n.cameraListEmpty, textAlign: TextAlign.center),
-                        if (isOwner) ...[
-                          const SizedBox(height: 16),
-                          FilledButton.icon(
-                            onPressed: _addCamera,
-                            icon: const Icon(Icons.add_a_photo_outlined),
-                            label: Text(l10n.addCameraButton),
-                          ),
-                        ],
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          onPressed: _addDevice,
+                          icon: const Icon(Icons.add_a_photo_outlined),
+                          label: Text(l10n.addCameraButton),
+                        ),
                       ],
                     ),
                   ),

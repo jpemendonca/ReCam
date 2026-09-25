@@ -22,8 +22,7 @@
   "scanQrTitle": "Scan QR code",
   "scannerUnavailable": "Could not open the camera. Allow camera access and try again.",
   "addCameraButton": "Add camera",
-  "addCameraTitle": "Add camera",
-  "addCameraInstructions": "On the camera phone, open ReCam, go to the Camera tab and scan this QR code.",
+  "addCameraInstructions": "On the camera phone, open ReCam and scan this QR code.",
   "addCameraExpiresIn": "Expires in {time}",
   "@addCameraExpiresIn": {
     "placeholders": {
@@ -107,5 +106,10 @@
   },
   "cameraStreaming": "streaming",
   "cameraIdle": "standing by",
-  "refreshButton": "Refresh"
+  "refreshButton": "Refresh",
+  "addDeviceButton": "Add",
+  "addDeviceTitle": "Add",
+  "addDeviceCamera": "Another camera",
+  "addDeviceViewer": "Another phone to watch",
+  "addViewerInstructions": "On the other phone, open ReCam and scan this QR code. It will watch these cameras too."
 }
