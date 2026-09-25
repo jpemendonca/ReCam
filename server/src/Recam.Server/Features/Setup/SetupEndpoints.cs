@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
+using Recam.Server.Domain;
 using Recam.Server.Infrastructure.Network;
+using Recam.Server.Infrastructure.Persistence;
+using Recam.Server.Infrastructure.Presence;
 
 namespace Recam.Server.Features.Setup;
 
@@ -18,8 +22,16 @@ public static class SetupEndpoints
         return endpoints;
     }
 
+    /// <summary>
+    /// The server's only page: the first phone's QR code while nobody owns the server, then a
+    /// read-only panel of the paired devices.
+    /// </summary>
     private static async Task<Results<ContentHttpResult, ProblemHttpResult>> GetSetupPageAsync(
-        HttpContext context, OwnerSetup ownerSetup, CancellationToken cancellationToken)
+        HttpContext context,
+        OwnerSetup ownerSetup,
+        IDbContextFactory<RecamDbContext> databaseFactory,
+        DevicePresence presence,
+        CancellationToken cancellationToken)
     {
         if (!IsDirectLocalRequest(context))
         {
@@ -29,8 +41,29 @@ public static class SetupEndpoints
         }
 
         var status = await ownerSetup.EnsureTokenAsync(cancellationToken);
+        var page = status switch
+        {
+            OwnerSetupStatus.Pending pending => SetupPage.RenderPending(pending),
+            OwnerSetupStatus.Configured => SetupPage.RenderPanel(
+                await LoadPanelAsync(databaseFactory, presence, cancellationToken)),
+            _ => throw new InvalidOperationException($"Unknown setup status {status.GetType().Name}."),
+        };
         context.Response.Headers.CacheControl = "no-store";
-        return TypedResults.Content(SetupPage.Render(status), "text/html; charset=utf-8");
+        return TypedResults.Content(page, "text/html; charset=utf-8");
+    }
+
+    private static async Task<List<PanelDevice>> LoadPanelAsync(
+        IDbContextFactory<RecamDbContext> databaseFactory, DevicePresence presence, CancellationToken cancellationToken)
+    {
+        await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
+        var devices = await database.Devices.AsNoTracking()
+            .Where(device => device.RevokedAt == null)
+            .ToListAsync(cancellationToken);
+        return devices
+            .OrderBy(device => device.Role == DeviceRole.Camera ? 0 : 1)
+            .ThenBy(device => device.Name, StringComparer.CurrentCultureIgnoreCase)
+            .Select(device => PanelDevice.From(device, presence))
+            .ToList();
     }
 
     // The page hands out the owner token. Behind a proxy the direct peer is the proxy itself,

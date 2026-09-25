@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.SignalR;
+using Recam.Server.Infrastructure.Presence;
 
 namespace Recam.Server.Features.Realtime;
 
 /// <summary>
 /// Who is watching each camera. The first watcher makes the camera publish; when the last one
 /// leaves, the camera stops after <see cref="StopGrace"/>, so a quick reopen does not restart
-/// the stream. Every change in the number of watchers is sent to the camera.
+/// the stream. Every change in the number of watchers is sent to the camera and kept in
+/// <see cref="DevicePresence"/>, where other features read it.
 /// </summary>
-public sealed class WatchLeases(IHubContext<DeviceHub, IDeviceClient> hub, TimeProvider timeProvider)
+public sealed class WatchLeases(
+    IHubContext<DeviceHub, IDeviceClient> hub, DevicePresence presence, TimeProvider timeProvider)
 {
     public static readonly TimeSpan StopGrace = TimeSpan.FromSeconds(30);
 
@@ -33,6 +36,7 @@ public sealed class WatchLeases(IHubContext<DeviceHub, IDeviceClient> hub, TimeP
             var stopWasPending = CancelPendingStop(cameraId);
             startNeeded = firstWatcher && !stopWasPending;
             count = connections.Count;
+            presence.SetWatchers(cameraId, count);
         }
 
         if (startNeeded)
@@ -80,15 +84,6 @@ public sealed class WatchLeases(IHubContext<DeviceHub, IDeviceClient> hub, TimeP
         }
     }
 
-    /// <summary>Open leases on the camera: one per watching connection.</summary>
-    public int WatcherCount(Guid cameraId)
-    {
-        lock (_lock)
-        {
-            return _watchers.TryGetValue(cameraId, out var connections) ? connections.Count : 0;
-        }
-    }
-
     private Task NotifyCountAsync(Guid cameraId, int count) =>
         hub.Clients.User(DeviceHub.UserId(cameraId)).WatchersChanged(count);
 
@@ -100,6 +95,7 @@ public sealed class WatchLeases(IHubContext<DeviceHub, IDeviceClient> hub, TimeP
             return null;
         }
 
+        presence.SetWatchers(cameraId, connections.Count);
         if (connections.Count > 0)
         {
             return connections.Count;

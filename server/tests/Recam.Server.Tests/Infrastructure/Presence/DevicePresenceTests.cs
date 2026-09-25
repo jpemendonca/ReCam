@@ -26,4 +26,21 @@ public sealed class DevicePresenceTests
         Assert.True(lastWentOffline);
         Assert.False(presence.IsOnline(deviceId));
     }
+
+    [Fact(DisplayName = "The watcher count follows the last value set and drops at zero")]
+    public void SetWatchers_ThenZero_ForgetsTheCount()
+    {
+        // arrange
+        var presence = new DevicePresence();
+        var cameraId = Guid.NewGuid();
+        presence.SetWatchers(cameraId, 2);
+        var whileWatched = presence.Watchers(cameraId);
+
+        // act
+        presence.SetWatchers(cameraId, 0);
+
+        // assert
+        Assert.Equal(2, whileWatched);
+        Assert.Equal(0, presence.Watchers(cameraId));
+    }
 }

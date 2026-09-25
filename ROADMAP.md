@@ -651,7 +651,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > volta. Testes: primeira abertura (pergunta, "Para assistir" lê e mostra a lista, "Câmera" lê e
   > abre o modo câmera, leitor fechado, código inválido).
 
-- [ ] **1.12.11 Painel de acompanhamento no servidor (só leitura)**
+- [x] **1.12.11 Painel de acompanhamento no servidor (só leitura)**
   - Origem: conversa com o autor em 2026-09-25: o PC serve para instalar e acompanhar; o resto é
     pelo celular.
   - Escopo: a página `/setup` vira o painel, na mesma regra de acesso (só IP local, sem
@@ -659,6 +659,18 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     aparelhos (nome, câmera ou visualizador, online, transmitindo, quantos assistem, bateria) e se
     atualiza sozinha a cada 5 s. HTML gerado no servidor, sem framework de front-end e sem ações.
   - Aceite: testes da página com e sem dono e da lista refletindo presença e transmissão.
+  > Validação (2026-09-25): só código escrito. Não aberto num navegador. Gate verde (93 no
+  > servidor, 145 no app). `SetupPage` virou `RenderPending` (QR, como antes, com o texto "escolha
+  > Para assistir") e `RenderPanel` (tabela). O endpoint só orquestra: pergunta ao `OwnerSetup` o
+  > estado e, com dono, carrega os aparelhos não revogados e monta um `PanelDevice` por aparelho
+  > com o `DevicePresence`. Para o painel saber "quantos assistem" sem `Setup` depender de
+  > `Realtime`, o `WatchLeases` passou a gravar a contagem no `DevicePresence` (dentro do mesmo
+  > lock), e o hub também lê dali. Atualização sem script: `<meta http-equiv="refresh">`, 5 s no
+  > painel e 30 s na página do QR (para ela virar o painel depois do primeiro pareamento sem
+  > atrapalhar quem copia o código). O log do QR diz "escolha Para assistir". Testes:
+  > `SetupPage_WithOwner_ListsDevices`, `SetupPage_WithCameraStreaming_ShowsPresenceAndTransmission`,
+  > `SetupPage_WithOwner_FromPublicAddress_Returns403`, `SetWatchers_ThenZero_ForgetsTheCount`; os
+  > testes antigos sem dono seguem valendo.
 
 - [ ] **1.14 [aparelho] Validar o caminho principal completo**
   - Origem: definição do MVP.

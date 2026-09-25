@@ -44,7 +44,7 @@ public sealed partial class DeviceHub(
         // A camera that reconnects while someone watches resumes publishing on its own.
         if (user.IsInRole(nameof(DeviceRole.Camera)))
         {
-            var watchers = leases.WatcherCount(deviceId);
+            var watchers = presence.Watchers(deviceId);
             if (watchers > 0)
             {
                 await Clients.Caller.StartPublishing();

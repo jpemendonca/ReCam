@@ -1,5 +1,8 @@
 using System.Net;
+using Microsoft.AspNetCore.SignalR.Client;
 using Recam.Server.Domain;
+using Recam.Server.Features.Setup;
+using Recam.Server.Infrastructure.Realtime;
 using Recam.Server.Tests.Support;
 
 namespace Recam.Server.Tests.Features.Setup;
@@ -40,12 +43,13 @@ public sealed class SetupEndpointsTests
         Assert.Contains("recam://pair?v=1&amp;t=", body, StringComparison.Ordinal);
     }
 
-    [Fact(DisplayName = "Once an owner is paired, the setup page no longer hands out a token")]
-    public async Task SetupPage_WithOwner_ShowsAlreadyConfigured()
+    [Fact(DisplayName = "Once a phone owns the server, the page lists the devices instead of handing out a token")]
+    public async Task SetupPage_WithOwner_ListsDevices()
     {
         // arrange
         using var factory = new RecamApiFactory();
-        await factory.PairDeviceAsync(DeviceRole.Owner);
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner, "Pedro's phone");
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera, "Porch");
         using var client = factory.CreateClient();
 
         // act
@@ -54,8 +58,59 @@ public sealed class SetupEndpointsTests
 
         // assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Contains("already configured", body, StringComparison.Ordinal);
         Assert.DoesNotContain("<svg", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("recam://pair", body, StringComparison.Ordinal);
+        Assert.Contains("Pedro&#39;s phone", Row(body, owner.DeviceId), StringComparison.Ordinal);
+        Assert.Contains("Watches · Assiste", Row(body, owner.DeviceId), StringComparison.Ordinal);
+        Assert.Contains("Camera · Câmera", Row(body, camera.DeviceId), StringComparison.Ordinal);
+        Assert.Contains(
+            $"<meta http-equiv=\"refresh\" content=\"{SetupPage.PanelRefreshSeconds}\">", body, StringComparison.Ordinal);
+    }
+
+    [Fact(DisplayName = "The panel shows which camera is online, streaming and how many watch it")]
+    public async Task SetupPage_WithCameraStreaming_ShowsPresenceAndTransmission()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var porch = await factory.PairDeviceAsync(DeviceRole.Camera, "Porch");
+        var garage = await factory.PairDeviceAsync(DeviceRole.Camera, "Garage");
+        await using var cameraConnection = await factory.ConnectAsync(porch.Credential);
+        await cameraConnection.InvokeAsync<HubResult>("ReportTelemetry", 64, true, TestContext.Current.CancellationToken);
+        await cameraConnection.InvokeAsync<HubResult>("ReportPublishing", true, TestContext.Current.CancellationToken);
+        await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
+        await viewerConnection.InvokeAsync<HubResult>("WatchCamera", porch.DeviceId, TestContext.Current.CancellationToken);
+        using var client = factory.CreateClient();
+
+        // act
+        var body = await client.GetStringAsync(SetupUri, TestContext.Current.CancellationToken);
+
+        // assert
+        var porchRow = Row(body, porch.DeviceId);
+        Assert.Equal(
+            "<td>Porch</td><td>Camera · Câmera</td><td><span class=\"on\">yes · sim</span></td><td>yes · sim</td><td>1</td><td>64% ⚡</td>",
+            porchRow);
+        var garageRow = Row(body, garage.DeviceId);
+        Assert.Equal(
+            "<td>Garage</td><td>Camera · Câmera</td><td><span class=\"off\">no · não</span></td><td>no · não</td><td>0</td><td>—</td>",
+            garageRow);
+        Assert.Contains("<span class=\"on\">", Row(body, owner.DeviceId), StringComparison.Ordinal);
+    }
+
+    [Fact(DisplayName = "The panel keeps the local-network rule once a phone owns the server")]
+    public async Task SetupPage_WithOwner_FromPublicAddress_Returns403()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        await factory.PairDeviceAsync(DeviceRole.Owner);
+        factory.RemoteIpAddress = IPAddress.Parse("203.0.113.7");
+        using var client = factory.CreateClient();
+
+        // act
+        using var response = await client.GetAsync(SetupUri, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact(DisplayName = "Setup page refuses requests that came through a proxy")]
@@ -86,5 +141,15 @@ public sealed class SetupEndpointsTests
 
         // assert
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    /// <summary>The cells of one device's row in the panel.</summary>
+    private static string Row(string body, Guid deviceId)
+    {
+        var start = $"<tr data-device=\"{deviceId:N}\">";
+        var from = body.IndexOf(start, StringComparison.Ordinal);
+        Assert.True(from >= 0, $"No row for device {deviceId}.");
+        from += start.Length;
+        return body[from..body.IndexOf("</tr>", from, StringComparison.Ordinal)];
     }
 }

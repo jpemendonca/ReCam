@@ -464,3 +464,11 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > conexões de visualizador têm lease aberto nela. O servidor manda a cada mudança (lease aberto,
 > fechado ou perdido por desconexão) e ao conectar a câmera. É o que o celular câmera mostra como
 > "quantos assistem" (bullet 1.12.7). `UnwatchCamera` passou a esperar esse aviso antes de responder.
+
+> Revisão (2026-09-25): com um celular já pareado, `GET /setup` deixou de ser a página "already
+> configured" e virou o painel só leitura (bullet 1.12.11), na mesma regra de acesso: tabela com
+> nome, tipo (câmera ou "assiste"), online, transmitindo, quantos assistem e bateria, recarregada
+> sozinha a cada 5 s por `<meta http-equiv="refresh">`, sem script e sem ações. A página do QR
+> também se recarrega, a cada 30 s, para virar o painel depois do primeiro pareamento. A contagem
+> de quem assiste passou a ficar também no `DevicePresence` (Infrastructure), que o `WatchLeases`
+> atualiza, porque `Features.Setup` não pode ler `Features.Realtime`.
