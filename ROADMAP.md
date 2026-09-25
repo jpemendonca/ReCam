@@ -808,7 +808,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
 
 - [ ] **1.14 [aparelho] Validar o caminho principal completo**
   - Origem: definição do MVP.
-  - Escopo: servidor no PC. A10 ou 7A como câmera, emulador Android no PC como visualizador
+  - Escopo: servidor no PC. A10 ou 6A como câmera, emulador Android no PC como visualizador
     (revisado em 2026-09-25; antes era um segundo celular). Percorrer os passos 1 a 7 do caminho
     principal em `AGENTS.md`.
   > Revisão (2026-09-25): sem emulador. Servidor no PC, Samsung A10 e Redmi 6A, trocando os papéis
@@ -884,7 +884,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
 
 - [ ] **2.5 [aparelho] Validar 24 horas ligado**
   - Origem: robustez.
-  - Escopo: A10 e 7A em modo câmera por 24 h, na tomada, com sessões de visualização
+  - Escopo: A10 e 6A em modo câmera por 24 h, na tomada, com sessões de visualização
     espalhadas.
   - Aceite: nenhum dos dois cai sem reconectar. Anotar a temperatura máxima e as falhas.
   > Bloqueado (2026-09-25): aguardando aparelho. São 24 h com o Samsung A10 e o Redmi 6A em modo
@@ -1205,7 +1205,7 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
 - [ ] **5.4 APK de release assinado** (depende do usuário gerar o keystore e cadastrar os secrets)
   - Escopo: build de release com `--split-per-abi` (armeabi-v7a e arm64-v8a) publicada no
     GitHub Releases.
-  - Aceite: APK de release instalado no A10 e no 7A.
+  - Aceite: APK de release instalado no A10 e no 6A.
 
 - [ ] **5.5 Contribuição e CLA** (depende do usuário escolher o texto do CLA e instalar o CLA Assistant)
   - Escopo: `CONTRIBUTING.md` (como rodar, gate, Conventional Commits, CLA obrigatório) e o

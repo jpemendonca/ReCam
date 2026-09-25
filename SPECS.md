@@ -33,7 +33,7 @@ e a Câmera é `Camera`. O Monitor pareia com o nome padrão "Monitor".
 - Telemetria de bateria (nível e se está carregando) e status online/offline.
 - App em PT-BR e inglês.
 - Android 9 (API 28) ou mais novo. Aparelhos de referência: Samsung Galaxy A10 e Xiaomi
-  Redmi 7A.
+  Redmi 6A.
 - Gravação no servidor, ligada por câmera, com espaço total escolhido numa barrinha e o mais
   antigo apagado quando enche (seção 2.4). Nunca no celular câmera. Entrou em 2026-09-25.
 
@@ -403,7 +403,7 @@ Política: meio-termo.
   - Plugins substituídos por fakes das interfaces de `core/`.
   - Widget test do shell de abas.
 - **Aparelho real:** vídeo, lanterna, foreground service e comportamento de bateria só se
-  provam no A10 e no 7A. O ROADMAP tem bullets de validação no aparelho para isso.
+  provam no A10 e no 6A. O ROADMAP tem bullets de validação no aparelho para isso.
 
 ## 9. Segredos e configuração
 
@@ -431,8 +431,9 @@ O agente nunca escreve valor real de segredo em arquivo nenhum.
 ## 11. Riscos conhecidos
 
 - **Encoder H.264 de hardware**: o libwebrtc só usa H.264 em hardware em alguns fabricantes de
-  chip, e o Android não tem H.264 por software no libwebrtc. Exynos (A10) e Snapdragon (7A)
-  devem funcionar. MediaTek antigo pode não ter. Tratado na fase 2.
+  chip, e o Android não tem H.264 por software no libwebrtc. Exynos (A10) deve funcionar. O
+  Redmi 6A usa MediaTek Helio A22, que pode não ter H.264 exposto ao libwebrtc: se não tiver, ele
+  transmite ao vivo em VP8 e não grava (ver "Gravação de VP8"). Conferir no teste do 6A.
 - **Gravação de VP8**: o MediaMTX 1.21.1 não grava VP8 em fMP4 (conferido em 2026-09-25 publicando
   VP8 num path `rec-`: "no supported tracks found, skipping recording"). Aparelho sem encoder
   H.264 transmite ao vivo em VP8, mas não grava (bullet 3.2).
@@ -448,7 +449,7 @@ O agente nunca escreve valor real de segredo em arquivo nenhum.
 
 Cada item deste log tem um ADR em `docs/adr/` (índice em [`docs/adr/README.md`](docs/adr/README.md)),
 na ordem em que aparece aqui: as 16 decisões iniciais são os ADRs 0001 a 0016, e as revisões
-datadas, de cima para baixo, os ADRs 0017 a 0036. O ADR traz contexto, decisão e consequências; o
+datadas, de cima para baixo, os ADRs 0017 a 0037. O ADR traz contexto, decisão e consequências; o
 log continua sendo o resumo.
 
 Decisões iniciais (2026-09-24):
@@ -645,3 +646,7 @@ seguinte em `docs/adr/`:
 > o `access_token` do WebSocket do SignalR não vaza; cabeçalhos não são gravados. As portas 18888 e
 > 4317 do Aspire Dashboard só existem com o compose opcional e ficam presas ao loopback, porque o
 > painel roda sem login; as portas expostas à rede continuam só a 8443/tcp e a 8189/udp.
+
+> Revisão (2026-09-25): o segundo aparelho de referência é o Xiaomi Redmi 6A (MediaTek Helio A22),
+> não o Redmi 7A (Snapdragon), porque é o que o autor tem. O risco de H.264 da seção 11 passa a
+> valer para ele: se o 6A não expuser H.264, transmite em VP8 e não grava.

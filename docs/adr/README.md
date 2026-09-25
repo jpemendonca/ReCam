@@ -42,3 +42,4 @@ no log do `SPECS.md` e ganha o próximo número aqui.
 | [0034](0034-reset-owner.md) | Comando reset-owner | 2026-09-25 |
 | [0035](0035-modo-proxy-reverso.md) | Modo atrás de proxy reverso | 2026-09-25 |
 | [0036](0036-opentelemetry.md) | Observabilidade com OpenTelemetry | 2026-09-25 |
+| [0037](0037-redmi-6a-como-referencia.md) | Redmi 6A como aparelho de referência | 2026-09-25 |

@@ -25,7 +25,7 @@ You install two things:
    scan that QR code.
 4. Watch it live from your phone, and toggle the camera phone's flashlight remotely.
 
-Requirements: Android 9 or newer. Tested on a Samsung Galaxy A10 and a Xiaomi Redmi 7A.
+Requirements: Android 9 or newer. Reference devices: Samsung Galaxy A10 and Xiaomi Redmi 6A.
 
 ## Development
 
