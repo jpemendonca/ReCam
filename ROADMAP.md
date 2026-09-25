@@ -237,7 +237,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > do QR devolvido. App: `AddCameraController` (contagem regressiva e renovação ao expirar) e
   > `AddCameraScreen` com `qr_flutter`; o botão "Adicionar câmera" só aparece para o dono.
   > Decisões no caminho: `role` chega como texto e o validador aceita só `camera` por enquanto
-  > (o 3.2 libera `viewer`); o app conta o tempo restante a partir da hora do servidor, lida do
+  > (o 3.2, hoje 4.2, libera `viewer`); o app conta o tempo restante a partir da hora do servidor, lida do
   > header `Date` da resposta, para o relógio do celular não encurtar nem esticar o QR; o QR é
   > renovado ao chegar em zero, sem margem.
 
@@ -563,7 +563,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Origem: pedido do autor no teste de 2026-09-25.
   - Escopo: um botão "Reiniciar" (com confirmação) que apaga os pareamentos das duas abas neste
     aparelho e volta o app ao estado de recém-instalado. No servidor, o aparelho continua registrado
-    até ser revogado (3.1).
+    até ser revogado (3.1, hoje 4.1).
   - Aceite: teste do controller apagando as duas credenciais e voltando as abas para "não pareado".
   > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (83 no
   > servidor, 123 no app). O app ganhou uma barra de título "ReCam" com um menu; "Reiniciar o app"
@@ -611,7 +611,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
 
 - [x] **1.12.9 Qualquer celular que assiste adiciona câmeras e visualizadores**
   - Origem: conversa com o autor em 2026-09-25: não dava para inverter os papéis dos celulares.
-    Traz para agora o que era o bullet 3.2.
+    Traz para agora o que era o bullet 3.2 (hoje 4.2).
   - Escopo: `POST /api/pairing-tokens` aceita `role: "camera"` e `role: "viewer"` e passa a valer para
     `Owner` e `Viewer` (a regra fica em `Device.IssuePairingToken`; dono continua não sendo
     concedível). No app, "Adicionar" oferece "Outra câmera" e "Outro celular para assistir", cada um
@@ -624,7 +624,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > visualizador ativo emite; câmera recebe `pairing.issuer_cannot_invite` (novo nome do antigo
   > `pairing.issuer_not_owner`); papel de dono continua `pairing.owner_role_not_grantable`. O
   > validador aceita `camera` e `viewer`, e o endpoint passou de `OwnerOnly` para `ViewerOrOwner`.
-  > A política `OwnerOnly` ficou sem uso por enquanto; ela continua registrada porque o 3.1
+  > A política `OwnerOnly` ficou sem uso por enquanto; ela continua registrada porque o 3.1 (hoje 4.1)
   > (revogar) é só do dono. No app, `createCameraPairingToken` virou `createPairingToken(role)`, e a
   > tela "Adicionar" (antes "Adicionar câmera") tem a escolha "Outra câmera" / "Outro celular para
   > assistir", cada uma com seu QR, contagem e "Copiar código". O botão aparece para qualquer
@@ -799,7 +799,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
 
 ## Fase 2: câmera que aguenta ficar ligada
 
-- [ ] **2.1 Aparelho sem H.264 em hardware**
+- [ ] **2.1 Aparelho sem H.264 em hardware** (substituído pelo 3.2 em 2026-09-25; não executar)
   - Origem: `SPECS.md` 11.
   - Escopo: antes de iniciar o modo câmera, verificar se o `flutter_webrtc` oferece H.264 para
     envio. Se não oferecer, mostrar mensagem clara (ARB) e não entrar no modo câmera.
@@ -831,35 +831,125 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     espalhadas.
   - Aceite: nenhum dos dois cai sem reconectar. Anotar a temperatura máxima e as falhas.
 
-## Fase 3: gestão de aparelhos
+## Fase 3: gravação
 
-- [ ] **3.1 Revogar aparelhos**
+Combinado com o autor em 2026-09-25: a gravação entra depois da Fase 2, porque gravar obriga a
+câmera a transmitir o tempo todo (calor e bateria). Desenho:
+
+- O MediaMTX grava; o .NET só decide o que gravar, controla o espaço e serve os arquivos. O app no
+  modo câmera continua sem gravar nada no aparelho.
+- Gravação ligada por câmera ("Gravar sempre"). Câmera com gravação ligada transmite o tempo todo,
+  mesmo sem ninguém assistindo.
+- Espaço total para gravações escolhido numa barrinha no Monitor; quando enche, o mais antigo é
+  apagado.
+- Linha do tempo simples no Monitor: dias, horas com trechos gravados, tocar para assistir.
+
+- [ ] **3.1 Gravação no MediaMTX, volume e desenho no SPECS**
+  - Origem: combinado com o autor em 2026-09-25.
+  - Escopo: `SPECS.md`: a gravação sai de "Fora do escopo", entra no 1.1 e ganha uma seção
+    "Gravação" com o desenho desta fase (revisão datada no 12). No `mediamtx.yml`, um segundo grupo
+    de paths, `~^rec-[0-9a-f]{32}$`, com `record: yes`, `recordFormat: fmp4`, segmentos de 60 s em
+    `/recordings/%path/%Y-%m-%d_%H-%M-%S-%f` e `recordDeleteAfter: 0` (quem apaga é o servidor). Os
+    paths `cam-` seguem sem gravar. Volume nomeado `recam-recordings` montado no MediaMTX e no
+    servidor, nos dois composes. Os arquivos criados pelo MediaMTX precisam poder ser apagados pelo
+    servidor, que roda sem root: rodar o MediaMTX com o mesmo usuário do servidor, ou resolver de
+    outro jeito e registrar no SPECS. Conferir se o MediaMTX grava VP8 em fMP4 e registrar o
+    resultado no SPECS 11.
+  - Aceite: teste com Testcontainers publicando H.264 por WHIP num path `rec-` e achando um segmento
+    fMP4 na pasta; num path `cam-`, nenhum arquivo.
+
+- [ ] **3.2 Gravar sempre, por câmera**
+  - Origem: combinado com o autor em 2026-09-25. Substitui o 2.1.
+  - Escopo: `Device.RecordingEnabled`, com migração e método da entidade para ligar e desligar (só
+    câmera, só por Monitor). Hub: `SetRecording(Guid cameraId, bool enabled)` para Monitores. O
+    proxy WHIP/WHEP escolhe o path do MediaMTX pelo estado: `rec-{id}` gravando, `cam-{id}` sem
+    gravar. Mudar o estado com a câmera transmitindo faz ela reiniciar a transmissão. Câmera com
+    gravação ligada recebe `StartPublishing` ao conectar e não recebe `StopPublishing` quando o
+    último Monitor sai. `CameraStatusDto` ganha `recording`. App: no ao vivo e na lista, um
+    interruptor "Gravar sempre"; no modo câmera, o status mostra "Gravando". Câmera sem H.264
+    (VP8) não grava, se o 3.1 confirmar que o MediaMTX não grava VP8: o interruptor fica desligado
+    com a explicação.
+  - Aceite: testes de domínio, do hub (liga, reconecta, último Monitor sai e ela continua), do path
+    escolhido pelo proxy e dos controllers do app.
+
+- [ ] **3.3 Espaço para gravações e limpeza automática**
+  - Origem: combinado com o autor em 2026-09-25 (a "barrinha" do SPECS 1.2).
+  - Escopo: cota total em MB guardada no banco (migração), padrão 2048 MB. `GET` e `PUT
+    /api/recordings/quota` (Monitores): o `GET` devolve cota, uso atual e espaço livre no disco; o
+    `PUT` recusa cota maior que uso + livre. Um `BackgroundService` a cada 60 s soma os arquivos de
+    `/recordings` e apaga os segmentos mais antigos, de qualquer câmera, até ficar dentro da cota;
+    também apaga as gravações de câmeras removidas. App: no menu ⋮ do Monitor, "Gravações" com a
+    barrinha, o uso atual e quantas horas cabem (a 700 kbps, cerca de 300 MB por hora por câmera).
+    A página do servidor mostra o uso ("1,2 de 2 GB").
+  - Aceite: testes da limpeza com pasta temporária e `FakeTimeProvider`, dos endpoints e do
+    controller da barrinha.
+
+- [ ] **3.4 Listar e servir as gravações**
+  - Origem: combinado com o autor em 2026-09-25.
+  - Escopo: `GET /api/cameras/{id}/recordings?day=AAAA-MM-DD` (Monitores) devolve os trechos do dia
+    (início, fim, url), montados a partir dos nomes dos arquivos, com trechos seguidos emendados. O
+    segmento ainda sendo gravado fica de fora. `GET /api/recordings/{cameraId}/{segmento}` serve o
+    arquivo com suporte a `Range`. Nenhum caminho vindo do cliente chega ao disco sem validação (sem
+    `..`, só nomes no formato do MediaMTX). Horários em UTC no protocolo.
+  - Aceite: testes de listagem (dia vazio, trechos emendados, segmento em andamento), de `Range` e
+    de caminho malicioso recusado.
+
+- [ ] **3.5 Linha do tempo no Monitor**
+  - Origem: combinado com o autor em 2026-09-25.
+  - Escopo: dependência nova `video_player`. O player do Android não passa pelo pinning do Dart,
+    então um repassador local em `lib/core/` (`HttpServer` em 127.0.0.1, porta aleatória) busca o
+    arquivo no servidor pareado, com a credencial e o pinning, e entrega ao player, com `Range`.
+    Nada é salvo no aparelho. Tela "Gravações" de cada câmera (botão no ao vivo e na lista): dias
+    com gravação, as 24 horas do dia com os trechos gravados marcados; tocar num ponto começa ali e
+    segue para o próximo segmento. Horários no fuso do celular.
+  - Aceite: testes do repassador (repassa `Range`, só atende o próprio aparelho), do controller da
+    linha do tempo e widget test da tela.
+
+- [ ] **3.6 [aparelho] Validar a gravação**
+  - Origem: combinado com o autor em 2026-09-25.
+  - Escopo: Samsung A10 e Redmi 6A. Uma câmera gravando por 2 h, com cota pequena (ex.: 300 MB) para
+    ver a limpeza; linha do tempo e reprodução no Monitor.
+  - Aceite: a gravação aparece na linha do tempo e toca, e o mais antigo some quando a cota enche.
+    Anotar temperatura e bateria da câmera gravando.
+
+## Fase 4: gestão de aparelhos
+
+- [ ] **4.1 Revogar aparelhos**
   - Escopo: `GET /api/devices` e `DELETE /api/devices/{id}` (`OwnerOnly`, derruba a conexão do
     hub). Tela de aparelhos na aba Assistir.
   - Aceite: `DeleteDevice_AsOwner_RevokesAndDisconnects` e o teste do controller.
+  > Revisão (2026-09-25): o app não mostra dono, e o dono pode ter saído (1.12.15). Qualquer
+  > Monitor remove aparelhos (política `ViewerOrOwner`, regra em `Device`); um aparelho não remove a
+  > si mesmo por aqui (isso é o "Reiniciar o app"). A tela "Aparelhos" fica no menu ⋮ do Monitor,
+  > com câmeras e Monitores, e remover pede confirmação. A câmera removida some da lista dos
+  > Monitores, e o modo câmera dela fecha com a mensagem de pareamento perdido. O nome do teste de
+  > aceite vira `DeleteDevice_AsMonitor_RevokesAndDisconnects`.
 
-- [ ] **3.2 Parear outro celular visualizador** (movido para o 1.12.9 em 2026-09-25; não executar)
+- [ ] **4.2 Parear outro celular visualizador** (movido para o 1.12.9 em 2026-09-25; não executar)
   - Escopo: `POST /api/pairing-tokens` aceita `role: "viewer"`. Botão "Adicionar visualizador".
   - Aceite: `CreatePairingToken_ForViewer_PairsAsViewer`.
 
-- [ ] **3.3 Resetar o dono**
+- [ ] **4.3 Resetar o dono**
   - Escopo: `docker compose exec server ./Recam.Server reset-owner` revoga o dono atual e
     volta a gerar o token do dono.
+  > Revisão (2026-09-25): o comando revoga todos os Monitores (dono e visualizadores), não só o dono.
+  > É a saída quando o único Monitor quebrou ou sumiu e não dá para usar "Reiniciar o app" nele. As
+  > câmeras continuam pareadas, e a página do servidor volta ao QR do primeiro Monitor.
   - Aceite: `ResetOwner_WithOwner_RevokesAndCreatesSetupToken`.
 
-## Fase 4: distribuição
+## Fase 5: distribuição
 
-- [ ] **4.1 Modo atrás de proxy reverso**
+- [ ] **5.1 Modo atrás de proxy reverso**
   - Escopo: `RECAM_TLS=off` faz o Kestrel servir HTTP. Respeitar `X-Forwarded-*` de proxies
     configurados. O QR sai sem `f`, e o app valida pelas CAs do sistema.
   - Aceite: testes do QR sem fingerprint e do middleware de forwarded headers.
 
-- [ ] **4.2 CI no GitHub Actions** (depende do usuário criar o repositório no GitHub)
+- [ ] **5.2 CI no GitHub Actions** (repositório criado: `jpemendonca/ReCam`, privado até o lançamento)
   - Escopo: workflow rodando `scripts/gate.sh` em pull request e push na `main`, com relatório
     de cobertura do servidor (`coverlet`). Selos de build e cobertura no `README.md`.
   - Aceite: workflow verde num PR e selos aparecendo no README.
 
-- [ ] **4.2.1 Observabilidade com OpenTelemetry**
+- [ ] **5.2.1 Observabilidade com OpenTelemetry**
   - Origem: vitrine de portfólio.
   - Escopo: pacotes `OpenTelemetry.Extensions.Hosting` e instrumentações de ASP.NET Core e
     HttpClient. Métricas próprias: câmeras online, câmeras publicando, visualizações ativas.
@@ -868,29 +958,29 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Aceite: teste das métricas com `MeterListener`. Com o compose de observabilidade, o painel
     mostra traces de `/api/cameras` e a métrica de câmeras online.
 
-- [ ] **4.2.2 ADRs**
+- [ ] **5.2.2 ADRs**
   - Origem: vitrine de portfólio.
   - Escopo: `docs/adr/`, um arquivo por decisão do log do `SPECS.md` 12 (contexto, decisão,
     consequências), em português. O `SPECS.md` 12 passa a apontar para os ADRs.
   - Aceite: todo item do log tem ADR correspondente.
 
-- [ ] **4.2.3 [aparelho] Vitrine do README**
+- [ ] **5.2.3 [aparelho] Vitrine do README**
   - Origem: vitrine de portfólio.
   - Escopo: GIF curto do caminho principal (parear, ver ao vivo, lanterna) e diagrama da
     arquitetura no `README.md`.
   - Aceite: README mostra o GIF gravado nos aparelhos reais.
 
-- [ ] **4.3 Imagem publicada no GHCR e instalação em um comando**
+- [ ] **5.3 Imagem publicada no GHCR e instalação em um comando**
   - Escopo: workflow que publica `ghcr.io/<dono>/recam-server` em tag `v*`. Os composes usam a
     imagem publicada. O README ensina a instalar baixando só a pasta `deploy/`.
   - Aceite: instalação do zero numa máquina Linux seguindo só o README.
 
-- [ ] **4.4 APK de release assinado** (depende do usuário gerar o keystore e cadastrar os secrets)
+- [ ] **5.4 APK de release assinado** (depende do usuário gerar o keystore e cadastrar os secrets)
   - Escopo: build de release com `--split-per-abi` (armeabi-v7a e arm64-v8a) publicada no
     GitHub Releases.
   - Aceite: APK de release instalado no A10 e no 7A.
 
-- [ ] **4.5 Contribuição e CLA** (depende do usuário escolher o texto do CLA e instalar o CLA Assistant)
+- [ ] **5.5 Contribuição e CLA** (depende do usuário escolher o texto do CLA e instalar o CLA Assistant)
   - Escopo: `CONTRIBUTING.md` (como rodar, gate, Conventional Commits, CLA obrigatório) e o
     documento do CLA.
   - Aceite: antes do primeiro pull request externo, o CLA Assistant pede o aceite num PR de
@@ -902,7 +992,6 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
 
 Itens que dependem de decisão futura. O loop para antes daqui.
 
-- Gravação no servidor com cota de disco por barrinha, apagando o mais antigo.
 - Acesso fora da rede local.
 - Detecção de movimento e notificações.
 - iOS.

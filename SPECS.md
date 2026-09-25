@@ -331,7 +331,7 @@ Servidor → cliente:
 
 - Sem usuário e senha. Cada celular pareado é um `Device` com credencial própria.
 - O primeiro pareamento cria o `Owner`. Só existe um dono. O app não mostra esse conceito; ele
-  existe para a segurança (só o dono revoga aparelhos, fase 3).
+  existe para a segurança (revogar aparelhos fica na fase 4).
 - Dono e visualizadores geram tokens de câmera e de visualizador. Ninguém gera token de dono.
 - `DeviceAuthenticationHandler` autentica o bearer. Políticas: `OwnerOnly`, `ViewerOrOwner`,
   `CameraOnly`.
@@ -505,3 +505,8 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > Monitores (online), e o passo a passo de adicionar câmera. CSS no próprio HTML, com tema claro e
 > escuro (`prefers-color-scheme`). Sem script nenhum: o `onclick` da caixa do código saiu
 > (bullet 1.12.16).
+
+> Revisão (2026-09-25): a gravação sai de "Fora do escopo" e vira a Fase 3 do ROADMAP, depois da
+> Fase 2 (calor e bateria), porque gravar obriga a câmera a transmitir o tempo todo. As fases de
+> gestão de aparelhos e de distribuição passaram a ser 4 e 5. O desenho está na abertura da Fase 3
+> do ROADMAP; o bullet 3.1 o traz para uma seção própria deste documento.
