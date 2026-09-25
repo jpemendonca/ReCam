@@ -105,6 +105,28 @@ class FakeApiClient implements ApiClient {
     return setQuotaFailure;
   }
 
+  final List<ApiResult<List<DeviceInfo>>> deviceResults = [];
+  ApiFailureKind? removeFailure;
+  final List<String> removedDevices = [];
+
+  @override
+  Future<ApiResult<List<DeviceInfo>>> devices(
+    Uri baseUrl,
+    String credential,
+  ) async => deviceResults.isEmpty
+      ? ApiSuccess(const <DeviceInfo>[])
+      : deviceResults.removeAt(0);
+
+  @override
+  Future<ApiFailureKind?> removeDevice(
+    Uri baseUrl,
+    String credential,
+    String deviceId,
+  ) async {
+    removedDevices.add(deviceId);
+    return removeFailure;
+  }
+
   List<DateTime> recordingDaysResult = [];
   final Map<DateTime, List<RecordingPieceInfo>> recordingsByDay = {};
   final List<DateTime> recordingDayCalls = [];

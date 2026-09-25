@@ -1061,7 +1061,7 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
 
 ## Fase 4: gestão de aparelhos
 
-- [ ] **4.1 Revogar aparelhos**
+- [x] **4.1 Revogar aparelhos**
   - Escopo: `GET /api/devices` e `DELETE /api/devices/{id}` (`OwnerOnly`, derruba a conexão do
     hub). Tela de aparelhos na aba Assistir.
   - Aceite: `DeleteDevice_AsOwner_RevokesAndDisconnects` e o teste do controller.
@@ -1071,6 +1071,22 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   > com câmeras e Monitores, e remover pede confirmação. A câmera removida some da lista dos
   > Monitores, e o modo câmera dela fecha com a mensagem de pareamento perdido. O nome do teste de
   > aceite vira `DeleteDevice_AsMonitor_RevokesAndDisconnects`.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (177 no
+  > servidor, 222 no app). Segue a revisão do bullet: qualquer Monitor remove (política
+  > `ViewerOrOwner`), a regra é `Device.RevokeBy(requester, now)` (só Monitor ativo, nunca a si
+  > mesmo, já removido é "não encontrado"), e a tela "Aparelhos" fica no menu ⋮ do Monitor, com
+  > câmeras e Monitores separados, "Este celular" sem o botão de remover, e confirmação. Para
+  > derrubar a conexão, a feature `Realtime` passou a guardar as conexões de cada aparelho
+  > (`DeviceConnections`, `HubCallerContext.Abort`) e implementa `IDeviceRemovals`, interface em
+  > `Infrastructure/Realtime`: assim o endpoint (feature `Devices`) aborta as conexões e avisa os
+  > Monitores com `CameraRemoved` sem depender de `Realtime`. O `DELETE /api/me` do 1.12.15 usa o
+  > mesmo caminho. No app, a lista de câmeras tira a câmera ao receber `CameraRemoved`; a câmera
+  > removida é derrubada, reconecta, recebe 401 e o modo câmera fecha pelo caminho do 1.12.3.
+  > Revisão no `SPECS.md` 12. Testes: `DeleteDevice_AsMonitor_RevokesAndDisconnects` (204, a
+  > conexão real da câmera fecha, o Monitor recebe `CameraRemoved`, a credencial dá 401, a lista fica
+  > vazia), listagem com presença, remover a si mesmo 409, desconhecido 404, câmera 403, domínio do
+  > `RevokeBy`, e no app o controller dos aparelhos, a lista tirando a câmera e o fluxo pelo menu
+  > com confirmação.
 
 - [ ] **4.2 Parear outro celular visualizador** (movido para o 1.12.9 em 2026-09-25; não executar)
   - Escopo: `POST /api/pairing-tokens` aceita `role: "viewer"`. Botão "Adicionar visualizador".

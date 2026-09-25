@@ -182,5 +182,21 @@
     }
   },
   "timelineEmpty": "No recordings yet. Turn on Record always for this camera.",
-  "timelineLoadFailed": "Could not load the recordings. Check the connection to the server."
+  "timelineLoadFailed": "Could not load the recordings. Check the connection to the server.",
+  "devicesTitle": "Devices",
+  "devicesCameras": "Cameras",
+  "devicesMonitors": "Monitors",
+  "devicesThisPhone": "This phone",
+  "devicesLoadFailed": "Could not load the devices. Check the connection to the server.",
+  "removeDeviceTitle": "Remove {name}?",
+  "@removeDeviceTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "removeDeviceMessage": "It leaves the server at once. To use it again, pair it again with a new QR code.",
+  "removeDeviceConfirm": "Remove",
+  "removeDeviceFailed": "Could not remove the device. Check the connection to the server."
 }

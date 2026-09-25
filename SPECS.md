@@ -593,3 +593,13 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > - `GET /api/recordings/{cameraId}/{segmento}` serve o arquivo `video/mp4` com `Range`. Só um nome
 >   no formato do MediaMTX (`AAAA-MM-DD_HH-MM-SS-ffffff.mp4`) vira caminho no disco; qualquer outro
 >   nome dá 404.
+
+> Revisão (2026-09-25): remover aparelhos (bullet 4.1, com a revisão do próprio bullet). `GET
+> /api/devices` (Monitores) devolve `[{ id, name, role, online }]`, câmeras primeiro. `DELETE
+> /api/devices/{id}` (Monitores, 204) segue `Device.RevokeBy(requester, now)`: só Monitor ativo
+> remove, nunca a si mesmo (409 `device.cannot_remove_itself`; para isso existe "Reiniciar o app"),
+> e um aparelho já removido é 404. Remover (e também o `DELETE /api/me`) derruba as conexões do hub
+> desse aparelho e, se era câmera, manda aos Monitores `CameraRemoved(Guid cameraId)`. A feature
+> `Realtime` implementa isso atrás da interface `IDeviceRemovals`, em `Infrastructure/Realtime`,
+> para `Devices` não depender de `Realtime`. A câmera removida tenta reconectar, recebe 401 e o
+> modo câmera fecha com a mensagem de pareamento perdido (1.12.3).

@@ -441,6 +441,36 @@ void main() {
       expect(find.text('About 7 hours of one camera fit.'), findsOneWidget);
     });
 
+    testWidgets('menuDevices_removesACameraAfterConfirming', (tester) async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      const camera = DeviceInfo(
+        id: 'cam',
+        name: 'Samsung A10',
+        role: DeviceRole.camera,
+        online: true,
+      );
+      api.deviceResults.addAll([
+        ApiSuccess(const [camera]),
+        ApiSuccess(const <DeviceInfo>[]),
+      ]);
+      await openApp(tester);
+      await tester.tap(find.byTooltip('Show menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Devices'));
+      await tester.pumpAndSettle();
+
+      // act
+      await tester.tap(find.byTooltip('Remove'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Remove'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(api.removedDevices, ['cam']);
+      expect(find.text('Samsung A10'), findsNothing);
+    });
+
     testWidgets('menuWithoutMonitor_hasNoAddMonitor', (tester) async {
       // arrange
       await store.write(

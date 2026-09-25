@@ -62,6 +62,7 @@ class CameraListController extends ChangeNotifier {
 
   Future<void> start() async {
     hub.client.on('CameraStatusChanged', _onStatusChanged);
+    hub.client.on('CameraRemoved', _onCameraRemoved);
     hub.onConnected = () => unawaited(refresh());
     hub.addListener(notifyListeners);
     hub.start();
@@ -121,6 +122,18 @@ class CameraListController extends ChangeNotifier {
     if (camera == null || state is! CameraListLoaded) return;
     final others = state.cameras.where((existing) => existing.id != camera.id);
     _setState(CameraListLoaded(_sorted([...others, camera])));
+  }
+
+  void _onCameraRemoved(List<Object?> args) {
+    final id = args.firstOrNull;
+    final state = _state;
+    if (id is! String || state is! CameraListLoaded) return;
+    _setState(
+      CameraListLoaded([
+        for (final camera in state.cameras)
+          if (camera.id.toLowerCase() != id.toLowerCase()) camera,
+      ]),
+    );
   }
 
   static List<CameraInfo> _sorted(List<CameraInfo> cameras) =>

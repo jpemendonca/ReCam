@@ -141,6 +141,31 @@ public sealed class Device
     }
 
     /// <summary>
+    /// A Monitor takes another device off the server. A device leaves by itself through
+    /// <see cref="Revoke"/> ("Reset app"), never through here.
+    /// </summary>
+    public Result RevokeBy(Device requester, DateTimeOffset now)
+    {
+        if (!requester.IsMonitor || requester.IsRevoked)
+        {
+            return DeviceErrors.NotAMonitor;
+        }
+
+        if (requester.Id == Id)
+        {
+            return DeviceErrors.CannotRemoveItself;
+        }
+
+        if (IsRevoked)
+        {
+            return DeviceErrors.NotFound;
+        }
+
+        Revoke(now);
+        return Result.Success();
+    }
+
+    /// <summary>
     /// Takes the device off the server: its credential stops working. Revoking twice keeps the
     /// first time.
     /// </summary>

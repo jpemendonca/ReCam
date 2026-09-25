@@ -1,3 +1,5 @@
+using Recam.Server.Infrastructure.Realtime;
+
 namespace Recam.Server.Features.Realtime;
 
 public static class RealtimeEndpoints
@@ -6,6 +8,8 @@ public static class RealtimeEndpoints
     {
         services.AddSignalR();
         services.AddSingleton<WatchLeases>();
+        services.AddSingleton<DeviceConnections>();
+        services.AddSingleton<IDeviceRemovals, RealtimeDeviceRemovals>();
         return services;
     }
 

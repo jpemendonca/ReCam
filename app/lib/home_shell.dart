@@ -15,6 +15,7 @@ import 'l10n/generated/app_localizations.dart';
 import 'core/pairing/device_role.dart';
 import 'pairing_router.dart';
 import 'viewer/add_device_screen.dart';
+import 'viewer/devices_screen.dart';
 import 'viewer/recordings_screen.dart';
 import 'viewer/camera_list_controller.dart';
 import 'viewer/viewer_pairing_controller.dart';
@@ -116,6 +117,12 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
+  void _openDevices(ViewerPaired paired) => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) => DevicesScreen(api: widget.api, session: paired.session),
+    ),
+  );
+
   void _openRecordings(ViewerPaired paired) => Navigator.of(context).push<void>(
     MaterialPageRoute(
       builder: (_) =>
@@ -195,6 +202,9 @@ class _HomeShellState extends State<HomeShell> {
                 (_MenuAction.recordings, final ViewerPaired paired) =>
                   _openRecordings(paired),
                 (_MenuAction.recordings, _) => null,
+                (_MenuAction.devices, final ViewerPaired paired) =>
+                  _openDevices(paired),
+                (_MenuAction.devices, _) => null,
                 (_MenuAction.reset, _) => unawaited(_confirmReset()),
               },
               itemBuilder: (context) => [
@@ -202,6 +212,10 @@ class _HomeShellState extends State<HomeShell> {
                   PopupMenuItem(
                     value: _MenuAction.recordings,
                     child: Text(l10n.recordingsTitle),
+                  ),
+                  PopupMenuItem(
+                    value: _MenuAction.devices,
+                    child: Text(l10n.devicesTitle),
                   ),
                   PopupMenuItem(
                     value: _MenuAction.addMonitor,
@@ -279,4 +293,4 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
-enum _MenuAction { recordings, addMonitor, reset }
+enum _MenuAction { recordings, devices, addMonitor, reset }

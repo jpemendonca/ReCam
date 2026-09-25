@@ -193,6 +193,61 @@ class HttpApiClient implements ApiClient {
   }
 
   @override
+  Future<ApiResult<List<DeviceInfo>>> devices(Uri baseUrl, String credential) {
+    return _sendJson(
+      () => _client.get(
+        baseUrl.resolve('/api/devices'),
+        headers: {HttpHeaders.authorizationHeader: 'Bearer $credential'},
+      ),
+      expectedStatus: HttpStatus.ok,
+      parse: (json, _) {
+        if (json is! List<Object?>) return null;
+        final devices = [
+          for (final item in json)
+            if (item case {
+              'id': final String id,
+              'name': final String name,
+              'role': final String role,
+              'online': final bool online,
+            })
+              if (DeviceRole.tryParse(role) case final DeviceRole parsed)
+                DeviceInfo(id: id, name: name, role: parsed, online: online),
+        ];
+        return devices.length == json.length ? devices : null;
+      },
+    );
+  }
+
+  @override
+  Future<ApiFailureKind?> removeDevice(
+    Uri baseUrl,
+    String credential,
+    String deviceId,
+  ) async {
+    final http.Response response;
+    try {
+      response = await _client
+          .delete(
+            baseUrl.resolve('/api/devices/$deviceId'),
+            headers: {HttpHeaders.authorizationHeader: 'Bearer $credential'},
+          )
+          .timeout(timeout);
+    } on IOException {
+      return ApiFailureKind.unreachable;
+    } on http.ClientException {
+      return ApiFailureKind.unreachable;
+    } on TimeoutException {
+      return ApiFailureKind.unreachable;
+    }
+    return switch (response.statusCode) {
+      HttpStatus.noContent || HttpStatus.notFound => null,
+      HttpStatus.unauthorized => ApiFailureKind.unauthorized,
+      HttpStatus.conflict => ApiFailureKind.conflict,
+      _ => ApiFailureKind.unexpected,
+    };
+  }
+
+  @override
   Future<ApiResult<List<DateTime>>> recordingDays(
     Uri baseUrl,
     String credential,

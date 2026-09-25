@@ -102,5 +102,14 @@
   "timelineTapToPlay": "Toque nas horas aqui embaixo para assistir a partir daquele momento.",
   "timelinePlaying": "Tocando a partir das {time}",
   "timelineEmpty": "Nenhuma gravação ainda. Ligue Gravar sempre nesta câmera.",
-  "timelineLoadFailed": "Não deu para carregar as gravações. Confira a conexão com o servidor."
+  "timelineLoadFailed": "Não deu para carregar as gravações. Confira a conexão com o servidor.",
+  "devicesTitle": "Aparelhos",
+  "devicesCameras": "Câmeras",
+  "devicesMonitors": "Monitores",
+  "devicesThisPhone": "Este celular",
+  "devicesLoadFailed": "Não deu para carregar os aparelhos. Confira a conexão com o servidor.",
+  "removeDeviceTitle": "Remover {name}?",
+  "removeDeviceMessage": "Ele sai do servidor na hora. Para usar de novo, pareie outra vez com um QR code novo.",
+  "removeDeviceConfirm": "Remover",
+  "removeDeviceFailed": "Não deu para remover o aparelho. Confira a conexão com o servidor."
 }

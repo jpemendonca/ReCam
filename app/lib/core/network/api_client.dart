@@ -36,6 +36,16 @@ abstract interface class ApiClient {
     String credential,
   );
 
+  /// Every device on the server, cameras first.
+  Future<ApiResult<List<DeviceInfo>>> devices(Uri baseUrl, String credential);
+
+  /// Takes another device off the server. Returns null when it was removed.
+  Future<ApiFailureKind?> removeDevice(
+    Uri baseUrl,
+    String credential,
+    String deviceId,
+  );
+
   /// The UTC days that have recordings of a camera, newest first.
   Future<ApiResult<List<DateTime>>> recordingDays(
     Uri baseUrl,
@@ -57,6 +67,24 @@ abstract interface class ApiClient {
     String credential,
     int megabytes,
   );
+}
+
+/// A device in the Monitor's device list.
+class DeviceInfo {
+  const DeviceInfo({
+    required this.id,
+    required this.name,
+    required this.role,
+    required this.online,
+  });
+
+  final String id;
+  final String name;
+  final DeviceRole role;
+  final bool online;
+
+  /// Owners and viewers are both Monitors on screen.
+  bool get isCamera => role == DeviceRole.camera;
 }
 
 /// One playable recorded file; [url] is a server path. Times in UTC.

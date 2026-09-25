@@ -187,6 +187,24 @@ void main() {
     });
   });
 
+  group('CameraListController removal', () {
+    test('onCameraRemoved_dropsTheCamera', () async {
+      // arrange
+      api.cameraResults.addAll([
+        ApiSuccess([_camera('a', 'Kitchen'), _camera('b', 'Porch')]),
+        ApiSuccess([_camera('a', 'Kitchen'), _camera('b', 'Porch')]),
+      ]);
+      await controller.start();
+      await settle();
+
+      // act
+      hubClient.receive('CameraRemoved', ['B']);
+
+      // assert
+      expect(cameras().map((camera) => camera.id), ['a']);
+    });
+  });
+
   group('CameraListController temperature', () {
     test('onStatusChanged_withTemperature_showsIt', () async {
       // arrange

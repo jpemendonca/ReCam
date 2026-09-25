@@ -19,6 +19,7 @@ public sealed partial class DeviceHub(
     IDbContextFactory<RecamDbContext> databaseFactory,
     DevicePresence presence,
     WatchLeases leases,
+    DeviceConnections connections,
     TimeProvider timeProvider,
     ILogger<DeviceHub> logger) : Hub<IDeviceClient>
 {
@@ -31,6 +32,7 @@ public sealed partial class DeviceHub(
         var deviceId = user.GetDeviceId();
         var role = user.FindFirstValue(ClaimTypes.Role);
         LogConnected(logger, deviceId, role, Context.ConnectionId);
+        connections.Add(deviceId, Context);
         if (user.IsInRole(nameof(DeviceRole.Owner)) || user.IsInRole(nameof(DeviceRole.Viewer)))
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, ViewersGroup, Context.ConnectionAborted);
@@ -67,6 +69,7 @@ public sealed partial class DeviceHub(
     {
         await leases.RemoveConnectionAsync(Context.ConnectionId);
         var deviceId = Context.User!.GetDeviceId();
+        connections.Remove(deviceId, Context.ConnectionId);
         var reason = exception?.Message;
         LogDisconnected(logger, deviceId, Context.ConnectionId, reason);
         if (presence.Disconnect(deviceId))

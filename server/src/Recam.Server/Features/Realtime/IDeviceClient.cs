@@ -20,4 +20,7 @@ public interface IDeviceClient
     Task RecordingChanged(bool recording);
 
     Task TorchChanged(Guid cameraId, bool torchOn);
+
+    /// <summary>A camera left the server; Monitors drop it from their list.</summary>
+    Task CameraRemoved(Guid cameraId);
 }
