@@ -72,5 +72,6 @@
   "addMonitorTitle": "Adicionar monitor",
   "cameraModeShowImage": "Ver imagem",
   "cameraModeHideImage": "Esconder imagem",
-  "temperatureC": "{degrees} °C"
+  "temperatureC": "{degrees} °C",
+  "cameraModeHot": "O celular esquentou: enviando vídeo em qualidade menor até esfriar."
 }

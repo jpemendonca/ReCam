@@ -847,11 +847,22 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > temperatura impossível, aceita ausência), hub até a lista, controller (manda quando muda um grau,
   > não manda por décimos) e a lista aplicando `CameraStatusChanged`.
 
-- [ ] **2.3 Redução automática de qualidade por calor**
+- [x] **2.3 Redução automática de qualidade por calor**
   - Origem: `SPECS.md` 11.
   - Escopo: com temperatura ≥ 42 °C, a câmera passa para 854x480 a 10 fps e 400 kbps. Volta a
     720p abaixo de 38 °C.
   - Aceite: teste da regra de histerese como função pura.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (119 no
+  > servidor, 182 no app). A regra é `VideoQuality.forTemperature(atual, temperatura)`, função pura
+  > em `core/media/video_quality.dart`: ≥ 42 °C reduz, < 38 °C volta ao cheio, entre os dois mantém,
+  > sem leitura não muda. O `CameraModeController` reavalia a cada leitura da bateria (a cada 15 s)
+  > e manda a mudança ao `WebRtcPublisher.setQuality`, que troca os parâmetros do sender sem reabrir
+  > a câmera nem renegociar (`maxBitrate` 400 kbps, `maxFramerate` 10, `scaleResolutionDownBy` 1,5)
+  > e guarda a qualidade para a próxima transmissão. Com escala 1,5 sobre a captura de 1280x720, o
+  > libwebrtc manda 853x480, não 854x480 exatos; para 854 seria preciso reabrir a câmera com outra
+  > resolução, o que derrubaria a transmissão. A tela da câmera avisa "O celular esquentou: enviando
+  > vídeo em qualidade menor até esfriar." Testes: histerese como função pura (limites 42 e 38,
+  > faixa do meio nos dois sentidos, sem leitura) e o controller reduzindo e voltando.
 
 - [ ] **2.4 Tela guiada de otimização de bateria**
   - Origem: `SPECS.md` 11.

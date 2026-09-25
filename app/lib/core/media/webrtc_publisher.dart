@@ -6,6 +6,7 @@ import '../storage/credential_store.dart';
 import 'camera_capture.dart';
 import 'ice_gathering.dart';
 import 'signaling_client.dart';
+import 'video_quality.dart';
 
 /// Sends this phone's camera to the server.
 abstract interface class WebRtcPublisher {
@@ -18,15 +19,17 @@ abstract interface class WebRtcPublisher {
   /// Switches the torch of the camera being published. Returns false when there is no
   /// publishing camera or it has no torch.
   Future<bool> setTorch(bool on);
+
+  /// Changes what is sent without reopening the camera. Kept for the next [start] too.
+  Future<void> setQuality(VideoQuality quality);
 }
 
-/// Publishes with WHIP through the server proxy: no audio, H.264 first, at most 700 kbps
-/// (SPECS.md 2.3). Frames go from the camera to the hardware encoder to the network inside
+/// Publishes with WHIP through the server proxy: no audio, H.264 first, at the current
+/// [VideoQuality] (SPECS.md 2.3). Frames go from the camera to the hardware encoder to the network inside
 /// libwebrtc; none pass through Dart.
 class WhipPublisher implements WebRtcPublisher {
   WhipPublisher({required this._session, required this._signaling});
 
-  static const _maxBitrate = 700000;
   static const _sendOnlyOffer = <String, Object>{
     'mandatory': {'OfferToReceiveAudio': false, 'OfferToReceiveVideo': false},
     'optional': <Object>[],
@@ -36,6 +39,8 @@ class WhipPublisher implements WebRtcPublisher {
   final SignalingClient _signaling;
 
   RTCPeerConnection? _connection;
+  RTCRtpSender? _sender;
+  VideoQuality _quality = VideoQuality.full;
   PluginCameraFeed? _feed;
   Uri? _resource;
 
@@ -73,12 +78,14 @@ class WhipPublisher implements WebRtcPublisher {
         streams: [feed.stream],
         sendEncodings: [
           RTCRtpEncoding(
-            maxBitrate: _maxBitrate,
-            maxFramerate: PluginCameraCapture.frameRate,
+            maxBitrate: _quality.maxBitrate,
+            maxFramerate: _quality.maxFramerate,
+            scaleResolutionDownBy: _quality.scaleDownBy,
           ),
         ],
       ),
     );
+    _sender = transceiver.sender;
     await _preferH264(transceiver);
 
     // Without these flags the Android plugin adds receive-only audio and video lines, and
@@ -132,6 +139,26 @@ class WhipPublisher implements WebRtcPublisher {
   }
 
   @override
+  Future<void> setQuality(VideoQuality quality) async {
+    _quality = quality;
+    final sender = _sender;
+    if (sender == null) return;
+    final parameters = sender.parameters;
+    for (final encoding in parameters.encodings ?? <RTCRtpEncoding>[]) {
+      encoding
+        ..maxBitrate = quality.maxBitrate
+        ..maxFramerate = quality.maxFramerate
+        ..scaleResolutionDownBy = quality.scaleDownBy;
+    }
+    // A sender that is closing refuses new parameters; the next start uses the quality anyway.
+    try {
+      await sender.setParameters(parameters);
+    } on Object {
+      return;
+    }
+  }
+
+  @override
   Future<void> stop() async {
     final resource = _resource;
     _resource = null;
@@ -140,6 +167,7 @@ class WhipPublisher implements WebRtcPublisher {
     }
     await _connection?.close();
     _connection = null;
+    _sender = null;
     _feed = null;
   }
 }

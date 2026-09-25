@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/camera/camera_mode_controller.dart';
 import 'package:recam/core/device/battery_reader.dart';
+import 'package:recam/core/media/video_quality.dart';
 import 'package:recam/core/network/hub_client.dart';
 import 'package:recam/core/network/hub_session.dart';
 
@@ -377,6 +378,42 @@ void main() {
       expect(offline.watchers, 0);
       await offline.stop();
       offline.dispose();
+    });
+  });
+
+  group('CameraModeController heat', () {
+    BatteryReading at(double temperatureC) =>
+        BatteryReading(level: 80, isCharging: true, temperatureC: temperatureC);
+
+    test('atFortyTwoDegrees_reducesTheQuality', () async {
+      // arrange
+      await start();
+      battery.reading = at(42);
+
+      // act
+      await controller.checkBattery();
+      await settle();
+
+      // assert
+      expect(controller.quality, VideoQuality.reduced);
+      expect(publisher.qualities, [VideoQuality.reduced]);
+    });
+
+    test('coolingBelowThirtyEight_restoresFullQuality', () async {
+      // arrange
+      battery.reading = at(43);
+      await start();
+      battery.reading = at(39);
+      await controller.checkBattery();
+
+      // act
+      battery.reading = at(37.5);
+      await controller.checkBattery();
+      await settle();
+
+      // assert
+      expect(controller.quality, VideoQuality.full);
+      expect(publisher.qualities, [VideoQuality.reduced, VideoQuality.full]);
     });
   });
 

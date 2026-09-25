@@ -516,3 +516,8 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > SignalR do Dart não manda argumento nulo). `Device` e `CameraStatus` ganharam `temperatureC`
 > (temperatura da bateria, validada entre -40 e 120 °C). A câmera manda a telemetria também quando
 > a temperatura muda um grau inteiro (bullet 2.2).
+
+> Revisão (2026-09-25): com a bateria a 42 °C ou mais, a câmera passa a mandar cerca de 480p
+> (escala 1,5 sobre a captura de 1280x720, 853x480), 10 fps e 400 kbps, trocando os parâmetros do
+> envio sem reabrir a câmera. Volta a 1280x720, 15 fps e 700 kbps abaixo de 38 °C. Entre os dois
+> limites, mantém o que estava (bullet 2.3).

@@ -6,6 +6,7 @@ import '../core/device/battery_reader.dart';
 import '../core/device/keep_alive.dart';
 import '../core/device/screen_controller.dart';
 import '../core/media/camera_capture.dart';
+import '../core/media/video_quality.dart';
 import '../core/media/webrtc_publisher.dart';
 import '../core/network/hub_session.dart';
 import '../core/storage/credential_store.dart';
@@ -48,6 +49,7 @@ class CameraModeController extends ChangeNotifier {
   DateTime? _lastSentAt;
   bool _publishing = false;
   bool _previewOpen = false;
+  VideoQuality _quality = VideoQuality.full;
   CameraFeed? _feed;
   bool _torchOn = false;
   int _watchers = 0;
@@ -59,6 +61,9 @@ class CameraModeController extends ChangeNotifier {
   bool get pairingLost => _hub.rejected;
 
   bool get publishing => _publishing;
+
+  /// Reduced while the phone is hot (SPECS.md 11).
+  VideoQuality get quality => _quality;
 
   /// The camera to show as a thumbnail, or null while the thumbnail is closed.
   CameraFeed? get preview => _previewOpen ? _feed : null;
@@ -177,6 +182,14 @@ class CameraModeController extends ChangeNotifier {
     await _hub.client.invoke('ReportTorch', [_torchOn]);
   }
 
+  void _followTemperature(double? temperatureC) {
+    final next = VideoQuality.forTemperature(_quality, temperatureC);
+    if (next == _quality) return;
+    _quality = next;
+    notifyListeners();
+    _queue(() => _publisher.setQuality(next));
+  }
+
   void _onWatchersChanged(List<Object?> args) {
     final count = args.firstOrNull;
     if (count is! num) return;
@@ -187,6 +200,7 @@ class CameraModeController extends ChangeNotifier {
   Future<void> _report({required bool force}) async {
     if (!_hub.connected) return;
     final reading = await _battery.read();
+    _followTemperature(reading.temperatureC);
     final lastSentAt = _lastSentAt;
     final due =
         lastSentAt == null || _now().difference(lastSentAt) >= reportInterval;

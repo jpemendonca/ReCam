@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../core/media/video_quality.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'camera_mode_controller.dart';
 
@@ -107,6 +108,14 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
                     Text(
                       l10n.cameraModeWatchers(_controller.watchers),
                       textAlign: TextAlign.center,
+                    ),
+                  ],
+                  if (_controller.quality == VideoQuality.reduced) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.cameraModeHot,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: theme.colorScheme.error),
                     ),
                   ],
                   if (_controller.torchOn) ...[

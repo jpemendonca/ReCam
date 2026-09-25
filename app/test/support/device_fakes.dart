@@ -82,6 +82,10 @@ class FakePublisher implements WebRtcPublisher {
   int starts = 0;
   int stops = 0;
   final List<bool> torchCalls = [];
+  final List<VideoQuality> qualities = [];
+
+  @override
+  Future<void> setQuality(VideoQuality quality) async => qualities.add(quality);
 
   /// The feed the last successful start published.
   CameraFeed? publishedFeed;

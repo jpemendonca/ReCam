@@ -114,5 +114,6 @@
         "type": "int"
       }
     }
-  }
+  },
+  "cameraModeHot": "The phone is hot: sending lower quality video until it cools down."
 }
