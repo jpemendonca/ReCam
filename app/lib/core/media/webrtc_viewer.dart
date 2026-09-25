@@ -33,8 +33,10 @@ class WhepViewer implements WebRtcViewer {
     required this._signaling,
   });
 
+  // Video must stay true: false would turn the receive-only video line into a rejected one
+  // (port 0), and MediaMTX would have nothing to send. Audio false keeps an audio line out.
   static const _receiveOnlyOffer = <String, Object>{
-    'mandatory': {'OfferToReceiveAudio': false, 'OfferToReceiveVideo': false},
+    'mandatory': {'OfferToReceiveAudio': false, 'OfferToReceiveVideo': true},
     'optional': <Object>[],
   };
 

@@ -342,13 +342,16 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > Validação (2026-09-25): só código escrito. Gate verde. Remote do git atualizado para
   > `github.com/jpemendonca/ReCam`.
 
-- [ ] **1.6.2 [aparelho] Validar pareamento com emulador como dono e celular como câmera**
+- [x] **1.6.2 [aparelho] Validar pareamento com emulador como dono e celular como câmera**
   - Origem: nova forma de teste (1.6.1).
   - Escopo: `./scripts/dev.ps1 -Reset` (1.6.5) deixa o emulador pareado como dono. O emulador abre
     "Adicionar câmera". O A10 lê esse QR na tela do PC pela aba Câmera.
   - Aceite: o emulador mostra "pareado" como dono e o A10 mostra "pareado" como câmera.
   > Bloqueado (2026-09-25): aguardando o autor com o A10 desbloqueado. O link de câmera no A10
   > já foi conferido pelo agente (log `paired as Camera`).
+  > Validação (2026-09-25): caminho percorrido pelo autor, com o Redmi 6A no lugar do emulador
+  > (`./scripts/dev.ps1 -Reset -Viewer`). O 6A virou dono pelo link, gerou o QR em "Adicionar
+  > câmera", e o A10 leu esse QR na aba Câmera e pareou.
 
 - [x] **1.7 [junto] Servidor: hub, presença e telemetria**
   - Origem: caminho principal, passo 5.
@@ -496,6 +499,38 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     sozinho quando a credencial é recusada.
   - Aceite: testes do `PairingService.verify` (fingerprint diferente → pareamento inválido) e do
     modo câmera saindo com credencial recusada.
+
+- [x] **1.12.4 Oferta WHEP pedindo vídeo**
+  - Origem: teste do autor em 2026-09-25 (A10 câmera, 6A visualizador): a câmera transmitia, mas o
+    visualizador ficava preto. A oferta do visualizador saía com `m=video 0` (vídeo recusado),
+    porque usava `OfferToReceiveVideo: false`, a mesma opção da câmera.
+  - Escopo: o visualizador passa a usar `OfferToReceiveVideo: true` e `OfferToReceiveAudio: false`.
+  - Aceite: vídeo ao vivo aparecendo num celular real.
+  > Validação (2026-09-25): caminho percorrido pelo autor. A10 transmitindo em H.264, Redmi 6A
+  > assistindo ao vivo. A suspeita anterior (NAT do emulador, repasse de UDP do Docker Desktop)
+  > estava errada: o emulador falhava pelo mesmo motivo. Isso valida os passos 1 a 6 do caminho
+  > principal com dois celulares.
+
+- [ ] **1.12.5 Depois de ler o QR, ir direto para o modo câmera**
+  - Origem: feedback do autor no teste de 2026-09-25.
+  - Escopo: na aba Câmera, quando o pareamento pelo QR (ou pelo link) dá certo, o app abre o modo
+    câmera na hora, sem parar na tela "Pareado".
+  - Aceite: teste do fluxo de pareamento abrindo o modo câmera.
+
+- [ ] **1.12.6 Botão de reiniciar o app**
+  - Origem: pedido do autor no teste de 2026-09-25.
+  - Escopo: um botão "Reiniciar" (com confirmação) que apaga os pareamentos das duas abas neste
+    aparelho e volta o app ao estado de recém-instalado. No servidor, o aparelho continua registrado
+    até ser revogado (3.1).
+  - Aceite: teste do controller apagando as duas credenciais e voltando as abas para "não pareado".
+
+- [ ] **1.12.7 Status mais claro nos dois lados, e atualizar a lista**
+  - Origem: pedido do autor no teste de 2026-09-25.
+  - Escopo: no celular câmera, mostrar se há alguém assistindo e quantos. Na lista da aba Assistir,
+    deixar claro online/offline e transmitindo/parada para cada câmera, e oferecer "Atualizar"
+    (puxar a lista para baixo e um botão), que recarrega pela API.
+  - Aceite: testes do controller da lista recarregando e da tela da câmera mostrando quantos
+    assistem.
 
 - [ ] **1.13 Lanterna**
   - Origem: caminho principal, passo 7.
