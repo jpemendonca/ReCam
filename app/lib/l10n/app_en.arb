@@ -87,7 +87,6 @@
   "cameraOffline": "Offline",
   "liveConnecting": "Waking up the camera…",
   "liveFailed": "Could not show the video. Check that the camera is online.",
-  "cameraModeWatched": "Someone is watching this camera now.",
   "cameraModeTorchOn": "Flashlight on.",
   "torchTurnOn": "Turn on flashlight",
   "torchTurnOff": "Turn off flashlight",
@@ -96,5 +95,17 @@
   "resetAppButton": "Reset app",
   "resetAppTitle": "Reset ReCam on this phone?",
   "resetAppMessage": "This phone forgets its pairings and starts over, as if just installed. The server keeps the devices until they are removed.",
-  "resetAppConfirm": "Reset"
+  "resetAppConfirm": "Reset",
+  "cameraModeSending": "Sending video.",
+  "cameraModeWatchers": "{count, plural, =0{Nobody is watching.} =1{1 person is watching.} other{{count} people are watching.}}",
+  "@cameraModeWatchers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cameraStreaming": "streaming",
+  "cameraIdle": "standing by",
+  "refreshButton": "Refresh"
 }

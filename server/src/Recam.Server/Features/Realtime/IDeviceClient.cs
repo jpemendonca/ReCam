@@ -11,6 +11,9 @@ public interface IDeviceClient
 
     Task StopPublishing();
 
+    /// <summary>How many viewers hold a lease on this camera now.</summary>
+    Task WatchersChanged(int count);
+
     Task SetTorch(bool torchOn);
 
     Task TorchChanged(Guid cameraId, bool torchOn);

@@ -155,4 +155,95 @@ public sealed class WatchLeasesTests
             return connection;
         }
     }
+
+    [Fact(DisplayName = "The camera hears how many viewers are watching it")]
+    public async Task WatchCamera_TwoViewers_SendsWatcherCountToCamera()
+    {
+        // arrange
+        var (factory, viewer, camera, cameraId) = await ConnectBothAsync();
+        using var _ = factory;
+        await using var viewerConnection = viewer;
+        await using var cameraConnection = camera;
+        var viewerDevice = await factory.PairDeviceAsync(DeviceRole.Viewer, "Second viewer");
+        await using var secondViewer = await factory.ConnectAsync(viewerDevice.Credential);
+        using var counts = new CountInbox(cameraConnection);
+
+        // act
+        await viewerConnection.InvokeAsync<HubResult>("WatchCamera", cameraId, TestContext.Current.CancellationToken);
+        await secondViewer.InvokeAsync<HubResult>("WatchCamera", cameraId, TestContext.Current.CancellationToken);
+        await secondViewer.InvokeAsync<HubResult>("UnwatchCamera", cameraId, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Equal([1, 2, 1], await counts.WaitForAsync(3));
+    }
+
+    [Fact(DisplayName = "A viewer that disconnects no longer counts as watching")]
+    public async Task ViewerDisconnect_WithOpenLease_SendsLowerCount()
+    {
+        // arrange
+        var (factory, viewer, camera, cameraId) = await ConnectBothAsync();
+        using var _ = factory;
+        await using var cameraConnection = camera;
+        using var counts = new CountInbox(cameraConnection);
+        await viewer.InvokeAsync<HubResult>("WatchCamera", cameraId, TestContext.Current.CancellationToken);
+
+        // act
+        await viewer.DisposeAsync();
+
+        // assert
+        Assert.Equal([1, 0], await counts.WaitForAsync(2));
+    }
+
+    [Fact(DisplayName = "A camera learns the current count as soon as it connects")]
+    public async Task CameraConnect_SendsCurrentWatcherCount()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        var cameraConnection = factory.BuildConnection(camera.Credential);
+        await using var __ = cameraConnection;
+        using var counts = new CountInbox(cameraConnection);
+
+        // act
+        await cameraConnection.StartAsync(TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Equal([0], await counts.WaitForAsync(1));
+    }
+
+    /// <summary>Collects the counts a camera receives in WatchersChanged.</summary>
+    private sealed class CountInbox : IDisposable
+    {
+        private static readonly TimeSpan Wait = TimeSpan.FromSeconds(10);
+
+        private readonly List<int> _received = [];
+        private readonly SemaphoreSlim _signal = new(0);
+
+        public CountInbox(HubConnection connection) =>
+            connection.On<int>("WatchersChanged", count =>
+            {
+                lock (_received)
+                {
+                    _received.Add(count);
+                }
+
+                _signal.Release();
+            });
+
+        public void Dispose() => _signal.Dispose();
+
+        public async Task<List<int>> WaitForAsync(int messages)
+        {
+            using var timeout = new CancellationTokenSource(Wait);
+            for (var i = 0; i < messages; i++)
+            {
+                await _signal.WaitAsync(timeout.Token);
+            }
+
+            lock (_received)
+            {
+                return [.. _received];
+            }
+        }
+    }
 }

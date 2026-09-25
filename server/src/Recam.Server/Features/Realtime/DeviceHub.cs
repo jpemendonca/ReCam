@@ -42,9 +42,15 @@ public sealed partial class DeviceHub(
         }
 
         // A camera that reconnects while someone watches resumes publishing on its own.
-        if (user.IsInRole(nameof(DeviceRole.Camera)) && leases.HasWatchers(deviceId))
+        if (user.IsInRole(nameof(DeviceRole.Camera)))
         {
-            await Clients.Caller.StartPublishing();
+            var watchers = leases.WatcherCount(deviceId);
+            if (watchers > 0)
+            {
+                await Clients.Caller.StartPublishing();
+            }
+
+            await Clients.Caller.WatchersChanged(watchers);
         }
 
         await base.OnConnectedAsync();
@@ -52,7 +58,7 @@ public sealed partial class DeviceHub(
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        leases.RemoveConnection(Context.ConnectionId);
+        await leases.RemoveConnectionAsync(Context.ConnectionId);
         var deviceId = Context.User!.GetDeviceId();
         var reason = exception?.Message;
         LogDisconnected(logger, deviceId, Context.ConnectionId, reason);
@@ -104,9 +110,9 @@ public sealed partial class DeviceHub(
     }
 
     [Authorize(Policy = AuthExtensions.ViewerOrOwner)]
-    public HubResult UnwatchCamera(Guid cameraId)
+    public async Task<HubResult> UnwatchCamera(Guid cameraId)
     {
-        leases.Unwatch(Context.ConnectionId, cameraId);
+        await leases.UnwatchAsync(Context.ConnectionId, cameraId);
         return HubResult.Success;
     }
 

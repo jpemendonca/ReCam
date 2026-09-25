@@ -90,66 +90,99 @@ class _CameraListViewState extends State<CameraListView> {
               '${l10n.watchPairedRole(deviceRoleText(l10n, widget.session.role))}'
               ' · ${_controller.connected ? l10n.serverOnline : l10n.serverConnecting}',
             ),
-            trailing: isOwner
-                ? IconButton(
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  tooltip: l10n.refreshButton,
+                  onPressed: _controller.refreshing
+                      ? null
+                      : _controller.refresh,
+                  icon: const Icon(Icons.refresh),
+                ),
+                if (isOwner)
+                  IconButton(
                     tooltip: l10n.addCameraButton,
                     onPressed: _addCamera,
                     icon: const Icon(Icons.add_a_photo_outlined),
-                  )
-                : null,
+                  ),
+              ],
+            ),
           ),
           const Divider(height: 1),
           Expanded(
-            child: switch (_controller.state) {
-              CameraListLoading() => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              CameraListFailed() => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(l10n.cameraListError, textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: _controller.refresh,
-                      child: Text(l10n.retryButton),
-                    ),
-                  ],
+            child: RefreshIndicator(
+              onRefresh: _controller.refresh,
+              child: switch (_controller.state) {
+                CameraListLoading() => const _PullableCenter(
+                  child: CircularProgressIndicator(),
                 ),
-              ),
-              CameraListLoaded(:final cameras) when cameras.isEmpty => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
+                CameraListFailed() => _PullableCenter(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(l10n.cameraListEmpty, textAlign: TextAlign.center),
-                      if (isOwner) ...[
-                        const SizedBox(height: 16),
-                        FilledButton.icon(
-                          onPressed: _addCamera,
-                          icon: const Icon(Icons.add_a_photo_outlined),
-                          label: Text(l10n.addCameraButton),
-                        ),
-                      ],
+                      Text(l10n.cameraListError, textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: _controller.refresh,
+                        child: Text(l10n.retryButton),
+                      ),
                     ],
                   ),
                 ),
-              ),
-              CameraListLoaded(:final cameras) => ListView.separated(
-                itemCount: cameras.length,
-                separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (context, index) => _CameraTile(
-                  camera: cameras[index],
-                  onOpen: () => _openLive(cameras[index]),
+                CameraListLoaded(:final cameras) when cameras.isEmpty =>
+                  _PullableCenter(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(l10n.cameraListEmpty, textAlign: TextAlign.center),
+                        if (isOwner) ...[
+                          const SizedBox(height: 16),
+                          FilledButton.icon(
+                            onPressed: _addCamera,
+                            icon: const Icon(Icons.add_a_photo_outlined),
+                            label: Text(l10n.addCameraButton),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                CameraListLoaded(:final cameras) => ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: cameras.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (context, index) => _CameraTile(
+                    camera: cameras[index],
+                    onOpen: () => _openLive(cameras[index]),
+                  ),
                 ),
-              ),
-            },
+              },
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+/// Centers its child and still lets the user pull to refresh.
+class _PullableCenter extends StatelessWidget {
+  const _PullableCenter({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+        child: Center(
+          child: Padding(padding: const EdgeInsets.all(24), child: child),
+        ),
+      ),
+    ),
+  );
 }
 
 class _CameraTile extends StatelessWidget {
@@ -168,10 +201,19 @@ class _CameraTile extends StatelessWidget {
       onTap: onOpen,
       leading: Icon(
         camera.online ? Icons.videocam : Icons.videocam_off_outlined,
-        color: camera.online ? colors.primary : colors.outline,
+        color: !camera.online
+            ? colors.outline
+            : camera.publishing
+            ? colors.error
+            : colors.primary,
       ),
       title: Text(camera.name),
-      subtitle: Text(camera.online ? l10n.cameraOnline : l10n.cameraOffline),
+      subtitle: Text(
+        !camera.online
+            ? l10n.cameraOffline
+            : '${l10n.cameraOnline} · '
+                  '${camera.publishing ? l10n.cameraStreaming : l10n.cameraIdle}',
+      ),
       trailing: battery == null
           ? null
           : Row(

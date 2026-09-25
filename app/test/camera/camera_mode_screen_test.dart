@@ -43,8 +43,41 @@ void main() {
 
       // assert
       expect(find.text('Connected. This phone is a camera.'), findsOneWidget);
+      expect(find.text('Nobody is watching.'), findsOneWidget);
       expect(find.text('Battery 57%'), findsOneWidget);
       expect(find.text('Stop camera'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('whenViewersWatch_showsHowMany', (tester) async {
+      // arrange
+      final client = FakeHubClient();
+      CameraModeController create() => CameraModeController(
+        hub: HubSession(client: client, delay: (_) async {}),
+        battery: FakeBatteryReader(),
+        screen: FakeScreenController(),
+        keepAlive: FakeKeepAlive(),
+        publisher: FakePublisher(),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: CameraModeScreen(create: create, onPairingLost: () {}),
+        ),
+      );
+      await tester.runAsync(settle);
+
+      // act
+      client.receive('WatchersChanged', [3]);
+      await tester.pump();
+
+      // assert
+      expect(find.text('3 people are watching.'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
 

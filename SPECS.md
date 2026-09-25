@@ -459,3 +459,8 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > Revisão (2026-09-25): o erro de `SetTorch` com a câmera parada tem o código
 > `media.camera_not_publishing`, no mesmo formato `área.nome` dos outros erros de domínio (a tabela
 > da seção 5.6 dizia `camera-not-publishing`). Câmera inexistente devolve `media.camera_not_found`.
+
+> Revisão (2026-09-25): nova mensagem servidor → câmera, `WatchersChanged(int count)`, com quantas
+> conexões de visualizador têm lease aberto nela. O servidor manda a cada mudança (lease aberto,
+> fechado ou perdido por desconexão) e ao conectar a câmera. É o que o celular câmera mostra como
+> "quantos assistem" (bullet 1.12.7). `UnwatchCamera` passou a esperar esse aviso antes de responder.

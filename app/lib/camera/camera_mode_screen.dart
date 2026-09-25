@@ -93,14 +93,21 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    _controller.publishing
-                        ? l10n.cameraModeWatched
-                        : _controller.connected
-                        ? l10n.cameraModeConnected
-                        : l10n.cameraModeConnecting,
+                    !_controller.connected
+                        ? l10n.cameraModeConnecting
+                        : _controller.publishing
+                        ? l10n.cameraModeSending
+                        : l10n.cameraModeConnected,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.titleMedium,
                   ),
+                  if (_controller.connected) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.cameraModeWatchers(_controller.watchers),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                   if (_controller.torchOn) ...[
                     const SizedBox(height: 8),
                     Text(l10n.cameraModeTorchOn),

@@ -5,7 +5,7 @@ namespace Recam.Server.Features.Realtime;
 /// <summary>
 /// Who is watching each camera. The first watcher makes the camera publish; when the last one
 /// leaves, the camera stops after <see cref="StopGrace"/>, so a quick reopen does not restart
-/// the stream.
+/// the stream. Every change in the number of watchers is sent to the camera.
 /// </summary>
 public sealed class WatchLeases(IHubContext<DeviceHub, IDeviceClient> hub, TimeProvider timeProvider)
 {
@@ -17,7 +17,9 @@ public sealed class WatchLeases(IHubContext<DeviceHub, IDeviceClient> hub, TimeP
 
     public async Task WatchAsync(string connectionId, Guid cameraId)
     {
+        bool added;
         bool startNeeded;
+        int count;
         lock (_lock)
         {
             if (!_watchers.TryGetValue(cameraId, out var connections))
@@ -26,60 +28,88 @@ public sealed class WatchLeases(IHubContext<DeviceHub, IDeviceClient> hub, TimeP
                 _watchers[cameraId] = connections;
             }
 
-            var firstWatcher = connections.Add(connectionId) && connections.Count == 1;
+            added = connections.Add(connectionId);
+            var firstWatcher = added && connections.Count == 1;
             var stopWasPending = CancelPendingStop(cameraId);
             startNeeded = firstWatcher && !stopWasPending;
+            count = connections.Count;
         }
 
         if (startNeeded)
         {
             await hub.Clients.User(DeviceHub.UserId(cameraId)).StartPublishing();
         }
-    }
 
-    public void Unwatch(string connectionId, Guid cameraId)
-    {
-        lock (_lock)
+        if (added)
         {
-            ReleaseLease(connectionId, cameraId);
+            await NotifyCountAsync(cameraId, count);
         }
     }
 
-    public void RemoveConnection(string connectionId)
+    public async Task UnwatchAsync(string connectionId, Guid cameraId)
     {
+        int? remaining;
+        lock (_lock)
+        {
+            remaining = ReleaseLease(connectionId, cameraId);
+        }
+
+        if (remaining is { } count)
+        {
+            await NotifyCountAsync(cameraId, count);
+        }
+    }
+
+    public async Task RemoveConnectionAsync(string connectionId)
+    {
+        List<(Guid CameraId, int Count)> changed = [];
         lock (_lock)
         {
             foreach (var cameraId in _watchers.Where(pair => pair.Value.Contains(connectionId)).Select(pair => pair.Key).ToList())
             {
-                ReleaseLease(connectionId, cameraId);
+                if (ReleaseLease(connectionId, cameraId) is { } count)
+                {
+                    changed.Add((cameraId, count));
+                }
             }
+        }
+
+        foreach (var (cameraId, count) in changed)
+        {
+            await NotifyCountAsync(cameraId, count);
         }
     }
 
-    public bool HasWatchers(Guid cameraId)
+    /// <summary>Open leases on the camera: one per watching connection.</summary>
+    public int WatcherCount(Guid cameraId)
     {
         lock (_lock)
         {
-            return _watchers.ContainsKey(cameraId);
+            return _watchers.TryGetValue(cameraId, out var connections) ? connections.Count : 0;
         }
     }
 
-    private void ReleaseLease(string connectionId, Guid cameraId)
+    private Task NotifyCountAsync(Guid cameraId, int count) =>
+        hub.Clients.User(DeviceHub.UserId(cameraId)).WatchersChanged(count);
+
+    /// <summary>Returns the watchers left, or null when the connection held no lease.</summary>
+    private int? ReleaseLease(string connectionId, Guid cameraId)
     {
         if (!_watchers.TryGetValue(cameraId, out var connections) || !connections.Remove(connectionId))
         {
-            return;
+            return null;
         }
 
         if (connections.Count > 0)
         {
-            return;
+            return connections.Count;
         }
 
         _watchers.Remove(cameraId);
         var cancellation = new CancellationTokenSource();
         _pendingStops[cameraId] = cancellation;
         _ = StopAfterGraceAsync(cameraId, cancellation);
+        return 0;
     }
 
     private bool CancelPendingStop(Guid cameraId)

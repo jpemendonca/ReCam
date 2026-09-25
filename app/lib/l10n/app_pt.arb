@@ -52,7 +52,6 @@
   "cameraOffline": "Offline",
   "liveConnecting": "Acordando a câmera…",
   "liveFailed": "Não deu para mostrar o vídeo. Confira se a câmera está online.",
-  "cameraModeWatched": "Alguém está assistindo esta câmera agora.",
   "cameraModeTorchOn": "Lanterna ligada.",
   "torchTurnOn": "Ligar lanterna",
   "torchTurnOff": "Desligar lanterna",
@@ -61,5 +60,10 @@
   "resetAppButton": "Reiniciar o app",
   "resetAppTitle": "Reiniciar o ReCam neste celular?",
   "resetAppMessage": "Este celular esquece os pareamentos e começa do zero, como recém-instalado. O servidor mantém os aparelhos até serem removidos.",
-  "resetAppConfirm": "Reiniciar"
+  "resetAppConfirm": "Reiniciar",
+  "cameraModeSending": "Enviando vídeo.",
+  "cameraModeWatchers": "{count, plural, =0{Ninguém está assistindo.} =1{1 pessoa está assistindo.} other{{count} pessoas estão assistindo.}}",
+  "cameraStreaming": "transmitindo",
+  "cameraIdle": "parada",
+  "refreshButton": "Atualizar"
 }

@@ -42,6 +42,7 @@ class CameraModeController extends ChangeNotifier {
   DateTime? _lastSentAt;
   bool _publishing = false;
   bool _torchOn = false;
+  int _watchers = 0;
   Future<void> _publishingChange = Future.value();
 
   bool get connected => _hub.connected;
@@ -53,6 +54,9 @@ class CameraModeController extends ChangeNotifier {
 
   bool get torchOn => _torchOn;
 
+  /// How many viewers are watching, as the server last said. Zero while disconnected.
+  int get watchers => _hub.connected ? _watchers : 0;
+
   BatteryReading? get lastReading => _lastSent;
 
   Future<void> start({
@@ -63,6 +67,7 @@ class CameraModeController extends ChangeNotifier {
     _hub.onConnected = () => unawaited(_report(force: true));
     _hub.client.on('StartPublishing', (_) => _queue(_startPublishing));
     _hub.client.on('StopPublishing', (_) => _queue(_stopPublishing));
+    _hub.client.on('WatchersChanged', _onWatchersChanged);
     _hub.client.on(
       'SetTorch',
       (args) => _queue(() => _setTorch(args.firstOrNull == true)),
@@ -121,6 +126,13 @@ class CameraModeController extends ChangeNotifier {
       notifyListeners();
     }
     await _hub.client.invoke('ReportTorch', [_torchOn]);
+  }
+
+  void _onWatchersChanged(List<Object?> args) {
+    final count = args.firstOrNull;
+    if (count is! num) return;
+    _watchers = count.toInt();
+    notifyListeners();
   }
 
   Future<void> _report({required bool force}) async {

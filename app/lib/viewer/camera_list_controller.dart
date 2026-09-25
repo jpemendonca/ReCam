@@ -44,8 +44,12 @@ class CameraListController extends ChangeNotifier {
 
   CameraListState _state = CameraListLoading();
   bool _credentialRefused = false;
+  bool _refreshing = false;
 
   CameraListState get state => _state;
+
+  /// True while a reload from the API is on its way.
+  bool get refreshing => _refreshing;
 
   bool get connected => hub.connected;
 
@@ -60,8 +64,13 @@ class CameraListController extends ChangeNotifier {
     await refresh();
   }
 
+  /// Reloads the list from the API. A failure keeps the list already shown.
   Future<void> refresh() async {
+    _refreshing = true;
+    notifyListeners();
     final result = await _api.cameras(_session.serverUrl, _session.credential);
+    _refreshing = false;
+    notifyListeners();
     switch (result) {
       case ApiSuccess(:final value):
         _setState(CameraListLoaded(_sorted(value)));

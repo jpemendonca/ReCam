@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/camera/camera_mode_controller.dart';
 import 'package:recam/core/device/battery_reader.dart';
@@ -208,6 +210,42 @@ void main() {
       // assert
       expect(controller.torchOn, isFalse);
       expect(torchReports().last, [false]);
+    });
+  });
+
+  group('CameraModeController watchers', () {
+    test('onWatchersChanged_showsTheCount', () async {
+      // arrange
+      await start();
+
+      // act
+      client.receive('WatchersChanged', [2]);
+
+      // assert
+      expect(controller.watchers, 2);
+    });
+
+    test('whenDisconnected_showsNobodyWatching', () async {
+      // arrange
+      final offline = CameraModeController(
+        hub: HubSession(client: client, delay: (_) => Completer<void>().future),
+        battery: battery,
+        screen: screen,
+        keepAlive: keepAlive,
+        publisher: publisher,
+      );
+      await offline.start(notificationTitle: 't', notificationText: 'x');
+      await settle();
+      client.receive('WatchersChanged', [2]);
+
+      // act
+      client.drop();
+      await settle();
+
+      // assert
+      expect(offline.watchers, 0);
+      await offline.stop();
+      offline.dispose();
     });
   });
 

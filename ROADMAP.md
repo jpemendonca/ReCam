@@ -571,13 +571,24 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > e volta a "não pareado" sem mensagem de erro). Depois de reiniciar, o app volta para a aba
   > Câmera. Testes: `AppReset.reset` e o fluxo no `app_test` (confirmar apaga, cancelar mantém).
 
-- [ ] **1.12.7 Status mais claro nos dois lados, e atualizar a lista**
+- [x] **1.12.7 Status mais claro nos dois lados, e atualizar a lista**
   - Origem: pedido do autor no teste de 2026-09-25.
   - Escopo: no celular câmera, mostrar se há alguém assistindo e quantos. Na lista da aba Assistir,
     deixar claro online/offline e transmitindo/parada para cada câmera, e oferecer "Atualizar"
     (puxar a lista para baixo e um botão), que recarrega pela API.
   - Aceite: testes do controller da lista recarregando e da tela da câmera mostrando quantos
     assistem.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (86 no
+  > servidor, 129 no app). A câmera não tinha como saber quantos assistem, então o servidor ganhou
+  > a mensagem `WatchersChanged(int count)` (revisão no `SPECS.md` 12): o `WatchLeases` avisa a
+  > câmera a cada lease aberto ou fechado, e o hub manda a contagem atual quando a câmera conecta.
+  > `Unwatch` e `RemoveConnection` viraram `UnwatchAsync` e `RemoveConnectionAsync`, e `HasWatchers`
+  > deu lugar a `WatcherCount` (reusado no painel do 1.12.11). A tela da câmera mostra "Conectado",
+  > "Enviando vídeo" ou "Conectando", mais "Ninguém está assistindo" / "N pessoas estão assistindo".
+  > Na lista, cada câmera mostra "Offline" ou "Online · transmitindo/parada" (ícone vermelho
+  > transmitindo); "Atualizar" existe como botão no topo e puxando a lista para baixo. Testes no
+  > servidor: `WatchCamera_TwoViewers_SendsWatcherCountToCamera`,
+  > `ViewerDisconnect_WithOpenLease_SendsLowerCount`, `CameraConnect_SendsCurrentWatcherCount`.
 
 - [ ] **1.12.8 Um só "Ler QR" que decide o papel do celular**
   - Origem: conversa com o autor em 2026-09-25: trocar entre câmera e visualizador está confuso.

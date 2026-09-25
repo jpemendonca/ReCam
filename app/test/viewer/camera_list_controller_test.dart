@@ -131,6 +131,57 @@ void main() {
     });
   });
 
+  group('CameraListController.refresh', () {
+    test('afterLoad_reloadsFromTheApi', () async {
+      // arrange
+      api.cameraResults.addAll([
+        ApiSuccess([_camera('a', 'Kitchen')]),
+        ApiSuccess([
+          _camera('a', 'Kitchen', online: true),
+          _camera('b', 'Porch'),
+        ]),
+      ]);
+      await controller.refresh();
+
+      // act
+      await controller.refresh();
+
+      // assert
+      expect(api.cameraCalls, 2);
+      expect(cameras().map((camera) => camera.name), ['Kitchen', 'Porch']);
+      expect(cameras().first.online, isTrue);
+      expect(controller.refreshing, isFalse);
+    });
+
+    test('whenReloadFails_keepsTheLastList', () async {
+      // arrange
+      api.cameraResults.addAll([
+        ApiSuccess([_camera('a', 'Kitchen')]),
+        ApiFailure(ApiFailureKind.unreachable),
+      ]);
+      await controller.refresh();
+
+      // act
+      await controller.refresh();
+
+      // assert
+      expect(cameras().single.name, 'Kitchen');
+    });
+
+    test('whileLoading_reportsRefreshing', () async {
+      // arrange
+      final seen = <bool>[];
+      controller.addListener(() => seen.add(controller.refreshing));
+
+      // act
+      await controller.refresh();
+
+      // assert
+      expect(seen.first, isTrue);
+      expect(seen.last, isFalse);
+    });
+  });
+
   group('CameraListController pairing lost', () {
     test('whenApiRefusesCredential_reportsPairingLost', () async {
       // arrange
