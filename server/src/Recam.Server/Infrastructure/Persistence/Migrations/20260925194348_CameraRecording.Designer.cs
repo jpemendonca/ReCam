@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Recam.Server.Infrastructure.Persistence;
 
@@ -10,9 +11,11 @@ using Recam.Server.Infrastructure.Persistence;
 namespace Recam.Server.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(RecamDbContext))]
-    partial class RecamDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260925194348_CameraRecording")]
+    partial class CameraRecording
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");

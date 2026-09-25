@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../core/media/webrtc_viewer.dart';
 import '../core/network/api_client.dart';
+import '../core/network/hub_client.dart';
 import '../core/network/hub_session.dart';
 import '../core/storage/credential_store.dart';
 import 'live_view_controller.dart';
@@ -81,6 +82,19 @@ class CameraListController extends ChangeNotifier {
         if (_state is! CameraListLoaded) _setState(CameraListFailed());
     }
   }
+
+  /// Turns "record always" on or off. False when the server refuses; the list shows the new
+  /// state once the server confirms it.
+  Future<bool> setRecording(String cameraId, bool enabled) async =>
+      isHubSuccess(
+        await hub.client.invoke('SetRecording', [cameraId, enabled]),
+      );
+
+  CameraInfo? camera(String cameraId) => switch (_state) {
+    CameraListLoaded(:final cameras) =>
+      cameras.where((camera) => camera.id == cameraId).firstOrNull,
+    _ => null,
+  };
 
   /// A live view of one camera, sharing this list's hub connection for the watch lease.
   LiveViewController openLive(String cameraId) => LiveViewController(

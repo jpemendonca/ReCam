@@ -9,10 +9,14 @@ class LiveViewScreen extends StatefulWidget {
   const LiveViewScreen({
     required this.cameraName,
     required this.create,
+    this.recordingSwitch,
     super.key,
   });
 
   final String cameraName;
+
+  /// "Record always", shown in the app bar.
+  final Widget? recordingSwitch;
 
   /// Builds the controller once, in initState; the route builder may run again.
   final LiveViewController Function() create;
@@ -53,6 +57,7 @@ class _LiveViewScreenState extends State<LiveViewScreen> {
       appBar: AppBar(
         title: Text(widget.cameraName),
         actions: [
+          ?widget.recordingSwitch,
           ListenableBuilder(
             listenable: _controller,
             builder: (context, _) {

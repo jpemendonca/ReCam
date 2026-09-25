@@ -83,5 +83,9 @@
   "batteryGuideGeneric1": "Toque em Liberar, aqui embaixo, e confirme, para o ReCam deixar de ser otimizado.",
   "batteryGuideAllow": "Liberar",
   "batteryGuideOpenSettings": "Abrir configurações do app",
-  "batteryGuideContinue": "Continuar para o modo câmera"
+  "batteryGuideContinue": "Continuar para o modo câmera",
+  "recordAlways": "Gravar sempre",
+  "recordingNeedsH264": "Não grava: este celular não tem H.264",
+  "recordingFailed": "Não deu para mudar a gravação. Confira a conexão com o servidor.",
+  "cameraModeRecording": "Gravando"
 }

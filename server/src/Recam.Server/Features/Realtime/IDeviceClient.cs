@@ -16,5 +16,8 @@ public interface IDeviceClient
 
     Task SetTorch(bool torchOn);
 
+    /// <summary>Whether this camera records; while it does, it publishes even with nobody watching.</summary>
+    Task RecordingChanged(bool recording);
+
     Task TorchChanged(Guid cameraId, bool torchOn);
 }

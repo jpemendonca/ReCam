@@ -33,6 +33,15 @@ public sealed class Device
 
     public DateTimeOffset? TelemetryAt { get; private set; }
 
+    /// <summary>"Record always": the camera publishes all the time and MediaMTX records it.</summary>
+    public bool RecordingEnabled { get; private set; }
+
+    /// <summary>What the camera said about its encoder; null until it reports.</summary>
+    public bool? SupportsH264 { get; private set; }
+
+    /// <summary>MediaMTX records H.264 only; a camera that sends VP8 streams live but cannot record.</summary>
+    public bool CanRecord => Role == DeviceRole.Camera && SupportsH264 != false;
+
     public const double MinTemperatureC = -40;
     public const double MaxTemperatureC = 120;
 
@@ -137,13 +146,48 @@ public sealed class Device
     /// </summary>
     public void Revoke(DateTimeOffset now) => RevokedAt ??= now;
 
+    /// <summary>
+    /// Turns "record always" on or off. Only an active Monitor may do it, only for a camera, and
+    /// never on for a camera without H.264.
+    /// </summary>
+    public Result SetRecording(Device requester, bool enabled)
+    {
+        if (!requester.IsMonitor || requester.IsRevoked)
+        {
+            return DeviceErrors.NotAMonitor;
+        }
+
+        if (Role != DeviceRole.Camera || IsRevoked)
+        {
+            return MediaErrors.CameraNotFound;
+        }
+
+        if (enabled && !CanRecord)
+        {
+            return MediaErrors.RecordingNeedsH264;
+        }
+
+        RecordingEnabled = enabled;
+        return Result.Success();
+    }
+
+    /// <summary>A camera that turns out not to encode H.264 cannot keep recording.</summary>
+    public void ReportVideoCodecs(bool supportsH264)
+    {
+        SupportsH264 = supportsH264;
+        if (!supportsH264)
+        {
+            RecordingEnabled = false;
+        }
+    }
+
     /// <summary>Owners and viewers are the phones the app calls Monitors.</summary>
     public bool IsMonitor => Role is DeviceRole.Owner or DeviceRole.Viewer;
 
     public void MarkSeen(DateTimeOffset now) => LastSeenAt = now;
 
     public CameraStatus ToCameraStatus(bool online, bool publishing) =>
-        new(Id, Name, online, publishing, BatteryLevel, IsCharging, TemperatureC, TelemetryAt);
+        new(Id, Name, online, publishing, BatteryLevel, IsCharging, TemperatureC, TelemetryAt, RecordingEnabled, CanRecord);
 
     public bool HasCredentialSecret(string secret) =>
         CryptographicOperations.FixedTimeEquals(SecretToken.Hash(secret), CredentialHash);

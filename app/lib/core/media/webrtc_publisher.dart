@@ -22,6 +22,9 @@ abstract interface class WebRtcPublisher {
 
   /// Changes what is sent without reopening the camera. Kept for the next [start] too.
   Future<void> setQuality(VideoQuality quality);
+
+  /// Whether this phone can encode H.264, the only codec the server records (SPECS.md 11).
+  Future<bool> canSendH264();
 }
 
 /// Publishes with WHIP through the server proxy: no audio, H.264 first, at the current
@@ -110,16 +113,29 @@ class WhipPublisher implements WebRtcPublisher {
     return true;
   }
 
-  // H.264 is what old phones encode in hardware and what recording will store later. Other
-  // codecs stay as fallback for phones without a hardware H.264 encoder.
+  // libwebrtc lists H.264 only when the phone has an encoder for it.
+  @override
+  Future<bool> canSendH264() async {
+    // A plugin failure means the answer is unknown; assume the common case, H.264.
+    try {
+      final capabilities = await getRtpSenderCapabilities('video');
+      return (capabilities.codecs ?? []).any(_isH264);
+    } on Object {
+      return true;
+    }
+  }
+
+  static bool _isH264(RTCRtpCodecCapability codec) =>
+      codec.mimeType.toLowerCase() == 'video/h264';
+
+  // H.264 is what old phones encode in hardware and what recording stores. Other codecs stay
+  // as fallback for phones without a hardware H.264 encoder.
   static Future<void> _preferH264(RTCRtpTransceiver transceiver) async {
     final capabilities = await getRtpSenderCapabilities('video');
     final codecs = capabilities.codecs ?? [];
-    bool isH264(RTCRtpCodecCapability codec) =>
-        codec.mimeType.toLowerCase() == 'video/h264';
     await transceiver.setCodecPreferences([
-      ...codecs.where(isH264),
-      ...codecs.where((codec) => !isH264(codec)),
+      ...codecs.where(_isH264),
+      ...codecs.where((codec) => !_isH264(codec)),
     ]);
   }
 

@@ -9,4 +9,6 @@ public sealed record CameraStatus(
     int? BatteryLevel,
     bool? IsCharging,
     double? TemperatureC,
-    DateTimeOffset? TelemetryAt);
+    DateTimeOffset? TelemetryAt,
+    bool Recording,
+    bool CanRecord);

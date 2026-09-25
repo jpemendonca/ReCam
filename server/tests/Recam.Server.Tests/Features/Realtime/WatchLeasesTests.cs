@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Recam.Server.Domain;
 using Recam.Server.Features.Realtime;
@@ -245,5 +246,126 @@ public sealed class WatchLeasesTests
                 return [.. _received];
             }
         }
+    }
+
+    [Fact(DisplayName = "Turning recording on makes an idle camera publish and tells it it records")]
+    public async Task SetRecording_On_SendsStartPublishing()
+    {
+        // arrange
+        var (factory, viewer, camera, cameraId) = await ConnectBothAsync();
+        using var _ = factory;
+        await using var viewerConnection = viewer;
+        await using var cameraConnection = camera;
+        using var starts = new HubCallCounter(cameraConnection, "StartPublishing");
+        var recording = new TaskCompletionSource<bool>();
+        cameraConnection.On<bool>("RecordingChanged", value => recording.TrySetResult(value));
+
+        // act
+        var result = await viewerConnection.InvokeAsync<HubResult>("SetRecording", cameraId, true, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.True(result.Ok);
+        await starts.WaitForCallAsync();
+        Assert.True(await recording.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        using var client = factory.CreateDeviceClient((await factory.PairDeviceAsync(DeviceRole.Viewer)).Credential);
+        var cameras = await client.GetFromJsonAsync<List<CameraStatus>>(
+            new Uri("/api/cameras", UriKind.Relative), ApiJson.Options, TestContext.Current.CancellationToken);
+        Assert.True(Assert.Single(cameras!).Recording);
+    }
+
+    [Fact(DisplayName = "Changing recording while the camera publishes makes it restart on the new path")]
+    public async Task SetRecording_WhilePublishing_RestartsPublishing()
+    {
+        // arrange
+        var (factory, viewer, camera, cameraId) = await ConnectBothAsync();
+        using var _ = factory;
+        await using var viewerConnection = viewer;
+        await using var cameraConnection = camera;
+        await viewerConnection.InvokeAsync<HubResult>("WatchCamera", cameraId, TestContext.Current.CancellationToken);
+        await cameraConnection.InvokeAsync<HubResult>("ReportPublishing", true, TestContext.Current.CancellationToken);
+        using var starts = new HubCallCounter(cameraConnection, "StartPublishing");
+        using var stops = new HubCallCounter(cameraConnection, "StopPublishing");
+
+        // act
+        await viewerConnection.InvokeAsync<HubResult>("SetRecording", cameraId, true, TestContext.Current.CancellationToken);
+
+        // assert
+        await stops.WaitForCallAsync();
+        await starts.WaitForCallAsync();
+    }
+
+    [Fact(DisplayName = "A recording camera keeps publishing when the last Monitor leaves")]
+    public async Task UnwatchCamera_LastLease_WhileRecording_KeepsPublishing()
+    {
+        // arrange
+        var (factory, viewer, camera, cameraId) = await ConnectBothAsync();
+        using var _ = factory;
+        await using var viewerConnection = viewer;
+        await using var cameraConnection = camera;
+        await viewerConnection.InvokeAsync<HubResult>("SetRecording", cameraId, true, TestContext.Current.CancellationToken);
+        await viewerConnection.InvokeAsync<HubResult>("WatchCamera", cameraId, TestContext.Current.CancellationToken);
+        using var stops = new HubCallCounter(cameraConnection, "StopPublishing");
+
+        // act
+        await viewerConnection.InvokeAsync<HubResult>("UnwatchCamera", cameraId, TestContext.Current.CancellationToken);
+        factory.Time.Advance(WatchLeases.StopGrace);
+
+        // assert
+        Assert.True(await stops.StaysSilentAsync());
+    }
+
+    [Fact(DisplayName = "A recording camera that reconnects publishes again with nobody watching")]
+    public async Task CameraReconnect_WithRecording_SendsStartPublishing()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
+        await viewerConnection.InvokeAsync<HubResult>("SetRecording", camera.DeviceId, true, TestContext.Current.CancellationToken);
+        var reconnected = factory.BuildConnection(camera.Credential);
+        await using var __ = reconnected;
+        using var starts = new HubCallCounter(reconnected, "StartPublishing");
+
+        // act
+        await reconnected.StartAsync(TestContext.Current.CancellationToken);
+
+        // assert
+        await starts.WaitForCallAsync();
+    }
+
+    [Fact(DisplayName = "A camera cannot turn recording on")]
+    public async Task SetRecording_FromCamera_IsRejected()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        await using var connection = await factory.ConnectAsync(camera.Credential);
+
+        // act
+        var exception = await Record.ExceptionAsync(() => connection.InvokeAsync<HubResult>(
+            "SetRecording", camera.DeviceId, true, TestContext.Current.CancellationToken));
+
+        // assert
+        Assert.IsType<HubException>(exception);
+    }
+
+    [Fact(DisplayName = "A camera that sends VP8 cannot be set to record")]
+    public async Task SetRecording_ForVp8Camera_ReturnsRecordingNeedsH264()
+    {
+        // arrange
+        var (factory, viewer, camera, cameraId) = await ConnectBothAsync();
+        using var _ = factory;
+        await using var viewerConnection = viewer;
+        await using var cameraConnection = camera;
+        await cameraConnection.InvokeAsync<HubResult>(
+            "ReportTelemetry", new TelemetryReport(50, true, null, SupportsH264: false), TestContext.Current.CancellationToken);
+
+        // act
+        var result = await viewerConnection.InvokeAsync<HubResult>("SetRecording", cameraId, true, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.False(result.Ok);
+        Assert.Equal(MediaErrors.RecordingNeedsH264.Code, result.Code);
     }
 }

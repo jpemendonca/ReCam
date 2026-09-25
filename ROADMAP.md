@@ -934,7 +934,7 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   > publicador H.264 por WHIP que o aceite pede). No teste o MediaMTX anuncia só a `eth0`, porque o
   > FFmpeg tenta só o primeiro candidato ICE.
 
-- [ ] **3.2 Gravar sempre, por câmera**
+- [x] **3.2 Gravar sempre, por câmera**
   - Origem: combinado com o autor em 2026-09-25. Substitui o 2.1.
   - Escopo: `Device.RecordingEnabled`, com migração e método da entidade para ligar e desligar (só
     câmera, só por Monitor). Hub: `SetRecording(Guid cameraId, bool enabled)` para Monitores. O
@@ -947,6 +947,24 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
     com a explicação.
   - Aceite: testes de domínio, do hub (liga, reconecta, último Monitor sai e ela continua), do path
     escolhido pelo proxy e dos controllers do app.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (136 no
+  > servidor, 195 no app). Domínio: `Device.SetRecording(requester, enabled)` (só Monitor ativo, só
+  > câmera, ligar exige H.264), `Device.ReportVideoCodecs`, `CanRecord`; migração `CameraRecording`.
+  > Hub: `SetRecording` salva, avisa a câmera com `RecordingChanged` e chama
+  > `WatchLeases.RecordingChangedAsync`, que reinicia uma câmera transmitindo (para trocar de path)
+  > ou liga uma parada; o fim da carência de 30 s consulta o banco e não para uma câmera que grava;
+  > a câmera que conecta com gravação ligada recebe `StartPublishing`. Proxy: o path sai do estado
+  > da câmera no `POST`, e a sessão devolvida leva o prefixo `cam-`/`rec-` (tipo `MediaSession`), que
+  > decide o path do `PATCH`/`DELETE`. VP8: como o 3.1 confirmou que o MediaMTX não grava VP8, a
+  > câmera informa na telemetria se o libwebrtc oferece H.264 (`WebRtcPublisher.canSendH264`), e o
+  > interruptor aparece desligado com "Não grava: este celular não tem H.264". App: `RecordingSwitch`
+  > ("Gravar sempre") na lista, embaixo do status de cada câmera, e na barra do ao vivo; o modo
+  > câmera mostra "Gravando". Revisão no `SPECS.md` 12. Testes: domínio (Monitor liga e desliga,
+  > câmera não pode, só câmera grava, VP8 recusado, perder H.264 desliga), hub (ligar faz publicar,
+  > trocar transmitindo reinicia, último Monitor sai e ela continua, reconecta e publica, câmera não
+  > liga, VP8 recusado), path do proxy com um MediaMTX falso (`cam-` sem gravação, `rec-` com
+  > gravação para WHIP e WHEP, `DELETE` segue a sessão, sessão desconhecida dá 404) e, no app, o
+  > controller da câmera, o da lista e o widget do interruptor.
 
 - [ ] **3.3 Espaço para gravações e limpeza automática**
   - Origem: combinado com o autor em 2026-09-25 (a "barrinha" do SPECS 1.2).

@@ -52,6 +52,8 @@ class CameraModeController extends ChangeNotifier {
   VideoQuality _quality = VideoQuality.full;
   CameraFeed? _feed;
   bool _torchOn = false;
+  bool _recording = false;
+  bool? _supportsH264;
   int _watchers = 0;
   Future<void> _publishingChange = Future.value();
 
@@ -70,6 +72,9 @@ class CameraModeController extends ChangeNotifier {
 
   bool get torchOn => _torchOn;
 
+  /// "Record always" is on: the camera publishes even with nobody watching.
+  bool get recording => _recording;
+
   /// How many viewers are watching, as the server last said. Zero while disconnected.
   int get watchers => _hub.connected ? _watchers : 0;
 
@@ -84,6 +89,7 @@ class CameraModeController extends ChangeNotifier {
     _hub.client.on('StartPublishing', (_) => _queue(_startPublishing));
     _hub.client.on('StopPublishing', (_) => _queue(_stopPublishing));
     _hub.client.on('WatchersChanged', _onWatchersChanged);
+    _hub.client.on('RecordingChanged', _onRecordingChanged);
     _hub.client.on(
       'SetTorch',
       (args) => _queue(() => _setTorch(args.firstOrNull == true)),
@@ -190,6 +196,11 @@ class CameraModeController extends ChangeNotifier {
     _queue(() => _publisher.setQuality(next));
   }
 
+  void _onRecordingChanged(List<Object?> args) {
+    _recording = args.firstOrNull == true;
+    notifyListeners();
+  }
+
   void _onWatchersChanged(List<Object?> args) {
     final count = args.firstOrNull;
     if (count is! num) return;
@@ -200,6 +211,7 @@ class CameraModeController extends ChangeNotifier {
   Future<void> _report({required bool force}) async {
     if (!_hub.connected) return;
     final reading = await _battery.read();
+    final supportsH264 = _supportsH264 ??= await _publisher.canSendH264();
     _followTemperature(reading.temperatureC);
     final lastSentAt = _lastSentAt;
     final due =
@@ -210,6 +222,7 @@ class CameraModeController extends ChangeNotifier {
         'batteryLevel': reading.level,
         'isCharging': reading.isCharging,
         'temperatureC': reading.temperatureC,
+        'supportsH264': supportsH264,
       },
     ]);
     _lastSent = reading;

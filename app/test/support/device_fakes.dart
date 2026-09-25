@@ -106,6 +106,11 @@ class FakePublisher implements WebRtcPublisher {
   @override
   Future<void> setQuality(VideoQuality quality) async => qualities.add(quality);
 
+  bool h264 = true;
+
+  @override
+  Future<bool> canSendH264() async => h264;
+
   /// The feed the last successful start published.
   CameraFeed? publishedFeed;
 

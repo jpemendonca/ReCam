@@ -110,6 +110,21 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
                       textAlign: TextAlign.center,
                     ),
                   ],
+                  if (_controller.recording) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.fiber_manual_record,
+                          size: 16,
+                          color: theme.colorScheme.error,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(l10n.cameraModeRecording),
+                      ],
+                    ),
+                  ],
                   if (_controller.quality == VideoQuality.reduced) ...[
                     const SizedBox(height: 8),
                     Text(

@@ -41,16 +41,23 @@ public sealed partial class DeviceHub(
             await PresenceChangedAsync(deviceId, Context.ConnectionAborted);
         }
 
-        // A camera that reconnects while someone watches resumes publishing on its own.
+        // A camera that reconnects while someone watches, or that records, resumes publishing
+        // on its own.
         if (user.IsInRole(nameof(DeviceRole.Camera)))
         {
+            await using var database = await databaseFactory.CreateDbContextAsync(Context.ConnectionAborted);
+            var recording = await database.Devices
+                .Where(device => device.Id == deviceId)
+                .Select(device => device.RecordingEnabled)
+                .SingleAsync(Context.ConnectionAborted);
             var watchers = presence.Watchers(deviceId);
-            if (watchers > 0)
+            if (watchers > 0 || recording)
             {
                 await Clients.Caller.StartPublishing();
             }
 
             await Clients.Caller.WatchersChanged(watchers);
+            await Clients.Caller.RecordingChanged(recording);
         }
 
         await base.OnConnectedAsync();
@@ -89,7 +96,45 @@ public sealed partial class DeviceHub(
             return reported.Error.ToHubResult();
         }
 
+        var wasRecording = camera.RecordingEnabled;
+        if (report.SupportsH264 is { } supportsH264)
+        {
+            camera.ReportVideoCodecs(supportsH264);
+        }
+
         await database.SaveChangesAsync(Context.ConnectionAborted);
+        if (wasRecording && !camera.RecordingEnabled)
+        {
+            await Clients.Caller.RecordingChanged(false);
+            await leases.RecordingChangedAsync(camera.Id, recording: false);
+        }
+
+        await NotifyViewersAsync(camera);
+        return HubResult.Success;
+    }
+
+    /// <summary>Turns "record always" on or off for a camera.</summary>
+    [Authorize(Policy = AuthExtensions.ViewerOrOwner)]
+    public async Task<HubResult> SetRecording(Guid cameraId, bool enabled)
+    {
+        await using var database = await databaseFactory.CreateDbContextAsync(Context.ConnectionAborted);
+        var requesterId = Context.User!.GetDeviceId();
+        var requester = await database.Devices.SingleAsync(device => device.Id == requesterId, Context.ConnectionAborted);
+        var camera = await database.Devices.SingleOrDefaultAsync(device => device.Id == cameraId, Context.ConnectionAborted);
+        if (camera is null)
+        {
+            return MediaErrors.CameraNotFound.ToHubResult();
+        }
+
+        var changed = camera.SetRecording(requester, enabled);
+        if (changed.IsFailure)
+        {
+            return changed.Error.ToHubResult();
+        }
+
+        await database.SaveChangesAsync(Context.ConnectionAborted);
+        await Clients.User(UserId(cameraId)).RecordingChanged(enabled);
+        await leases.RecordingChangedAsync(cameraId, enabled);
         await NotifyViewersAsync(camera);
         return HubResult.Success;
     }

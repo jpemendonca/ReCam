@@ -125,5 +125,9 @@
   "batteryGuideGeneric1": "Tap Allow below and confirm, so ReCam stops being optimized.",
   "batteryGuideAllow": "Allow",
   "batteryGuideOpenSettings": "Open app settings",
-  "batteryGuideContinue": "Continue to camera mode"
+  "batteryGuideContinue": "Continue to camera mode",
+  "recordAlways": "Record always",
+  "recordingNeedsH264": "Can't record: this phone has no H.264",
+  "recordingFailed": "Could not change recording. Check the connection to the server.",
+  "cameraModeRecording": "Recording"
 }

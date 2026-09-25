@@ -417,6 +417,30 @@ void main() {
     });
   });
 
+  group('CameraModeController recording', () {
+    test('onRecordingChanged_showsRecording', () async {
+      // arrange
+      await start();
+
+      // act
+      client.receive('RecordingChanged', [true]);
+
+      // assert
+      expect(controller.recording, isTrue);
+    });
+
+    test('telemetry_withoutH264_tellsTheServer', () async {
+      // arrange
+      publisher.h264 = false;
+
+      // act
+      await start();
+
+      // assert
+      expect((telemetry().single as Map)['supportsH264'], isFalse);
+    });
+  });
+
   group('CameraModeController pairing lost', () {
     test('whenServerRejectsCredential_reportsPairingLost', () async {
       // arrange
@@ -443,7 +467,12 @@ void main() {
       expect(keepAlive.running, isTrue);
       expect(screen.inCameraMode, isTrue);
       expect(telemetry(), [
-        {'batteryLevel': 64, 'isCharging': false, 'temperatureC': null},
+        {
+          'batteryLevel': 64,
+          'isCharging': false,
+          'temperatureC': null,
+          'supportsH264': true,
+        },
       ]);
     });
 
@@ -461,6 +490,7 @@ void main() {
         'batteryLevel': 79,
         'isCharging': true,
         'temperatureC': null,
+        'supportsH264': true,
       });
     });
 

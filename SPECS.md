@@ -555,3 +555,19 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > Fase 3: paths `rec-` gravando em fMP4 no MediaMTX, volume `recam-recordings`, MediaMTX rodando com
 > o usuário do servidor para o servidor poder apagar os segmentos, e o registro de que VP8 não é
 > gravado (seção 11) (bullet 3.1).
+
+> Revisão (2026-09-25): "Gravar sempre", por câmera (bullet 3.2).
+> - `Device` ganhou `RecordingEnabled` e `SupportsH264` (migração `CameraRecording`). A regra é
+>   `Device.SetRecording(requester, enabled)`: só um Monitor ativo muda, só numa câmera, e ligar é
+>   recusado para câmera sem H.264 (`media.recording_needs_h264`). `Device.ReportVideoCodecs` desliga
+>   a gravação de uma câmera que passa a dizer que não tem H.264.
+> - Hub: `SetRecording(Guid cameraId, bool enabled)` para Monitores; servidor → câmera
+>   `RecordingChanged(bool recording)`, ao conectar e a cada mudança. `ReportTelemetry` aceita
+>   `supportsH264`. `CameraStatus` ganhou `recording` e `canRecord`.
+> - Câmera gravando recebe `StartPublishing` ao conectar e não recebe `StopPublishing` quando o
+>   último Monitor sai. Mudar a gravação com a câmera transmitindo manda `StopPublishing` e
+>   `StartPublishing`, para ela publicar de novo no outro path.
+> - Proxy: um `POST /whip` ou `/whep` vai para `rec-{id}` com a gravação ligada e para `cam-{id}` sem
+>   ela. O `Location` devolvido passa a ser `/whip/{cameraId}/{cam|rec}-{sessão}`: o prefixo diz o
+>   path, para `PATCH` e `DELETE` irem ao lugar certo mesmo depois de uma troca. Sessão sem prefixo
+>   conhecido devolve 404 `media.session_not_found`.

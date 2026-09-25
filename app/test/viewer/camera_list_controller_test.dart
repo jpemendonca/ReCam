@@ -131,6 +131,54 @@ void main() {
     });
   });
 
+  group('CameraListController recording', () {
+    test('setRecording_asksTheServerForThisCamera', () async {
+      // arrange
+      hubClient.invokeResult = <String, Object?>{'ok': true};
+
+      // act
+      final accepted = await controller.setRecording('a', true);
+
+      // assert
+      expect(accepted, isTrue);
+      final call = hubClient.invocations.single;
+      expect(call.method, 'SetRecording');
+      expect(call.args, ['a', true]);
+    });
+
+    test('setRecording_whenRefused_returnsFalse', () async {
+      // arrange
+      hubClient.invokeResult = <String, Object?>{
+        'ok': false,
+        'code': 'media.recording_needs_h264',
+      };
+
+      // act
+      final accepted = await controller.setRecording('a', true);
+
+      // assert
+      expect(accepted, isFalse);
+    });
+
+    test('onStatusChanged_withRecording_showsIt', () async {
+      // arrange
+      api.cameraResults.addAll([
+        ApiSuccess([_camera('a', 'Kitchen')]),
+        ApiSuccess([_camera('a', 'Kitchen')]),
+      ]);
+      await controller.start();
+      await settle();
+
+      // act
+      hubClient.receive('CameraStatusChanged', [
+        {..._statusJson('a', 'Kitchen'), 'recording': true, 'canRecord': true},
+      ]);
+
+      // assert
+      expect(controller.camera('a')?.recording, isTrue);
+    });
+  });
+
   group('CameraListController temperature', () {
     test('onStatusChanged_withTemperature_showsIt', () async {
       // arrange

@@ -106,6 +106,8 @@ class CameraInfo {
     this.batteryLevel,
     this.isCharging,
     this.temperatureC,
+    this.recording = false,
+    this.canRecord = true,
   });
 
   final String id;
@@ -115,6 +117,12 @@ class CameraInfo {
   final int? batteryLevel;
   final bool? isCharging;
   final double? temperatureC;
+
+  /// "Record always" is on for this camera.
+  final bool recording;
+
+  /// False for a camera that sends VP8, which the server cannot record.
+  final bool canRecord;
 
   /// Returns null for data that does not describe a camera.
   static CameraInfo? tryParse(Object? json) {
@@ -126,6 +134,8 @@ class CameraInfo {
     final batteryLevel = json['batteryLevel'];
     final isCharging = json['isCharging'];
     final temperatureC = json['temperatureC'];
+    final recording = json['recording'];
+    final canRecord = json['canRecord'];
     if (id is! String || name is! String || online is! bool) return null;
     return CameraInfo(
       id: id,
@@ -135,6 +145,8 @@ class CameraInfo {
       batteryLevel: batteryLevel is num ? batteryLevel.toInt() : null,
       isCharging: isCharging is bool ? isCharging : null,
       temperatureC: temperatureC is num ? temperatureC.toDouble() : null,
+      recording: recording == true,
+      canRecord: canRecord != false,
     );
   }
 }

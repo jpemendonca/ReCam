@@ -1,14 +1,18 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Net.Http.Headers;
 using Recam.Server.Domain;
 using Recam.Server.Infrastructure.Auth;
 using Recam.Server.Infrastructure.Hosting;
 using Recam.Server.Infrastructure.Http;
+using Recam.Server.Infrastructure.Persistence;
 
 namespace Recam.Server.Features.Media;
 
 /// <summary>
 /// Relays WHIP (camera publishes) and WHEP (viewer plays) signaling to MediaMTX. Only SDP
-/// travels here; the video itself goes over UDP straight to MediaMTX (SPECS.md 5.5).
+/// travels here; the video itself goes over UDP straight to MediaMTX (SPECS.md 5.5). A new
+/// session goes to the recorded or the live path, by the camera's recording state; the session
+/// URL the client gets back remembers which one.
 /// </summary>
 public static class MediaProxyEndpoints
 {
@@ -26,31 +30,37 @@ public static class MediaProxyEndpoints
     public static IEndpointRouteBuilder MapMediaProxyEndpoints(this IEndpointRouteBuilder endpoints)
     {
         var whip = endpoints.MapGroup("/whip/{cameraId:guid}").RequireAuthorization(AuthExtensions.CameraOnly);
-        whip.MapPost(string.Empty, (Guid cameraId, HttpContext context, IHttpClientFactory clients) =>
-            PublishAsync(cameraId, null, context, clients));
-        whip.MapMethods("{session}", SessionMethods, (Guid cameraId, string session, HttpContext context, IHttpClientFactory clients) =>
-            PublishAsync(cameraId, session, context, clients));
+        whip.MapPost(string.Empty, (Guid cameraId, HttpContext context, IHttpClientFactory clients, IDbContextFactory<RecamDbContext> databaseFactory) =>
+            PublishAsync(cameraId, null, context, clients, databaseFactory));
+        whip.MapMethods("{session}", SessionMethods, (Guid cameraId, string session, HttpContext context, IHttpClientFactory clients, IDbContextFactory<RecamDbContext> databaseFactory) =>
+            PublishAsync(cameraId, session, context, clients, databaseFactory));
 
         var whep = endpoints.MapGroup("/whep/{cameraId:guid}").RequireAuthorization(AuthExtensions.ViewerOrOwner);
-        whep.MapPost(string.Empty, (Guid cameraId, HttpContext context, IHttpClientFactory clients) =>
-            ForwardAsync(cameraId, MediaProtocol.Whep, null, context, clients));
-        whep.MapMethods("{session}", SessionMethods, (Guid cameraId, string session, HttpContext context, IHttpClientFactory clients) =>
-            ForwardAsync(cameraId, MediaProtocol.Whep, session, context, clients));
+        whep.MapPost(string.Empty, (Guid cameraId, HttpContext context, IHttpClientFactory clients, IDbContextFactory<RecamDbContext> databaseFactory) =>
+            ForwardAsync(cameraId, MediaProtocol.Whep, null, context, clients, databaseFactory));
+        whep.MapMethods("{session}", SessionMethods, (Guid cameraId, string session, HttpContext context, IHttpClientFactory clients, IDbContextFactory<RecamDbContext> databaseFactory) =>
+            ForwardAsync(cameraId, MediaProtocol.Whep, session, context, clients, databaseFactory));
         return endpoints;
     }
 
-    private static Task<IResult> PublishAsync(Guid cameraId, string? session, HttpContext context, IHttpClientFactory clients)
+    private static Task<IResult> PublishAsync(
+        Guid cameraId, string? session, HttpContext context, IHttpClientFactory clients, IDbContextFactory<RecamDbContext> databaseFactory)
     {
         if (context.User.GetDeviceId() != cameraId)
         {
             return Task.FromResult(MediaErrors.NotYourCamera.ToHttpResult());
         }
 
-        return ForwardAsync(cameraId, MediaProtocol.Whip, session, context, clients);
+        return ForwardAsync(cameraId, MediaProtocol.Whip, session, context, clients, databaseFactory);
     }
 
     private static async Task<IResult> ForwardAsync(
-        Guid cameraId, MediaProtocol protocol, string? session, HttpContext context, IHttpClientFactory clients)
+        Guid cameraId,
+        MediaProtocol protocol,
+        string? session,
+        HttpContext context,
+        IHttpClientFactory clients,
+        IDbContextFactory<RecamDbContext> databaseFactory)
     {
         var body = await ReadBodyAsync(context.Request, context.RequestAborted);
         if (body is null)
@@ -58,9 +68,23 @@ public static class MediaProxyEndpoints
             return MediaErrors.SignalingTooLarge.ToHttpResult();
         }
 
+        MediaSession? existing = null;
+        if (session is not null)
+        {
+            existing = MediaSession.Parse(session);
+            if (existing is null)
+            {
+                return MediaErrors.SessionNotFound.ToHttpResult();
+            }
+        }
+
+        var recorded = existing?.Recorded ?? await IsRecordingAsync(cameraId, databaseFactory, context.RequestAborted);
+        var mediaPath = MediaSession.PathFor(cameraId, recorded);
         using var upstreamRequest = new HttpRequestMessage(
             new HttpMethod(context.Request.Method),
-            UpstreamPath(cameraId, protocol, session));
+            existing is null
+                ? $"/{mediaPath}/{ProtocolSegment(protocol)}"
+                : $"/{mediaPath}/{ProtocolSegment(protocol)}/{Uri.EscapeDataString(existing.Id)}");
         if (body.Length > 0 || HttpMethods.IsPost(context.Request.Method) || HttpMethods.IsPatch(context.Request.Method))
         {
             upstreamRequest.Content = new ByteArrayContent(body);
@@ -85,7 +109,7 @@ public static class MediaProxyEndpoints
         CopyHeader(upstream, response, "Accept-Patch");
         if (upstream.Headers.Location is { } location)
         {
-            response.Headers.Location = ProxyLocation(cameraId, protocol, location);
+            response.Headers.Location = ProxyLocation(cameraId, protocol, recorded, location);
         }
 
         if (responseBody.Length > 0)
@@ -97,18 +121,22 @@ public static class MediaProxyEndpoints
         return Results.Empty;
     }
 
-    // MediaMTX names each stream "cam-<id>" (deploy/mediamtx.yml only accepts that shape).
-    private static string UpstreamPath(Guid cameraId, MediaProtocol protocol, string? session) =>
-        session is null
-            ? $"/cam-{cameraId:N}/{ProtocolSegment(protocol)}"
-            : $"/cam-{cameraId:N}/{ProtocolSegment(protocol)}/{Uri.EscapeDataString(session)}";
+    private static async Task<bool> IsRecordingAsync(
+        Guid cameraId, IDbContextFactory<RecamDbContext> databaseFactory, CancellationToken cancellationToken)
+    {
+        await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
+        return await database.Devices
+            .Where(device => device.Id == cameraId)
+            .Select(device => device.RecordingEnabled)
+            .SingleOrDefaultAsync(cancellationToken);
+    }
 
     // MediaMTX answers with its own path for the session; clients must only see the proxy path.
-    private static string ProxyLocation(Guid cameraId, MediaProtocol protocol, Uri location)
+    private static string ProxyLocation(Guid cameraId, MediaProtocol protocol, bool recorded, Uri location)
     {
         var path = location.IsAbsoluteUri ? location.AbsolutePath : location.OriginalString.Split('?')[0];
         var session = path.TrimEnd('/').Split('/')[^1];
-        return $"/{ProtocolSegment(protocol)}/{cameraId}/{session}";
+        return $"/{ProtocolSegment(protocol)}/{cameraId}/{new MediaSession(recorded, session)}";
     }
 
     private static string ProtocolSegment(MediaProtocol protocol) => protocol == MediaProtocol.Whip ? "whip" : "whep";

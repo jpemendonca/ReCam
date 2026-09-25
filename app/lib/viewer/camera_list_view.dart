@@ -9,6 +9,7 @@ import '../l10n/generated/app_localizations.dart';
 import 'add_device_screen.dart';
 import 'camera_list_controller.dart';
 import 'live_view_screen.dart';
+import 'recording_switch.dart';
 
 /// The Watch tab once paired: the cameras, live, and "Add camera" for the owner.
 class CameraListView extends StatefulWidget {
@@ -64,6 +65,11 @@ class _CameraListViewState extends State<CameraListView> {
       builder: (_) => LiveViewScreen(
         cameraName: camera.name,
         create: () => _controller.openLive(camera.id),
+        recordingSwitch: RecordingSwitch(
+          list: _controller,
+          cameraId: camera.id,
+          color: Colors.white,
+        ),
       ),
     ),
   );
@@ -155,6 +161,7 @@ class _CameraListViewState extends State<CameraListView> {
                   separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (context, index) => _CameraTile(
                     camera: cameras[index],
+                    list: _controller,
                     onOpen: () => _openLive(cameras[index]),
                   ),
                 ),
@@ -188,9 +195,14 @@ class _PullableCenter extends StatelessWidget {
 }
 
 class _CameraTile extends StatelessWidget {
-  const _CameraTile({required this.camera, required this.onOpen});
+  const _CameraTile({
+    required this.camera,
+    required this.list,
+    required this.onOpen,
+  });
 
   final CameraInfo camera;
+  final CameraListController list;
   final VoidCallback onOpen;
 
   @override
@@ -211,11 +223,17 @@ class _CameraTile extends StatelessWidget {
             : colors.primary,
       ),
       title: Text(camera.name),
-      subtitle: Text(
-        !camera.online
-            ? l10n.cameraOffline
-            : '${l10n.cameraOnline} · '
-                  '${camera.publishing ? l10n.cameraStreaming : l10n.cameraIdle}',
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            !camera.online
+                ? l10n.cameraOffline
+                : '${l10n.cameraOnline} · '
+                      '${camera.publishing ? l10n.cameraStreaming : l10n.cameraIdle}',
+          ),
+          RecordingSwitch(list: list, cameraId: camera.id),
+        ],
       ),
       trailing: battery == null && temperature == null
           ? null
