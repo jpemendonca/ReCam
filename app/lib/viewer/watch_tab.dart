@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../core/network/api_client.dart';
 import '../core/pairing/pairing_labels.dart';
 import '../core/pairing/pairing_service.dart';
-import '../core/scanner/qr_scanner_screen.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'camera_list_controller.dart';
 import 'camera_list_view.dart';
@@ -14,12 +13,16 @@ class WatchTab extends StatelessWidget {
     required this.pairing,
     required this.api,
     required this.cameraList,
+    required this.onScan,
     super.key,
   });
 
   final ViewerPairingController pairing;
   final ApiClient api;
   final CameraListFactory cameraList;
+
+  /// Opens the app's QR reader; the code read decides which tab pairs.
+  final Future<void> Function() onScan;
 
   @override
   Widget build(BuildContext context) {
@@ -29,8 +32,8 @@ class WatchTab extends StatelessWidget {
         ViewerPairingLoading() ||
         ViewerPairing() => const Center(child: CircularProgressIndicator()),
         ViewerNotPaired(:final lastFailure) => _NotPaired(
-          controller: pairing,
           failure: lastFailure,
+          onScan: onScan,
         ),
         ViewerPaired(:final session) => CameraListView(
           api: api,
@@ -44,19 +47,10 @@ class WatchTab extends StatelessWidget {
 }
 
 class _NotPaired extends StatelessWidget {
-  const _NotPaired({required this.controller, required this.failure});
+  const _NotPaired({required this.failure, required this.onScan});
 
-  final ViewerPairingController controller;
   final PairingFailure? failure;
-
-  Future<void> _scan(BuildContext context) async {
-    final deviceName = AppLocalizations.of(context).ownerDeviceName;
-    final raw = await Navigator.of(
-      context,
-    ).push<String>(MaterialPageRoute(builder: (_) => const QrScannerScreen()));
-    if (raw == null) return;
-    await controller.submitQr(raw, deviceName: deviceName);
-  }
+  final Future<void> Function() onScan;
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +65,7 @@ class _NotPaired extends StatelessWidget {
             Text(l10n.watchNotPaired, textAlign: TextAlign.center),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: () => _scan(context),
+              onPressed: onScan,
               icon: const Icon(Icons.qr_code_scanner),
               label: Text(l10n.scanQrButton),
             ),

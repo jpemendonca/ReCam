@@ -47,6 +47,7 @@ void main() {
         home: Scaffold(
           body: CameraTab(
             pairing: pairing,
+            onScan: (_) async {},
             cameraMode: (_) => CameraModeController(
               hub: HubSession(client: FakeHubClient(), delay: (_) async {}),
               battery: FakeBatteryReader(),

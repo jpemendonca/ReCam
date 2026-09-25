@@ -8,7 +8,9 @@ import 'camera/camera_pairing_controller.dart';
 import 'camera/camera_tab.dart';
 import 'core/network/api_client.dart';
 import 'core/pairing/pairing_link.dart';
+import 'core/scanner/qr_scanner_screen.dart';
 import 'l10n/generated/app_localizations.dart';
+import 'pairing_router.dart';
 import 'viewer/camera_list_controller.dart';
 import 'viewer/viewer_pairing_controller.dart';
 import 'viewer/watch_tab.dart';
@@ -49,6 +51,10 @@ class _HomeShellState extends State<HomeShell> {
     camera: widget.cameraPairing,
     viewer: widget.viewerPairing,
   );
+  late final _router = PairingRouter(
+    camera: widget.cameraPairing,
+    viewer: widget.viewerPairing,
+  );
 
   @override
   void initState() {
@@ -62,32 +68,44 @@ class _HomeShellState extends State<HomeShell> {
     super.dispose();
   }
 
-  /// Opens the tab the link is for and pairs it, unless that tab is already paired.
   Future<void> _onLink(Uri uri) async {
-    final link = uri.toString();
-    final target = pairingLinkTarget(link);
-    if (target == null) return;
     await widget.ready;
-    if (!mounted) return;
+    await _route(uri.toString());
+  }
+
+  /// The one QR reader of the app. The code decides which tab pairs, not the tab that asked.
+  Future<void> _scan({
+    required PairingLinkTarget from,
+    String? cameraName,
+  }) async {
+    final code = await Navigator.of(
+      context,
+    ).push<String>(MaterialPageRoute(builder: (_) => const QrScannerScreen()));
+    if (code == null) return;
+    await _route(code, from: from, cameraName: cameraName);
+  }
+
+  /// Opens the tab the code is for and pairs it, unless that tab is already paired.
+  Future<void> _route(
+    String code, {
+    PairingLinkTarget? from,
+    String? cameraName,
+  }) async {
+    final target = _router.targetOf(code, from: from);
+    if (target == null || !mounted) return;
     final l10n = AppLocalizations.of(context);
-    switch (target) {
-      case PairingLinkTarget.camera:
-        setState(() => _selectedIndex = _cameraTab);
-        if (widget.cameraPairing.state is CameraNotPaired) {
-          await widget.cameraPairing.submitQr(
-            link,
-            name: l10n.defaultCameraName,
-          );
-        }
-      case PairingLinkTarget.viewer:
-        setState(() => _selectedIndex = _watchTab);
-        if (widget.viewerPairing.state is ViewerNotPaired) {
-          await widget.viewerPairing.submitQr(
-            link,
-            deviceName: l10n.ownerDeviceName,
-          );
-        }
-    }
+    setState(
+      () => _selectedIndex = switch (target) {
+        PairingLinkTarget.camera => _cameraTab,
+        PairingLinkTarget.viewer => _watchTab,
+      },
+    );
+    await _router.pair(
+      target,
+      code,
+      cameraName: cameraName ?? l10n.defaultCameraName,
+      viewerName: l10n.ownerDeviceName,
+    );
   }
 
   Future<void> _confirmReset() async {
@@ -141,11 +159,14 @@ class _HomeShellState extends State<HomeShell> {
             CameraTab(
               pairing: widget.cameraPairing,
               cameraMode: widget.cameraMode,
+              onScan: (name) =>
+                  _scan(from: PairingLinkTarget.camera, cameraName: name),
             ),
             WatchTab(
               pairing: widget.viewerPairing,
               api: widget.api,
               cameraList: widget.cameraList,
+              onScan: () => _scan(from: PairingLinkTarget.viewer),
             ),
           ],
         ),

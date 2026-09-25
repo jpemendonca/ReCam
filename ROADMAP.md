@@ -590,13 +590,23 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > servidor: `WatchCamera_TwoViewers_SendsWatcherCountToCamera`,
   > `ViewerDisconnect_WithOpenLease_SendsLowerCount`, `CameraConnect_SendsCurrentWatcherCount`.
 
-- [ ] **1.12.8 Um só "Ler QR" que decide o papel do celular**
+- [x] **1.12.8 Um só "Ler QR" que decide o papel do celular**
   - Origem: conversa com o autor em 2026-09-25: trocar entre câmera e visualizador está confuso.
   - Escopo: ler qualquer QR do ReCam, em qualquer aba, usa o `r=` para decidir: QR de câmera pareia
     a aba Câmera e abre o modo câmera (1.12.5); QR de visualizador ou de dono pareia a aba Assistir
     e abre a lista. O leitor e o roteamento ficam num lugar só, reusado pelas duas abas e pelo link
     `recam://pair` (1.6.4).
   - Aceite: testes do roteamento pelo papel do QR a partir de cada aba.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (86 no
+  > servidor, 136 no app). O leitor de QR saiu das abas e ficou no `HomeShell`, que é o único a
+  > abri-lo; as abas só pedem "ler QR". O `PairingRouter` (raiz de `lib/`, porque conhece as duas
+  > abas) decide a aba pelo `r=`: câmera vai para a aba Câmera (e o 1.12.5 abre o modo câmera),
+  > dono ou visualizador vão para a aba Assistir. O link `recam://pair` passa pelo mesmo caminho.
+  > Código que não é do ReCam mostra o erro na aba que leu; link que não é do ReCam é ignorado.
+  > Aba já pareada não é pareada de novo (a mesma regra que o link tinha): o app só troca para ela.
+  > Código lido na aba Assistir que é de câmera usa o nome padrão "Câmera". Testes: `PairingRouter`
+  > (câmera a partir da aba Assistir, visualizador e dono a partir da aba Câmera, código inválido,
+  > aba já pareada, link estranho).
 
 - [ ] **1.12.9 Qualquer celular que assiste adiciona câmeras e visualizadores**
   - Origem: conversa com o autor em 2026-09-25: não dava para inverter os papéis dos celulares.

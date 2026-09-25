@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/pairing/pairing_labels.dart';
-import '../core/scanner/qr_scanner_screen.dart';
 import '../core/storage/credential_store.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'camera_mode_controller.dart';
@@ -11,10 +10,18 @@ import 'camera_mode_screen.dart';
 import 'camera_pairing_controller.dart';
 
 class CameraTab extends StatefulWidget {
-  const CameraTab({required this.pairing, required this.cameraMode, super.key});
+  const CameraTab({
+    required this.pairing,
+    required this.cameraMode,
+    required this.onScan,
+    super.key,
+  });
 
   final CameraPairingController pairing;
   final CameraModeFactory cameraMode;
+
+  /// Opens the app's QR reader; the code read decides which tab pairs.
+  final Future<void> Function(String cameraName) onScan;
 
   @override
   State<CameraTab> createState() => _CameraTabState();
@@ -76,6 +83,7 @@ class _CameraTabState extends State<CameraTab> {
           controller: widget.pairing,
           state: state,
           nameController: _nameController,
+          onScan: widget.onScan,
         ),
         CameraPaired(:final session) => _Paired(
           session: session,
@@ -91,20 +99,18 @@ class _NotPaired extends StatelessWidget {
     required this.controller,
     required this.state,
     required this.nameController,
+    required this.onScan,
   });
 
   final CameraPairingController controller;
   final CameraNotPaired state;
   final TextEditingController nameController;
+  final Future<void> Function(String cameraName) onScan;
 
-  Future<void> _scan(BuildContext context) async {
+  Future<void> _scan() async {
     final name = nameController.text;
     if (!controller.checkName(name)) return;
-    final raw = await Navigator.of(
-      context,
-    ).push<String>(MaterialPageRoute(builder: (_) => const QrScannerScreen()));
-    if (raw == null) return;
-    await controller.submitQr(raw, name: name);
+    await onScan(name);
   }
 
   @override
@@ -133,7 +139,7 @@ class _NotPaired extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: () => _scan(context),
+              onPressed: _scan,
               icon: const Icon(Icons.qr_code_scanner),
               label: Text(l10n.scanQrButton),
             ),
