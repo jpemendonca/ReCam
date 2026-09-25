@@ -1056,6 +1056,8 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
     ver a limpeza; linha do tempo e reprodução no Monitor.
   - Aceite: a gravação aparece na linha do tempo e toca, e o mais antigo some quando a cota enche.
     Anotar temperatura e bateria da câmera gravando.
+  > Bloqueado (2026-09-25): aguardando aparelho. São 2 h de gravação com o Samsung A10 e o Redmi 6A e
+  > o servidor no PC; o agente não tem os celulares.
 
 ## Fase 4: gestão de aparelhos
 
