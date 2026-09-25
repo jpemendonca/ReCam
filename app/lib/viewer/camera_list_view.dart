@@ -9,6 +9,7 @@ import '../core/storage/credential_store.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'add_camera_screen.dart';
 import 'camera_list_controller.dart';
+import 'live_view_screen.dart';
 
 /// The Watch tab once paired: the cameras, live, and "Add camera" for the owner.
 class CameraListView extends StatefulWidget {
@@ -43,6 +44,15 @@ class _CameraListViewState extends State<CameraListView> {
     _controller.dispose();
     super.dispose();
   }
+
+  void _openLive(CameraInfo camera) => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) => LiveViewScreen(
+        cameraName: camera.name,
+        controller: _controller.openLive(camera.id),
+      ),
+    ),
+  );
 
   void _addCamera() => Navigator.of(context).push<void>(
     MaterialPageRoute(
@@ -114,8 +124,10 @@ class _CameraListViewState extends State<CameraListView> {
               CameraListLoaded(:final cameras) => ListView.separated(
                 itemCount: cameras.length,
                 separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (context, index) =>
-                    _CameraTile(camera: cameras[index]),
+                itemBuilder: (context, index) => _CameraTile(
+                  camera: cameras[index],
+                  onOpen: () => _openLive(cameras[index]),
+                ),
               ),
             },
           ),
@@ -126,9 +138,10 @@ class _CameraListViewState extends State<CameraListView> {
 }
 
 class _CameraTile extends StatelessWidget {
-  const _CameraTile({required this.camera});
+  const _CameraTile({required this.camera, required this.onOpen});
 
   final CameraInfo camera;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -136,6 +149,8 @@ class _CameraTile extends StatelessWidget {
     final colors = Theme.of(context).colorScheme;
     final battery = camera.batteryLevel;
     return ListTile(
+      enabled: camera.online,
+      onTap: onOpen,
       leading: Icon(
         camera.online ? Icons.videocam : Icons.videocam_off_outlined,
         color: camera.online ? colors.primary : colors.outline,

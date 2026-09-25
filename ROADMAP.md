@@ -442,7 +442,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > vídeo na oferta, e o MediaMTX recusava. O emulador não tem encoder H.264 e publicou em VP8
   > (revisão no `SPECS.md` 12). Gate verde, 88 testes no app. H.264 no A10 fica para o 1.14.
 
-- [ ] **1.12 [opus] App: vídeo ao vivo na aba Assistir**
+- [x] **1.12 [opus] App: vídeo ao vivo na aba Assistir**
   - Origem: caminho principal, passo 6.
   - Escopo: interface `WebRtcViewer` em `core/media/` e a implementação com WHEP. Tela de vídeo
     ao vivo com `RTCVideoView`. Chama `WatchCamera` ao abrir e `UnwatchCamera` ao sair. Tenta o
@@ -450,6 +450,24 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     "conectando" e erro com botão de tentar de novo.
   - Aceite: teste `LiveViewController` (com fakes: abre lease, espera publicação, conecta e
     fecha o lease no dispose).
+  > Validação (2026-09-25): só código escrito, gate verde (92 testes no app), APK compila.
+  > Tocar numa câmera online abre a tela ao vivo, que pega o lease, tenta o WHEP a cada 1 s e
+  > reconecta se o stream cair. Foram 20 tentativas em vez de 10, porque um aparelho fraco pode
+  > levar mais de 10 s para abrir a câmera. O `WhepViewer` entrega o próprio widget de vídeo, e a
+  > tela não importa o plugin. O teste com dois emuladores achou a queda silenciosa do hub; a
+  > correção é o 1.12.1, e a imagem ao vivo será conferida depois dele.
+
+- [ ] **1.12.1 Conexão com o hub que percebe queda silenciosa**
+  - Origem: teste com dois emuladores em 2026-09-25. Depois de um restart do servidor, o
+    visualizador continuou mostrando "connected" por minutos sem reconectar: o cliente SignalR do
+    Dart não disparou `onclose`. A lista ficou com a câmera "Offline" enquanto ela estava online.
+  - Escopo: hub ganha `Heartbeat()` (qualquer aparelho, devolve `HubResult` ok). `HubSession`
+    chama o batimento a cada 20 s enquanto conectada; sem resposta em 10 s, derruba a conexão e
+    reconecta com o backoff. O `Completer` de fechamento passa a existir antes do `connect`, para
+    um fechamento imediato não se perder. `CameraModeScreen` e `LiveViewScreen` passam a criar o
+    controller no `initState`, não no `builder` da rota (o Flutter pode chamar o builder de novo).
+  - Aceite: `Heartbeat_FromAnyDevice_ReturnsOk` no servidor; no app,
+    `whenHeartbeatFails_reconnects` e `whenConnectionClosesRightAway_reconnects`.
 
 - [ ] **1.13 Lanterna**
   - Origem: caminho principal, passo 7.

@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../core/media/webrtc_viewer.dart';
 import '../core/network/api_client.dart';
 import '../core/network/hub_session.dart';
 import '../core/storage/credential_store.dart';
+import 'live_view_controller.dart';
 
 typedef CameraListFactory = CameraListController Function(
   PairedSession session,
@@ -30,10 +32,12 @@ class CameraListController extends ChangeNotifier {
     required this._api,
     required this._session,
     required this.hub,
+    required this._viewerFactory,
   });
 
   final ApiClient _api;
   final PairedSession _session;
+  final WebRtcViewerFactory _viewerFactory;
 
   /// The viewer's hub connection; the live view reuses it for its watch lease.
   final HubSession hub;
@@ -61,6 +65,13 @@ class CameraListController extends ChangeNotifier {
         if (_state is! CameraListLoaded) _setState(CameraListFailed());
     }
   }
+
+  /// A live view of one camera, sharing this list's hub connection for the watch lease.
+  LiveViewController openLive(String cameraId) => LiveViewController(
+    hub: hub,
+    viewer: _viewerFactory(cameraId),
+    cameraId: cameraId,
+  );
 
   Future<void> stop() async {
     hub.removeListener(notifyListeners);

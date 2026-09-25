@@ -85,5 +85,7 @@
   "cameraListError": "Could not load the cameras. Check the connection to the server.",
   "cameraListEmpty": "No cameras yet.",
   "cameraOnline": "Online",
-  "cameraOffline": "Offline"
+  "cameraOffline": "Offline",
+  "liveConnecting": "Waking up the camera…",
+  "liveFailed": "Could not show the video. Check that the camera is online."
 }

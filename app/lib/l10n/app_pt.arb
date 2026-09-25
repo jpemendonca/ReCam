@@ -50,5 +50,7 @@
   "cameraListError": "Não deu para carregar as câmeras. Confira a conexão com o servidor.",
   "cameraListEmpty": "Nenhuma câmera ainda.",
   "cameraOnline": "Online",
-  "cameraOffline": "Offline"
+  "cameraOffline": "Offline",
+  "liveConnecting": "Acordando a câmera…",
+  "liveFailed": "Não deu para mostrar o vídeo. Confira se a câmera está online."
 }

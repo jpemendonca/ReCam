@@ -46,6 +46,7 @@ void main() {
       api: api,
       session: pairedSession(),
       hub: HubSession(client: hubClient, delay: (_) async {}),
+      viewerFactory: (_) => FakeViewer(),
     );
   });
 

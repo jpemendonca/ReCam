@@ -51,6 +51,7 @@ void main() {
           api: api,
           session: session,
           hub: HubSession(client: FakeHubClient(), delay: (_) async {}),
+          viewerFactory: (_) => FakeViewer(),
         ),
         links: links,
         ready: Future.value(),

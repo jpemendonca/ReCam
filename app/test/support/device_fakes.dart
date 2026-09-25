@@ -82,6 +82,33 @@ class FakePublisher implements WebRtcPublisher {
   Future<void> stop() async => stops++;
 }
 
+class FakeViewer implements WebRtcViewer {
+  /// Results for the next start calls; when empty, start fails.
+  final List<bool> startResults = [];
+  int starts = 0;
+  int stops = 0;
+  bool disposed = false;
+  void Function()? ended;
+
+  @override
+  set onEnded(void Function() callback) => ended = callback;
+
+  @override
+  Future<bool> start() async {
+    starts++;
+    return startResults.isEmpty ? false : startResults.removeAt(0);
+  }
+
+  @override
+  Future<void> stop() async => stops++;
+
+  @override
+  Widget buildVideo() => const SizedBox.shrink();
+
+  @override
+  Future<void> dispose() async => disposed = true;
+}
+
 /// Lets queued async work (microtasks and zero-length delays) finish.
 Future<void> settle() async {
   for (var i = 0; i < 5; i++) {

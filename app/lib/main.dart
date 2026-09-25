@@ -11,6 +11,7 @@ import 'core/device/keep_alive.dart';
 import 'core/device/screen_controller.dart';
 import 'core/media/signaling_client.dart';
 import 'core/media/webrtc_publisher.dart';
+import 'core/media/webrtc_viewer.dart';
 import 'core/network/hub_client.dart';
 import 'core/network/hub_session.dart';
 import 'core/network/http_api_client.dart';
@@ -55,6 +56,11 @@ Future<void> main() async {
         api: api,
         session: session,
         hub: HubSession(client: SignalRHubClient(session)),
+        viewerFactory: (cameraId) => WhepViewer(
+          session: session,
+          cameraId: cameraId,
+          signaling: SignalingClient(http.Client()),
+        ),
       ),
       links: AppLinkSource(),
       ready: ready,
