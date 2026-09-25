@@ -17,12 +17,13 @@ public sealed class DeviceTelemetryTests
         var camera = Paired(DeviceRole.Camera);
 
         // act
-        var result = camera.ReportTelemetry(80, isCharging: true, Now.AddMinutes(1));
+        var result = camera.ReportTelemetry(80, isCharging: true, 31.5, Now.AddMinutes(1));
 
         // assert
         Assert.True(result.IsSuccess);
         Assert.Equal(80, camera.BatteryLevel);
         Assert.True(camera.IsCharging);
+        Assert.Equal(31.5, camera.TemperatureC);
         Assert.Equal(Now.AddMinutes(1), camera.TelemetryAt);
     }
 
@@ -33,7 +34,7 @@ public sealed class DeviceTelemetryTests
         var camera = Paired(DeviceRole.Camera);
 
         // act
-        var result = camera.ReportTelemetry(101, isCharging: false, Now);
+        var result = camera.ReportTelemetry(101, isCharging: false, null, Now);
 
         // assert
         Assert.Equal(DeviceErrors.InvalidBatteryLevel, result.Error);
@@ -47,9 +48,41 @@ public sealed class DeviceTelemetryTests
         var viewer = Paired(DeviceRole.Viewer);
 
         // act
-        var result = viewer.ReportTelemetry(50, isCharging: false, Now);
+        var result = viewer.ReportTelemetry(50, isCharging: false, null, Now);
 
         // assert
         Assert.Equal(DeviceErrors.NotACamera, result.Error);
+    }
+
+    [Theory(DisplayName = "A temperature no battery can have is refused")]
+    [InlineData(-41)]
+    [InlineData(121)]
+    [InlineData(double.NaN)]
+    public void ReportTelemetry_WithImpossibleTemperature_ReturnsInvalidTemperature(double temperatureC)
+    {
+        // arrange
+        var camera = Paired(DeviceRole.Camera);
+
+        // act
+        var result = camera.ReportTelemetry(50, isCharging: false, temperatureC, Now);
+
+        // assert
+        Assert.Equal(DeviceErrors.InvalidTemperature, result.Error);
+        Assert.Null(camera.TemperatureC);
+    }
+
+    [Fact(DisplayName = "A phone that cannot read its temperature reports none")]
+    public void ReportTelemetry_WithoutTemperature_ClearsIt()
+    {
+        // arrange
+        var camera = Paired(DeviceRole.Camera);
+        camera.ReportTelemetry(50, isCharging: false, 35, Now);
+
+        // act
+        var result = camera.ReportTelemetry(49, isCharging: false, null, Now.AddMinutes(1));
+
+        // assert
+        Assert.True(result.IsSuccess);
+        Assert.Null(camera.TemperatureC);
     }
 }

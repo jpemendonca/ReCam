@@ -106,5 +106,13 @@
   "addMonitorButton": "Add Monitor",
   "addMonitorTitle": "Add Monitor",
   "cameraModeShowImage": "Show image",
-  "cameraModeHideImage": "Hide image"
+  "cameraModeHideImage": "Hide image",
+  "temperatureC": "{degrees} °C",
+  "@temperatureC": {
+    "placeholders": {
+      "degrees": {
+        "type": "int"
+      }
+    }
+  }
 }

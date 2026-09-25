@@ -71,5 +71,6 @@
   "addMonitorButton": "Adicionar monitor",
   "addMonitorTitle": "Adicionar monitor",
   "cameraModeShowImage": "Ver imagem",
-  "cameraModeHideImage": "Esconder imagem"
+  "cameraModeHideImage": "Esconder imagem",
+  "temperatureC": "{degrees} °C"
 }

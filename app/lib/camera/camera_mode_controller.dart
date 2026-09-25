@@ -192,8 +192,11 @@ class CameraModeController extends ChangeNotifier {
         lastSentAt == null || _now().difference(lastSentAt) >= reportInterval;
     if (!force && reading == _lastSent && !due) return;
     await _hub.client.invoke('ReportTelemetry', [
-      reading.level,
-      reading.isCharging,
+      {
+        'batteryLevel': reading.level,
+        'isCharging': reading.isCharging,
+        'temperatureC': reading.temperatureC,
+      },
     ]);
     _lastSent = reading;
     _lastSentAt = _now();

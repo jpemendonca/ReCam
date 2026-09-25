@@ -8,4 +8,5 @@ public sealed record CameraStatus(
     bool Publishing,
     int? BatteryLevel,
     bool? IsCharging,
+    double? TemperatureC,
     DateTimeOffset? TelemetryAt);

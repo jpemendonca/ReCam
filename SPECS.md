@@ -510,3 +510,9 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > Fase 2 (calor e bateria), porque gravar obriga a câmera a transmitir o tempo todo. As fases de
 > gestão de aparelhos e de distribuição passaram a ser 4 e 5. O desenho está na abertura da Fase 3
 > do ROADMAP; o bullet 3.1 o traz para uma seção própria deste documento.
+
+> Revisão (2026-09-25): `ReportTelemetry` recebe um objeto só, `{ batteryLevel, isCharging,
+> temperatureC }`, com `temperatureC` em °C ou `null` quando o celular não informa (o cliente
+> SignalR do Dart não manda argumento nulo). `Device` e `CameraStatus` ganharam `temperatureC`
+> (temperatura da bateria, validada entre -40 e 120 °C). A câmera manda a telemetria também quando
+> a temperatura muda um grau inteiro (bullet 2.2).

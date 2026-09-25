@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Recam.Server.Domain;
+using Recam.Server.Features.Realtime;
 using Recam.Server.Infrastructure.Realtime;
 using Recam.Server.Tests.Support;
 
@@ -27,7 +28,7 @@ public sealed class DeviceHubTests
 
         // act
         var result = await cameraConnection.InvokeAsync<HubResult>(
-            "ReportTelemetry", 42, true, TestContext.Current.CancellationToken);
+            "ReportTelemetry", new TelemetryReport(42, true, null), TestContext.Current.CancellationToken);
 
         // assert
         Assert.True(result.Ok);
@@ -37,6 +38,30 @@ public sealed class DeviceHubTests
         using var client = factory.CreateDeviceClient(owner.Credential);
         var cameras = await client.GetFromJsonAsync<List<CameraStatus>>(CamerasUri, ApiJson.Options, TestContext.Current.CancellationToken);
         Assert.Equal(42, Assert.Single(cameras!).BatteryLevel);
+    }
+
+    [Fact(DisplayName = "The camera's temperature reaches viewers and the camera list")]
+    public async Task ReportTelemetry_WithTemperature_ReachesViewersAndList()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera, "Porch");
+        await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
+        using var updates = new StatusInbox(viewerConnection);
+        await using var cameraConnection = await factory.ConnectAsync(camera.Credential);
+
+        // act
+        var result = await cameraConnection.InvokeAsync<HubResult>(
+            "ReportTelemetry", new TelemetryReport(70, false, 38.4), TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.True(result.Ok);
+        var status = await updates.WaitForAsync(status => status.TemperatureC is not null);
+        Assert.Equal(38.4, status.TemperatureC);
+        using var client = factory.CreateDeviceClient(owner.Credential);
+        var cameras = await client.GetFromJsonAsync<List<CameraStatus>>(CamerasUri, ApiJson.Options, TestContext.Current.CancellationToken);
+        Assert.Equal(38.4, Assert.Single(cameras!).TemperatureC);
     }
 
     [Fact(DisplayName = "Any device can check its connection with a heartbeat")]
@@ -64,7 +89,7 @@ public sealed class DeviceHubTests
 
         // act
         var result = await connection.InvokeAsync<HubResult>(
-            "ReportTelemetry", 101, false, TestContext.Current.CancellationToken);
+            "ReportTelemetry", new TelemetryReport(101, false, null), TestContext.Current.CancellationToken);
 
         // assert
         Assert.False(result.Ok);
@@ -81,7 +106,7 @@ public sealed class DeviceHubTests
 
         // act
         var exception = await Record.ExceptionAsync(() => connection.InvokeAsync<HubResult>(
-            "ReportTelemetry", 50, false, TestContext.Current.CancellationToken));
+            "ReportTelemetry", new TelemetryReport(50, false, null), TestContext.Current.CancellationToken));
 
         // assert
         Assert.IsType<HubException>(exception);

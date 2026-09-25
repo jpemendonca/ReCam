@@ -19,7 +19,7 @@ public sealed class WatchLeasesTests
 
         // The server runs OnConnectedAsync before any invocation, so this round trip means the
         // camera is fully registered and will not also get a StartPublishing from connecting.
-        await cameraConnection.InvokeAsync<HubResult>("ReportTelemetry", 50, true, TestContext.Current.CancellationToken);
+        await cameraConnection.InvokeAsync<HubResult>("ReportTelemetry", new TelemetryReport(50, true, null), TestContext.Current.CancellationToken);
         return (factory, viewerConnection, cameraConnection, camera.DeviceId);
     }
 

@@ -827,12 +827,25 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     envio. Se não oferecer, mostrar mensagem clara (ARB) e não entrar no modo câmera.
   - Aceite: teste do controller com fake retornando "sem H.264".
 
-- [ ] **2.2 Telemetria de temperatura**
+- [x] **2.2 Telemetria de temperatura**
   - Origem: `SPECS.md` 11.
   - Escopo: method channel no Android lendo `BatteryManager.EXTRA_TEMPERATURE`. Campo
     `temperatureC` na telemetria, no `Device`, no `CameraStatusDto` e na lista de câmeras.
     Migração nova.
   - Aceite: testes de servidor e do controller com fake.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho; o `MainActivity.kt` não foi
+  > compilado aqui (sem Android SDK). Gate verde (119 no servidor, 173 no app). Canal
+  > `io.recam.app/device`, método `batteryTemperature`, lê `EXTRA_TEMPERATURE` (décimos de °C) do
+  > broadcast fixo da bateria, sem registrar receiver. Servidor: `Device.TemperatureC` (`double?`,
+  > migração `CameraTemperature`), validado na entidade entre -40 e 120 °C
+  > (`device.invalid_temperature`); `CameraStatus` ganhou `temperatureC`. Decisão fora do bullet:
+  > `ReportTelemetry` passou a receber um objeto `{ batteryLevel, isCharging, temperatureC }`
+  > (`TelemetryReport`) no lugar de dois argumentos soltos, porque o cliente SignalR do Dart só
+  > aceita argumentos não nulos e a temperatura pode faltar. Revisão no `SPECS.md` 12. No app, a
+  > leitura compara a temperatura em graus inteiros, para uma oscilação de décimos não mandar
+  > relatório a cada 15 s; a lista mostra "NN °C" ao lado da bateria. Testes: domínio (guarda, recusa
+  > temperatura impossível, aceita ausência), hub até a lista, controller (manda quando muda um grau,
+  > não manda por décimos) e a lista aplicando `CameraStatusChanged`.
 
 - [ ] **2.3 Redução automática de qualidade por calor**
   - Origem: `SPECS.md` 11.

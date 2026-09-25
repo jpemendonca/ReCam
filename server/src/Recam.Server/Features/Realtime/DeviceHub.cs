@@ -77,12 +77,13 @@ public sealed partial class DeviceHub(
     public HubResult Heartbeat() => HubResult.Success;
 
     [Authorize(Policy = AuthExtensions.CameraOnly)]
-    public async Task<HubResult> ReportTelemetry(int batteryLevel, bool isCharging)
+    public async Task<HubResult> ReportTelemetry(TelemetryReport report)
     {
         await using var database = await databaseFactory.CreateDbContextAsync(Context.ConnectionAborted);
         var camera = await database.Devices.SingleAsync(
             device => device.Id == Context.User!.GetDeviceId(), Context.ConnectionAborted);
-        var reported = camera.ReportTelemetry(batteryLevel, isCharging, timeProvider.GetUtcNow());
+        var reported = camera.ReportTelemetry(
+            report.BatteryLevel, report.IsCharging, report.TemperatureC, timeProvider.GetUtcNow());
         if (reported.IsFailure)
         {
             return reported.Error.ToHubResult();

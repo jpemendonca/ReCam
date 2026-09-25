@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.SignalR.Client;
 using Recam.Server.Domain;
+using Recam.Server.Features.Realtime;
 using Recam.Server.Features.Setup;
 using Recam.Server.Infrastructure.Realtime;
 using Recam.Server.Tests.Support;
@@ -131,7 +132,7 @@ public sealed class SetupEndpointsTests
         var porch = await factory.PairDeviceAsync(DeviceRole.Camera, "Porch");
         var garage = await factory.PairDeviceAsync(DeviceRole.Camera, "Garage");
         await using var cameraConnection = await factory.ConnectAsync(porch.Credential);
-        await cameraConnection.InvokeAsync<HubResult>("ReportTelemetry", 64, true, TestContext.Current.CancellationToken);
+        await cameraConnection.InvokeAsync<HubResult>("ReportTelemetry", new TelemetryReport(64, true, null), TestContext.Current.CancellationToken);
         await cameraConnection.InvokeAsync<HubResult>("ReportPublishing", true, TestContext.Current.CancellationToken);
         await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
         await viewerConnection.InvokeAsync<HubResult>("WatchCamera", porch.DeviceId, TestContext.Current.CancellationToken);

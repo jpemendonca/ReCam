@@ -28,7 +28,13 @@ public sealed class Device
 
     public bool? IsCharging { get; private set; }
 
+    /// <summary>Battery temperature in °C, the closest a phone offers to "is it overheating".</summary>
+    public double? TemperatureC { get; private set; }
+
     public DateTimeOffset? TelemetryAt { get; private set; }
+
+    public const double MinTemperatureC = -40;
+    public const double MaxTemperatureC = 120;
 
     public bool IsRevoked => RevokedAt is not null;
 
@@ -81,7 +87,7 @@ public sealed class Device
         return PairingToken.Issue(grantsRole, now, Id);
     }
 
-    public Result ReportTelemetry(int batteryLevel, bool isCharging, DateTimeOffset now)
+    public Result ReportTelemetry(int batteryLevel, bool isCharging, double? temperatureC, DateTimeOffset now)
     {
         if (Role != DeviceRole.Camera)
         {
@@ -93,8 +99,14 @@ public sealed class Device
             return DeviceErrors.InvalidBatteryLevel;
         }
 
+        if (temperatureC is < MinTemperatureC or > MaxTemperatureC || (temperatureC is { } value && double.IsNaN(value)))
+        {
+            return DeviceErrors.InvalidTemperature;
+        }
+
         BatteryLevel = batteryLevel;
         IsCharging = isCharging;
+        TemperatureC = temperatureC;
         TelemetryAt = now;
         LastSeenAt = now;
         return Result.Success();
@@ -131,7 +143,7 @@ public sealed class Device
     public void MarkSeen(DateTimeOffset now) => LastSeenAt = now;
 
     public CameraStatus ToCameraStatus(bool online, bool publishing) =>
-        new(Id, Name, online, publishing, BatteryLevel, IsCharging, TelemetryAt);
+        new(Id, Name, online, publishing, BatteryLevel, IsCharging, TemperatureC, TelemetryAt);
 
     public bool HasCredentialSecret(string secret) =>
         CryptographicOperations.FixedTimeEquals(SecretToken.Hash(secret), CredentialHash);

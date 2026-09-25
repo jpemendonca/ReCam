@@ -198,6 +198,7 @@ class _CameraTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final colors = Theme.of(context).colorScheme;
     final battery = camera.batteryLevel;
+    final temperature = camera.temperatureC;
     return ListTile(
       enabled: camera.online,
       onTap: onOpen,
@@ -216,19 +217,26 @@ class _CameraTile extends StatelessWidget {
             : '${l10n.cameraOnline} · '
                   '${camera.publishing ? l10n.cameraStreaming : l10n.cameraIdle}',
       ),
-      trailing: battery == null
+      trailing: battery == null && temperature == null
           ? null
           : Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  camera.isCharging == true
-                      ? Icons.battery_charging_full
-                      : Icons.battery_std,
-                  size: 20,
-                ),
-                const SizedBox(width: 4),
-                Text('$battery%'),
+                if (temperature != null) ...[
+                  const Icon(Icons.thermostat, size: 20),
+                  Text(l10n.temperatureC(temperature.round())),
+                  const SizedBox(width: 8),
+                ],
+                if (battery != null) ...[
+                  Icon(
+                    camera.isCharging == true
+                        ? Icons.battery_charging_full
+                        : Icons.battery_std,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 4),
+                  Text('$battery%'),
+                ],
               ],
             ),
     );

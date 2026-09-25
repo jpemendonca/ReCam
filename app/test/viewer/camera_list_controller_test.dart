@@ -131,6 +131,26 @@ void main() {
     });
   });
 
+  group('CameraListController temperature', () {
+    test('onStatusChanged_withTemperature_showsIt', () async {
+      // arrange
+      api.cameraResults.addAll([
+        ApiSuccess([_camera('a', 'Kitchen')]),
+        ApiSuccess([_camera('a', 'Kitchen')]),
+      ]);
+      await controller.start();
+      await settle();
+
+      // act
+      hubClient.receive('CameraStatusChanged', [
+        {..._statusJson('a', 'Kitchen', battery: 50), 'temperatureC': 41.7},
+      ]);
+
+      // assert
+      expect(cameras().single.temperatureC, 41.7);
+    });
+  });
+
   group('CameraListController.refresh', () {
     test('afterLoad_reloadsFromTheApi', () async {
       // arrange

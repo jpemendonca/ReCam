@@ -105,6 +105,7 @@ class CameraInfo {
     required this.publishing,
     this.batteryLevel,
     this.isCharging,
+    this.temperatureC,
   });
 
   final String id;
@@ -113,6 +114,7 @@ class CameraInfo {
   final bool publishing;
   final int? batteryLevel;
   final bool? isCharging;
+  final double? temperatureC;
 
   /// Returns null for data that does not describe a camera.
   static CameraInfo? tryParse(Object? json) {
@@ -123,6 +125,7 @@ class CameraInfo {
     final publishing = json['publishing'];
     final batteryLevel = json['batteryLevel'];
     final isCharging = json['isCharging'];
+    final temperatureC = json['temperatureC'];
     if (id is! String || name is! String || online is! bool) return null;
     return CameraInfo(
       id: id,
@@ -131,6 +134,7 @@ class CameraInfo {
       publishing: publishing == true,
       batteryLevel: batteryLevel is num ? batteryLevel.toInt() : null,
       isCharging: isCharging is bool ? isCharging : null,
+      temperatureC: temperatureC is num ? temperatureC.toDouble() : null,
     );
   }
 }

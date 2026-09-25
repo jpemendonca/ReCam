@@ -47,9 +47,9 @@ void main() {
     await settle();
   }
 
-  List<List<Object>> telemetry() => [
+  List<Object> telemetry() => [
     for (final call in client.invocations)
-      if (call.method == 'ReportTelemetry') call.args,
+      if (call.method == 'ReportTelemetry') call.args.single,
   ];
 
   List<List<Object>> publishingReports() => [
@@ -406,7 +406,7 @@ void main() {
       expect(keepAlive.running, isTrue);
       expect(screen.inCameraMode, isTrue);
       expect(telemetry(), [
-        [64, false],
+        {'batteryLevel': 64, 'isCharging': false, 'temperatureC': null},
       ]);
     });
 
@@ -420,7 +420,54 @@ void main() {
 
       // assert
       expect(telemetry(), hasLength(2));
-      expect(telemetry().last, [79, true]);
+      expect(telemetry().last, {
+        'batteryLevel': 79,
+        'isCharging': true,
+        'temperatureC': null,
+      });
+    });
+
+    test('checkBattery_whenTemperatureChangesADegree_reportsIt', () async {
+      // arrange
+      battery.reading = const BatteryReading(
+        level: 80,
+        isCharging: true,
+        temperatureC: 36.2,
+      );
+      await start();
+      battery.reading = const BatteryReading(
+        level: 80,
+        isCharging: true,
+        temperatureC: 37.4,
+      );
+
+      // act
+      await controller.checkBattery();
+
+      // assert
+      expect(telemetry(), hasLength(2));
+      expect((telemetry().last as Map)['temperatureC'], 37.4);
+    });
+
+    test('checkBattery_whenTemperatureMovesATenth_sendsNothing', () async {
+      // arrange
+      battery.reading = const BatteryReading(
+        level: 80,
+        isCharging: true,
+        temperatureC: 36.2,
+      );
+      await start();
+      battery.reading = const BatteryReading(
+        level: 80,
+        isCharging: true,
+        temperatureC: 36.4,
+      );
+
+      // act
+      await controller.checkBattery();
+
+      // assert
+      expect(telemetry(), hasLength(1));
     });
 
     test('checkBattery_whenUnchangedAndRecent_sendsNothing', () async {
