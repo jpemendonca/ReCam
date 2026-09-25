@@ -87,5 +87,14 @@
   "recordAlways": "Gravar sempre",
   "recordingNeedsH264": "Não grava: este celular não tem H.264",
   "recordingFailed": "Não deu para mudar a gravação. Confira a conexão com o servidor.",
-  "cameraModeRecording": "Gravando"
+  "cameraModeRecording": "Gravando",
+  "recordingsTitle": "Gravações",
+  "recordingsInUse": "Em uso: {used} de {total} GB.",
+  "recordingsSpace": "Espaço para gravações: {size} GB",
+  "recordingsHours": "Cabem cerca de {hours} horas de uma câmera.",
+  "recordingsHowItWorks": "Uma câmera grava cerca de 300 MB por hora. Quando o espaço enche, as gravações mais antigas são apagadas, de qualquer câmera.",
+  "recordingsSave": "Salvar",
+  "recordingsSaved": "Espaço para gravações salvo.",
+  "recordingsSaveFailed": "Não deu para salvar. Confira a conexão com o servidor.",
+  "recordingsLoadFailed": "Não deu para carregar o espaço das gravações. Confira a conexão com o servidor."
 }

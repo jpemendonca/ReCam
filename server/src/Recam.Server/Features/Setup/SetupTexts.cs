@@ -39,6 +39,8 @@ public sealed record SetupTexts
         Battery = "Battery",
         Charging = "charging",
         UpdatesEvery = seconds => $"This page updates every {seconds} seconds.",
+        RecordingsTitle = "Recordings",
+        RecordingsUsage = (used, quota) => $"{used} of {quota} GB in use.",
     };
 
     public static readonly SetupTexts Portuguese = new()
@@ -74,6 +76,8 @@ public sealed record SetupTexts
         Battery = "Bateria",
         Charging = "carregando",
         UpdatesEvery = seconds => $"Esta página se atualiza a cada {seconds} segundos.",
+        RecordingsTitle = "Gravações",
+        RecordingsUsage = (used, quota) => $"{used} de {quota} GB em uso.",
     };
 
     public required string Language { get; init; }
@@ -117,6 +121,11 @@ public sealed record SetupTexts
     public required string Charging { get; init; }
 
     public required Func<int, string> UpdatesEvery { get; init; }
+
+    public required string RecordingsTitle { get; init; }
+
+    /// <summary>Used and total, already formatted for the language.</summary>
+    public required Func<string, string, string> RecordingsUsage { get; init; }
 
     /// <summary>
     /// Picks Portuguese or English from the browser's Accept-Language, by preference; anything

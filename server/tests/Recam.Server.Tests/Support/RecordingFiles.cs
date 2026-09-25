@@ -1,0 +1,18 @@
+namespace Recam.Server.Tests.Support;
+
+public static class RecordingFiles
+{
+    /// <summary>
+    /// Writes a segment file as MediaMTX names it. Sparse: its length counts, but it takes no
+    /// disk, so tests can go past a quota of hundreds of megabytes.
+    /// </summary>
+    public static string Write(string recordingsDirectory, Guid cameraId, DateTimeOffset startsAt, long bytes)
+    {
+        var folder = Path.Combine(recordingsDirectory, $"rec-{cameraId:N}");
+        Directory.CreateDirectory(folder);
+        var path = Path.Combine(folder, $"{startsAt.UtcDateTime:yyyy-MM-dd_HH-mm-ss-ffffff}.mp4");
+        using var file = File.Create(path);
+        file.SetLength(bytes);
+        return path;
+    }
+}

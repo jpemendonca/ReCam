@@ -10,6 +10,8 @@ public sealed class RecamDbContext(DbContextOptions<RecamDbContext> options) : D
 
     public DbSet<PairingToken> PairingTokens => Set<PairingToken>();
 
+    public DbSet<RecordingQuota> RecordingQuotas => Set<RecordingQuota>();
+
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         // SQLite has no DateTimeOffset type; stored as binary so WHERE and ORDER BY still translate.
@@ -34,6 +36,12 @@ public sealed class RecamDbContext(DbContextOptions<RecamDbContext> options) : D
 
             // Two requests racing with the same token: only the first save wins, the other fails.
             token.Property(t => t.UsedAt).IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<RecordingQuota>(quota =>
+        {
+            quota.HasKey(q => q.Id);
+            quota.Property(q => q.Id).ValueGeneratedNever();
         });
     }
 }

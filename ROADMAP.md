@@ -966,7 +966,7 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   > gravação para WHIP e WHEP, `DELETE` segue a sessão, sessão desconhecida dá 404) e, no app, o
   > controller da câmera, o da lista e o widget do interruptor.
 
-- [ ] **3.3 Espaço para gravações e limpeza automática**
+- [x] **3.3 Espaço para gravações e limpeza automática**
   - Origem: combinado com o autor em 2026-09-25 (a "barrinha" do SPECS 1.2).
   - Escopo: cota total em MB guardada no banco (migração), padrão 2048 MB. `GET` e `PUT
     /api/recordings/quota` (Monitores): o `GET` devolve cota, uso atual e espaço livre no disco; o
@@ -977,6 +977,24 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
     A página do servidor mostra o uso ("1,2 de 2 GB").
   - Aceite: testes da limpeza com pasta temporária e `FakeTimeProvider`, dos endpoints e do
     controller da barrinha.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (151 no
+  > servidor, 204 no app). Domínio: `RecordingQuota` (linha única, migração `RecordingQuota`,
+  > padrão 2048 MB, mínimo 100 MB) com `ChangeTo(mb, usado, livre)` e `PlanCleanup(segmentos,
+  > câmeras ativas)`, função pura: apaga tudo de câmera removida e depois os mais antigos, de
+  > qualquer câmera, até caber. Decisão: o segmento mais novo de cada câmera nunca é apagado, porque
+  > o MediaMTX pode estar escrevendo nele (apagar um arquivo aberto não libera o espaço no Linux);
+  > com uma cota muito pequena, o uso pode passar dela por até um segmento por câmera.
+  > `RecordingStore` (Infrastructure) lê só pastas `rec-<32 hex>` e arquivos no formato do MediaMTX,
+  > mede o disco (`DriveInfo`) e apaga; o resto da pasta é ignorado. `RecordingCleanupWorker` roda a
+  > cada 60 s com o `TimeProvider`. Endpoints `GET`/`PUT /api/recordings/quota` (Monitores).
+  > `RecordingQuotas.LoadAsync` ficou em `Infrastructure/Recordings`, porque a página do servidor
+  > (`Features.Setup`) também lê a cota para mostrar "1,2 de 2 GB em uso". App: "Gravações" no menu
+  > ⋮ (com o Monitor pareado), com a barrinha entre 100 MB e uso + livre, o uso atual e quantas
+  > horas de uma câmera cabem (300 MB por hora). Revisão no `SPECS.md` 12. Testes: plano de limpeza
+  > (dentro da cota, mais antigos entre câmeras, mais novo preservado, câmera removida), cota maior
+  > que o disco, leitura da pasta (nomes, UTC, arquivos estranhos), endpoints (GET, PUT, maior que
+  > o disco, abaixo do mínimo, câmera 403), worker com pasta temporária e `FakeTimeProvider`
+  > (arquivos esparsos de 60 MB), página nos dois idiomas e, no app, controller, cliente HTTP e menu.
 
 - [ ] **3.4 Listar e servir as gravações**
   - Origem: combinado com o autor em 2026-09-25.

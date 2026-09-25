@@ -15,6 +15,7 @@ import 'l10n/generated/app_localizations.dart';
 import 'core/pairing/device_role.dart';
 import 'pairing_router.dart';
 import 'viewer/add_device_screen.dart';
+import 'viewer/recordings_screen.dart';
 import 'viewer/camera_list_controller.dart';
 import 'viewer/viewer_pairing_controller.dart';
 import 'viewer/watch_tab.dart';
@@ -115,6 +116,13 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
+  void _openRecordings(ViewerPaired paired) => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) =>
+          RecordingsScreen(api: widget.api, session: paired.session),
+    ),
+  );
+
   void _addMonitor(ViewerPaired paired) => Navigator.of(context).push<void>(
     MaterialPageRoute(
       builder: (_) => AddDeviceScreen(
@@ -184,14 +192,22 @@ class _HomeShellState extends State<HomeShell> {
                 (_MenuAction.addMonitor, final ViewerPaired paired) =>
                   _addMonitor(paired),
                 (_MenuAction.addMonitor, _) => null,
+                (_MenuAction.recordings, final ViewerPaired paired) =>
+                  _openRecordings(paired),
+                (_MenuAction.recordings, _) => null,
                 (_MenuAction.reset, _) => unawaited(_confirmReset()),
               },
               itemBuilder: (context) => [
-                if (viewerState is ViewerPaired)
+                if (viewerState is ViewerPaired) ...[
+                  PopupMenuItem(
+                    value: _MenuAction.recordings,
+                    child: Text(l10n.recordingsTitle),
+                  ),
                   PopupMenuItem(
                     value: _MenuAction.addMonitor,
                     child: Text(l10n.addMonitorButton),
                   ),
+                ],
                 PopupMenuItem(
                   value: _MenuAction.reset,
                   child: Text(l10n.resetAppButton),
@@ -263,4 +279,4 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
-enum _MenuAction { addMonitor, reset }
+enum _MenuAction { recordings, addMonitor, reset }

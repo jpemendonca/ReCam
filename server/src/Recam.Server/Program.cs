@@ -3,6 +3,7 @@ using Recam.Server.Features.Health;
 using Recam.Server.Features.Media;
 using Recam.Server.Features.Pairing;
 using Recam.Server.Features.Realtime;
+using Recam.Server.Features.Recordings;
 using Recam.Server.Features.Setup;
 using Recam.Server.Infrastructure.Auth;
 using Recam.Server.Infrastructure.Hosting;
@@ -27,7 +28,8 @@ builder.Services
     .AddSetup()
     .AddPairing()
     .AddRealtime()
-    .AddMediaProxy(settings);
+    .AddMediaProxy(settings)
+    .AddRecordings();
 
 var app = builder.Build();
 
@@ -41,6 +43,7 @@ app.MapPairingEndpoints();
 app.MapDeviceEndpoints();
 app.MapRealtimeEndpoints();
 app.MapMediaProxyEndpoints();
+app.MapRecordingEndpoints();
 
 await app.RunAsync();
 return 0;

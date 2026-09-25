@@ -39,7 +39,7 @@ public static class SetupPage
             """);
     }
 
-    public static string RenderPanel(IReadOnlyList<PanelDevice> devices, SetupTexts texts)
+    public static string RenderPanel(IReadOnlyList<PanelDevice> devices, RecordingUsage recordings, SetupTexts texts)
     {
         var cameras = devices.Where(device => device.Role == DeviceRole.Camera).ToList();
         var monitors = devices.Where(device => device.Role != DeviceRole.Camera).ToList();
@@ -59,6 +59,10 @@ public static class SetupPage
             <div class="grid">
             {string.Concat(monitors.Select(monitor => MonitorCard(monitor, texts)))}
             </div>
+            </section>
+            <section class="card">
+            <h2>{Encode(texts.RecordingsTitle)}</h2>
+            <p>{Encode(texts.RecordingsUsage(Gigabytes(recordings.UsedBytes, texts), Gigabytes(recordings.QuotaBytes, texts)))}</p>
             </section>
             <section class="card">
             <h2>{Encode(texts.AddCameraTitle)}</h2>
@@ -100,6 +104,10 @@ public static class SetupPage
         string.Concat(steps.Select(step => $"<li>{step}</li>\n"));
 
     private static string Encode(string text) => Html.Encode(text);
+
+    // "1,2" in Portuguese and "1.2" in English; whole numbers without decimals.
+    private static string Gigabytes(long bytes, SetupTexts texts) =>
+        (bytes / 1024d / 1024d / 1024d).ToString("0.#", CultureInfo.GetCultureInfo(texts.Language));
 
     private static string Layout(SetupTexts texts, int refreshSeconds, string body) => $$"""
         <!doctype html>

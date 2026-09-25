@@ -30,6 +30,36 @@ abstract interface class ApiClient {
   );
 
   Future<ApiResult<List<CameraInfo>>> cameras(Uri baseUrl, String credential);
+
+  Future<ApiResult<RecordingQuota>> recordingQuota(
+    Uri baseUrl,
+    String credential,
+  );
+
+  /// Returns null when the server accepted the new quota.
+  Future<ApiFailureKind?> setRecordingQuota(
+    Uri baseUrl,
+    String credential,
+    int megabytes,
+  );
+}
+
+/// The space all recordings may take together, and the disk around it.
+class RecordingQuota {
+  const RecordingQuota({
+    required this.megabytes,
+    required this.usedBytes,
+    required this.freeBytes,
+  });
+
+  static const bytesPerMegabyte = 1024 * 1024;
+
+  final int megabytes;
+  final int usedBytes;
+  final int freeBytes;
+
+  /// The largest quota the disk allows: what recordings use plus what is still free.
+  int get maxMegabytes => (usedBytes + freeBytes) ~/ bytesPerMegabyte;
 }
 
 enum ApiFailureKind {

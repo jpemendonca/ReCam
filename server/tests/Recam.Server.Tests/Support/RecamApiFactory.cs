@@ -29,6 +29,8 @@ public sealed class RecamApiFactory : WebApplicationFactory<Program>
 
     public string DataDirectory => _dataDirectory.Path;
 
+    public string RecordingsDirectory => Path.Combine(_dataDirectory.Path, "recordings");
+
     public FakeTimeProvider Time { get; } = new(new DateTimeOffset(2026, 9, 24, 12, 0, 0, TimeSpan.Zero));
 
     public IPAddress RemoteIpAddress { get; set; } = IPAddress.Loopback;
@@ -78,6 +80,7 @@ public sealed class RecamApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting(ServerSettings.DataDirectoryKey, _dataDirectory.Path);
+        builder.UseSetting(ServerSettings.RecordingsDirectoryKey, RecordingsDirectory);
         if (MediaMtxUrl is not null)
         {
             builder.UseSetting(ServerSettings.MediaMtxUrlKey, MediaMtxUrl.ToString());

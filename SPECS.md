@@ -571,3 +571,14 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 >   ela. O `Location` devolvido passa a ser `/whip/{cameraId}/{cam|rec}-{sessão}`: o prefixo diz o
 >   path, para `PATCH` e `DELETE` irem ao lugar certo mesmo depois de uma troca. Sessão sem prefixo
 >   conhecido devolve 404 `media.session_not_found`.
+
+> Revisão (2026-09-25): espaço para gravações (bullet 3.3). Tabela `RecordingQuota` (linha única,
+> migração `RecordingQuota`), padrão 2048 MB, mínimo 100 MB. `GET /api/recordings/quota`
+> (Monitores) devolve `{ quotaMb, usedBytes, freeBytes }`; `PUT` com `{ quotaMb }` devolve 204 e
+> recusa, com `ValidationProblem` em `quotaMb`, cota menor que 100 MB ou maior que uso + espaço
+> livre (`RecordingQuota.ChangeTo`). A cada 60 s, um `BackgroundService` aplica
+> `RecordingQuota.PlanCleanup`: apaga tudo de câmeras removidas e depois os segmentos mais antigos,
+> de qualquer câmera, até caber, sem apagar o segmento mais novo de cada câmera (o MediaMTX pode
+> estar escrevendo nele). O servidor lê as gravações em `RECAM_RECORDINGS_DIR` (padrão
+> `/recordings`, configuração interna como `RECAM_MEDIAMTX_URL`). A página do servidor mostra
+> "1,2 de 2 GB em uso".

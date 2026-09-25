@@ -129,5 +129,38 @@
   "recordAlways": "Record always",
   "recordingNeedsH264": "Can't record: this phone has no H.264",
   "recordingFailed": "Could not change recording. Check the connection to the server.",
-  "cameraModeRecording": "Recording"
+  "cameraModeRecording": "Recording",
+  "recordingsTitle": "Recordings",
+  "recordingsInUse": "In use: {used} of {total} GB.",
+  "@recordingsInUse": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "recordingsSpace": "Space for recordings: {size} GB",
+  "@recordingsSpace": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "recordingsHours": "About {hours} hours of one camera fit.",
+  "@recordingsHours": {
+    "placeholders": {
+      "hours": {
+        "type": "String"
+      }
+    }
+  },
+  "recordingsHowItWorks": "A camera records about 300 MB per hour. When the space is full, the oldest recordings are deleted, from any camera.",
+  "recordingsSave": "Save",
+  "recordingsSaved": "Space for recordings saved.",
+  "recordingsSaveFailed": "Could not save. Check the connection to the server.",
+  "recordingsLoadFailed": "Could not load the recordings space. Check the connection to the server."
 }

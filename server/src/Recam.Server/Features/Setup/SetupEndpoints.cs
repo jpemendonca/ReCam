@@ -4,6 +4,7 @@ using Recam.Server.Domain;
 using Recam.Server.Infrastructure.Network;
 using Recam.Server.Infrastructure.Persistence;
 using Recam.Server.Infrastructure.Presence;
+using Recam.Server.Infrastructure.Recordings;
 
 namespace Recam.Server.Features.Setup;
 
@@ -31,6 +32,7 @@ public static class SetupEndpoints
         OwnerSetup ownerSetup,
         IDbContextFactory<RecamDbContext> databaseFactory,
         DevicePresence presence,
+        RecordingStore recordings,
         CancellationToken cancellationToken)
     {
         if (!IsDirectLocalRequest(context))
@@ -46,12 +48,22 @@ public static class SetupEndpoints
         {
             OwnerSetupStatus.Pending pending => SetupPage.RenderPending(pending, texts),
             OwnerSetupStatus.Configured => SetupPage.RenderPanel(
-                await LoadPanelAsync(databaseFactory, presence, cancellationToken), texts),
+                await LoadPanelAsync(databaseFactory, presence, cancellationToken),
+                await LoadRecordingUsageAsync(databaseFactory, recordings, cancellationToken),
+                texts),
             _ => throw new InvalidOperationException($"Unknown setup status {status.GetType().Name}."),
         };
         context.Response.Headers.CacheControl = "no-store";
         context.Response.Headers.Vary = "Accept-Language";
         return TypedResults.Content(page, "text/html; charset=utf-8");
+    }
+
+    private static async Task<RecordingUsage> LoadRecordingUsageAsync(
+        IDbContextFactory<RecamDbContext> databaseFactory, RecordingStore recordings, CancellationToken cancellationToken)
+    {
+        await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
+        var quota = await RecordingQuotas.LoadAsync(database, cancellationToken);
+        return new RecordingUsage(recordings.ListSegments().Sum(segment => segment.Bytes), quota.Bytes);
     }
 
     private static async Task<List<PanelDevice>> LoadPanelAsync(

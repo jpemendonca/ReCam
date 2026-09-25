@@ -6,12 +6,17 @@ public sealed record ServerSettings(string DataDirectory, IReadOnlyList<Uri> Pub
     public const string PublicUrlsKey = "RECAM_PUBLIC_URLS";
     public const string HostKey = "RECAM_HOST";
     public const string MediaMtxUrlKey = "RECAM_MEDIAMTX_URL";
+    public const string RecordingsDirectoryKey = "RECAM_RECORDINGS_DIR";
     public const int HttpsPort = 8443;
 
     private const string DefaultDataDirectory = "/data";
+    private const string DefaultRecordingsDirectory = "/recordings";
 
     /// <summary>MediaMTX WebRTC HTTP listener. Never exposed; only this server calls it.</summary>
     public Uri MediaMtxUrl { get; init; } = new("http://127.0.0.1:8889");
+
+    /// <summary>Where MediaMTX writes recordings; the same volume is mounted in both containers.</summary>
+    public string RecordingsDirectory { get; init; } = DefaultRecordingsDirectory;
 
     /// <summary>
     /// Reads operator configuration. Invalid values stop the server at startup, the same way
@@ -25,6 +30,11 @@ public sealed record ServerSettings(string DataDirectory, IReadOnlyList<Uri> Pub
             Path.GetFullPath(dataDirectory, contentRootPath),
             ParsePublicUrls(configuration[PublicUrlsKey]),
             host);
+        if (configuration[RecordingsDirectoryKey] is { Length: > 0 } recordingsDirectory)
+        {
+            settings = settings with { RecordingsDirectory = Path.GetFullPath(recordingsDirectory, contentRootPath) };
+        }
+
         if (configuration[MediaMtxUrlKey] is { Length: > 0 } mediaMtxUrl)
         {
             if (!Uri.TryCreate(mediaMtxUrl, UriKind.Absolute, out var url))

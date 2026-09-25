@@ -100,6 +100,7 @@ public sealed class SetupEndpointsTests
         Assert.Contains("<h3>Pedro&#x27;s phone</h3>", Card(body, owner.DeviceId), StringComparison.Ordinal);
         Assert.Contains("<h3>Porch</h3>", Card(body, camera.DeviceId), StringComparison.Ordinal);
         Assert.Contains("<h2>Add a camera</h2>", body, StringComparison.Ordinal);
+        Assert.Contains("<p>0 of 2 GB in use.</p>", body, StringComparison.Ordinal);
         Assert.Contains(
             $"<meta http-equiv=\"refresh\" content=\"{SetupPage.PanelRefreshSeconds}\">", body, StringComparison.Ordinal);
         AssertNoScript(body);
@@ -121,6 +122,7 @@ public sealed class SetupEndpointsTests
         Assert.Contains("<h2>Monitores <span class=\"count\">1</span></h2>", body, StringComparison.Ordinal);
         Assert.Contains("Nenhuma câmera ainda.", body, StringComparison.Ordinal);
         Assert.Contains("toque em <strong>Filmar</strong>", body, StringComparison.Ordinal);
+        Assert.Contains("<h2>Gravações</h2>\n<p>0 de 2 GB em uso.</p>", body, StringComparison.Ordinal);
     }
 
     [Fact(DisplayName = "The panel shows which camera is online, streaming and how many watch it")]

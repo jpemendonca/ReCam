@@ -81,6 +81,28 @@ class FakeApiClient implements ApiClient {
     return leaveResult;
   }
 
+  ApiResult<RecordingQuota> quotaResult = ApiFailure(
+    ApiFailureKind.unreachable,
+  );
+  ApiFailureKind? setQuotaFailure;
+  final List<int> quotaChanges = [];
+
+  @override
+  Future<ApiResult<RecordingQuota>> recordingQuota(
+    Uri baseUrl,
+    String credential,
+  ) async => quotaResult;
+
+  @override
+  Future<ApiFailureKind?> setRecordingQuota(
+    Uri baseUrl,
+    String credential,
+    int megabytes,
+  ) async {
+    quotaChanges.add(megabytes);
+    return setQuotaFailure;
+  }
+
   final List<DeviceRole> tokenRoles = [];
 
   /// Answers for the next "was it used" questions; when empty, not used yet.

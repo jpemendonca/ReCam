@@ -170,6 +170,62 @@ class HttpApiClient implements ApiClient {
   }
 
   @override
+  Future<ApiResult<RecordingQuota>> recordingQuota(
+    Uri baseUrl,
+    String credential,
+  ) {
+    return _send(
+      () => _client.get(
+        baseUrl.resolve('/api/recordings/quota'),
+        headers: {HttpHeaders.authorizationHeader: 'Bearer $credential'},
+      ),
+      expectedStatus: HttpStatus.ok,
+      parse: (json, _) =>
+          switch ((json['quotaMb'], json['usedBytes'], json['freeBytes'])) {
+            (final int quota, final int used, final int free) => RecordingQuota(
+              megabytes: quota,
+              usedBytes: used,
+              freeBytes: free,
+            ),
+            _ => null,
+          },
+    );
+  }
+
+  @override
+  Future<ApiFailureKind?> setRecordingQuota(
+    Uri baseUrl,
+    String credential,
+    int megabytes,
+  ) async {
+    final http.Response response;
+    try {
+      response = await _client
+          .put(
+            baseUrl.resolve('/api/recordings/quota'),
+            headers: {
+              HttpHeaders.contentTypeHeader: 'application/json',
+              HttpHeaders.authorizationHeader: 'Bearer $credential',
+            },
+            body: jsonEncode({'quotaMb': megabytes}),
+          )
+          .timeout(timeout);
+    } on IOException {
+      return ApiFailureKind.unreachable;
+    } on http.ClientException {
+      return ApiFailureKind.unreachable;
+    } on TimeoutException {
+      return ApiFailureKind.unreachable;
+    }
+    return switch (response.statusCode) {
+      HttpStatus.noContent => null,
+      HttpStatus.unauthorized => ApiFailureKind.unauthorized,
+      HttpStatus.badRequest => ApiFailureKind.rejected,
+      _ => ApiFailureKind.unexpected,
+    };
+  }
+
+  @override
   Future<ApiResult<List<CameraInfo>>> cameras(Uri baseUrl, String credential) {
     return _sendJson(
       () => _client.get(

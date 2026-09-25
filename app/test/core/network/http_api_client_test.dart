@@ -174,4 +174,46 @@ void main() {
       expect(left, isFalse);
     });
   });
+
+  group('HttpApiClient.recordingQuota', () {
+    test('withQuota_readsIt', () async {
+      // arrange
+      final client = HttpApiClient(
+        MockClient(
+          (_) async => http.Response(
+            jsonEncode({'quotaMb': 2048, 'usedBytes': 10, 'freeBytes': 20}),
+            200,
+          ),
+        ),
+      );
+
+      // act
+      final result = await client.recordingQuota(baseUrl, 'id.secret');
+
+      // assert
+      final quota = (result as ApiSuccess<RecordingQuota>).value;
+      expect(quota.megabytes, 2048);
+      expect(quota.usedBytes, 10);
+      expect(quota.freeBytes, 20);
+    });
+
+    test('setRecordingQuota_withNoContent_returnsNoFailure', () async {
+      // arrange
+      late http.Request sent;
+      final client = HttpApiClient(
+        MockClient((request) async {
+          sent = request;
+          return http.Response('', 204);
+        }),
+      );
+
+      // act
+      final failure = await client.setRecordingQuota(baseUrl, 'id.secret', 300);
+
+      // assert
+      expect(failure, isNull);
+      expect(sent.method, 'PUT');
+      expect(jsonDecode(sent.body), {'quotaMb': 300});
+    });
+  });
 }

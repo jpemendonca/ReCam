@@ -409,6 +409,30 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
+    testWidgets('menuRecordings_opensTheSpaceSlider', (tester) async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      api.quotaResult = ApiSuccess(
+        const RecordingQuota(
+          megabytes: 2048,
+          usedBytes: 0,
+          freeBytes: 10 * 1024 * 1024 * 1024,
+        ),
+      );
+      await openApp(tester);
+      await tester.tap(find.byTooltip('Show menu'));
+      await tester.pumpAndSettle();
+
+      // act
+      await tester.tap(find.text('Recordings'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(find.byType(Slider), findsOneWidget);
+      expect(find.text('Space for recordings: 2 GB'), findsOneWidget);
+      expect(find.text('About 7 hours of one camera fit.'), findsOneWidget);
+    });
+
     testWidgets('menuWithoutMonitor_hasNoAddMonitor', (tester) async {
       // arrange
       await store.write(
