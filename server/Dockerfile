@@ -13,7 +13,8 @@ ENV ASPNETCORE_ENVIRONMENT=Production \
     ASPNETCORE_HTTP_PORTS= \
     RECAM_DATA_DIR=/data
 # A named volume copies this ownership on first use, so the non-root user can write to it.
-RUN mkdir /data && chown "$APP_UID" /data
+# MediaMTX runs as the same user and writes the recordings.
+RUN mkdir /data /recordings && chown "$APP_UID" /data /recordings
 USER $APP_UID
 EXPOSE 8443
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \

@@ -903,7 +903,7 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   apagado.
 - Linha do tempo simples no Monitor: dias, horas com trechos gravados, tocar para assistir.
 
-- [ ] **3.1 Gravação no MediaMTX, volume e desenho no SPECS**
+- [x] **3.1 Gravação no MediaMTX, volume e desenho no SPECS**
   - Origem: combinado com o autor em 2026-09-25.
   - Escopo: `SPECS.md`: a gravação sai de "Fora do escopo", entra no 1.1 e ganha uma seção
     "Gravação" com o desenho desta fase (revisão datada no 12). No `mediamtx.yml`, um segundo grupo
@@ -916,6 +916,23 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
     resultado no SPECS 11.
   - Aceite: teste com Testcontainers publicando H.264 por WHIP num path `rec-` e achando um segmento
     fMP4 na pasta; num path `cam-`, nenhum arquivo.
+  > Validação (2026-09-25): código escrito e caminho de servidor percorrido; nada no celular. Gate
+  > verde (120 no servidor, 188 no app). `deploy/mediamtx.yml` ganhou o grupo
+  > `~^rec-[0-9a-f]{32}$` com `record: yes`, fMP4, segmentos de 60 s em
+  > `/recordings/%path/%Y-%m-%d_%H-%M-%S-%f` e `recordDeleteAfter: 0s`; os paths `cam-` seguem sem
+  > gravar. Volume `recam-recordings` nos dois composes, em `/recordings` no MediaMTX e no servidor.
+  > Permissões: o MediaMTX roda com `user: "1654:1654"` (o `APP_UID` das imagens .NET), o Dockerfile
+  > cria `/recordings` com esse dono e o MediaMTX depende do servidor, para o volume nascer com a
+  > permissão certa. Conferido com o mesmo arranjo do compose (imagem mínima com as linhas do
+  > Dockerfile, porque o `dotnet restore` dentro do build não passa pelo proxy deste ambiente):
+  > volume com dono `app`, segmento gravado como 1654, e o servidor apagou o arquivo e a pasta. VP8:
+  > publicando VP8 num path `rec-` (por RTSP, só no experimento, porque o muxer WHIP do FFmpeg só
+  > aceita H.264), o MediaMTX 1.21.1 registrou "no supported tracks found, skipping recording": não
+  > grava VP8 (registrado no SPECS 11). Teste `Publish_ToRecPath_WritesFmp4Segment`, com MediaMTX e
+  > FFmpeg reais via Testcontainers: H.264 por WHIP num `rec-` gera um `.mp4` começando com `ftyp`;
+  > num `cam-`, nenhum arquivo. Dependência de teste: imagem `linuxserver/ffmpeg:9.0-cli-ls83` (o
+  > publicador H.264 por WHIP que o aceite pede). No teste o MediaMTX anuncia só a `eth0`, porque o
+  > FFmpeg tenta só o primeiro candidato ICE.
 
 - [ ] **3.2 Gravar sempre, por câmera**
   - Origem: combinado com o autor em 2026-09-25. Substitui o 2.1.

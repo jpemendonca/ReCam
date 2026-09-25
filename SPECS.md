@@ -34,11 +34,11 @@ e a Câmera é `Camera`. O Monitor pareia com o nome padrão "Monitor".
 - App em PT-BR e inglês.
 - Android 9 (API 28) ou mais novo. Aparelhos de referência: Samsung Galaxy A10 e Xiaomi
   Redmi 7A.
+- Gravação no servidor, ligada por câmera, com espaço total escolhido numa barrinha e o mais
+  antigo apagado quando enche (seção 2.4). Nunca no celular câmera. Entrou em 2026-09-25.
 
 ### 1.2 Fora do escopo (anotado para depois)
 
-- Gravação, com cota de disco escolhida numa barrinha e apagando o mais antigo quando enche.
-  Quando entrar: gravação só no servidor, nunca no celular câmera.
 - Acesso de fora da rede local (porta aberta, Tailscale, Cloudflare Tunnel em modo rede
   privada). Responsabilidade do usuário. O Cloudflare Tunnel com hostname público não transporta
   UDP, então não serve para o WebRTC.
@@ -170,6 +170,30 @@ Para rodar num celular fraco e não ser morto pelo Android:
 - Foreground service do tipo `camera` enquanto o modo câmera está ativo, para manter a
   prioridade do processo. A lógica roda no isolate principal.
 - Reconexão ao servidor com backoff exponencial: 1, 2, 4, 8, 16, 30 s, e depois 30 s fixo.
+
+### 2.4 Gravação
+
+Desenho combinado com o autor em 2026-09-25 (Fase 3 do ROADMAP):
+
+- **O MediaMTX grava; o .NET decide e administra.** O servidor escolhe o que gravar, controla o
+  espaço e serve os arquivos. O app no modo câmera continua sem gravar nada no aparelho.
+- **Dois grupos de paths no MediaMTX.** `cam-<id>` só repassa. `rec-<id>` repassa e grava em fMP4,
+  com segmentos de 60 s em `/recordings/rec-<id>/AAAA-MM-DD_HH-MM-SS-ffffff.mp4` (hora UTC do
+  container) e `recordDeleteAfter: 0s`: o MediaMTX nunca apaga, quem apaga é o servidor, pela cota.
+  O proxy WHIP/WHEP escolhe o path pelo estado da câmera (bullet 3.2).
+- **Gravação ligada por câmera ("Gravar sempre").** Câmera gravando transmite o tempo todo, mesmo
+  sem ninguém assistindo.
+- **Espaço total** escolhido numa barrinha no Monitor; quando enche, o segmento mais antigo sai.
+- **Linha do tempo** simples no Monitor: dias, horas com trechos gravados, tocar para assistir.
+- **Volume `recam-recordings`**, montado em `/recordings` no MediaMTX e no servidor, nos dois
+  composes.
+- **Permissões.** O servidor roda como o usuário não-root das imagens .NET (UID 1654) e precisa
+  apagar o que o MediaMTX grava. Por isso o MediaMTX roda com `user: "1654:1654"`, e o Dockerfile
+  do servidor cria `/recordings` com esse dono. O compose sobe o servidor primeiro
+  (`depends_on`), e o Docker copia essa permissão para o volume novo. Validado em 2026-09-25 com o
+  mesmo arranjo: o MediaMTX gravou como 1654 e o servidor apagou o segmento e a pasta.
+- **Codec.** O MediaMTX 1.21.1 grava H.264 em fMP4, mas não grava VP8: com VP8 ele registra "no
+  supported tracks found, skipping recording" e só repassa (seção 11).
 
 ## 3. Modelo de dados
 
@@ -351,9 +375,11 @@ Servidor → cliente:
 - Healthcheck: o próprio binário com o argumento `healthcheck` faz `GET https://localhost:8443/health`
   aceitando o certificado local e sai com código 0 ou 1. A imagem `aspnet` não tem `curl`.
 - MediaMTX: imagem `bluenviron/mediamtx` com tag exata. Nunca `latest`. Só aceita paths no
-  formato `cam-<32 hexadecimais>`.
+  formato `cam-<32 hexadecimais>` e `rec-<32 hexadecimais>` (gravando, seção 2.4). Roda com o
+  usuário do servidor (`1654:1654`).
 - Dados em volume nomeado `recam-data`. O Dockerfile cria `/data` com dono não-root, e o
-  Docker copia essa permissão para o volume no primeiro uso.
+  Docker copia essa permissão para o volume no primeiro uso. As gravações ficam no volume
+  `recam-recordings`, em `/recordings`, pelo mesmo mecanismo.
 
 ## 8. Testes
 
@@ -401,6 +427,9 @@ O agente nunca escreve valor real de segredo em arquivo nenhum.
 - **Encoder H.264 de hardware**: o libwebrtc só usa H.264 em hardware em alguns fabricantes de
   chip, e o Android não tem H.264 por software no libwebrtc. Exynos (A10) e Snapdragon (7A)
   devem funcionar. MediaTek antigo pode não ter. Tratado na fase 2.
+- **Gravação de VP8**: o MediaMTX 1.21.1 não grava VP8 em fMP4 (conferido em 2026-09-25 publicando
+  VP8 num path `rec-`: "no supported tracks found, skipping recording"). Aparelho sem encoder
+  H.264 transmite ao vivo em VP8, mas não grava (bullet 3.2).
 - **Android matando o app**: MIUI e One UI encerram processos em segundo plano de forma
   agressiva. Mitigação: foreground service, wakelock, tela guiada de otimização de bateria
   (fase 2).
@@ -521,3 +550,8 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > (escala 1,5 sobre a captura de 1280x720, 853x480), 10 fps e 400 kbps, trocando os parâmetros do
 > envio sem reabrir a câmera. Volta a 1280x720, 15 fps e 700 kbps abaixo de 38 °C. Entre os dois
 > limites, mantém o que estava (bullet 2.3).
+
+> Revisão (2026-09-25): a gravação entrou no escopo (1.1) e ganhou a seção 2.4, com o desenho da
+> Fase 3: paths `rec-` gravando em fMP4 no MediaMTX, volume `recam-recordings`, MediaMTX rodando com
+> o usuário do servidor para o servidor poder apagar os segmentos, e o registro de que VP8 não é
+> gravado (seção 11) (bullet 3.1).

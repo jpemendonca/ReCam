@@ -14,17 +14,25 @@ services:
       RECAM_MEDIAMTX_URL: http://mediamtx:8889
     volumes:
       - recam-data:/data
+      - recam-recordings:/recordings
     restart: unless-stopped
 
   mediamtx:
     image: bluenviron/mediamtx:1.21.1
+    # Same user as the server, so the server can delete the segments MediaMTX writes.
+    user: "1654:1654"
+    # The server creates the recordings volume first, owned by that user.
+    depends_on:
+      - server
     ports:
       - "8189:8189/udp"
     environment:
       MTX_WEBRTCADDITIONALHOSTS: ${RECAM_HOST:?Set RECAM_HOST in deploy/.env to this machine's LAN IP}
     volumes:
       - ./mediamtx.yml:/mediamtx.yml:ro
+      - recam-recordings:/recordings
     restart: unless-stopped
 
 volumes:
   recam-data:
+  recam-recordings:

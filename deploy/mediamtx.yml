@@ -1,5 +1,5 @@
-# ReCam uses MediaMTX only as a WebRTC relay (WHIP in, WHEP out).
-# Every other protocol is off. The HTTP listener is never exposed:
+# ReCam uses MediaMTX as a WebRTC relay (WHIP in, WHEP out) and, for cameras with recording
+# on, as the recorder. Every other protocol is off. The HTTP listener is never exposed:
 # Recam.Server proxies WHIP/WHEP to it and enforces authorization.
 
 logLevel: info
@@ -35,3 +35,11 @@ webrtcICEServers2: []
 
 paths:
   "~^cam-[0-9a-f]{32}$":
+  # Same stream, recorded. Recam.Server picks this path while recording is on and deletes old
+  # segments itself to stay within the quota, so MediaMTX never deletes.
+  "~^rec-[0-9a-f]{32}$":
+    record: yes
+    recordFormat: fmp4
+    recordPath: /recordings/%path/%Y-%m-%d_%H-%M-%S-%f
+    recordSegmentDuration: 60s
+    recordDeleteAfter: 0s
