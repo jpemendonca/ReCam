@@ -9,15 +9,17 @@ You install two things:
   and relays the video.
 - **The ReCam app**, on every phone. Each phone picks what it does in the app:
   - **Camera** tab: the phone becomes a camera and streams video.
-  - **Watch** tab: the phone shows your cameras live.
+  - **Monitor** tab: the phone shows your cameras live.
 
 > Status: pre-alpha. Nothing works yet. Follow progress in [ROADMAP.md](ROADMAP.md).
 
 ## How it will work
 
 1. Run the server with `docker compose up -d`.
-2. On your phone, open the **Watch** tab and scan the QR code the server shows.
-3. Tap **Add camera**. On the camera phone, open the **Camera** tab and scan that QR code.
+2. On your phone, open ReCam, choose **Watch** and scan the QR code the server shows. It becomes a
+   Monitor.
+3. On the Monitor, tap **Add camera**. On the phone that will film, open ReCam, choose **Film** and
+   scan that QR code.
 4. Watch it live from your phone, and toggle the camera phone's flashlight remotely.
 
 Requirements: Android 9 or newer. Tested on a Samsung Galaxy A10 and a Xiaomi Redmi 7A.

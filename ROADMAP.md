@@ -673,7 +673,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > `SetupPage_WithOwner_FromPublicAddress_Returns403`, `SetWatchers_ThenZero_ForgetsTheCount`; os
   > testes antigos sem dono seguem valendo.
 
-- [ ] **1.12.12 Nomes que não se confundem: Filmar/Assistir, Câmera/Monitor**
+- [x] **1.12.12 Nomes que não se confundem: Filmar/Assistir, Câmera/Monitor**
   - Origem: teste do autor em 2026-09-25: "celular que assiste", "celular câmera", "Para assistir"
     e a aba "Assistir" começam iguais e se confundem.
   - Escopo: a primeira abertura pergunta "Este celular vai ser usado para:" com "Filmar" (ícone de
@@ -683,6 +683,16 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     caminho principal do `AGENTS.md` e o glossário do `SPECS.md` 1.
   - Aceite: widget test da primeira abertura com "Filmar" e "Assistir"; teste do log e da página do
     servidor falando em "Assistir"/"Monitor".
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (95 no
+  > servidor, 148 no app). Mudaram só textos visíveis: ARB en/pt (aba "Monitor", primeira
+  > abertura "Este celular vai ser usado para:" com "Filmar"/"Film" e "Assistir"/"Watch", nome
+  > padrão "Monitor"), página do servidor (QR: "escolha Assistir... vira um Monitor"; painel com o
+  > tipo "Monitor") e log do QR (em inglês, como todo log: "No Monitor paired yet... choose Watch").
+  > Identificadores e protocolo continuam `Viewer`/`Owner`. O `RecamApiFactory` ganhou o
+  > `LogCapture` (provedor de log escrito à mão) para o teste ler o log. `AGENTS.md` (caminho
+  > principal), `SPECS.md` 1 (glossário) e `README.md` atualizados. Testes:
+  > `Setup_WithoutOwner_LogsQrThatSpeaksOfWatchAndMonitor`,
+  > `SetupPage_WithoutOwner_SpeaksOfWatchAndMonitor`, `FirstRunScreen` em pt e en.
 
 - [ ] **1.12.13 O "+" do Monitor abre direto o QR da câmera**
   - Origem: teste do autor em 2026-09-25: a escolha "Outra câmera" / "Outro celular para assistir"

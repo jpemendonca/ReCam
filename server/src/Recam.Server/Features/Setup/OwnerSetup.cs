@@ -76,7 +76,7 @@ public sealed partial class OwnerSetup(
 
     // The only log line allowed to carry a token (AGENTS.md): the operator reads it to claim the server.
     [LoggerMessage(Level = LogLevel.Warning, Message =
-        "No phone paired yet. In the ReCam app, choose For watching and scan this QR code, or open " +
+        "No Monitor paired yet. On the phone that will watch, open ReCam, choose Watch and scan this QR code, or open " +
         "https://<server-ip>:8443/setup from your network. Expires at {ExpiresAt}. Server URLs: {ServerUrls}.{QrCode}" +
         "Without a camera, choose Paste code in the app and paste: {PairingUri}")]
     private static partial void LogOwnerToken(ILogger logger, DateTimeOffset expiresAt, string serverUrls, string qrCode, string pairingUri);

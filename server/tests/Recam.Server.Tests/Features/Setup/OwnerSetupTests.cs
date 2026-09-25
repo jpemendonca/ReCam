@@ -27,6 +27,23 @@ public sealed class OwnerSetupTests
         Assert.Equal(DeviceRole.Owner, token.GrantsRole);
     }
 
+    [Fact(DisplayName = "The QR in the log tells the person to choose Watch; the phone becomes a Monitor")]
+    public async Task Setup_WithoutOwner_LogsQrThatSpeaksOfWatchAndMonitor()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var ownerSetup = factory.Services.GetRequiredService<OwnerSetup>();
+
+        // act
+        var status = await ownerSetup.EnsureTokenAsync(TestContext.Current.CancellationToken);
+
+        // assert
+        var pending = Assert.IsType<OwnerSetupStatus.Pending>(status);
+        var message = Assert.Single(factory.Logs.Messages, message => message.Contains(pending.PairingUri, StringComparison.Ordinal));
+        Assert.Contains("No Monitor paired yet", message, StringComparison.Ordinal);
+        Assert.Contains("choose Watch", message, StringComparison.Ordinal);
+    }
+
     [Fact(DisplayName = "Calling setup again before expiry keeps the same token")]
     public async Task Setup_BeforeExpiry_ReusesToken()
     {

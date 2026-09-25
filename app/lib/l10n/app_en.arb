@@ -2,8 +2,8 @@
   "@@locale": "en",
   "appTitle": "ReCam",
   "cameraTab": "Camera",
-  "watchTab": "Watch",
-  "cameraNotPaired": "Scan the QR code from Add on the phone that watches to use this phone as a camera.",
+  "watchTab": "Monitor",
+  "cameraNotPaired": "Scan the QR code from Add camera on the Monitor to use this phone as a camera.",
   "cameraNameLabel": "Camera name",
   "defaultCameraName": "Camera",
   "startCameraMode": "Start camera mode",
@@ -17,12 +17,12 @@
     }
   },
   "deviceNameInvalidCharacters": "The name has characters that are not allowed.",
-  "watchNotPaired": "Scan the QR code your ReCam server shows, or the one from Add on a phone that already watches.",
+  "watchNotPaired": "Scan the QR code your ReCam server shows, or the one from Add on another Monitor.",
   "scanQrButton": "Scan QR code",
   "scanQrTitle": "Scan QR code",
   "scannerUnavailable": "Could not open the camera. Allow camera access and try again.",
   "addCameraButton": "Add camera",
-  "addCameraInstructions": "On the camera phone, open ReCam and scan this QR code.",
+  "addCameraInstructions": "On the phone that will film, open ReCam, choose Film and scan this QR code.",
   "addCameraExpiresIn": "Expires in {time}",
   "@addCameraExpiresIn": {
     "placeholders": {
@@ -98,12 +98,12 @@
   "addDeviceButton": "Add",
   "addDeviceTitle": "Add",
   "addDeviceCamera": "Another camera",
-  "addDeviceViewer": "Another phone to watch",
-  "addViewerInstructions": "On the other phone, open ReCam and scan this QR code. It will watch these cameras too.",
-  "viewerDeviceName": "Phone that watches",
-  "firstRunTitle": "This phone will be:",
-  "firstRunCamera": "A camera",
-  "firstRunCameraHint": "Then scan the QR code from Add on the phone that watches.",
-  "firstRunWatch": "For watching",
-  "firstRunWatchHint": "Then scan the QR code your ReCam server shows (in its log or at https://<server-ip>:8443/setup), or the one from Add on a phone that already watches."
+  "addDeviceViewer": "Another Monitor",
+  "addViewerInstructions": "On the other phone, open ReCam, choose Watch and scan this QR code. It becomes a Monitor of these cameras.",
+  "viewerDeviceName": "Monitor",
+  "firstRunTitle": "This phone will be used to:",
+  "firstRunCamera": "Film",
+  "firstRunCameraHint": "Then scan the QR code from Add camera on the Monitor.",
+  "firstRunWatch": "Watch",
+  "firstRunWatchHint": "Then scan the QR code your ReCam server shows (in its log or at https://<server-ip>:8443/setup), or the one from Add on another Monitor. This phone becomes a Monitor."
 }

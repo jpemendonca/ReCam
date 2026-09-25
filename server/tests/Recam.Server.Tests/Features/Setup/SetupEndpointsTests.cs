@@ -28,6 +28,22 @@ public sealed class SetupEndpointsTests
         Assert.Contains("<svg", body, StringComparison.Ordinal);
     }
 
+    [Fact(DisplayName = "Setup page tells the person to choose Watch, and the phone becomes a Monitor")]
+    public async Task SetupPage_WithoutOwner_SpeaksOfWatchAndMonitor()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        using var client = factory.CreateClient();
+
+        // act
+        var body = await client.GetStringAsync(SetupUri, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Contains("<strong>Assistir</strong>", body, StringComparison.Ordinal);
+        Assert.Contains("<strong>Watch</strong>", body, StringComparison.Ordinal);
+        Assert.Contains("Monitor", body, StringComparison.Ordinal);
+    }
+
     [Fact(DisplayName = "Setup page also shows the pairing code as text, for phones that cannot scan")]
     public async Task SetupPage_FromLocalNetwork_ShowsPairingUriAsText()
     {
@@ -61,7 +77,7 @@ public sealed class SetupEndpointsTests
         Assert.DoesNotContain("<svg", body, StringComparison.Ordinal);
         Assert.DoesNotContain("recam://pair", body, StringComparison.Ordinal);
         Assert.Contains("Pedro&#39;s phone", Row(body, owner.DeviceId), StringComparison.Ordinal);
-        Assert.Contains("Watches · Assiste", Row(body, owner.DeviceId), StringComparison.Ordinal);
+        Assert.Contains("<td>Monitor</td>", Row(body, owner.DeviceId), StringComparison.Ordinal);
         Assert.Contains("Camera · Câmera", Row(body, camera.DeviceId), StringComparison.Ordinal);
         Assert.Contains(
             $"<meta http-equiv=\"refresh\" content=\"{SetupPage.PanelRefreshSeconds}\">", body, StringComparison.Ordinal);

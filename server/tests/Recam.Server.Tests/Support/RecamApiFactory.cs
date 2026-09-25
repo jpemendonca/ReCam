@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using Recam.Server.Domain;
 using Recam.Server.Features.Pairing;
@@ -31,6 +32,8 @@ public sealed class RecamApiFactory : WebApplicationFactory<Program>
     public FakeTimeProvider Time { get; } = new(new DateTimeOffset(2026, 9, 24, 12, 0, 0, TimeSpan.Zero));
 
     public IPAddress RemoteIpAddress { get; set; } = IPAddress.Loopback;
+
+    public LogCapture Logs { get; } = new();
 
     /// <summary>Real MediaMTX to proxy to (see <see cref="MediaMtxFixture"/>); unset when unused.</summary>
     public Uri? MediaMtxUrl { get; init; }
@@ -83,6 +86,7 @@ public sealed class RecamApiFactory : WebApplicationFactory<Program>
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<TimeProvider>(Time);
+            services.AddSingleton<ILoggerProvider>(Logs);
 
             // SignalR reads the same TimeProvider for keep-alive and client timeouts; advancing the
             // fake clock past them would drop connections in the middle of a test.

@@ -22,9 +22,9 @@ public static class SetupPage
         using var svg = new SvgQRCode(qrData);
         var expiresAt = WebUtility.HtmlEncode(pending.ExpiresAt.ToString("HH:mm 'UTC'", CultureInfo.InvariantCulture));
         return Layout($"""
-            <h1>Pair your first phone</h1>
-            <p>Open the ReCam app on the phone that will watch, choose <strong>For watching</strong> and scan this code.</p>
-            <p lang="pt">Abra o app ReCam no celular que vai assistir, escolha <strong>Para assistir</strong> e leia este código.</p>
+            <h1>Pair your first Monitor</h1>
+            <p>Open ReCam on the phone that will watch, choose <strong>Watch</strong> and scan this code. That phone becomes a Monitor.</p>
+            <p lang="pt">Abra o ReCam no celular que vai assistir, escolha <strong>Assistir</strong> e leia este código. Esse celular vira um Monitor.</p>
             <div class="qr">{svg.GetGraphic(8)}</div>
             <p>No camera? In the app, choose <strong>Paste code</strong> and paste this. · Sem câmera? No app, escolha <strong>Colar código</strong> e cole isto.</p>
             <textarea class="code" readonly rows="4" onclick="this.select()">{WebUtility.HtmlEncode(pending.PairingUri)}</textarea>
@@ -42,8 +42,8 @@ public static class SetupPage
 
         return Layout($"""
             <h1>ReCam</h1>
-            <p>Devices paired with this server. Add cameras and phones from <strong>Add</strong>, on a phone that watches.</p>
-            <p lang="pt">Aparelhos pareados com este servidor. Adicione câmeras e celulares pelo <strong>Adicionar</strong>, num celular que assiste.</p>
+            <p>Devices paired with this server. Add cameras from <strong>Add camera</strong>, on a Monitor.</p>
+            <p lang="pt">Aparelhos pareados com este servidor. Adicione câmeras pelo <strong>Adicionar câmera</strong>, num Monitor.</p>
             <table>
             <thead><tr><th>Name · Nome</th><th>Type · Tipo</th><th>Online</th><th>Streaming · Transmitindo</th><th>Watching · Assistindo</th><th>Battery · Bateria</th></tr></thead>
             <tbody>
@@ -56,7 +56,7 @@ public static class SetupPage
     private static string Row(PanelDevice device)
     {
         var isCamera = device.Role == DeviceRole.Camera;
-        var type = isCamera ? "Camera · Câmera" : "Watches · Assiste";
+        var type = isCamera ? "Camera · Câmera" : "Monitor";
         var online = device.Online ? "<span class=\"on\">yes · sim</span>" : "<span class=\"off\">no · não</span>";
         var streaming = !isCamera ? "—" : device.Publishing ? "yes · sim" : "no · não";
         var watching = isCamera ? device.Watchers.ToString(CultureInfo.InvariantCulture) : "—";

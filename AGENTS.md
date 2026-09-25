@@ -10,21 +10,23 @@ sem anúncio, sem telemetria para terceiros, leve o bastante para rodar num celu
 É a régua para decidir se um bullet importa. Tudo no MVP existe para este percurso funcionar:
 
 1. A pessoa sobe o servidor com `docker compose up -d`.
-2. No celular que vai assistir, abre o ReCam na aba **Assistir** e lê o QR que o servidor mostra (no
-   `docker compose logs` ou na página `https://<ip>:8443/setup`). Esse celular vira o dono.
-3. Nesse mesmo celular, toca em **Adicionar câmera**. Aparece um QR.
-4. No celular câmera, abre o ReCam na aba **Câmera**, lê esse QR e dá um nome à câmera. Ele fica
-   em modo câmera, mostrando o status na tela.
-5. No celular que assiste, a câmera aparece na lista, online, com o nível de bateria.
+2. No celular que vai assistir, abre o ReCam, escolhe **Assistir** na primeira tela e lê o QR que o
+   servidor mostra (no `docker compose logs` ou na página `https://<ip>:8443/setup`). Esse celular
+   vira um **Monitor** (o primeiro Monitor também é o dono, conceito que não aparece nas telas).
+3. No Monitor, toca em **Adicionar câmera**. Aparece um QR.
+4. No celular que vai filmar, abre o ReCam, escolhe **Filmar** na primeira tela, dá um nome à
+   câmera e lê esse QR. Ele vira uma **Câmera** e entra direto no modo câmera, mostrando o status na
+   tela.
+5. No Monitor, a câmera aparece na lista, online, com o nível de bateria.
 6. Toca na câmera e vê o vídeo ao vivo, com atraso abaixo de 1 segundo na rede local.
-7. Na tela do vídeo ao vivo, liga e desliga a lanterna do celular câmera.
+7. Na tela do vídeo ao vivo, liga e desliga a lanterna da Câmera.
 
 ## Áreas do repositório
 
 | Pasta | O que é | Estado |
 |---|---|---|
 | `server/` | Servidor .NET 10: pareamento, autenticação, hub em tempo real, proxy de sinalização WebRTC | ativa (criada na fase 0) |
-| `app/` | App Flutter, Android: abas Câmera e Assistir | ativa (criada na fase 0) |
+| `app/` | App Flutter, Android: abas Câmera e Monitor | ativa (criada na fase 0) |
 | `deploy/` | `compose.yaml`, `compose.bridge.yaml`, configuração do MediaMTX, `.env.example` | ativa (criada na fase 0) |
 | `scripts/`, `.githooks/` | Gate de qualidade e hook de pre-commit | ativa |
 | raiz | Estes documentos | ativa |
@@ -128,7 +130,7 @@ server/
 app/
   lib/core/          rede, pareamento, armazenamento, abstrações de plugin
   lib/camera/        aba Câmera
-  lib/viewer/        aba Assistir
+  lib/viewer/        aba Monitor
   lib/l10n/          app_en.arb, app_pt.arb
   test/
 ```

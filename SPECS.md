@@ -4,12 +4,23 @@
 
 ReCam reaproveita celulares Android parados como câmeras de monitoramento. Três papéis:
 
-- **Celular câmera**: captura e transmite. Não guarda nada, não decide nada.
+- **Câmera** (celular câmera): captura e transmite. Não guarda nada, não decide nada.
 - **Servidor**: roda em Docker na casa do usuário ou numa VPS. Pareia aparelhos, autentica,
   repassa comandos e distribui o vídeo.
-- **Celular visualizador**: lista as câmeras, assiste ao vivo, manda comandos.
+- **Monitor** (celular que assiste): lista as câmeras, assiste ao vivo, manda comandos.
 
-Um único app Flutter faz os dois papéis de celular, em duas abas: **Câmera** e **Assistir**.
+Um único app Flutter faz os dois papéis de celular, em duas abas: **Câmera** e **Monitor**.
+
+Glossário das telas (revisado em 2026-09-25):
+
+| Onde | Texto | Papel |
+|---|---|---|
+| Primeira abertura, "Este celular vai ser usado para:" | **Filmar** / Film | vira Câmera |
+| Primeira abertura | **Assistir** / Watch | vira Monitor |
+| Abas, textos do app, página do servidor, log do QR | **Câmera** / Camera e **Monitor** / Monitor | — |
+
+No código e no protocolo, o Monitor é `Viewer` (ou `Owner`, o primeiro, que as telas não mostram)
+e a Câmera é `Camera`. O Monitor pareia com o nome padrão "Monitor".
 
 ### 1.1 Dentro do escopo (MVP)
 

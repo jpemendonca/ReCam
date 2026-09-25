@@ -228,7 +228,7 @@ void main() {
 
       // assert
       expect(store.sessions, isEmpty);
-      expect(find.text('This phone will be:'), findsOneWidget);
+      expect(find.text('This phone will be used to:'), findsOneWidget);
     });
 
     testWidgets('resetApp_whenCancelled_keepsThePairings', (tester) async {
@@ -258,9 +258,9 @@ void main() {
       await openApp(tester);
 
       // assert
-      expect(find.text('This phone will be:'), findsOneWidget);
-      expect(find.text('A camera'), findsOneWidget);
-      expect(find.text('For watching'), findsOneWidget);
+      expect(find.text('This phone will be used to:'), findsOneWidget);
+      expect(find.text('Film'), findsOneWidget);
+      expect(find.text('Watch'), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
     });
 
@@ -273,13 +273,13 @@ void main() {
       await openApp(tester);
 
       // act
-      await tester.tap(find.text('For watching'));
+      await tester.tap(find.text('Watch'));
       await tester.pumpAndSettle();
 
       // assert
       expect(codesToRead, isEmpty);
-      expect(api.pairCalls.single.name, 'Phone that watches');
-      expect(find.text('This phone will be:'), findsNothing);
+      expect(api.pairCalls.single.name, 'Monitor');
+      expect(find.text('This phone will be used to:'), findsNothing);
       expect(find.text('Paired with ReCam'), findsOneWidget);
       expect(find.byType(NavigationBar), findsOneWidget);
     });
@@ -294,7 +294,7 @@ void main() {
       await tester.enterText(find.byType(TextField), 'Garage');
 
       // act
-      await tester.tap(find.text('A camera'));
+      await tester.tap(find.text('Film'));
       await tester.pumpAndSettle();
 
       // assert
@@ -309,12 +309,12 @@ void main() {
       await openApp(tester);
 
       // act
-      await tester.tap(find.text('For watching'));
+      await tester.tap(find.text('Watch'));
       await tester.pumpAndSettle();
 
       // assert
       expect(api.pairCalls, isEmpty);
-      expect(find.text('This phone will be:'), findsOneWidget);
+      expect(find.text('This phone will be used to:'), findsOneWidget);
     });
 
     testWidgets('whenCodeIsNotReCam_showsTheErrorOnFirstRun', (tester) async {
@@ -323,11 +323,11 @@ void main() {
       await openApp(tester);
 
       // act
-      await tester.tap(find.text('For watching'));
+      await tester.tap(find.text('Watch'));
       await tester.pumpAndSettle();
 
       // assert
-      expect(find.text('This phone will be:'), findsOneWidget);
+      expect(find.text('This phone will be used to:'), findsOneWidget);
       expect(find.text('This is not a ReCam pairing QR code.'), findsOneWidget);
     });
   });

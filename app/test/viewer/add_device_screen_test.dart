@@ -46,7 +46,9 @@ void main() {
       // assert
       expect(api.tokenRoles, [DeviceRole.camera]);
       expect(
-        find.text('On the camera phone, open ReCam and scan this QR code.'),
+        find.text(
+          'On the phone that will film, open ReCam, choose Film and scan this QR code.',
+        ),
         findsOneWidget,
       );
       await tester.pumpWidget(const SizedBox());
@@ -63,12 +65,15 @@ void main() {
       await openScreen(tester);
 
       // act
-      await tester.tap(find.text('Another phone to watch'));
+      await tester.tap(find.text('Another Monitor'));
       await tester.pump();
 
       // assert
       expect(api.tokenRoles, [DeviceRole.camera, DeviceRole.viewer]);
-      expect(find.textContaining('It will watch these cameras too.'), findsOne);
+      expect(
+        find.textContaining('It becomes a Monitor of these cameras.'),
+        findsOne,
+      );
       expect(find.text('Copy code'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
