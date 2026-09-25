@@ -200,5 +200,44 @@ void main() {
       expect(find.textContaining('Role: owner'), findsOneWidget);
       expect(find.text('Add camera'), findsOneWidget);
     });
+
+    testWidgets('resetApp_afterConfirming_forgetsBothPairings', (tester) async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      await store.write(
+        PairingSlot.camera,
+        pairedSession(role: DeviceRole.camera),
+      );
+      await openApp(tester);
+      await tester.tap(find.byTooltip('Show menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Reset app'));
+      await tester.pumpAndSettle();
+
+      // act
+      await tester.tap(find.widgetWithText(FilledButton, 'Reset'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(store.sessions, isEmpty);
+      expect(find.text('Scan QR code'), findsOneWidget);
+    });
+
+    testWidgets('resetApp_whenCancelled_keepsThePairings', (tester) async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      await openApp(tester);
+      await tester.tap(find.byTooltip('Show menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Reset app'));
+      await tester.pumpAndSettle();
+
+      // act
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(store.sessions, isNotEmpty);
+    });
   });
 }

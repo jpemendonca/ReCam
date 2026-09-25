@@ -558,12 +558,18 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > abre com pareamento salvo) e o teste do link de câmera no `app_test` agora confere a tela do
   > modo câmera.
 
-- [ ] **1.12.6 Botão de reiniciar o app**
+- [x] **1.12.6 Botão de reiniciar o app**
   - Origem: pedido do autor no teste de 2026-09-25.
   - Escopo: um botão "Reiniciar" (com confirmação) que apaga os pareamentos das duas abas neste
     aparelho e volta o app ao estado de recém-instalado. No servidor, o aparelho continua registrado
     até ser revogado (3.1).
   - Aceite: teste do controller apagando as duas credenciais e voltando as abas para "não pareado".
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (83 no
+  > servidor, 123 no app). O app ganhou uma barra de título "ReCam" com um menu; "Reiniciar o app"
+  > pede confirmação e chama o `AppReset`, que fica na raiz de `lib/` porque só ela pode conhecer
+  > as duas abas. Cada controller de pareamento ganhou `reset()` (apaga a credencial da própria aba
+  > e volta a "não pareado" sem mensagem de erro). Depois de reiniciar, o app volta para a aba
+  > Câmera. Testes: `AppReset.reset` e o fluxo no `app_test` (confirmar apaga, cancelar mantém).
 
 - [ ] **1.12.7 Status mais claro nos dois lados, e atualizar a lista**
   - Origem: pedido do autor no teste de 2026-09-25.

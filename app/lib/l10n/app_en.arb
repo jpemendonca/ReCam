@@ -92,5 +92,9 @@
   "torchTurnOn": "Turn on flashlight",
   "torchTurnOff": "Turn off flashlight",
   "torchFailed": "Could not switch the flashlight. Wait for the video to start.",
-  "pairingErrorPairingLost": "This server changed or no longer knows this phone. Pair again."
+  "pairingErrorPairingLost": "This server changed or no longer knows this phone. Pair again.",
+  "resetAppButton": "Reset app",
+  "resetAppTitle": "Reset ReCam on this phone?",
+  "resetAppMessage": "This phone forgets its pairings and starts over, as if just installed. The server keeps the devices until they are removed.",
+  "resetAppConfirm": "Reset"
 }

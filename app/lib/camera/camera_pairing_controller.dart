@@ -49,6 +49,12 @@ class CameraPairingController extends ChangeNotifier {
     }
   }
 
+  /// Forgets the pairing on this phone, as if it had never paired.
+  Future<void> reset() async {
+    await _pairing.forget(_slot);
+    _setState(CameraNotPaired());
+  }
+
   /// Forgets a pairing the server no longer accepts and asks for a new one.
   Future<void> forget() async {
     await _pairing.forget(_slot);

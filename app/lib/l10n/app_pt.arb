@@ -57,5 +57,9 @@
   "torchTurnOn": "Ligar lanterna",
   "torchTurnOff": "Desligar lanterna",
   "torchFailed": "Não deu para mudar a lanterna. Espere o vídeo começar.",
-  "pairingErrorPairingLost": "Este servidor mudou ou não reconhece mais este celular. Pareie de novo."
+  "pairingErrorPairingLost": "Este servidor mudou ou não reconhece mais este celular. Pareie de novo.",
+  "resetAppButton": "Reiniciar o app",
+  "resetAppTitle": "Reiniciar o ReCam neste celular?",
+  "resetAppMessage": "Este celular esquece os pareamentos e começa do zero, como recém-instalado. O servidor mantém os aparelhos até serem removidos.",
+  "resetAppConfirm": "Reiniciar"
 }
