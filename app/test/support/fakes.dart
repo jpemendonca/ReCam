@@ -9,6 +9,8 @@ import 'package:recam/core/device/battery_reader.dart';
 import 'package:recam/core/device/keep_alive.dart';
 import 'package:recam/core/device/screen_controller.dart';
 import 'package:recam/core/media/camera_capture.dart';
+import 'package:recam/core/media/recording_player.dart';
+import 'package:recam/core/media/recording_relay.dart';
 import 'package:recam/core/media/video_quality.dart';
 import 'package:recam/core/media/webrtc_publisher.dart';
 import 'package:recam/core/media/webrtc_viewer.dart';
@@ -101,6 +103,28 @@ class FakeApiClient implements ApiClient {
   ) async {
     quotaChanges.add(megabytes);
     return setQuotaFailure;
+  }
+
+  List<DateTime> recordingDaysResult = [];
+  final Map<DateTime, List<RecordingPieceInfo>> recordingsByDay = {};
+  final List<DateTime> recordingDayCalls = [];
+
+  @override
+  Future<ApiResult<List<DateTime>>> recordingDays(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+  ) async => ApiSuccess(recordingDaysResult);
+
+  @override
+  Future<ApiResult<List<RecordingPieceInfo>>> recordings(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+    DateTime utcDay,
+  ) async {
+    recordingDayCalls.add(utcDay);
+    return ApiSuccess(recordingsByDay[utcDay] ?? const []);
   }
 
   final List<DeviceRole> tokenRoles = [];

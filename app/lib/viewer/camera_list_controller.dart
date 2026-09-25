@@ -8,6 +8,7 @@ import '../core/network/hub_client.dart';
 import '../core/network/hub_session.dart';
 import '../core/storage/credential_store.dart';
 import 'live_view_controller.dart';
+import 'recording_timeline_controller.dart';
 
 typedef CameraListFactory = CameraListController Function(
   PairedSession session,
@@ -34,11 +35,13 @@ class CameraListController extends ChangeNotifier {
     required this._session,
     required this.hub,
     required this._viewerFactory,
+    required this._timelineFactory,
   });
 
   final ApiClient _api;
   final PairedSession _session;
   final WebRtcViewerFactory _viewerFactory;
+  final RecordingTimelineFactory _timelineFactory;
 
   /// The viewer's hub connection; the live view reuses it for its watch lease.
   final HubSession hub;
@@ -95,6 +98,10 @@ class CameraListController extends ChangeNotifier {
       cameras.where((camera) => camera.id == cameraId).firstOrNull,
     _ => null,
   };
+
+  /// The recordings of one camera.
+  RecordingTimelineController openRecordings(String cameraId) =>
+      _timelineFactory(cameraId);
 
   /// A live view of one camera, sharing this list's hub connection for the watch lease.
   LiveViewController openLive(String cameraId) => LiveViewController(

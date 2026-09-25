@@ -13,6 +13,7 @@ import 'package:recam/core/storage/credential_store.dart';
 import 'package:recam/core/network/hub_session.dart';
 import 'package:recam/viewer/add_device_screen.dart';
 import 'package:recam/viewer/camera_list_controller.dart';
+import 'package:recam/viewer/recording_timeline_controller.dart';
 import 'package:recam/viewer/viewer_pairing_controller.dart';
 
 import 'support/fakes.dart';
@@ -68,6 +69,13 @@ void main() {
           session: session,
           hub: HubSession(client: FakeHubClient(), delay: (_) async {}),
           viewerFactory: (_) => FakeViewer(),
+          timelineFactory: (cameraId) => RecordingTimelineController(
+            api: FakeApiClient(),
+            session: pairedSession(),
+            cameraId: cameraId,
+            player: FakeRecordingPlayer(),
+            segments: FakeSegmentSource(),
+          ),
         ),
         links: links,
         readCode: (_) async => codesToRead.removeAt(0),

@@ -10,6 +10,7 @@ class LiveViewScreen extends StatefulWidget {
     required this.cameraName,
     required this.create,
     this.recordingSwitch,
+    this.recordingsButton,
     super.key,
   });
 
@@ -17,6 +18,9 @@ class LiveViewScreen extends StatefulWidget {
 
   /// "Record always", shown in the app bar.
   final Widget? recordingSwitch;
+
+  /// Opens this camera's recordings.
+  final Widget? recordingsButton;
 
   /// Builds the controller once, in initState; the route builder may run again.
   final LiveViewController Function() create;
@@ -58,6 +62,7 @@ class _LiveViewScreenState extends State<LiveViewScreen> {
         title: Text(widget.cameraName),
         actions: [
           ?widget.recordingSwitch,
+          ?widget.recordingsButton,
           ListenableBuilder(
             listenable: _controller,
             builder: (context, _) {

@@ -10,6 +10,7 @@ import 'add_device_screen.dart';
 import 'camera_list_controller.dart';
 import 'live_view_screen.dart';
 import 'recording_switch.dart';
+import 'recordings_timeline_screen.dart';
 
 /// The Watch tab once paired: the cameras, live, and "Add camera" for the owner.
 class CameraListView extends StatefulWidget {
@@ -70,6 +71,18 @@ class _CameraListViewState extends State<CameraListView> {
           cameraId: camera.id,
           color: Colors.white,
         ),
+        recordingsButton: _RecordingsButton(
+          onPressed: () => _openRecordings(camera),
+        ),
+      ),
+    ),
+  );
+
+  void _openRecordings(CameraInfo camera) => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) => RecordingsTimelineScreen(
+        cameraName: camera.name,
+        create: () => _controller.openRecordings(camera.id),
       ),
     ),
   );
@@ -162,6 +175,7 @@ class _CameraListViewState extends State<CameraListView> {
                   itemBuilder: (context, index) => _CameraTile(
                     camera: cameras[index],
                     list: _controller,
+                    onRecordings: () => _openRecordings(cameras[index]),
                     onOpen: () => _openLive(cameras[index]),
                   ),
                 ),
@@ -199,11 +213,13 @@ class _CameraTile extends StatelessWidget {
     required this.camera,
     required this.list,
     required this.onOpen,
+    required this.onRecordings,
   });
 
   final CameraInfo camera;
   final CameraListController list;
   final VoidCallback onOpen;
+  final VoidCallback onRecordings;
 
   @override
   Widget build(BuildContext context) {
@@ -232,7 +248,14 @@ class _CameraTile extends StatelessWidget {
                 : '${l10n.cameraOnline} · '
                       '${camera.publishing ? l10n.cameraStreaming : l10n.cameraIdle}',
           ),
-          RecordingSwitch(list: list, cameraId: camera.id),
+          Row(
+            children: [
+              Flexible(
+                child: RecordingSwitch(list: list, cameraId: camera.id),
+              ),
+              _RecordingsButton(onPressed: onRecordings),
+            ],
+          ),
         ],
       ),
       trailing: battery == null && temperature == null
@@ -259,4 +282,17 @@ class _CameraTile extends StatelessWidget {
             ),
     );
   }
+}
+
+class _RecordingsButton extends StatelessWidget {
+  const _RecordingsButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+    tooltip: AppLocalizations.of(context).recordingsOpen,
+    onPressed: onPressed,
+    icon: const Icon(Icons.video_library_outlined),
+  );
 }

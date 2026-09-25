@@ -1020,7 +1020,7 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   > câmera gravando pelo hub, dia inválido, `Range` 206 com os bytes certos, quatro nomes maliciosos,
   > câmera 403).
 
-- [ ] **3.5 Linha do tempo no Monitor**
+- [x] **3.5 Linha do tempo no Monitor**
   - Origem: combinado com o autor em 2026-09-25.
   - Escopo: dependência nova `video_player`. O player do Android não passa pelo pinning do Dart,
     então um repassador local em `lib/core/` (`HttpServer` em 127.0.0.1, porta aleatória) busca o
@@ -1030,6 +1030,25 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
     segue para o próximo segmento. Horários no fuso do celular.
   - Aceite: testes do repassador (repassa `Range`, só atende o próprio aparelho), do controller da
     linha do tempo e widget test da tela.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho; o APK não foi compilado
+  > aqui (sem Android SDK). Gate verde (167 no servidor, 216 no app). Dependência nova, a pedida:
+  > `video_player` `^2.14.0`. `RecordingRelay` (`core/media`): `HttpServer` em 127.0.0.1, porta
+  > aleatória, sob um caminho secreto aleatório (outro app do mesmo celular não consegue usar a
+  > credencial por ele); só aceita `GET` de loopback em `/api/recordings/...`; busca no servidor
+  > pareado com o `HttpClient` do `dart:io` (logo com o pinning do `HttpOverrides`), a credencial e
+  > o `Range`, e devolve em streaming, sem gravar nada. `RecordingPlayer` é a interface sobre o
+  > `video_player` (o plugin fica em `core`). O manifesto ganhou `network_security_config.xml`
+  > liberando HTTP só para 127.0.0.1, porque o Android 9+ bloqueia HTTP sem TLS. O
+  > `RecordingTimelineController` converte os dias UTC do servidor para o calendário do celular,
+  > busca os um ou dois dias UTC que cobrem o dia local, põe os segmentos no relógio local, toca a
+  > partir do ponto tocado (num intervalo, do próximo trecho) e emenda o próximo segmento ao fim de
+  > cada um. Tela "Gravações · câmera": player 16:9, chips dos dias, barra das 24 horas desenhada
+  > com os trechos marcados e o segmento tocando em destaque. Botão de gravações no ao vivo e em
+  > cada câmera da lista. Testes: repassador (repassa `Range` e credencial, recusa sem o segredo,
+  > recusa outros caminhos do servidor, escuta só no loopback), controller (dias no fuso de
+  > Brasília, dia local em dois dias UTC, tocar no meio de um segmento, tocar num intervalo, emendar
+  > o próximo, liberar player e repassador) e widget test da tela (tocar nas horas toca; sem
+  > gravação explica como começar).
 
 - [ ] **3.6 [aparelho] Validar a gravação**
   - Origem: combinado com o autor em 2026-09-25.

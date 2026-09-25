@@ -162,5 +162,25 @@
   "recordingsSave": "Save",
   "recordingsSaved": "Space for recordings saved.",
   "recordingsSaveFailed": "Could not save. Check the connection to the server.",
-  "recordingsLoadFailed": "Could not load the recordings space. Check the connection to the server."
+  "recordingsLoadFailed": "Could not load the recordings space. Check the connection to the server.",
+  "recordingsOpen": "Recordings",
+  "timelineTitle": "Recordings · {camera}",
+  "@timelineTitle": {
+    "placeholders": {
+      "camera": {
+        "type": "String"
+      }
+    }
+  },
+  "timelineTapToPlay": "Tap the hours below to watch from that moment.",
+  "timelinePlaying": "Playing from {time}",
+  "@timelinePlaying": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "timelineEmpty": "No recordings yet. Turn on Record always for this camera.",
+  "timelineLoadFailed": "Could not load the recordings. Check the connection to the server."
 }

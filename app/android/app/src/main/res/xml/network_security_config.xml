@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The recordings player reads from the app's own relay on this phone (lib/core/media/
+     recording_relay.dart). Plain HTTP is allowed there and nowhere else. -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

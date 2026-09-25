@@ -193,6 +193,84 @@ class HttpApiClient implements ApiClient {
   }
 
   @override
+  Future<ApiResult<List<DateTime>>> recordingDays(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+  ) {
+    return _sendJson(
+      () => _client.get(
+        baseUrl.resolve('/api/cameras/$cameraId/recording-days'),
+        headers: {HttpHeaders.authorizationHeader: 'Bearer $credential'},
+      ),
+      expectedStatus: HttpStatus.ok,
+      parse: (json, _) {
+        if (json is! List<Object?>) return null;
+        final days = [
+          for (final day in json)
+            if (day is String) DateTime.tryParse('${day}T00:00:00Z'),
+        ];
+        return days.contains(null) || days.length != json.length
+            ? null
+            : days.nonNulls.toList();
+      },
+    );
+  }
+
+  @override
+  Future<ApiResult<List<RecordingPieceInfo>>> recordings(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+    DateTime utcDay,
+  ) {
+    final day =
+        '${utcDay.year.toString().padLeft(4, '0')}-'
+        '${utcDay.month.toString().padLeft(2, '0')}-'
+        '${utcDay.day.toString().padLeft(2, '0')}';
+    return _sendJson(
+      () => _client.get(
+        baseUrl.resolve('/api/cameras/$cameraId/recordings?day=$day'),
+        headers: {HttpHeaders.authorizationHeader: 'Bearer $credential'},
+      ),
+      expectedStatus: HttpStatus.ok,
+      parse: (json, _) {
+        if (json is! List<Object?>) return null;
+        final pieces = [for (final item in json) _parsePiece(item)];
+        return pieces.contains(null) ? null : pieces.nonNulls.toList();
+      },
+    );
+  }
+
+  static RecordingPieceInfo? _parsePiece(Object? json) {
+    if (json is! Map<String, Object?>) return null;
+    final start = _parseTime(json['start']);
+    final end = _parseTime(json['end']);
+    final rawSegments = json['segments'];
+    if (start == null || end == null || rawSegments is! List<Object?>) {
+      return null;
+    }
+    final segments = [
+      for (final segment in rawSegments)
+        if (segment case {
+          'start': final Object? segmentStart,
+          'end': final Object? segmentEnd,
+          'url': final String url,
+        })
+          if ((_parseTime(segmentStart), _parseTime(segmentEnd)) case (
+            final DateTime from,
+            final DateTime to,
+          ))
+            RecordingSegmentInfo(start: from, end: to, url: url),
+    ];
+    if (segments.length != rawSegments.length) return null;
+    return RecordingPieceInfo(start: start, end: end, segments: segments);
+  }
+
+  static DateTime? _parseTime(Object? value) =>
+      value is String ? DateTime.tryParse(value)?.toUtc() : null;
+
+  @override
   Future<ApiFailureKind?> setRecordingQuota(
     Uri baseUrl,
     String credential,

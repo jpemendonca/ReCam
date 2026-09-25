@@ -36,12 +36,53 @@ abstract interface class ApiClient {
     String credential,
   );
 
+  /// The UTC days that have recordings of a camera, newest first.
+  Future<ApiResult<List<DateTime>>> recordingDays(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+  );
+
+  /// The stretches recorded on one UTC day.
+  Future<ApiResult<List<RecordingPieceInfo>>> recordings(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+    DateTime utcDay,
+  );
+
   /// Returns null when the server accepted the new quota.
   Future<ApiFailureKind?> setRecordingQuota(
     Uri baseUrl,
     String credential,
     int megabytes,
   );
+}
+
+/// One playable recorded file; [url] is a server path. Times in UTC.
+class RecordingSegmentInfo {
+  const RecordingSegmentInfo({
+    required this.start,
+    required this.end,
+    required this.url,
+  });
+
+  final DateTime start;
+  final DateTime end;
+  final String url;
+}
+
+/// A continuous stretch of recording, made of back-to-back segments. Times in UTC.
+class RecordingPieceInfo {
+  const RecordingPieceInfo({
+    required this.start,
+    required this.end,
+    required this.segments,
+  });
+
+  final DateTime start;
+  final DateTime end;
+  final List<RecordingSegmentInfo> segments;
 }
 
 /// The space all recordings may take together, and the disk around it.

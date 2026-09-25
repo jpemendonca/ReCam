@@ -12,6 +12,8 @@ import 'core/device/battery_reader.dart';
 import 'core/device/keep_alive.dart';
 import 'core/device/screen_controller.dart';
 import 'core/media/camera_capture.dart';
+import 'core/media/recording_player.dart';
+import 'core/media/recording_relay.dart';
 import 'core/media/signaling_client.dart';
 import 'core/media/webrtc_publisher.dart';
 import 'core/media/webrtc_viewer.dart';
@@ -23,6 +25,7 @@ import 'core/pairing/pairing_link.dart';
 import 'core/pairing/pairing_service.dart';
 import 'core/storage/secure_credential_store.dart';
 import 'viewer/camera_list_controller.dart';
+import 'viewer/recording_timeline_controller.dart';
 import 'viewer/viewer_pairing_controller.dart';
 
 Future<void> main() async {
@@ -67,6 +70,13 @@ Future<void> main() async {
           session: session,
           cameraId: cameraId,
           signaling: SignalingClient(http.Client()),
+        ),
+        timelineFactory: (cameraId) => RecordingTimelineController(
+          api: api,
+          session: session,
+          cameraId: cameraId,
+          player: VideoPlayerRecordingPlayer(),
+          segments: RecordingRelay(session: session),
         ),
       ),
       links: AppLinkSource(),

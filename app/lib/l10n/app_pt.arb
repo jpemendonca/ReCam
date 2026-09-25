@@ -96,5 +96,11 @@
   "recordingsSave": "Salvar",
   "recordingsSaved": "Espaço para gravações salvo.",
   "recordingsSaveFailed": "Não deu para salvar. Confira a conexão com o servidor.",
-  "recordingsLoadFailed": "Não deu para carregar o espaço das gravações. Confira a conexão com o servidor."
+  "recordingsLoadFailed": "Não deu para carregar o espaço das gravações. Confira a conexão com o servidor.",
+  "recordingsOpen": "Gravações",
+  "timelineTitle": "Gravações · {camera}",
+  "timelineTapToPlay": "Toque nas horas aqui embaixo para assistir a partir daquele momento.",
+  "timelinePlaying": "Tocando a partir das {time}",
+  "timelineEmpty": "Nenhuma gravação ainda. Ligue Gravar sempre nesta câmera.",
+  "timelineLoadFailed": "Não deu para carregar as gravações. Confira a conexão com o servidor."
 }

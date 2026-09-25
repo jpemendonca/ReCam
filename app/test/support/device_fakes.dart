@@ -134,6 +134,39 @@ class FakePublisher implements WebRtcPublisher {
   }
 }
 
+class FakeRecordingPlayer implements RecordingPlayer {
+  final List<({Uri url, Duration from})> plays = [];
+  bool disposed = false;
+  void Function()? _finished;
+
+  /// Simulates the current segment reaching its end.
+  void finish() => _finished?.call();
+
+  @override
+  set onFinished(void Function() callback) => _finished = callback;
+
+  @override
+  Future<void> play(Uri url, {Duration from = Duration.zero}) async =>
+      plays.add((url: url, from: from));
+
+  @override
+  Widget buildVideo() => const SizedBox(key: Key('recording-video'));
+
+  @override
+  Future<void> dispose() async => disposed = true;
+}
+
+class FakeSegmentSource implements SegmentSource {
+  bool closed = false;
+
+  @override
+  Future<Uri> urlFor(String serverPath) async =>
+      Uri.parse('http://127.0.0.1:1/relay$serverPath');
+
+  @override
+  Future<void> close() async => closed = true;
+}
+
 class FakeFeed implements CameraFeed {
   @override
   Widget buildPreview() => const SizedBox(key: Key('camera-preview'));
