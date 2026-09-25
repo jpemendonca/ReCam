@@ -497,3 +497,11 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > revogado), e não só quando nunca houve dono. Assim um servidor sem Monitor volta a aceitar um
 > primeiro celular, que vira o novo dono. Se o dono sai e um visualizador fica, não há QR: o
 > visualizador adiciona os demais (bullet 1.12.15).
+
+> Revisão (2026-09-25): a página `/setup` mostra um idioma por vez, escolhido pelo `Accept-Language`
+> (a primeira preferência entre pt e en; sem nenhuma das duas, inglês), e responde com
+> `Vary: Accept-Language`. Sem Monitor: passo a passo numerado ao lado do QR e o código em texto.
+> Com Monitor: cartões de Câmeras (online, transmitindo ou parada, assistindo agora, bateria) e de
+> Monitores (online), e o passo a passo de adicionar câmera. CSS no próprio HTML, com tema claro e
+> escuro (`prefers-color-scheme`). Sem script nenhum: o `onclick` da caixa do código saiu
+> (bullet 1.12.16).

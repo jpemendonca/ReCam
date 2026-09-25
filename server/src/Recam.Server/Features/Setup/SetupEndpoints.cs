@@ -40,15 +40,17 @@ public static class SetupEndpoints
                 statusCode: StatusCodes.Status403Forbidden);
         }
 
+        var texts = SetupTexts.For(context.Request.GetTypedHeaders().AcceptLanguage);
         var status = await ownerSetup.EnsureTokenAsync(cancellationToken);
         var page = status switch
         {
-            OwnerSetupStatus.Pending pending => SetupPage.RenderPending(pending),
+            OwnerSetupStatus.Pending pending => SetupPage.RenderPending(pending, texts),
             OwnerSetupStatus.Configured => SetupPage.RenderPanel(
-                await LoadPanelAsync(databaseFactory, presence, cancellationToken)),
+                await LoadPanelAsync(databaseFactory, presence, cancellationToken), texts),
             _ => throw new InvalidOperationException($"Unknown setup status {status.GetType().Name}."),
         };
         context.Response.Headers.CacheControl = "no-store";
+        context.Response.Headers.Vary = "Accept-Language";
         return TypedResults.Content(page, "text/html; charset=utf-8");
     }
 

@@ -1,95 +1,160 @@
 using System.Globalization;
-using System.Net;
-using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 using QRCoder;
 using Recam.Server.Domain;
 
 namespace Recam.Server.Features.Setup;
 
 /// <summary>
-/// Server-rendered HTML, in English and Portuguese, with no script. Both pages reload
+/// Server-rendered HTML in one language, with no script and no actions. Both pages reload
 /// themselves: the panel to follow presence, the QR page to turn into the panel once the first
-/// phone pairs (slower, so the code can still be copied).
+/// Monitor pairs (slower, so the code can still be copied).
 /// </summary>
 public static class SetupPage
 {
     public const int PanelRefreshSeconds = 5;
     public const int PendingRefreshSeconds = 30;
 
-    public static string RenderPending(OwnerSetupStatus.Pending pending)
+    // Escapes markup but keeps accented letters readable in the page source.
+    private static readonly HtmlEncoder Html = HtmlEncoder.Create(UnicodeRanges.All);
+
+    public static string RenderPending(OwnerSetupStatus.Pending pending, SetupTexts texts)
     {
         using var qrData = QRCodeGenerator.GenerateQrCode(pending.PairingUri, QRCodeGenerator.ECCLevel.M);
         using var svg = new SvgQRCode(qrData);
-        var expiresAt = WebUtility.HtmlEncode(pending.ExpiresAt.ToString("HH:mm 'UTC'", CultureInfo.InvariantCulture));
-        return Layout($"""
-            <h1>Pair your first Monitor</h1>
-            <p>Open ReCam on the phone that will watch, choose <strong>Watch</strong> and scan this code. That phone becomes a Monitor.</p>
-            <p lang="pt">Abra o ReCam no celular que vai assistir, escolha <strong>Assistir</strong> e leia este código. Esse celular vira um Monitor.</p>
-            <div class="qr">{svg.GetGraphic(8)}</div>
-            <p>No camera? In the app, choose <strong>Paste code</strong> and paste this. · Sem câmera? No app, escolha <strong>Colar código</strong> e cole isto.</p>
-            <textarea class="code" readonly rows="4" onclick="this.select()">{WebUtility.HtmlEncode(pending.PairingUri)}</textarea>
-            <p class="muted">Expires at {expiresAt}; a new code appears by itself. · Expira às {expiresAt}; um código novo aparece sozinho.</p>
-            """, PendingRefreshSeconds);
+        var expiresAt = pending.ExpiresAt.ToString("HH:mm 'UTC'", CultureInfo.InvariantCulture);
+        return Layout(texts, PendingRefreshSeconds, $"""
+            <header><p class="brand">ReCam</p><h1>{Encode(texts.PendingTitle)}</h1><p class="lead">{Encode(texts.PendingIntro)}</p></header>
+            <section class="pair">
+            <ol class="steps">
+            {Steps(texts.PendingSteps)}</ol>
+            <div class="qr card">{svg.GetGraphic(8)}</div>
+            </section>
+            <section class="card">
+            <label for="code">{Encode(texts.CodeLabel)}</label>
+            <textarea id="code" class="code" readonly rows="3">{Encode(pending.PairingUri)}</textarea>
+            <p class="muted">{Encode(texts.ExpiresAt(expiresAt))}</p>
+            </section>
+            """);
     }
 
-    public static string RenderPanel(IReadOnlyList<PanelDevice> devices)
+    public static string RenderPanel(IReadOnlyList<PanelDevice> devices, SetupTexts texts)
     {
-        var rows = new StringBuilder();
-        foreach (var device in devices)
-        {
-            rows.Append(Row(device));
-        }
-
-        return Layout($"""
-            <h1>ReCam</h1>
-            <p>Devices paired with this server. Add cameras from <strong>Add camera</strong>, on a Monitor.</p>
-            <p lang="pt">Aparelhos pareados com este servidor. Adicione câmeras pelo <strong>Adicionar câmera</strong>, num Monitor.</p>
-            <table>
-            <thead><tr><th>Name · Nome</th><th>Type · Tipo</th><th>Online</th><th>Streaming · Transmitindo</th><th>Watching · Assistindo</th><th>Battery · Bateria</th></tr></thead>
-            <tbody>
-            {rows}</tbody>
-            </table>
-            <p class="muted">Updates every {PanelRefreshSeconds} seconds. · Atualiza a cada {PanelRefreshSeconds} segundos.</p>
-            """, PanelRefreshSeconds);
+        var cameras = devices.Where(device => device.Role == DeviceRole.Camera).ToList();
+        var monitors = devices.Where(device => device.Role != DeviceRole.Camera).ToList();
+        var cameraCards = cameras.Count == 0
+            ? $"<p class=\"muted\">{Encode(texts.NoCameras)}</p>"
+            : string.Concat(cameras.Select(camera => CameraCard(camera, texts)));
+        return Layout(texts, PanelRefreshSeconds, $"""
+            <header><p class="brand">ReCam</p><h1>{Encode(texts.PanelTitle)}</h1></header>
+            <section>
+            <h2>{Encode(texts.CamerasTitle)} <span class="count">{cameras.Count}</span></h2>
+            <div class="grid">
+            {cameraCards}
+            </div>
+            </section>
+            <section>
+            <h2>{Encode(texts.MonitorsTitle)} <span class="count">{monitors.Count}</span></h2>
+            <div class="grid">
+            {string.Concat(monitors.Select(monitor => MonitorCard(monitor, texts)))}
+            </div>
+            </section>
+            <section class="card">
+            <h2>{Encode(texts.AddCameraTitle)}</h2>
+            <ol class="steps">
+            {Steps(texts.AddCameraSteps)}</ol>
+            </section>
+            <p class="muted">{Encode(texts.UpdatesEvery(PanelRefreshSeconds))}</p>
+            """);
     }
 
-    private static string Row(PanelDevice device)
+    private static string CameraCard(PanelDevice camera, SetupTexts texts)
     {
-        var isCamera = device.Role == DeviceRole.Camera;
-        var type = isCamera ? "Camera · Câmera" : "Monitor";
-        var online = device.Online ? "<span class=\"on\">yes · sim</span>" : "<span class=\"off\">no · não</span>";
-        var streaming = !isCamera ? "—" : device.Publishing ? "yes · sim" : "no · não";
-        var watching = isCamera ? device.Watchers.ToString(CultureInfo.InvariantCulture) : "—";
-        var battery = !isCamera || device.BatteryLevel is not { } level
-            ? "—"
-            : string.Create(CultureInfo.InvariantCulture, $"{level}%{(device.IsCharging == true ? " ⚡" : string.Empty)}");
+        var streaming = !camera.Online
+            ? string.Empty
+            : camera.Publishing
+                ? $" <span class=\"badge live\">{Encode(texts.Streaming)}</span>"
+                : $" <span class=\"badge idle\">{Encode(texts.StandingBy)}</span>";
+        var battery = camera.BatteryLevel is { } level
+            ? string.Create(
+                CultureInfo.InvariantCulture,
+                $"{level}%{(camera.IsCharging == true ? $" ({texts.Charging})" : string.Empty)}")
+            : "—";
         return $"""
-            <tr data-device="{device.Id:N}"><td>{WebUtility.HtmlEncode(device.Name)}</td><td>{type}</td><td>{online}</td><td>{streaming}</td><td>{watching}</td><td>{battery}</td></tr>
+            <article class="device card" data-device="{camera.Id:N}"><h3>{Encode(camera.Name)}</h3><p>{PresenceBadge(camera, texts)}{streaming}</p><dl><dt>{Encode(texts.Watching)}</dt><dd>{camera.Watchers.ToString(CultureInfo.InvariantCulture)}</dd><dt>{Encode(texts.Battery)}</dt><dd>{Encode(battery)}</dd></dl></article>
 
             """;
     }
 
-    private static string Layout(string body, int refreshSeconds) => $$"""
+    private static string MonitorCard(PanelDevice monitor, SetupTexts texts) => $"""
+        <article class="device card" data-device="{monitor.Id:N}"><h3>{Encode(monitor.Name)}</h3><p>{PresenceBadge(monitor, texts)}</p></article>
+
+        """;
+
+    private static string PresenceBadge(PanelDevice device, SetupTexts texts) => device.Online
+        ? $"<span class=\"badge on\">{Encode(texts.Online)}</span>"
+        : $"<span class=\"badge off\">{Encode(texts.Offline)}</span>";
+
+    private static string Steps(IEnumerable<string> steps) =>
+        string.Concat(steps.Select(step => $"<li>{step}</li>\n"));
+
+    private static string Encode(string text) => Html.Encode(text);
+
+    private static string Layout(SetupTexts texts, int refreshSeconds, string body) => $$"""
         <!doctype html>
-        <html lang="en">
+        <html lang="{{texts.Language}}">
         <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="color-scheme" content="light dark">
         <meta http-equiv="refresh" content="{{refreshSeconds}}">
         <title>ReCam</title>
         <style>
-        body { font-family: system-ui, sans-serif; max-width: 48rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
-        .qr svg { width: 100%; max-width: 32rem; height: auto; background: #fff; }
-        .muted { color: #666; font-size: .9rem; }
-        .code { width: 100%; font-family: ui-monospace, monospace; font-size: .8rem; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid #ddd; }
-        .on { color: #1a7f37; }
-        .off { color: #999; }
+        :root { --bg: #f4f6f5; --card: #ffffff; --text: #17201d; --muted: #5d6b66; --line: #dde3e0;
+          --accent: #00796b; --on: #1a7f37; --off: #8a948f; --live: #c62828; --radius: 14px; }
+        @media (prefers-color-scheme: dark) {
+          :root { --bg: #101614; --card: #1a2320; --text: #e6ece9; --muted: #9aa8a2; --line: #2c3833;
+            --accent: #4db6ac; --on: #4cc26b; --off: #7c8783; --live: #ef5350; }
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+        main { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+        header { margin-bottom: 1.5rem; }
+        .brand { margin: 0; color: var(--accent); font-weight: 700; letter-spacing: .04em; }
+        h1 { margin: .2rem 0 .4rem; font-size: 1.8rem; line-height: 1.2; }
+        h2 { font-size: 1.2rem; margin: 1.5rem 0 .75rem; }
+        h3 { margin: 0 0 .4rem; font-size: 1.05rem; overflow-wrap: anywhere; }
+        .lead, .muted { color: var(--muted); }
+        .muted { font-size: .9rem; }
+        .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.25rem; }
+        section.card { margin-top: 1.5rem; }
+        .card h2 { margin-top: 0; }
+        .pair { display: grid; gap: 1.5rem; align-items: center; }
+        @media (min-width: 720px) { .pair { grid-template-columns: 1fr 1fr; } }
+        .steps { margin: 0; padding-left: 1.4rem; }
+        .steps li { margin: .35rem 0 .7rem; padding-left: .25rem; }
+        .steps li::marker { color: var(--accent); font-weight: 700; }
+        .qr { background: #ffffff; padding: .75rem; }
+        .qr svg { display: block; width: 100%; height: auto; }
+        label { display: block; font-weight: 600; margin-bottom: .4rem; }
+        .code { width: 100%; font: .8rem/1.4 ui-monospace, Consolas, monospace; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: .5rem; resize: vertical; }
+        .grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); }
+        .count { color: var(--muted); font-weight: 400; }
+        .device p { margin: 0 0 .5rem; }
+        .badge { display: inline-block; padding: .05rem .6rem; border-radius: 999px; font-size: .8rem; font-weight: 600; border: 1px solid currentColor; }
+        .badge.on { color: var(--on); }
+        .badge.off, .badge.idle { color: var(--off); }
+        .badge.live { color: var(--live); }
+        dl { display: grid; grid-template-columns: auto 1fr; gap: .15rem .75rem; margin: 0; font-size: .9rem; }
+        dt { color: var(--muted); }
+        dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
         </style>
         </head>
         <body>
+        <main>
         {{body}}
+        </main>
         </body>
         </html>
         """;

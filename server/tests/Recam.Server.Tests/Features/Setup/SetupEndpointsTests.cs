@@ -28,20 +28,40 @@ public sealed class SetupEndpointsTests
         Assert.Contains("<svg", body, StringComparison.Ordinal);
     }
 
-    [Fact(DisplayName = "Setup page tells the person to choose Watch, and the phone becomes a Monitor")]
-    public async Task SetupPage_WithoutOwner_SpeaksOfWatchAndMonitor()
+    [Fact(DisplayName = "In Portuguese, the page walks through pairing the first Monitor with Assistir")]
+    public async Task SetupPage_WithoutOwner_InPortuguese_ShowsSteps()
     {
         // arrange
         using var factory = new RecamApiFactory();
         using var client = factory.CreateClient();
 
         // act
-        var body = await client.GetStringAsync(SetupUri, TestContext.Current.CancellationToken);
+        var body = await GetPageAsync(client, "pt-BR,pt;q=0.9,en;q=0.8");
 
         // assert
-        Assert.Contains("<strong>Assistir</strong>", body, StringComparison.Ordinal);
-        Assert.Contains("<strong>Watch</strong>", body, StringComparison.Ordinal);
+        Assert.Contains("<html lang=\"pt-BR\">", body, StringComparison.Ordinal);
+        Assert.Contains("<li>Na primeira tela, toque em <strong>Assistir</strong>.</li>", body, StringComparison.Ordinal);
         Assert.Contains("Monitor", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("<strong>Watch</strong>", body, StringComparison.Ordinal);
+        Assert.Contains("<svg", body, StringComparison.Ordinal);
+        AssertNoScript(body);
+    }
+
+    [Fact(DisplayName = "In English, the page walks through pairing the first Monitor with Watch")]
+    public async Task SetupPage_WithoutOwner_InEnglish_ShowsSteps()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        using var client = factory.CreateClient();
+
+        // act
+        var body = await GetPageAsync(client, "en-US,en;q=0.9");
+
+        // assert
+        Assert.Contains("<html lang=\"en\">", body, StringComparison.Ordinal);
+        Assert.Contains("<li>On the first screen, tap <strong>Watch</strong>.</li>", body, StringComparison.Ordinal);
+        Assert.DoesNotContain("Assistir", body, StringComparison.Ordinal);
+        AssertNoScript(body);
     }
 
     [Fact(DisplayName = "Setup page also shows the pairing code as text, for phones that cannot scan")]
@@ -59,8 +79,8 @@ public sealed class SetupEndpointsTests
         Assert.Contains("recam://pair?v=1&amp;t=", body, StringComparison.Ordinal);
     }
 
-    [Fact(DisplayName = "Once a phone owns the server, the page lists the devices instead of handing out a token")]
-    public async Task SetupPage_WithOwner_ListsDevices()
+    [Fact(DisplayName = "Once a Monitor is paired, the page shows camera and Monitor cards instead of a token")]
+    public async Task SetupPage_WithOwner_InEnglish_ShowsCards()
     {
         // arrange
         using var factory = new RecamApiFactory();
@@ -69,18 +89,37 @@ public sealed class SetupEndpointsTests
         using var client = factory.CreateClient();
 
         // act
-        using var response = await client.GetAsync(SetupUri, TestContext.Current.CancellationToken);
-        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        var body = await GetPageAsync(client, "en");
 
         // assert
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.DoesNotContain("<svg", body, StringComparison.Ordinal);
         Assert.DoesNotContain("recam://pair", body, StringComparison.Ordinal);
-        Assert.Contains("Pedro&#39;s phone", Row(body, owner.DeviceId), StringComparison.Ordinal);
-        Assert.Contains("<td>Monitor</td>", Row(body, owner.DeviceId), StringComparison.Ordinal);
-        Assert.Contains("Camera · Câmera", Row(body, camera.DeviceId), StringComparison.Ordinal);
+        Assert.Contains("<h2>Cameras <span class=\"count\">1</span></h2>", body, StringComparison.Ordinal);
+        Assert.Contains("<h2>Monitors <span class=\"count\">1</span></h2>", body, StringComparison.Ordinal);
+        Assert.Contains("<h3>Pedro&#x27;s phone</h3>", Card(body, owner.DeviceId), StringComparison.Ordinal);
+        Assert.Contains("<h3>Porch</h3>", Card(body, camera.DeviceId), StringComparison.Ordinal);
+        Assert.Contains("<h2>Add a camera</h2>", body, StringComparison.Ordinal);
         Assert.Contains(
             $"<meta http-equiv=\"refresh\" content=\"{SetupPage.PanelRefreshSeconds}\">", body, StringComparison.Ordinal);
+        AssertNoScript(body);
+    }
+
+    [Fact(DisplayName = "In Portuguese, the panel speaks of Câmeras and Monitores")]
+    public async Task SetupPage_WithOwner_InPortuguese_ShowsCards()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        await factory.PairDeviceAsync(DeviceRole.Owner);
+        using var client = factory.CreateClient();
+
+        // act
+        var body = await GetPageAsync(client, "pt-BR");
+
+        // assert
+        Assert.Contains("<h2>Câmeras <span class=\"count\">0</span></h2>", body, StringComparison.Ordinal);
+        Assert.Contains("<h2>Monitores <span class=\"count\">1</span></h2>", body, StringComparison.Ordinal);
+        Assert.Contains("Nenhuma câmera ainda.", body, StringComparison.Ordinal);
+        Assert.Contains("toque em <strong>Filmar</strong>", body, StringComparison.Ordinal);
     }
 
     [Fact(DisplayName = "The panel shows which camera is online, streaming and how many watch it")]
@@ -99,18 +138,17 @@ public sealed class SetupEndpointsTests
         using var client = factory.CreateClient();
 
         // act
-        var body = await client.GetStringAsync(SetupUri, TestContext.Current.CancellationToken);
+        var body = await GetPageAsync(client, "pt-BR");
 
         // assert
-        var porchRow = Row(body, porch.DeviceId);
-        Assert.Equal(
-            "<td>Porch</td><td>Camera · Câmera</td><td><span class=\"on\">yes · sim</span></td><td>yes · sim</td><td>1</td><td>64% ⚡</td>",
-            porchRow);
-        var garageRow = Row(body, garage.DeviceId);
-        Assert.Equal(
-            "<td>Garage</td><td>Camera · Câmera</td><td><span class=\"off\">no · não</span></td><td>no · não</td><td>0</td><td>—</td>",
-            garageRow);
-        Assert.Contains("<span class=\"on\">", Row(body, owner.DeviceId), StringComparison.Ordinal);
+        var porchCard = Card(body, porch.DeviceId);
+        Assert.Contains("<span class=\"badge on\">Online</span> <span class=\"badge live\">Transmitindo</span>", porchCard, StringComparison.Ordinal);
+        Assert.Contains("<dt>Assistindo agora</dt><dd>1</dd>", porchCard, StringComparison.Ordinal);
+        Assert.Contains("<dt>Bateria</dt><dd>64% (carregando)</dd>", porchCard, StringComparison.Ordinal);
+        var garageCard = Card(body, garage.DeviceId);
+        Assert.Contains("<span class=\"badge off\">Offline</span></p>", garageCard, StringComparison.Ordinal);
+        Assert.Contains("<dt>Bateria</dt><dd>—</dd>", garageCard, StringComparison.Ordinal);
+        Assert.Contains("<span class=\"badge on\">Online</span>", Card(body, owner.DeviceId), StringComparison.Ordinal);
     }
 
     [Fact(DisplayName = "When the last Monitor leaves, the page shows the first-phone QR again")]
@@ -199,13 +237,28 @@ public sealed class SetupEndpointsTests
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    /// <summary>The cells of one device's row in the panel.</summary>
-    private static string Row(string body, Guid deviceId)
+    private static async Task<string> GetPageAsync(HttpClient client, string acceptLanguage)
     {
-        var start = $"<tr data-device=\"{deviceId:N}\">";
+        using var request = new HttpRequestMessage(HttpMethod.Get, SetupUri);
+        request.Headers.Add("Accept-Language", acceptLanguage);
+        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+    }
+
+    private static void AssertNoScript(string body)
+    {
+        Assert.DoesNotContain("<script", body, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(" onclick=", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>The inside of one device's card in the panel.</summary>
+    private static string Card(string body, Guid deviceId)
+    {
+        var start = $"data-device=\"{deviceId:N}\">";
         var from = body.IndexOf(start, StringComparison.Ordinal);
-        Assert.True(from >= 0, $"No row for device {deviceId}.");
+        Assert.True(from >= 0, $"No card for device {deviceId}.");
         from += start.Length;
-        return body[from..body.IndexOf("</tr>", from, StringComparison.Ordinal)];
+        return body[from..body.IndexOf("</article>", from, StringComparison.Ordinal)];
     }
 }

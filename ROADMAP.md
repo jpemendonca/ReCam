@@ -748,7 +748,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > 12. Extras: `Cameras_AfterCameraLeaves_DoesNotListIt`, `DeleteMe_WithoutCredential_Returns401`,
   > `SetupPage_WhenOwnerLeavesButViewerStays_KeepsPanel`, `DeviceRevokeTests`, `HttpApiClient.leave`.
 
-- [ ] **1.12.16 Página do servidor com passo a passo e visual cuidado**
+- [x] **1.12.16 Página do servidor com passo a passo e visual cuidado**
   - Origem: teste do autor em 2026-09-25: a página é feia e não diz o que fazer.
   - Escopo: um idioma por vez, escolhido pelo `Accept-Language` (pt ou en), no lugar dos dois lado a
     lado. Sem Monitor: passo a passo numerado ("1. Pegue o celular que vai assistir...") ao lado do QR.
@@ -756,6 +756,17 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     bateria) e o passo a passo curto de como adicionar uma câmera. CSS próprio no HTML, com tema claro
     e escuro, legível no celular. Continua sem script e só leitura.
   - Aceite: testes da página em pt e en, com e sem Monitor.
+  > Validação (2026-09-25): código escrito e página aberta no Chromium (headless, via Playwright)
+  > contra o servidor rodando localmente: QR em pt no tema claro a 1100 px, em en no tema escuro a
+  > 390 px, painel com duas câmeras e um Monitor nos dois temas. Com o servidor de pé, também foi
+  > percorrido o 1.12.15 por `curl`: `DELETE /api/me` do único Monitor devolveu 204, a credencial
+  > passou a dar 401 e a página voltou ao QR. Não percorrido nos celulares. Gate verde (114 no
+  > servidor, 159 no app). Os textos ficam em `SetupTexts` (um registro por idioma), e
+  > `SetupTexts.For` é uma função pura que escolhe pelo `Accept-Language`. A página escapa texto
+  > com um `HtmlEncoder` que libera todo o Unicode (acentos legíveis no HTML; o que é marcação
+  > continua escapado). Revisão no `SPECS.md` 12. Testes: página em pt e en sem Monitor e com
+  > Monitor, cartão de câmera transmitindo, ausência de `<script>` e `onclick`, e `SetupTextsTests`
+  > com cinco cabeçalhos.
 
 - [ ] **1.14 [aparelho] Validar o caminho principal completo**
   - Origem: definição do MVP.
