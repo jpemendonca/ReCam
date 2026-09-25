@@ -37,6 +37,9 @@ public sealed class RecamApiFactory : WebApplicationFactory<Program>
 
     public LogCapture Logs { get; } = new();
 
+    /// <summary>Extra server configuration, as the operator would set it in the environment.</summary>
+    public IReadOnlyDictionary<string, string> Settings { get; init; } = new Dictionary<string, string>();
+
     /// <summary>Real MediaMTX to proxy to (see <see cref="MediaMtxFixture"/>); unset when unused.</summary>
     public Uri? MediaMtxUrl { get; init; }
 
@@ -81,6 +84,10 @@ public sealed class RecamApiFactory : WebApplicationFactory<Program>
     {
         builder.UseSetting(ServerSettings.DataDirectoryKey, _dataDirectory.Path);
         builder.UseSetting(ServerSettings.RecordingsDirectoryKey, RecordingsDirectory);
+        foreach (var (key, value) in Settings)
+        {
+            builder.UseSetting(key, value);
+        }
         if (MediaMtxUrl is not null)
         {
             builder.UseSetting(ServerSettings.MediaMtxUrlKey, MediaMtxUrl.ToString());

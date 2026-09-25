@@ -610,3 +610,14 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > banco, aplica as migrações, revoga e imprime o que fazer; o servidor em execução, sem Monitor
 > ativo, volta a gerar o QR do primeiro Monitor no log e em `/setup` em até 30 s. As conexões do
 > hub desses Monitores, abertas no outro processo, só caem na próxima reconexão.
+
+> Revisão (2026-09-25): modo atrás de proxy reverso (bullet 5.1). `RECAM_TLS=off` faz o Kestrel
+> servir HTTP simples na 8443, para o proxy terminar o TLS; o QR sai sem `f`, e o app valida o
+> certificado do proxy pelas CAs do sistema (o que o 5.2 da seção 5 já previa). `RECAM_PUBLIC_URLS`
+> deve ter o endereço público do proxy. `RECAM_TRUSTED_PROXIES` (IPs ou redes, separados por vírgula)
+> liga o `ForwardedHeaders` só para esses proxies, sem nem o loopback por padrão: atrás de um
+> proxy confiável o servidor vê o IP real do cliente, e o `/setup` passa a decidir pelo IP real
+> (cliente de fora continua recusado). Cabeçalhos `X-Forwarded-*` de qualquer outro endereço são
+> ignorados, e o `/setup` continua recusando a requisição que os traz. As duas chaves estão no
+> `.env.example` e nos dois composes. O WebRTC continua precisando da UDP 8189 alcançável direto:
+> o proxy só leva o HTTP.

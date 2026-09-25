@@ -120,6 +120,30 @@ void main() {
     });
   });
 
+  group('PairingService.pairFromQr behind a proxy', () {
+    test('withoutFingerprint_leavesTheCertificateToTheSystemCas', () async {
+      // arrange
+      api
+        ..healthyHosts = {'recam.example.com'}
+        ..pairResult = ApiSuccess(pairResult());
+      final qr = pairingQr(
+        fingerprint: null,
+        urls: ['https://recam.example.com'],
+      );
+
+      // act
+      final outcome = await pair(qr);
+
+      // assert
+      final session = (outcome as PairingSucceeded).session;
+      expect(session.fingerprint, isNull);
+      expect(
+        pins.accepts(FakeCertificate([1, 2, 3]), 'recam.example.com', 443),
+        isFalse,
+      );
+    });
+  });
+
   group('PairingService.verify', () {
     test('withRevokedCredential_forgetsTheSession', () async {
       // arrange

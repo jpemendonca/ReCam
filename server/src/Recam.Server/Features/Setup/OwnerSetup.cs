@@ -15,7 +15,7 @@ namespace Recam.Server.Features.Setup;
 public sealed partial class OwnerSetup(
     IDbContextFactory<RecamDbContext> databaseFactory,
     TimeProvider timeProvider,
-    ServerCertificate certificate,
+    CertificatePin certificate,
     ServerSettings settings,
     ILogger<OwnerSetup> logger) : IDisposable
 {

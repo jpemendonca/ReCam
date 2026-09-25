@@ -1115,10 +1115,23 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
 
 ## Fase 5: distribuição
 
-- [ ] **5.1 Modo atrás de proxy reverso**
+- [x] **5.1 Modo atrás de proxy reverso**
   - Escopo: `RECAM_TLS=off` faz o Kestrel servir HTTP. Respeitar `X-Forwarded-*` de proxies
     configurados. O QR sai sem `f`, e o app valida pelas CAs do sistema.
   - Aceite: testes do QR sem fingerprint e do middleware de forwarded headers.
+  > Validação (2026-09-25): só código escrito. Não percorrido atrás de um proxy de verdade. Gate verde
+  > (187 no servidor, 223 no app; o servidor rodou 5 vezes seguidas sem falha). `ServerSettings`
+  > ganhou `RECAM_TLS` (on/off; outro valor para o servidor na partida) e `RECAM_TRUSTED_PROXIES`
+  > (IPs ou redes). Com TLS desligado, o Kestrel escuta HTTP na 8443, nenhum certificado é criado, e
+  > um `CertificatePin(null)` substitui o `ServerCertificate` onde o QR é montado (`OwnerSetup` e
+  > pareamento), então o `f` some; o `healthcheck` também passa a usar `http`. O `ForwardedHeaders`
+  > (For, Proto, Host) só entra com proxies configurados e limpa as redes que o ASP.NET confia por
+  > padrão. Chaves novas no `.env.example` e nos dois composes. No app nada mudou: QR sem `f` já não
+  > pinava e ficava com as CAs do sistema; ganhou um teste disso. Revisão no `SPECS.md` 12. Testes:
+  > QR do primeiro Monitor e de câmera sem `f` com TLS desligado, com `f` no padrão, `/setup` atrás
+  > de proxy confiável (cliente local passa, cliente externo não), proxy não configurado recusado,
+  > valor inválido em `RECAM_TRUSTED_PROXIES`. Observado uma vez, antes deste bullet ficar pronto,
+  > uma falha isolada ao abrir o SQLite no teste da lanterna; não se repetiu em 8 rodadas.
 
 - [ ] **5.2 CI no GitHub Actions** (repositório criado: `jpemendonca/ReCam`, privado até o lançamento)
   - Escopo: workflow rodando `scripts/gate.sh` em pull request e push na `main`, com relatório

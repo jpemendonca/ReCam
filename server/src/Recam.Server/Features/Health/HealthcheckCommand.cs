@@ -17,8 +17,10 @@ public static class HealthcheckCommand
         var builder = WebApplication.CreateBuilder();
         var settings = ServerSettings.From(builder.Configuration, builder.Environment.ContentRootPath);
 
-        using var expected = new CertificateStore(settings.DataDirectory, TimeProvider.System).Load();
-        if (expected is null)
+        using var expected = settings.TlsEnabled
+            ? new CertificateStore(settings.DataDirectory, TimeProvider.System).Load()
+            : null;
+        if (settings.TlsEnabled && expected is null)
         {
             return 1;
         }
@@ -26,15 +28,16 @@ public static class HealthcheckCommand
         using var handler = new HttpClientHandler
         {
             ServerCertificateCustomValidationCallback = (_, certificate, _, _) =>
-                certificate is not null && expected.Matches(certificate),
+                certificate is not null && expected is not null && expected.Matches(certificate),
         };
         using var client = new HttpClient(handler) { Timeout = Timeout };
+        var scheme = settings.TlsEnabled ? "https" : "http";
 
         // Refused connections and timeouts mean "unhealthy"; the exit code is the only output.
         try
         {
             using var response = await client.GetAsync(
-                new Uri($"https://localhost:{ServerSettings.HttpsPort}/health"), cancellationToken);
+                new Uri($"{scheme}://localhost:{ServerSettings.HttpsPort}/health"), cancellationToken);
             return response.IsSuccessStatusCode ? 0 : 1;
         }
         catch (HttpRequestException)

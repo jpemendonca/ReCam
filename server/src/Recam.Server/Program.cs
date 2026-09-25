@@ -27,7 +27,7 @@ var settings = ServerSettings.From(builder.Configuration, builder.Environment.Co
 builder.AddRecamTls(settings);
 builder.Services
     .AddRecamHosting(settings)
-    .AddRecamHttp()
+    .AddRecamHttp(settings)
     .AddRecamPersistence(settings)
     .AddRecamAuth()
     .AddSetup()
@@ -40,7 +40,7 @@ var app = builder.Build();
 
 await app.ApplyMigrationsAsync();
 
-app.UseRecamHttp();
+app.UseRecamHttp(settings);
 
 app.MapHealthEndpoints();
 app.MapSetupEndpoints();

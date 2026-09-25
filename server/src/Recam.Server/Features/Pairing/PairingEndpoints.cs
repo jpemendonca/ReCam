@@ -86,7 +86,7 @@ public static partial class PairingEndpoints
         ClaimsPrincipal user,
         IDbContextFactory<RecamDbContext> databaseFactory,
         TimeProvider timeProvider,
-        ServerCertificate certificate,
+        CertificatePin certificate,
         ServerSettings settings,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)

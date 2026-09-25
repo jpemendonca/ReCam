@@ -1,3 +1,5 @@
+using System.Net;
+
 namespace Recam.Server.Infrastructure.Hosting;
 
 public sealed record ServerSettings(string DataDirectory, IReadOnlyList<Uri> PublicUrls, string? Host)
@@ -7,6 +9,8 @@ public sealed record ServerSettings(string DataDirectory, IReadOnlyList<Uri> Pub
     public const string HostKey = "RECAM_HOST";
     public const string MediaMtxUrlKey = "RECAM_MEDIAMTX_URL";
     public const string RecordingsDirectoryKey = "RECAM_RECORDINGS_DIR";
+    public const string TlsKey = "RECAM_TLS";
+    public const string TrustedProxiesKey = "RECAM_TRUSTED_PROXIES";
     public const int HttpsPort = 8443;
 
     private const string DefaultDataDirectory = "/data";
@@ -17,6 +21,15 @@ public sealed record ServerSettings(string DataDirectory, IReadOnlyList<Uri> Pub
 
     /// <summary>Where MediaMTX writes recordings; the same volume is mounted in both containers.</summary>
     public string RecordingsDirectory { get; init; } = DefaultRecordingsDirectory;
+
+    /// <summary>
+    /// Off behind a reverse proxy that terminates TLS: the server speaks plain HTTP and the QR code
+    /// carries no fingerprint, so the app checks the proxy's certificate with the system CAs.
+    /// </summary>
+    public bool TlsEnabled { get; init; } = true;
+
+    /// <summary>Proxies whose X-Forwarded-* headers are believed. Empty: none are.</summary>
+    public IReadOnlyList<IPNetwork> TrustedProxies { get; init; } = [];
 
     /// <summary>
     /// Reads operator configuration. Invalid values stop the server at startup, the same way
@@ -35,6 +48,12 @@ public sealed record ServerSettings(string DataDirectory, IReadOnlyList<Uri> Pub
             settings = settings with { RecordingsDirectory = Path.GetFullPath(recordingsDirectory, contentRootPath) };
         }
 
+        settings = settings with
+        {
+            TlsEnabled = ParseTls(configuration[TlsKey]),
+            TrustedProxies = ParseTrustedProxies(configuration[TrustedProxiesKey]),
+        };
+
         if (configuration[MediaMtxUrlKey] is { Length: > 0 } mediaMtxUrl)
         {
             if (!Uri.TryCreate(mediaMtxUrl, UriKind.Absolute, out var url))
@@ -46,6 +65,36 @@ public sealed record ServerSettings(string DataDirectory, IReadOnlyList<Uri> Pub
         }
 
         return settings;
+    }
+
+    private static bool ParseTls(string? value) => value?.Trim().ToLowerInvariant() switch
+    {
+        null or "" or "on" => true,
+        "off" => false,
+        _ => throw new InvalidOperationException($"{TlsKey} must be 'on' or 'off'. Got '{value}'."),
+    };
+
+    /// <summary>Addresses (<c>10.0.0.5</c>) or networks (<c>172.16.0.0/12</c>), comma separated.</summary>
+    private static List<IPNetwork> ParseTrustedProxies(string? value)
+    {
+        var networks = new List<IPNetwork>();
+        foreach (var part in (value ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            if (IPNetwork.TryParse(part, out var network))
+            {
+                networks.Add(network);
+            }
+            else if (IPAddress.TryParse(part, out var address))
+            {
+                networks.Add(new IPNetwork(address, address.GetAddressBytes().Length * 8));
+            }
+            else
+            {
+                throw new InvalidOperationException($"{TrustedProxiesKey} must list IP addresses or networks. Invalid entry: '{part}'.");
+            }
+        }
+
+        return networks;
     }
 
     private static List<Uri> ParsePublicUrls(string? value)
