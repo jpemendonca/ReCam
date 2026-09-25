@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'camera/camera_tab.dart';
 import 'l10n/generated/app_localizations.dart';
+import 'viewer/viewer_pairing_controller.dart';
 import 'viewer/watch_tab.dart';
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key});
+  const HomeShell({required this.viewerPairing, super.key});
+
+  final ViewerPairingController viewerPairing;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -21,7 +24,10 @@ class _HomeShellState extends State<HomeShell> {
       body: SafeArea(
         child: IndexedStack(
           index: _selectedIndex,
-          children: const [CameraTab(), WatchTab()],
+          children: [
+            const CameraTab(),
+            WatchTab(pairing: widget.viewerPairing),
+          ],
         ),
       ),
       bottomNavigationBar: NavigationBar(

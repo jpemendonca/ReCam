@@ -8,11 +8,15 @@ environment:
   sdk: ^3.13.3
 
 dependencies:
+  crypto: ^3.0.7
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
+  flutter_secure_storage: ^11.2.0
+  http: ^1.6.0
   intl: ^0.20.3
+  mobile_scanner: ^7.4.2
 
 dev_dependencies:
   flutter_test:

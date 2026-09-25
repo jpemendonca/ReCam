@@ -185,7 +185,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > é a constante `"Recam"`. Testes extras: `Pair_WithUnknownToken_Returns401`,
   > `Me_WithWrongSecret_Returns401`, `Me_WithoutCredential_Returns401`, `DevicePairTests`.
 
-- [ ] **1.3 App: pareamento do dono na aba Assistir**
+- [x] **1.3 App: pareamento do dono na aba Assistir**
   - Origem: caminho principal, passo 2.
   - Escopo: dependências `mobile_scanner`, `flutter_secure_storage`, `http`.
     `core/pairing/qr_payload.dart` (parse conforme `SPECS.md` 5.2).
@@ -196,6 +196,17 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Aceite: testes `QrPayload.parse` (válido, sem token, sem URL, fingerprint inválido, vários
     erros juntos), `PinnedHttpOverrides` (aceita fingerprint igual, recusa diferente),
     `ViewerPairingController` (pareia com fake de `ApiClient` e salva credencial).
+  > Validação (2026-09-24): só código escrito. Não aberto num aparelho (isso é o 1.4). Gate verde
+  > com testes de `QrPayload.parse` (9), `PinnedHttpOverrides` (5), `PairingService` (7),
+  > `ViewerPairingController` (6), `PairedSession` (2) e o widget test do shell. Decisões no
+  > caminho: `crypto` entrou como quarta dependência, porque o pinning precisa de SHA-256 e o
+  > `dart:io` não tem; `PairingService` (previsto no `SPECS.md` 2.2) concentra pin, escolha da
+  > primeira URL que responde `/health` e `POST /api/pair`, e será reusado pela aba Câmera; a aba
+  > Assistir recusa token de câmera (`wrongRole`) sem salvar nada; ao abrir, o app mostra o
+  > pareamento salvo e chama `GET /api/me` em seguida, e um 401 apaga a credencial; o celular do
+  > dono se chama "Owner phone"/"Celular do dono" (ARB), sem campo de nome; o leitor de QR
+  > (`mobile_scanner`) mora em `core/scanner/`, por causa da regra de plugin só em `core/`. O
+  > `AndroidManifest.xml` ganhou `INTERNET` (só existia no manifesto de debug) e `CAMERA`.
 
 - [ ] **1.4 [aparelho] Validar pareamento do dono num celular real**
   - Origem: provar TLS, pinning e rede antes de construir em cima.

@@ -4,5 +4,19 @@
   "cameraTab": "Câmera",
   "watchTab": "Assistir",
   "cameraPlaceholder": "Use este celular como câmera.",
-  "watchPlaceholder": "Assista às suas câmeras por este celular."
+  "watchNotPaired": "Leia o QR code que o servidor Recam mostra para tornar este celular o dono.",
+  "scanQrButton": "Ler QR code",
+  "scanQrTitle": "Ler QR code",
+  "scannerUnavailable": "Não deu para abrir a câmera. Permita o acesso à câmera e tente de novo.",
+  "ownerDeviceName": "Celular do dono",
+  "watchPairedTitle": "Pareado com {serverName}",
+  "watchPairedRole": "Papel: {role}",
+  "roleOwner": "dono",
+  "roleViewer": "visualizador",
+  "roleCamera": "câmera",
+  "pairingErrorInvalidQr": "Este não é um QR code de pareamento do Recam.",
+  "pairingErrorUnreachable": "Não deu para falar com o servidor. Confira se o celular está na mesma rede.",
+  "pairingErrorTokenRejected": "Este QR code expirou ou já foi usado. Gere um novo.",
+  "pairingErrorWrongRole": "Este QR code é de outro tipo de aparelho.",
+  "pairingErrorUnexpected": "O pareamento falhou. Tente de novo."
 }
