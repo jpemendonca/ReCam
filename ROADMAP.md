@@ -485,6 +485,18 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > Validação (2026-09-25): só código escrito, gate verde (96 testes no app). A dependência
   > `screen_brightness` saiu, porque não é mais usada.
 
+- [ ] **1.12.3 Pareamento que não vale mais volta para a tela de pareamento**
+  - Origem: teste no A10 em 2026-09-25. Depois de zerar o servidor, o A10 ficou em "Conectando ao
+    servidor…" para sempre, mesmo fechando e abrindo o app. O servidor novo tem outro certificado;
+    o pinning recusa a conexão antes de qualquer requisição, e o app trata isso como "servidor fora
+    do ar", não como "pareamento inválido".
+  - Escopo: distinguir "certificado não bate com o fingerprint salvo" de "servidor inalcançável".
+    No primeiro caso, e também quando o hub ou a API respondem 401, a aba volta para a tela de
+    pareamento com uma mensagem clara ("Este servidor mudou. Pareie de novo."). O modo câmera sai
+    sozinho quando a credencial é recusada.
+  - Aceite: testes do `PairingService.verify` (fingerprint diferente → pareamento inválido) e do
+    modo câmera saindo com credencial recusada.
+
 - [ ] **1.13 Lanterna**
   - Origem: caminho principal, passo 7.
   - Escopo: hub: `SetTorch` e `ReportTorch` conforme `SPECS.md` 5.6. App câmera: aplica com
