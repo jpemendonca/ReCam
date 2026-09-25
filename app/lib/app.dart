@@ -4,6 +4,7 @@ import 'camera/camera_mode_controller.dart';
 import 'camera/camera_pairing_controller.dart';
 import 'core/network/api_client.dart';
 import 'core/pairing/pairing_link.dart';
+import 'core/scanner/qr_scanner_screen.dart';
 import 'home_shell.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'viewer/camera_list_controller.dart';
@@ -18,6 +19,7 @@ class RecamApp extends StatelessWidget {
     required this.cameraList,
     required this.links,
     required this.ready,
+    this.readCode = readPairingCode,
     super.key,
   });
 
@@ -28,6 +30,7 @@ class RecamApp extends StatelessWidget {
   final CameraListFactory cameraList;
   final LinkSource links;
   final Future<void> ready;
+  final PairingCodeReader readCode;
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +51,7 @@ class RecamApp extends StatelessWidget {
         cameraMode: cameraMode,
         cameraList: cameraList,
         links: links,
+        readCode: readCode,
         ready: ready,
       ),
     );

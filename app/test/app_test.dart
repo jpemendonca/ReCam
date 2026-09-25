@@ -21,6 +21,7 @@ void main() {
   late CameraPairingController cameraPairing;
   late ViewerPairingController viewerPairing;
   late FakeLinkSource links;
+  late List<String?> codesToRead;
 
   setUp(() {
     api = FakeApiClient();
@@ -33,6 +34,7 @@ void main() {
     cameraPairing = CameraPairingController(pairing: pairing);
     viewerPairing = ViewerPairingController(pairing: pairing);
     links = FakeLinkSource();
+    codesToRead = [];
   });
 
   tearDown(() {
@@ -62,6 +64,7 @@ void main() {
           viewerFactory: (_) => FakeViewer(),
         ),
         links: links,
+        readCode: (_) async => codesToRead.removeAt(0),
         ready: Future.value(),
       ),
     );
@@ -124,11 +127,11 @@ void main() {
   });
 
   group('RecamApp', () {
-    testWidgets('onStart_showsCameraTabWithNameFieldAndScanButton', (
+    testWidgets('onStart_withOnlyViewerPaired_showsCameraTabWithScanButton', (
       tester,
     ) async {
       // arrange
-      // (empty store)
+      await store.write(PairingSlot.viewer, pairedSession());
 
       // act
       await openApp(tester);
@@ -151,7 +154,7 @@ void main() {
       await openApp(tester);
 
       // assert
-      expect(find.text('Role: camera'), findsOneWidget);
+      expect(find.text('Paired with ReCam'), findsOneWidget);
       expect(find.text('Start camera mode'), findsOneWidget);
     });
 
@@ -159,6 +162,7 @@ void main() {
       tester,
     ) async {
       // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
       await openApp(tester);
       await tester.enterText(find.byType(TextField), '   ');
 
@@ -174,6 +178,10 @@ void main() {
       tester,
     ) async {
       // arrange
+      await store.write(
+        PairingSlot.camera,
+        pairedSession(role: DeviceRole.camera),
+      );
       await openApp(tester);
 
       // act
@@ -197,7 +205,7 @@ void main() {
 
       // assert
       expect(find.text('Paired with ReCam'), findsOneWidget);
-      expect(find.textContaining('Role: owner'), findsOneWidget);
+      expect(find.textContaining('owner'), findsNothing);
       expect(find.text('Add camera'), findsOneWidget);
     });
 
@@ -220,7 +228,7 @@ void main() {
 
       // assert
       expect(store.sessions, isEmpty);
-      expect(find.text('Scan QR code'), findsOneWidget);
+      expect(find.text('This phone will be:'), findsOneWidget);
     });
 
     testWidgets('resetApp_whenCancelled_keepsThePairings', (tester) async {
@@ -238,6 +246,89 @@ void main() {
 
       // assert
       expect(store.sessions, isNotEmpty);
+    });
+  });
+
+  group('RecamApp first run', () {
+    testWidgets('withNothingPaired_asksWhatThePhoneIsFor', (tester) async {
+      // arrange
+      // (empty store)
+
+      // act
+      await openApp(tester);
+
+      // assert
+      expect(find.text('This phone will be:'), findsOneWidget);
+      expect(find.text('A camera'), findsOneWidget);
+      expect(find.text('For watching'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsNothing);
+    });
+
+    testWidgets('forWatching_readsCodeAndShowsTheCameraList', (tester) async {
+      // arrange
+      api
+        ..healthyHosts = {'192.168.0.10'}
+        ..pairResult = ApiSuccess(pairResult());
+      codesToRead.add(pairingQr(role: 'owner'));
+      await openApp(tester);
+
+      // act
+      await tester.tap(find.text('For watching'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(codesToRead, isEmpty);
+      expect(api.pairCalls.single.name, 'Phone that watches');
+      expect(find.text('This phone will be:'), findsNothing);
+      expect(find.text('Paired with ReCam'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+    });
+
+    testWidgets('asCamera_readsCodeAndOpensCameraMode', (tester) async {
+      // arrange
+      api
+        ..healthyHosts = {'192.168.0.10'}
+        ..pairResult = ApiSuccess(pairResult(role: DeviceRole.camera));
+      codesToRead.add(pairingQr(role: 'camera'));
+      await openApp(tester);
+      await tester.enterText(find.byType(TextField), 'Garage');
+
+      // act
+      await tester.tap(find.text('A camera'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(api.pairCalls.single.name, 'Garage');
+      expect(find.byType(CameraModeScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('whenReaderIsClosed_staysOnFirstRun', (tester) async {
+      // arrange
+      codesToRead.add(null);
+      await openApp(tester);
+
+      // act
+      await tester.tap(find.text('For watching'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(api.pairCalls, isEmpty);
+      expect(find.text('This phone will be:'), findsOneWidget);
+    });
+
+    testWidgets('whenCodeIsNotReCam_showsTheErrorOnFirstRun', (tester) async {
+      // arrange
+      codesToRead.add('hello');
+      await openApp(tester);
+
+      // act
+      await tester.tap(find.text('For watching'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(find.text('This phone will be:'), findsOneWidget);
+      expect(find.text('This is not a ReCam pairing QR code.'), findsOneWidget);
     });
   });
 }

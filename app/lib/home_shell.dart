@@ -9,6 +9,7 @@ import 'camera/camera_tab.dart';
 import 'core/network/api_client.dart';
 import 'core/pairing/pairing_link.dart';
 import 'core/scanner/qr_scanner_screen.dart';
+import 'first_run_screen.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'pairing_router.dart';
 import 'viewer/camera_list_controller.dart';
@@ -23,6 +24,7 @@ class HomeShell extends StatefulWidget {
     required this.cameraMode,
     required this.cameraList,
     required this.links,
+    required this.readCode,
     required this.ready,
     super.key,
   });
@@ -33,6 +35,7 @@ class HomeShell extends StatefulWidget {
   final CameraModeFactory cameraMode;
   final CameraListFactory cameraList;
   final LinkSource links;
+  final PairingCodeReader readCode;
 
   /// Completes when both tabs have loaded their saved pairing.
   final Future<void> ready;
@@ -78,9 +81,7 @@ class _HomeShellState extends State<HomeShell> {
     required PairingLinkTarget from,
     String? cameraName,
   }) async {
-    final code = await Navigator.of(
-      context,
-    ).push<String>(MaterialPageRoute(builder: (_) => const QrScannerScreen()));
+    final code = await widget.readCode(context);
     if (code == null) return;
     await _route(code, from: from, cameraName: cameraName);
   }
@@ -104,7 +105,7 @@ class _HomeShellState extends State<HomeShell> {
       target,
       code,
       cameraName: cameraName ?? l10n.defaultCameraName,
-      viewerName: l10n.ownerDeviceName,
+      viewerName: l10n.viewerDeviceName,
     );
   }
 
@@ -132,62 +133,97 @@ class _HomeShellState extends State<HomeShell> {
     if (mounted) setState(() => _selectedIndex = _cameraTab);
   }
 
+  bool get _nothingPaired =>
+      widget.cameraPairing.state is CameraNotPaired &&
+      widget.viewerPairing.state is ViewerNotPaired;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: Listenable.merge([widget.cameraPairing, widget.viewerPairing]),
+    builder: (context, _) => _buildShell(context),
+  );
+
+  Widget _buildShell(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final firstRun = _nothingPaired;
+    final cameraState = widget.cameraPairing.state;
+    final viewerState = widget.viewerPairing.state;
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.appTitle),
         actions: [
-          PopupMenuButton<_MenuAction>(
-            onSelected: (action) => switch (action) {
-              _MenuAction.reset => unawaited(_confirmReset()),
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: _MenuAction.reset,
-                child: Text(l10n.resetAppButton),
-              ),
-            ],
-          ),
+          if (!firstRun)
+            PopupMenuButton<_MenuAction>(
+              onSelected: (action) => switch (action) {
+                _MenuAction.reset => unawaited(_confirmReset()),
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: _MenuAction.reset,
+                  child: Text(l10n.resetAppButton),
+                ),
+              ],
+            ),
         ],
       ),
+      // The tabs stay built under the first-run screen, so the Camera tab sees its pairing
+      // finish and opens camera mode.
       body: SafeArea(
-        child: IndexedStack(
-          index: _selectedIndex,
+        child: Stack(
           children: [
-            CameraTab(
-              pairing: widget.cameraPairing,
-              cameraMode: widget.cameraMode,
-              onScan: (name) =>
-                  _scan(from: PairingLinkTarget.camera, cameraName: name),
+            Offstage(
+              offstage: firstRun,
+              child: IndexedStack(
+                index: _selectedIndex,
+                children: [
+                  CameraTab(
+                    pairing: widget.cameraPairing,
+                    cameraMode: widget.cameraMode,
+                    onScan: (name) =>
+                        _scan(from: PairingLinkTarget.camera, cameraName: name),
+                  ),
+                  WatchTab(
+                    pairing: widget.viewerPairing,
+                    api: widget.api,
+                    cameraList: widget.cameraList,
+                    onScan: () => _scan(from: PairingLinkTarget.viewer),
+                  ),
+                ],
+              ),
             ),
-            WatchTab(
-              pairing: widget.viewerPairing,
-              api: widget.api,
-              cameraList: widget.cameraList,
-              onScan: () => _scan(from: PairingLinkTarget.viewer),
-            ),
+            if (firstRun)
+              FirstRunScreen(
+                onCamera: (name) =>
+                    _scan(from: PairingLinkTarget.camera, cameraName: name),
+                onWatch: () => _scan(from: PairingLinkTarget.viewer),
+                failure: switch ((cameraState, viewerState)) {
+                  (CameraNotPaired(:final lastFailure?), _) => lastFailure,
+                  (_, ViewerNotPaired(:final lastFailure?)) => lastFailure,
+                  _ => null,
+                },
+              ),
           ],
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) =>
-            setState(() => _selectedIndex = index),
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.videocam_outlined),
-            selectedIcon: const Icon(Icons.videocam),
-            label: l10n.cameraTab,
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.live_tv_outlined),
-            selectedIcon: const Icon(Icons.live_tv),
-            label: l10n.watchTab,
-          ),
-        ],
-      ),
+      bottomNavigationBar: firstRun
+          ? null
+          : NavigationBar(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) =>
+                  setState(() => _selectedIndex = index),
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.videocam_outlined),
+                  selectedIcon: const Icon(Icons.videocam),
+                  label: l10n.cameraTab,
+                ),
+                NavigationDestination(
+                  icon: const Icon(Icons.live_tv_outlined),
+                  selectedIcon: const Icon(Icons.live_tv),
+                  label: l10n.watchTab,
+                ),
+              ],
+            ),
     );
   }
 }

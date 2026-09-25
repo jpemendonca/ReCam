@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/network/api_client.dart';
-import '../core/pairing/pairing_labels.dart';
 import '../core/storage/credential_store.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'add_device_screen.dart';
@@ -85,8 +84,7 @@ class _CameraListViewState extends State<CameraListView> {
           ListTile(
             title: Text(l10n.watchPairedTitle(widget.session.serverName)),
             subtitle: Text(
-              '${l10n.watchPairedRole(deviceRoleText(l10n, widget.session.role))}'
-              ' · ${_controller.connected ? l10n.serverOnline : l10n.serverConnecting}',
+              _controller.connected ? l10n.serverOnline : l10n.serverConnecting,
             ),
             trailing: Row(
               mainAxisSize: MainAxisSize.min,

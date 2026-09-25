@@ -630,13 +630,26 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > celular da aba Assistir, não só para o dono. Extras: testes de domínio do visualizador emitindo
   > e da câmera recusada, `forViewer_sendsViewerRole` e `start_forViewer_asksForAViewerQr`.
 
-- [ ] **1.12.10 Primeira abertura pergunta o uso do celular**
+- [x] **1.12.10 Primeira abertura pergunta o uso do celular**
   - Origem: conversa com o autor em 2026-09-25.
   - Escopo: com as duas abas sem pareamento, o app abre numa tela "Este celular vai ser: [Câmera]
     [Para assistir]". Cada opção explica em uma frase onde achar o QR e abre o leitor. Depois do
     pareamento, o app segue com as duas abas como hoje. O conceito de "dono" não aparece em
     nenhuma tela.
   - Aceite: widget test da primeira abertura levando ao leitor e, pareado, sumindo.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (90 no
+  > servidor, 145 no app). Com as duas abas sem pareamento, o `HomeShell` mostra a
+  > `FirstRunScreen` sem a barra de abas: "Câmera" (com o campo de nome, para as câmeras não se
+  > chamarem todas "Câmera") e "Para assistir", cada uma com a frase de onde achar o QR. Os dois
+  > botões abrem o mesmo leitor do 1.12.8, e o QR lido continua decidindo a aba. As abas ficam
+  > montadas por baixo (fora do palco), para a aba Câmera ver o pareamento terminar e abrir o modo
+  > câmera. Erro de pareamento aparece na própria primeira abertura. O leitor virou dependência
+  > injetada (`PairingCodeReader`, padrão `readPairingCode`), o que deixou o widget test percorrer
+  > o fluxo. "Dono" sumiu das telas: saíram "Papel: ..." e as chaves de papel; o nome do aparelho
+  > que assiste passou de "Celular do dono" para "Celular que assiste"; os textos de "não pareado"
+  > falam em "Adicionar" e no QR do servidor. Depois de "Reiniciar o app", a primeira abertura
+  > volta. Testes: primeira abertura (pergunta, "Para assistir" lê e mostra a lista, "Câmera" lê e
+  > abre o modo câmera, leitor fechado, código inválido).
 
 - [ ] **1.12.11 Painel de acompanhamento no servidor (só leitura)**
   - Origem: conversa com o autor em 2026-09-25: o PC serve para instalar e acompanhar; o resto é

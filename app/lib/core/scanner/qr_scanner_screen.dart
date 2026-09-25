@@ -4,6 +4,13 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../l10n/generated/app_localizations.dart';
 import 'pairing_code_dialog.dart';
 
+/// Asks the person for a pairing code; null when they give up.
+typedef PairingCodeReader = Future<String?> Function(BuildContext context);
+
+/// Opens the full-screen QR reader.
+Future<String?> readPairingCode(BuildContext context) => Navigator.of(context)
+    .push<String>(MaterialPageRoute(builder: (_) => const QrScannerScreen()));
+
 /// Full-screen QR reader. Pops with the raw text of the first QR code it sees,
 /// or with a code pasted as text for phones that cannot scan.
 class QrScannerScreen extends StatefulWidget {

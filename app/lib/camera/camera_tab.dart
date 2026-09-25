@@ -177,8 +177,6 @@ class _Paired extends StatelessWidget {
             l10n.watchPairedTitle(session.serverName),
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          const SizedBox(height: 8),
-          Text(l10n.watchPairedRole(deviceRoleText(l10n, session.role))),
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: onStart,
