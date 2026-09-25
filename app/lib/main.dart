@@ -9,6 +9,8 @@ import 'camera/camera_pairing_controller.dart';
 import 'core/device/battery_reader.dart';
 import 'core/device/keep_alive.dart';
 import 'core/device/screen_controller.dart';
+import 'core/media/signaling_client.dart';
+import 'core/media/webrtc_publisher.dart';
 import 'core/network/hub_client.dart';
 import 'core/network/hub_session.dart';
 import 'core/network/http_api_client.dart';
@@ -44,6 +46,10 @@ Future<void> main() async {
         battery: PluginBatteryReader(),
         screen: PluginScreenController(),
         keepAlive: ForegroundServiceKeepAlive(),
+        publisher: WhipPublisher(
+          session: session,
+          signaling: SignalingClient(http.Client()),
+        ),
       ),
       cameraList: (session) => CameraListController(
         api: api,

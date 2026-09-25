@@ -10,6 +10,7 @@ void main() {
   late FakeBatteryReader battery;
   late FakeScreenController screen;
   late FakeKeepAlive keepAlive;
+  late FakePublisher publisher;
   late DateTime now;
   late CameraModeController controller;
 
@@ -18,12 +19,14 @@ void main() {
     battery = FakeBatteryReader();
     screen = FakeScreenController();
     keepAlive = FakeKeepAlive();
+    publisher = FakePublisher();
     now = DateTime(2026, 9, 25, 12);
     controller = CameraModeController(
       hub: HubSession(client: client, delay: (_) async {}),
       battery: battery,
       screen: screen,
       keepAlive: keepAlive,
+      publisher: publisher,
       now: () => now,
     );
   });
@@ -42,6 +45,92 @@ void main() {
     for (final call in client.invocations)
       if (call.method == 'ReportTelemetry') call.args,
   ];
+
+  List<List<Object>> publishingReports() => [
+    for (final call in client.invocations)
+      if (call.method == 'ReportPublishing') call.args,
+  ];
+
+  group('CameraModeController publishing', () {
+    test('onStartPublishing_startsAndReportsTrue', () async {
+      // arrange
+      await start();
+
+      // act
+      client.receive('StartPublishing', []);
+      await settle();
+
+      // assert
+      expect(publisher.starts, 1);
+      expect(controller.publishing, isTrue);
+      expect(publishingReports(), [
+        [true],
+      ]);
+    });
+
+    test('onRepeatedStartPublishing_startsOnceAndReportsAgain', () async {
+      // arrange
+      await start();
+      client.receive('StartPublishing', []);
+      await settle();
+
+      // act
+      client.receive('StartPublishing', []);
+      await settle();
+
+      // assert
+      expect(publisher.starts, 1);
+      expect(publishingReports(), [
+        [true],
+        [true],
+      ]);
+    });
+
+    test('onStopPublishing_stopsAndReportsFalse', () async {
+      // arrange
+      await start();
+      client.receive('StartPublishing', []);
+      await settle();
+
+      // act
+      client.receive('StopPublishing', []);
+      await settle();
+
+      // assert
+      expect(publisher.stops, 1);
+      expect(controller.publishing, isFalse);
+      expect(publishingReports().last, [false]);
+    });
+
+    test('whenCameraFailsToStart_reportsFalse', () async {
+      // arrange
+      publisher.startResult = false;
+      await start();
+
+      // act
+      client.receive('StartPublishing', []);
+      await settle();
+
+      // assert
+      expect(controller.publishing, isFalse);
+      expect(publishingReports(), [
+        [false],
+      ]);
+    });
+
+    test('stop_whilePublishing_releasesTheCamera', () async {
+      // arrange
+      await start();
+      client.receive('StartPublishing', []);
+      await settle();
+
+      // act
+      await controller.stop();
+
+      // assert
+      expect(publisher.stops, 1);
+    });
+  });
 
   group('CameraModeController', () {
     test('start_keepsProcessAliveDimsScreenAndReportsOnConnect', () async {

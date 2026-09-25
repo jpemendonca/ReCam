@@ -17,6 +17,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_secure_storage: ^11.2.0
+  flutter_webrtc: ^1.6.2+hotfix.3
   http: ^1.6.0
   intl: ^0.20.3
   mobile_scanner: ^7.4.2

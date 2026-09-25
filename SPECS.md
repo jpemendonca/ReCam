@@ -438,3 +438,8 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > `recam-data`. No Linux, o Docker cria a pasta do bind mount como root, e o servidor roda como
 > usuário não-root, sem permissão de escrita. O volume nomeado herda a permissão da imagem.
 > Quando a gravação entrar, a escolha de pasta no host volta a ser discutida.
+
+> Revisão (2026-09-25): H.264 é o codec preferido, não o único. O app ordena H.264 primeiro e
+> deixa os outros como reserva; aparelho sem encoder H.264 (o emulador, por exemplo) publica em
+> VP8, que o MediaMTX aceita. O bullet 2.1 (recusar aparelho sem H.264) deve ser revisto quando a
+> gravação entrar, porque é ela que exige H.264.

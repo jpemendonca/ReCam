@@ -67,6 +67,21 @@ class FakeKeepAlive implements KeepAlive {
   Future<void> stop() async => running = false;
 }
 
+class FakePublisher implements WebRtcPublisher {
+  bool startResult = true;
+  int starts = 0;
+  int stops = 0;
+
+  @override
+  Future<bool> start() async {
+    starts++;
+    return startResult;
+  }
+
+  @override
+  Future<void> stop() async => stops++;
+}
+
 /// Lets queued async work (microtasks and zero-length delays) finish.
 Future<void> settle() async {
   for (var i = 0; i < 5; i++) {

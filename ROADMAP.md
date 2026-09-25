@@ -425,7 +425,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > vezes quando o lease coincide com a conexão da câmera (a câmera deve ignorar o repetido).
   > O compose de Windows passou a definir `RECAM_MEDIAMTX_URL=http://mediamtx:8889`.
 
-- [ ] **1.11 [opus] App: câmera transmite por WHIP**
+- [x] **1.11 [opus] App: câmera transmite por WHIP**
   - Origem: caminho principal, passo 6.
   - Escopo: dependência `flutter_webrtc`. Interface `WebRtcPublisher` em `core/media/` e a
     implementação com WHIP (POST do offer, PATCH de ICE, DELETE ao parar). Captura conforme
@@ -433,6 +433,14 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     abre, `StopPublishing` fecha e libera a câmera. `ReportPublishing` nos dois casos.
   - Aceite: teste `CameraModeController` (com `WebRtcPublisher` fake, `StartPublishing` inicia e
     reporta, `StopPublishing` para e reporta).
+  > Validação (2026-09-25): caminho percorrido no emulador como câmera, com um cliente SignalR
+  > descartável fazendo o papel de visualizador (lease pelo hub). O servidor mandou
+  > `StartPublishing`, o app publicou por WHIP através do proxy, e o MediaMTX registrou "stream is
+  > available and online, 1 track (VP8)". O visualizador recebeu `publishing: true`. Ao soltar o
+  > lease, a sessão fechou 28 s depois (carência de 30 s) e o estado voltou a `publishing: false`.
+  > Achado: sem `OfferToReceiveAudio/Video: false`, o plugin no Android punha áudio e um segundo
+  > vídeo na oferta, e o MediaMTX recusava. O emulador não tem encoder H.264 e publicou em VP8
+  > (revisão no `SPECS.md` 12). Gate verde, 88 testes no app. H.264 no A10 fica para o 1.14.
 
 - [ ] **1.12 [opus] App: vídeo ao vivo na aba Assistir**
   - Origem: caminho principal, passo 6.
