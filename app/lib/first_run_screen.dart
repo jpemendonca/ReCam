@@ -5,8 +5,8 @@ import 'core/pairing/pairing_labels.dart';
 import 'core/pairing/pairing_service.dart';
 import 'l10n/generated/app_localizations.dart';
 
-/// What a phone with nothing paired shows: the person says what this phone is for, and the QR
-/// reader opens. The code read still decides which tab pairs.
+/// What a phone with nothing paired shows: the person says what this phone is for (Watch first,
+/// the usual first step, then Film), and the QR reader opens. The code read still decides which tab pairs.
 class FirstRunScreen extends StatefulWidget {
   const FirstRunScreen({
     required this.onCamera,
@@ -75,6 +75,24 @@ class _FirstRunScreenState extends State<FirstRunScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    FilledButton.icon(
+                      onPressed: widget.onWatch,
+                      icon: const Icon(Icons.live_tv),
+                      label: Text(l10n.firstRunWatch),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(l10n.firstRunWatchHint, textAlign: TextAlign.center),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                     TextField(
                       controller: _name,
                       decoration: InputDecoration(
@@ -97,24 +115,6 @@ class _FirstRunScreenState extends State<FirstRunScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(l10n.firstRunCameraHint, textAlign: TextAlign.center),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    FilledButton.icon(
-                      onPressed: widget.onWatch,
-                      icon: const Icon(Icons.live_tv),
-                      label: Text(l10n.firstRunWatch),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(l10n.firstRunWatchHint, textAlign: TextAlign.center),
                   ],
                 ),
               ),

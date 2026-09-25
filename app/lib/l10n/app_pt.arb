@@ -64,7 +64,7 @@
   "viewerDeviceName": "Monitor",
   "firstRunTitle": "Este celular vai ser usado para:",
   "firstRunCamera": "Filmar",
-  "firstRunCameraHint": "Depois leia o QR code do Adicionar câmera, no Monitor.",
+  "firstRunCameraHint": "Depois leia o QR code do Adicionar câmera, no celular que for assistir.",
   "firstRunWatch": "Assistir",
   "firstRunWatchHint": "Depois leia o QR code que o servidor ReCam mostra (no log ou em https://<ip-do-servidor>:8443/setup), ou o do Adicionar em outro Monitor. Este celular vira um Monitor.",
   "addCameraTitle": "Adicionar câmera",

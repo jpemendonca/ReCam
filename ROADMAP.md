@@ -768,12 +768,17 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > Monitor, cartão de câmera transmitindo, ausência de `<script>` e `onclick`, e `SetupTextsTests`
   > com cinco cabeçalhos.
 
-- [ ] **1.12.17 Primeira abertura: Assistir em cima e texto do Filmar mais claro**
+- [x] **1.12.17 Primeira abertura: Assistir em cima e texto do Filmar mais claro**
   - Origem: teste do autor em 2026-09-25.
   - Escopo: na primeira abertura, a seção "Assistir" vem em cima e a seção "Filmar" embaixo. A dica
     do Filmar passa a ser "Depois leia o QR code do Adicionar câmera, no celular que for assistir."
     (en: "Then scan the QR code from Add camera on the phone that will watch.").
   - Aceite: widget test da primeira abertura conferindo a ordem das duas seções e o texto novo.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (114 no
+  > servidor, 161 no app). Na `FirstRunScreen`, o cartão "Assistir" veio para cima e o "Filmar" (com
+  > o campo de nome) para baixo. A dica do Filmar passou a ser "Depois leia o QR code do Adicionar
+  > câmera, no celular que for assistir." (en: "Then scan the QR code from Add camera on the phone
+  > that will watch."). Testes: ordem das seções pela posição na tela e o texto novo em pt e en.
 
 - [ ] **1.12.18 Miniatura opcional da própria imagem no modo câmera**
   - Origem: pedido do autor no teste de 2026-09-25.

@@ -99,7 +99,7 @@
   "viewerDeviceName": "Monitor",
   "firstRunTitle": "This phone will be used to:",
   "firstRunCamera": "Film",
-  "firstRunCameraHint": "Then scan the QR code from Add camera on the Monitor.",
+  "firstRunCameraHint": "Then scan the QR code from Add camera on the phone that will watch.",
   "firstRunWatch": "Watch",
   "firstRunWatchHint": "Then scan the QR code your ReCam server shows (in its log or at https://<server-ip>:8443/setup), or the one from Add on another Monitor. This phone becomes a Monitor.",
   "addCameraTitle": "Add camera",

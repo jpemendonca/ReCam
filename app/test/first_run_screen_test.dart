@@ -73,5 +73,40 @@ void main() {
       // assert
       expect(name, 'Varanda');
     });
+
+    testWidgets('showsAssistirAboveFilmarWithTheNewHint', (tester) async {
+      // arrange
+      // (Portuguese locale)
+
+      // act
+      await open(tester, locale: const Locale('pt'));
+
+      // assert
+      final watch = tester.getTopLeft(find.text('Assistir'));
+      final film = tester.getTopLeft(find.text('Filmar'));
+      expect(watch.dy, lessThan(film.dy));
+      expect(
+        find.text(
+          'Depois leia o QR code do Adicionar câmera, no celular que for assistir.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('inEnglish_showsTheNewFilmHint', (tester) async {
+      // arrange
+      // (English locale)
+
+      // act
+      await open(tester, locale: const Locale('en'));
+
+      // assert
+      expect(
+        find.text(
+          'Then scan the QR code from Add camera on the phone that will watch.',
+        ),
+        findsOneWidget,
+      );
+    });
   });
 }
