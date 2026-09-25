@@ -116,6 +116,7 @@ AGENTS.md            este arquivo (canônico)
 CLAUDE.md, GEMINI.md ponteiros para este arquivo
 SPECS.md             produto, arquitetura, contratos, decisões
 CODESTYLE.md         regras verificáveis num diff
+docs/adr/            um ADR por item do log de decisões do SPECS.md 12
 ROADMAP.md           fila de execução
 README.md            documento para humanos (inglês)
 LICENSE              AGPL-3.0

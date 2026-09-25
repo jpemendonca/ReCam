@@ -1177,11 +1177,19 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   > arquivos resolve o endpoint para `http://aspire-dashboard:18889`. Gate verde (190 testes no
   > servidor, 223 no app).
 
-- [ ] **5.2.2 ADRs**
+- [x] **5.2.2 ADRs**
   - Origem: vitrine de portfólio.
   - Escopo: `docs/adr/`, um arquivo por decisão do log do `SPECS.md` 12 (contexto, decisão,
     consequências), em português. O `SPECS.md` 12 passa a apontar para os ADRs.
   - Aceite: todo item do log tem ADR correspondente.
+  > Validação (2026-09-25): só documentação. `docs/adr/` tem 36 ADRs, um por item do log: as 16
+  > decisões iniciais (0001 a 0016) e as 20 revisões datadas, na ordem em que aparecem (0017 a 0036,
+  > a última sendo a do OpenTelemetry do 5.2.1). Cada um tem data, origem, contexto, decisão e
+  > consequências, e os que foram mudados depois apontam para o ADR que os mudou (a transmissão sob
+  > demanda aponta para "Gravar sempre", por exemplo). `docs/adr/README.md` é o índice. O `SPECS.md` 12
+  > abre dizendo onde estão e como a numeração segue o log, e a regra de revisão passou a pedir o
+  > ADR seguinte. O mapa do `AGENTS.md` ganhou a pasta. Conferido: 16 itens `- **` mais 20
+  > `> Revisão` no log, 36 arquivos numerados. Gate verde.
 
 - [ ] **5.2.3 [aparelho] Vitrine do README**
   - Origem: vitrine de portfólio.

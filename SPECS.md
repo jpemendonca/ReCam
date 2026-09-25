@@ -446,6 +446,11 @@ O agente nunca escreve valor real de segredo em arquivo nenhum.
 
 ## 12. Log de decisões
 
+Cada item deste log tem um ADR em `docs/adr/` (índice em [`docs/adr/README.md`](docs/adr/README.md)),
+na ordem em que aparece aqui: as 16 decisões iniciais são os ADRs 0001 a 0016, e as revisões
+datadas, de cima para baixo, os ADRs 0017 a 0036. O ADR traz contexto, decisão e consequências; o
+log continua sendo o resumo.
+
 Decisões iniciais (2026-09-24):
 
 - **MediaMTX como plano de mídia.** Implementar WebRTC dentro do .NET (SIPSorcery) custaria meses
@@ -479,7 +484,8 @@ Decisões iniciais (2026-09-24):
 - **Gravação e acesso remoto adiados.** Gravação é a parte mais cara do projeto. Acesso remoto
   é responsabilidade do usuário.
 
-Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
+Revisões são adicionadas abaixo, datadas, sem apagar o texto original, e cada uma ganha o ADR
+seguinte em `docs/adr/`:
 `> Revisão (AAAA-MM-DD): o que mudou e por quê.`
 
 > Revisão (2026-09-24): `/data` passou de bind mount em `deploy/data/` para volume nomeado
