@@ -1059,6 +1059,45 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   > Bloqueado (2026-09-25): aguardando aparelho. São 2 h de gravação com o Samsung A10 e o Redmi 6A e
   > o servidor no PC; o agente não tem os celulares.
 
+- [ ] **3.7 Clarear a imagem no Monitor**
+  - Origem: pedido do autor em 2026-09-25 (ver melhor com pouca luz).
+  - Escopo: botão "Clarear" no vídeo ao vivo e no player da linha do tempo. Liga um filtro de
+    brilho e contraste só na tela de quem assiste (`ColorFiltered` com matriz de cor), com dois
+    controles deslizantes e um "Voltar ao normal". Não muda a câmera, o envio nem a gravação; cada
+    Monitor tem o seu. O ajuste fica guardado por câmera no próprio Monitor. Textos nos ARB.
+    Sem servidor e sem dependência nova.
+  - Aceite: teste do controller (ligar, ajustar, voltar ao normal, lembrar por câmera) e widget
+    test do filtro aplicado no vídeo ao vivo.
+
+- [ ] **3.8 Detectar movimento nas gravações**
+  - Origem: pedido do autor em 2026-09-25 (achar os momentos importantes sem assistir horas).
+  - Escopo: só câmeras com "Gravar sempre". Desenho, sem o .NET processar vídeo:
+    - Serviço `motion` novo nos dois composes, com a imagem FFmpeg que os testes já usam
+      (`linuxserver/ffmpeg`, mesma tag exata), montando `recam-recordings`. Um script em loop
+      pega cada segmento já fechado (nunca o mais novo de cada câmera, a mesma regra da limpeza),
+      roda o FFmpeg a 2 quadros por segundo em 160 px de largura com a nota de mudança de cena
+      (`scene`) e grava ao lado do `.mp4` um arquivo pequeno com a nota de cada quadro.
+    - O servidor lê essas notas e monta os eventos (início, fim, pico) com a sensibilidade da
+      câmera (baixa, média, alta; padrão média), emendando mudanças a menos de 10 s. Mudar a
+      sensibilidade vale também para o que já foi gravado, sem reprocessar. Os segundos logo
+      depois de ligar ou desligar a lanterna são ignorados.
+    - `GET /api/cameras/{id}/motion?day=` (Monitores) e a sensibilidade no `Device`, trocada por
+      um Monitor. A limpeza da cota apaga as notas junto com o segmento.
+    - Atraso esperado: o evento aparece quando o segmento de 60 s fecha, não na hora.
+  - Fora: pessoas e carros com IA, zonas e notificação.
+  - Aceite: teste do domínio (notas para eventos em cada sensibilidade, lanterna ignorada),
+    teste do endpoint e teste com Testcontainers rodando o script do `motion` num segmento gravado
+    com movimento e noutro parado. Revisão do `SPECS.md` (seções 2.4 e 7) e ADR.
+
+- [ ] **3.9 Movimento na linha do tempo**
+  - Origem: continuação do 3.8.
+  - Escopo: na tela de gravações, os eventos de movimento aparecem destacados na barra das 24 h,
+    com botões "Movimento anterior" e "Próximo movimento" que tocam a partir de alguns segundos
+    antes do evento. Um filtro "Só movimento" e a escolha da sensibilidade da câmera na mesma
+    tela. Textos nos ARB.
+  - Aceite: testes do controller (navegar entre eventos, filtro, trocar sensibilidade) e widget
+    test das marcas na barra.
+
 ## Fase 4: gestão de aparelhos
 
 - [x] **4.1 Revogar aparelhos**
@@ -1224,3 +1263,13 @@ Itens que dependem de decisão futura. O loop para antes daqui.
 - iOS.
 - Fallback por TCP ou HLS.
 - Publicação nas lojas de apps de servidor caseiro (Umbrel, CasaOS, Unraid, Synology).
+- Detecção de pessoas e carros com IA, marcada na linha do tempo (conversa de 2026-09-25).
+  Opcional na instalação, num compose à parte como o de observabilidade, porque pesa no PC:
+  quem não quiser não sobe. Rodaria no PC (nunca no celular), num container próprio com um modelo
+  pequeno (via ONNX Runtime, possivelmente em .NET), só nos momentos que o 3.8 já marcou como
+  movimento. Precisa revisar a regra "o .NET não processa vídeo" para valer só no servidor
+  principal. Zonas (ignorar rua e calçada) entram junto ou logo depois.
+- Modo noturno (conversa de 2026-09-25): botão no Monitor que manda a câmera aceitar de 5 a 15
+  quadros por segundo em vez de 15 fixos, para expor por mais tempo no escuro. Vale para todos os
+  Monitores e para a gravação, como a lanterna. Antes do botão, testar no A10 e no 6A se o
+  `flutter_webrtc` repassa a faixa de quadros para a câmera; se não repassar, exige captura nativa.
