@@ -1092,13 +1092,26 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   - Escopo: `POST /api/pairing-tokens` aceita `role: "viewer"`. Botão "Adicionar visualizador".
   - Aceite: `CreatePairingToken_ForViewer_PairsAsViewer`.
 
-- [ ] **4.3 Resetar o dono**
+- [x] **4.3 Resetar o dono**
   - Escopo: `docker compose exec server ./Recam.Server reset-owner` revoga o dono atual e
     volta a gerar o token do dono.
   > Revisão (2026-09-25): o comando revoga todos os Monitores (dono e visualizadores), não só o dono.
   > É a saída quando o único Monitor quebrou ou sumiu e não dá para usar "Reiniciar o app" nele. As
   > câmeras continuam pareadas, e a página do servidor volta ao QR do primeiro Monitor.
   - Aceite: `ResetOwner_WithOwner_RevokesAndCreatesSetupToken`.
+  > Validação (2026-09-25): código escrito e comando percorrido fora do Docker; nada no celular. Gate
+  > verde (179 no servidor, 222 no app). Segue a revisão do bullet: revoga todos os Monitores ativos
+  > (dono e visualizadores) e mantém as câmeras. `Program.cs` despacha `reset-owner` antes de montar
+  > o servidor, como o `healthcheck`. O `ResetOwnerCommand` abre o banco por
+  > `PersistenceExtensions.CreateDbContext` (sem DI, para não usar `GetRequiredService` fora do
+  > `Program`), aplica as migrações, revoga cada Monitor pela entidade (`Device.Revoke`) e imprime o
+  > que fazer. Quem gera o QR novo é o servidor em execução: sem Monitor ativo, o `OwnerSetup` emite
+  > o token do dono no log e em `/setup` em até 30 s. Conferido: servidor rodando, um dono pareado, e
+  > `./Recam.Server reset-owner` (o executável que a publicação gera) imprimiu "Removed 1
+  > Monitor(s)", saiu com 0 e a página voltou a mostrar o QR. Limitação: as conexões do hub dos
+  > Monitores revogados vivem no processo do servidor e só caem na próxima reconexão, que recebe 401.
+  > Testes: `ResetOwner_WithOwner_RevokesAndCreatesSetupToken` (dono e visualizador revogados, câmera
+  > mantida, `OwnerSetup` volta a `Pending` e a página mostra o QR) e servidor sem Monitor.
 
 ## Fase 5: distribuição
 

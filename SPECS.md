@@ -603,3 +603,10 @@ Revisões são adicionadas abaixo, datadas, sem apagar o texto original:
 > `Realtime` implementa isso atrás da interface `IDeviceRemovals`, em `Infrastructure/Realtime`,
 > para `Devices` não depender de `Realtime`. A câmera removida tenta reconectar, recebe 401 e o
 > modo câmera fecha com a mensagem de pareamento perdido (1.12.3).
+
+> Revisão (2026-09-25): `docker compose exec server ./Recam.Server reset-owner` revoga todos os
+> Monitores ativos (dono e visualizadores), não só o dono, e deixa as câmeras pareadas (bullet 4.3,
+> revisão do próprio bullet). É a saída quando o único Monitor quebrou ou sumiu. O comando abre o
+> banco, aplica as migrações, revoga e imprime o que fazer; o servidor em execução, sem Monitor
+> ativo, volta a gerar o QR do primeiro Monitor no log e em `/setup` em até 30 s. As conexões do
+> hub desses Monitores, abertas no outro processo, só caem na próxima reconexão.

@@ -16,6 +16,11 @@ if (args is [HealthcheckCommand.Argument])
     return await HealthcheckCommand.RunAsync(CancellationToken.None);
 }
 
+if (args is [ResetOwnerCommand.Argument])
+{
+    return await ResetOwnerCommand.RunAsync(CancellationToken.None);
+}
+
 var builder = WebApplication.CreateBuilder(args);
 var settings = ServerSettings.From(builder.Configuration, builder.Environment.ContentRootPath);
 

@@ -7,10 +7,16 @@ public static class PersistenceExtensions
 {
     public static IServiceCollection AddRecamPersistence(this IServiceCollection services, ServerSettings settings)
     {
-        var databasePath = Path.Combine(settings.DataDirectory, "recam.db");
-        services.AddDbContextFactory<RecamDbContext>(options => options.UseSqlite($"Data Source={databasePath}"));
+        services.AddDbContextFactory<RecamDbContext>(options => options.UseSqlite(ConnectionString(settings)));
         return services;
     }
+
+    /// <summary>A context outside the web host, for command-line tools such as reset-owner.</summary>
+    public static RecamDbContext CreateDbContext(ServerSettings settings) =>
+        new(new DbContextOptionsBuilder<RecamDbContext>().UseSqlite(ConnectionString(settings)).Options);
+
+    private static string ConnectionString(ServerSettings settings) =>
+        $"Data Source={Path.Combine(settings.DataDirectory, "recam.db")}";
 
     public static async Task ApplyMigrationsAsync(this WebApplication app)
     {
