@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../l10n/generated/app_localizations.dart';
+import 'pairing_code_dialog.dart';
 
-/// Full-screen QR reader. Pops with the raw text of the first QR code it sees.
+/// Full-screen QR reader. Pops with the raw text of the first QR code it sees,
+/// or with a code pasted as text for phones that cannot scan.
 class QrScannerScreen extends StatefulWidget {
   const QrScannerScreen({super.key});
 
@@ -34,11 +36,27 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     Navigator.of(context).pop(value);
   }
 
+  Future<void> _pasteCode() async {
+    final code = await showPairingCodeDialog(context);
+    if (code == null || _done || !mounted) return;
+    _done = true;
+    Navigator.of(context).pop(code);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.scanQrTitle)),
+      appBar: AppBar(
+        title: Text(l10n.scanQrTitle),
+        actions: [
+          TextButton.icon(
+            onPressed: _pasteCode,
+            icon: const Icon(Icons.content_paste),
+            label: Text(l10n.pasteCodeButton),
+          ),
+        ],
+      ),
       body: MobileScanner(
         controller: _controller,
         onDetect: _onDetect,

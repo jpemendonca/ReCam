@@ -30,5 +30,12 @@
   "pairingErrorUnreachable": "Não deu para falar com o servidor. Confira se o celular está na mesma rede.",
   "pairingErrorTokenRejected": "Este QR code expirou ou já foi usado. Gere um novo.",
   "pairingErrorWrongRole": "Este QR code é de outro tipo de aparelho.",
-  "pairingErrorUnexpected": "O pareamento falhou. Tente de novo."
+  "pairingErrorUnexpected": "O pareamento falhou. Tente de novo.",
+  "pasteCodeButton": "Colar código",
+  "pasteCodeTitle": "Colar código de pareamento",
+  "pasteCodeHint": "recam://pair?...",
+  "pasteCodeConfirm": "Parear",
+  "cancelButton": "Cancelar",
+  "copyCodeButton": "Copiar código",
+  "codeCopied": "Código de pareamento copiado."
 }

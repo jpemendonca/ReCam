@@ -70,13 +70,14 @@ public sealed partial class OwnerSetup(
         using var qrData = QRCodeGenerator.GenerateQrCode(pending.PairingUri, QRCodeGenerator.ECCLevel.L);
         using var asciiQr = new AsciiQRCode(qrData);
         var readableUrls = string.Join(", ", serverUrls.Select(url => url.GetLeftPart(UriPartial.Authority)));
-        LogOwnerToken(logger, pending.ExpiresAt, readableUrls, Environment.NewLine + asciiQr.GetGraphicSmall());
+        LogOwnerToken(logger, pending.ExpiresAt, readableUrls, Environment.NewLine + asciiQr.GetGraphicSmall() + Environment.NewLine, pending.PairingUri);
         return pending;
     }
 
     // The only log line allowed to carry a token (AGENTS.md): the operator reads it to claim the server.
     [LoggerMessage(Level = LogLevel.Warning, Message =
         "No owner paired yet. In the Recam app, open the Watch tab and scan this QR code, or open " +
-        "https://<server-ip>:8443/setup from your network. Expires at {ExpiresAt}. Server URLs: {ServerUrls}.{QrCode}")]
-    private static partial void LogOwnerToken(ILogger logger, DateTimeOffset expiresAt, string serverUrls, string qrCode);
+        "https://<server-ip>:8443/setup from your network. Expires at {ExpiresAt}. Server URLs: {ServerUrls}.{QrCode}" +
+        "Without a camera, choose Paste code in the app and paste: {PairingUri}")]
+    private static partial void LogOwnerToken(ILogger logger, DateTimeOffset expiresAt, string serverUrls, string qrCode, string pairingUri);
 }

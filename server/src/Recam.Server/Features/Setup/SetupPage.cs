@@ -30,6 +30,8 @@ public static class SetupPage
             <p>Open the Recam app, go to the <strong>Watch</strong> tab and scan this code. This phone becomes the owner.</p>
             <p lang="pt">Abra o app Recam, vá na aba <strong>Assistir</strong> e leia este código. Este celular vira o dono.</p>
             <div class="qr">{svg.GetGraphic(8)}</div>
+            <p>No camera? In the app, choose <strong>Paste code</strong> and paste this. · Sem câmera? No app, escolha <strong>Colar código</strong> e cole isto.</p>
+            <textarea class="code" readonly rows="4" onclick="this.select()">{WebUtility.HtmlEncode(pending.PairingUri)}</textarea>
             <p class="muted">Expires at {expiresAt}. Reload the page for a new code. · Expira às {expiresAt}. Recarregue a página para um novo código.</p>
             """;
     }
@@ -45,6 +47,7 @@ public static class SetupPage
         body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
         .qr svg { width: 100%; height: auto; background: #fff; }
         .muted { color: #666; font-size: .9rem; }
+        .code { width: 100%; font-family: ui-monospace, monospace; font-size: .8rem; }
         </style>
         </head>
         <body>

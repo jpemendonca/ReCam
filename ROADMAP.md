@@ -258,6 +258,29 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > Câmera reusa `PairingService`, e o servidor recusa nome inválido de novo (o app não confia
   > só na validação local).
 
+- [x] **1.6.1 Código de pareamento em texto (colar e copiar)**
+  - Origem: pedido do autor (2026-09-25). O teste passa a usar um celular físico só, como câmera,
+    e o emulador Android no PC como visualizador. O emulador não lê QR direito.
+  - Escopo: servidor: o log do dono imprime também a URI `recam://pair?...` em texto, e a página
+    `/setup` mostra a URI num campo de texto selecionável abaixo do QR. App: a tela do leitor de
+    QR (`core/scanner/qr_scanner_screen.dart`) ganha a ação "Colar código", que abre um diálogo
+    com campo de texto e devolve o texto como se fosse lido do QR. A tela "Adicionar câmera" ganha
+    o botão "Copiar código", que põe a URI na área de transferência. Textos em `en` e `pt`.
+  - Fora: mudar o formato da URI ou o fluxo dos controllers.
+  - Aceite: teste de servidor `SetupPage_FromLocalNetwork_ShowsPairingUriAsText`. Widget tests
+    do diálogo (devolve o texto aparado; cancelar devolve nada) e do botão de copiar.
+  > Validação (2026-09-25): só código escrito. Gate verde (50 testes no servidor, 58 no app).
+  > A ação "Colar código" fica na tela do leitor de QR, então vale para as duas abas sem mudar os
+  > controllers. O log do dono imprime a URI depois do QR em ASCII. Testes:
+  > `SetupPage_FromLocalNetwork_ShowsPairingUriAsText`, `showPairingCodeDialog` (texto aparado,
+  > cancelar, texto em branco) e `whenTappingCopyCode_putsPairingUriInClipboard`.
+
+- [ ] **1.6.2 [aparelho] Validar pareamento com emulador como dono e celular como câmera**
+  - Origem: nova forma de teste (1.6.1).
+  - Escopo: servidor zerado (`docker compose down -v`). Emulador Android no PC cola a URI do log e
+    vira dono. O emulador abre "Adicionar câmera". O A10 lê esse QR na tela do PC pela aba Câmera.
+  - Aceite: o emulador mostra "pareado" como dono e o A10 mostra "pareado" como câmera.
+
 - [ ] **1.7 [junto] Servidor: hub, presença e telemetria**
   - Origem: caminho principal, passo 5.
   - Escopo: `Features/Realtime/DeviceHub.cs` em `/hubs/devices`, autenticado por
@@ -329,8 +352,9 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
 
 - [ ] **1.14 [aparelho] Validar o caminho principal completo**
   - Origem: definição do MVP.
-  - Escopo: servidor no PC. A10 ou 7A como câmera, celular novo como visualizador. Percorrer os
-    passos 1 a 7 do caminho principal em `AGENTS.md`.
+  - Escopo: servidor no PC. A10 ou 7A como câmera, emulador Android no PC como visualizador
+    (revisado em 2026-09-25; antes era um segundo celular). Percorrer os passos 1 a 7 do caminho
+    principal em `AGENTS.md`.
   - Aceite: os 7 passos funcionam. Anotar o atraso percebido, a temperatura do celular câmera
     depois de 30 min assistindo e qualquer falha, que vira bullet novo.
 

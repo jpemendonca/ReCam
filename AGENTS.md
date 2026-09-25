@@ -47,6 +47,9 @@ sem anúncio, sem telemetria para terceiros, leve o bastante para rodar num celu
    que foi feito e o que foi observado funcionando. Declare se foi só código escrito ou se o
    caminho foi percorrido.
 5. Faça um commit em Conventional Commits (ver `CODESTYLE.md`).
+   Quando o autor precisar testar algo que o agente não consegue rodar sozinho (celular,
+   emulador, navegador), entregue os comandos exatos, um por bloco `bash`, e diga o que
+   conferir na tela.
 6. Se o bullet estiver errado ou impossível, não redefina em silêncio. Deixe sem marcar, escreva
    `> Bloqueado (AAAA-MM-DD): ...` com o motivo e siga para o próximo.
 7. Se parar no meio, escreva `> Em andamento (AAAA-MM-DD): ...` com o que existe, o que falta e

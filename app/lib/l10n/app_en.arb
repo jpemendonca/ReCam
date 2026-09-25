@@ -11,7 +11,9 @@
   "deviceNameTooLong": "Use at most {max} characters.",
   "@deviceNameTooLong": {
     "placeholders": {
-      "max": {"type": "int"}
+      "max": {
+        "type": "int"
+      }
     }
   },
   "deviceNameInvalidCharacters": "The name has characters that are not allowed.",
@@ -25,7 +27,9 @@
   "addCameraExpiresIn": "Expires in {time}",
   "@addCameraExpiresIn": {
     "placeholders": {
-      "time": {"type": "String"}
+      "time": {
+        "type": "String"
+      }
     }
   },
   "addCameraError": "Could not create the QR code. Check the connection to the server.",
@@ -34,13 +38,17 @@
   "watchPairedTitle": "Paired with {serverName}",
   "@watchPairedTitle": {
     "placeholders": {
-      "serverName": {"type": "String"}
+      "serverName": {
+        "type": "String"
+      }
     }
   },
   "watchPairedRole": "Role: {role}",
   "@watchPairedRole": {
     "placeholders": {
-      "role": {"type": "String"}
+      "role": {
+        "type": "String"
+      }
     }
   },
   "roleOwner": "owner",
@@ -50,5 +58,12 @@
   "pairingErrorUnreachable": "Could not reach the server. Check that this phone is on the same network.",
   "pairingErrorTokenRejected": "This QR code has expired or was already used. Generate a new one.",
   "pairingErrorWrongRole": "This QR code is for another kind of device.",
-  "pairingErrorUnexpected": "Pairing failed. Try again."
+  "pairingErrorUnexpected": "Pairing failed. Try again.",
+  "pasteCodeButton": "Paste code",
+  "pasteCodeTitle": "Paste pairing code",
+  "pasteCodeHint": "recam://pair?...",
+  "pasteCodeConfirm": "Pair",
+  "cancelButton": "Cancel",
+  "copyCodeButton": "Copy code",
+  "codeCopied": "Pairing code copied."
 }

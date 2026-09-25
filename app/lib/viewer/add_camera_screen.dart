@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../core/network/api_client.dart';
@@ -69,6 +70,12 @@ class _AddCameraScreenState extends State<AddCameraScreen> {
                   ),
                   const SizedBox(height: 24),
                   Text(l10n.addCameraExpiresIn(_format(remaining))),
+                  const SizedBox(height: 8),
+                  TextButton.icon(
+                    onPressed: () => _copyCode(context, qrUri),
+                    icon: const Icon(Icons.copy),
+                    label: Text(l10n.copyCodeButton),
+                  ),
                 ],
               ),
             },
@@ -76,6 +83,13 @@ class _AddCameraScreenState extends State<AddCameraScreen> {
         ),
       ),
     );
+  }
+
+  static Future<void> _copyCode(BuildContext context, String code) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final copied = AppLocalizations.of(context).codeCopied;
+    await Clipboard.setData(ClipboardData(text: code));
+    messenger.showSnackBar(SnackBar(content: Text(copied)));
   }
 
   static String _format(Duration duration) {

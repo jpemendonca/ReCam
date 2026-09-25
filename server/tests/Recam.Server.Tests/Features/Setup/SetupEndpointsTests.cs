@@ -25,6 +25,21 @@ public sealed class SetupEndpointsTests
         Assert.Contains("<svg", body, StringComparison.Ordinal);
     }
 
+    [Fact(DisplayName = "Setup page also shows the pairing code as text, for phones that cannot scan")]
+    public async Task SetupPage_FromLocalNetwork_ShowsPairingUriAsText()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        using var client = factory.CreateClient();
+
+        // act
+        using var response = await client.GetAsync(SetupUri, TestContext.Current.CancellationToken);
+        var body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Contains("recam://pair?v=1&amp;t=", body, StringComparison.Ordinal);
+    }
+
     [Fact(DisplayName = "Once an owner is paired, the setup page no longer hands out a token")]
     public async Task SetupPage_WithOwner_ShowsAlreadyConfigured()
     {
