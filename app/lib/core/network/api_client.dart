@@ -10,6 +10,11 @@ abstract interface class ApiClient {
   });
 
   Future<ApiResult<MeResult>> me(Uri baseUrl, String credential);
+
+  Future<ApiResult<PairingTokenResult>> createCameraPairingToken(
+    Uri baseUrl,
+    String credential,
+  );
 }
 
 enum ApiFailureKind { unreachable, unauthorized, rejected, unexpected }
@@ -52,4 +57,13 @@ class MeResult {
   final String deviceId;
   final String name;
   final DeviceRole role;
+}
+
+class PairingTokenResult {
+  const PairingTokenResult({required this.qrUri, required this.validFor});
+
+  final String qrUri;
+
+  /// How long the token stays valid, counted from the moment the server answered.
+  final Duration validFor;
 }

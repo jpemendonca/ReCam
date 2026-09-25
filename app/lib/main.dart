@@ -16,12 +16,13 @@ Future<void> main() async {
   final pins = PinnedHttpOverrides();
   HttpOverrides.global = pins;
 
+  final api = HttpApiClient(http.Client());
   final pairing = PairingService(
-    api: HttpApiClient(http.Client()),
+    api: api,
     store: SecureCredentialStore(),
     pins: pins,
   );
   final viewerPairing = ViewerPairingController(pairing: pairing);
-  runApp(RecamApp(viewerPairing: viewerPairing));
+  runApp(RecamApp(viewerPairing: viewerPairing, api: api));
   await viewerPairing.load();
 }

@@ -55,6 +55,25 @@ public sealed class Device
         return new PairedDevice(device, DeviceCredential.Format(device.Id, secret));
     }
 
+    /// <summary>
+    /// Creates a pairing token on behalf of this device. Only an active owner may do it, and
+    /// never for the owner role: the server has a single owner.
+    /// </summary>
+    public Result<IssuedPairingToken> IssuePairingToken(DeviceRole grantsRole, DateTimeOffset now)
+    {
+        if (Role != DeviceRole.Owner || IsRevoked)
+        {
+            return PairingErrors.IssuerNotOwner;
+        }
+
+        if (grantsRole == DeviceRole.Owner)
+        {
+            return PairingErrors.OwnerRoleNotGrantable;
+        }
+
+        return PairingToken.Issue(grantsRole, now, Id);
+    }
+
     public bool HasCredentialSecret(string secret) =>
         CryptographicOperations.FixedTimeEquals(SecretToken.Hash(secret), CredentialHash);
 }

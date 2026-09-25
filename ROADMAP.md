@@ -221,7 +221,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > local. O app não foi fechado e reaberto, e a resposta de `GET /api/me` não foi lida direto (o
   > papel exibido vem do pareamento). A regra de firewall foi criada sem restringir a origem.
 
-- [ ] **1.5 Adicionar câmera: QR gerado pelo dono**
+- [x] **1.5 Adicionar câmera: QR gerado pelo dono**
   - Origem: caminho principal, passo 3.
   - Escopo: servidor: `POST /api/pairing-tokens` (`OwnerOnly`, token de câmera de 10 min, devolve
     `qrUri`). App: dependência `qr_flutter`. Botão "Adicionar câmera" na aba Assistir, que abre
@@ -229,6 +229,16 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Aceite: testes `CreatePairingToken_AsOwner_ReturnsQrUri`,
     `CreatePairingToken_AsCamera_Returns403`, e o teste do controller da tela de QR com
     `ApiClient` fake.
+  > Validação (2026-09-24): só código escrito. O QR da câmera não foi gerado num aparelho ainda.
+  > Gate verde com 49 testes do servidor e 41 do app. Servidor: `Device.IssuePairingToken` guarda a
+  > regra (só dono ativo emite, nunca token de dono, `CreatedByDeviceId` preenchido), o endpoint
+  > só orquestra, e o teste `CreatePairingToken_AsOwner_ReturnsQrUri` pareia uma câmera com o token
+  > do QR devolvido. App: `AddCameraController` (contagem regressiva e renovação ao expirar) e
+  > `AddCameraScreen` com `qr_flutter`; o botão "Adicionar câmera" só aparece para o dono.
+  > Decisões no caminho: `role` chega como texto e o validador aceita só `camera` por enquanto
+  > (o 3.2 libera `viewer`); o app conta o tempo restante a partir da hora do servidor, lida do
+  > header `Date` da resposta, para o relógio do celular não encurtar nem esticar o QR; o QR é
+  > renovado ao chegar em zero, sem margem.
 
 - [ ] **1.6 App: pareamento da câmera na aba Câmera**
   - Origem: caminho principal, passo 4.

@@ -8,6 +8,17 @@
   "scanQrButton": "Scan QR code",
   "scanQrTitle": "Scan QR code",
   "scannerUnavailable": "Could not open the camera. Allow camera access and try again.",
+  "addCameraButton": "Add camera",
+  "addCameraTitle": "Add camera",
+  "addCameraInstructions": "On the old phone, open Recam, go to the Camera tab and scan this QR code.",
+  "addCameraExpiresIn": "Expires in {time}",
+  "@addCameraExpiresIn": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "addCameraError": "Could not create the QR code. Check the connection to the server.",
+  "retryButton": "Try again",
   "ownerDeviceName": "Owner phone",
   "watchPairedTitle": "Paired with {serverName}",
   "@watchPairedTitle": {

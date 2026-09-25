@@ -33,7 +33,7 @@ void main() {
     ) async {
       // arrange
       await viewerPairing.load();
-      await tester.pumpWidget(RecamApp(viewerPairing: viewerPairing));
+      await tester.pumpWidget(RecamApp(viewerPairing: viewerPairing, api: api));
       await tester.pumpAndSettle();
 
       // act
@@ -50,7 +50,7 @@ void main() {
       // arrange
       await store.write(PairingSlot.viewer, pairedSession());
       await viewerPairing.load();
-      await tester.pumpWidget(RecamApp(viewerPairing: viewerPairing));
+      await tester.pumpWidget(RecamApp(viewerPairing: viewerPairing, api: api));
       await tester.pumpAndSettle();
 
       // act
@@ -60,12 +60,13 @@ void main() {
       // assert
       expect(find.text('Paired with Recam'), findsOneWidget);
       expect(find.text('Role: owner'), findsOneWidget);
+      expect(find.text('Add camera'), findsOneWidget);
     });
 
     testWidgets('onStart_showsCameraTab', (tester) async {
       // arrange
       await viewerPairing.load();
-      await tester.pumpWidget(RecamApp(viewerPairing: viewerPairing));
+      await tester.pumpWidget(RecamApp(viewerPairing: viewerPairing, api: api));
 
       // act
       await tester.pumpAndSettle();

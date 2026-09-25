@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 
+import '../core/network/api_client.dart';
 import '../core/pairing/device_role.dart';
 import '../core/pairing/pairing_service.dart';
 import '../core/scanner/qr_scanner_screen.dart';
+import '../core/storage/credential_store.dart';
 import '../l10n/generated/app_localizations.dart';
+import 'add_camera_screen.dart';
 import 'viewer_pairing_controller.dart';
 
 class WatchTab extends StatelessWidget {
-  const WatchTab({required this.pairing, super.key});
+  const WatchTab({required this.pairing, required this.api, super.key});
 
   final ViewerPairingController pairing;
+  final ApiClient api;
 
   @override
   Widget build(BuildContext context) {
@@ -22,10 +26,7 @@ class WatchTab extends StatelessWidget {
           controller: pairing,
           failure: lastFailure,
         ),
-        ViewerPaired(:final session) => _Paired(
-          serverName: session.serverName,
-          role: session.role,
-        ),
+        ViewerPaired(:final session) => _Paired(api: api, session: session),
       },
     );
   }
@@ -89,15 +90,15 @@ class _NotPaired extends StatelessWidget {
 }
 
 class _Paired extends StatelessWidget {
-  const _Paired({required this.serverName, required this.role});
+  const _Paired({required this.api, required this.session});
 
-  final String serverName;
-  final DeviceRole role;
+  final ApiClient api;
+  final PairedSession session;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final roleName = switch (role) {
+    final roleName = switch (session.role) {
       DeviceRole.owner => l10n.roleOwner,
       DeviceRole.viewer => l10n.roleViewer,
       DeviceRole.camera => l10n.roleCamera,
@@ -109,11 +110,23 @@ class _Paired extends StatelessWidget {
           const Icon(Icons.check_circle_outline, size: 48),
           const SizedBox(height: 16),
           Text(
-            l10n.watchPairedTitle(serverName),
+            l10n.watchPairedTitle(session.serverName),
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 8),
           Text(l10n.watchPairedRole(roleName)),
+          if (session.role == DeviceRole.owner) ...[
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute(
+                  builder: (_) => AddCameraScreen(api: api, session: session),
+                ),
+              ),
+              icon: const Icon(Icons.add_a_photo_outlined),
+              label: Text(l10n.addCameraButton),
+            ),
+          ],
         ],
       ),
     );

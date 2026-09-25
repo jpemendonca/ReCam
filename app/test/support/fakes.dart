@@ -6,6 +6,7 @@ class FakeApiClient implements ApiClient {
   Set<String> healthyHosts = {};
   ApiResult<PairResult> pairResult = ApiFailure(ApiFailureKind.unexpected);
   ApiResult<MeResult> meResult = ApiFailure(ApiFailureKind.unreachable);
+  final List<ApiResult<PairingTokenResult>> tokenResults = [];
 
   final List<Uri> healthCalls = [];
   final List<({Uri baseUrl, String token, String name})> pairCalls = [];
@@ -29,6 +30,17 @@ class FakeApiClient implements ApiClient {
   @override
   Future<ApiResult<MeResult>> me(Uri baseUrl, String credential) async =>
       meResult;
+
+  int tokenCalls = 0;
+
+  @override
+  Future<ApiResult<PairingTokenResult>> createCameraPairingToken(
+    Uri baseUrl,
+    String credential,
+  ) async {
+    tokenCalls++;
+    return tokenResults.removeAt(0);
+  }
 }
 
 class MemoryCredentialStore implements CredentialStore {
