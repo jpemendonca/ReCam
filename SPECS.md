@@ -251,7 +251,7 @@ vez.
 |---|---|---|---|
 | `GET /health` | qualquer um | — | `200 "ok"` |
 | `GET /setup` | só IP privado, sem header `X-Forwarded-For`, só enquanto não há dono | — | HTML com o QR em SVG e o texto em inglês e português. Com dono já pareado: página "already configured" |
-| `POST /api/pair` | qualquer um, com limite de 5 por minuto por IP | `{ token, name, role? }` | `201 { deviceId, credential, role, serverName }` |
+| `POST /api/pair` | qualquer um, com limite de 5 por minuto por IP | `{ token, name, expectedRoles }` | `201 { deviceId, credential, role, serverName }` |
 | `POST /api/pairing-tokens` | Owner | `{ role: "camera" }` | `201 { qrUri, expiresAt }` |
 | `GET /api/me` | qualquer dispositivo | — | `{ deviceId, name, role }` |
 | `GET /api/cameras` | Owner, Viewer | — | `[{ id, name, online, publishing, batteryLevel, isCharging, telemetryAt }]` |
@@ -260,7 +260,9 @@ vez.
 | `POST /whep/{cameraId}` | Owner, Viewer | SDP offer | proxy para `/cam-{cameraId}/whep` |
 | `PATCH`, `DELETE /whep/{cameraId}/{session}` | Owner, Viewer | trickle ICE / encerrar | proxy |
 
-- `POST /api/pair`: `serverName` é a constante `"Recam"` por enquanto. O `role` do corpo é ignorado. Quem decide o papel é o `GrantsRole` do token.
+- `POST /api/pair`: `serverName` é a constante `"Recam"` por enquanto. Quem decide o papel é o `GrantsRole` do token. `expectedRoles` (obrigatório) diz que papéis a aba
+  aceita; se o token for de outro papel, a resposta é 409 `pairing.wrong_role` e o token continua
+  sem uso.
   Token inexistente, expirado ou já usado recebe 401 com o mesmo corpo nos três casos. `name` é
   validado (1..40 caracteres, sem controle). Erros de validação voltam juntos, em
   `ValidationProblem`.

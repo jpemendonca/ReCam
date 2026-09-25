@@ -1,4 +1,5 @@
 using Recam.Server.Domain;
+using static Recam.Server.Tests.Support.ApiJson;
 
 namespace Recam.Server.Tests.Domain;
 
@@ -13,7 +14,7 @@ public sealed class DevicePairTests
         var token = PairingToken.Issue(DeviceRole.Camera, Now).Token;
 
         // act
-        var result = Device.Pair(token, "Kitchen", Now);
+        var result = Device.Pair(token, "Kitchen", AnyRole, Now);
 
         // assert
         var paired = result.Value;
@@ -31,7 +32,7 @@ public sealed class DevicePairTests
         var token = PairingToken.Issue(DeviceRole.Camera, Now).Token;
 
         // act
-        var result = Device.Pair(token, "Kitchen", Now.AddHours(1));
+        var result = Device.Pair(token, "Kitchen", AnyRole, Now.AddHours(1));
 
         // assert
         Assert.Equal(PairingErrors.TokenExpired, result.Error);
@@ -44,7 +45,7 @@ public sealed class DevicePairTests
         var token = PairingToken.Issue(DeviceRole.Camera, Now).Token;
 
         // act
-        var exception = Record.Exception(() => Device.Pair(token, "", Now));
+        var exception = Record.Exception(() => Device.Pair(token, "", AnyRole, Now));
 
         // assert
         Assert.IsType<ArgumentException>(exception);

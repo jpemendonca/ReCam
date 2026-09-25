@@ -52,6 +52,27 @@ public sealed class PairingEndpointsTests
         Assert.Equal(PairingErrors.InvalidToken.Code, problem?.Extensions["code"]?.ToString());
     }
 
+    [Fact(DisplayName = "Pairing in the wrong tab is refused and the token still works in the right one")]
+    public async Task Pair_WithWrongExpectedRole_Returns409AndKeepsToken()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var token = await factory.CreatePairingTokenAsync(DeviceRole.Owner);
+        using var client = factory.CreateClient();
+
+        // act
+        using var wrongTab = await client.PairAsync(token, "Old phone", [DeviceRole.Camera]);
+        using var rightTab = await client.PairAsync(token, "New phone", [DeviceRole.Owner, DeviceRole.Viewer]);
+
+        // assert
+        Assert.Equal(HttpStatusCode.Conflict, wrongTab.StatusCode);
+        var problem = await wrongTab.Content.ReadFromJsonAsync<ProblemDetails>(TestContext.Current.CancellationToken);
+        Assert.Equal(PairingErrors.WrongRole.Code, problem?.Extensions["code"]?.ToString());
+        Assert.Equal(HttpStatusCode.Created, rightTab.StatusCode);
+        await using var database = await factory.CreateDatabaseAsync();
+        Assert.Equal("New phone", (await database.Devices.SingleAsync(TestContext.Current.CancellationToken)).Name);
+    }
+
     [Fact(DisplayName = "Pairing with an expired token is rejected with the same answer as any bad token")]
     public async Task Pair_WithExpiredToken_Returns401()
     {

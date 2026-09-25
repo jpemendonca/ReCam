@@ -8,6 +8,9 @@ public static class PairingErrors
     public static readonly DomainError TokenAlreadyUsed =
         new("pairing.token_already_used", "The pairing token was already used.", ErrorType.Unauthorized);
 
+    public static readonly DomainError WrongRole =
+        new("pairing.wrong_role", "This pairing code is for another kind of device. Use it in the other tab.", ErrorType.Conflict);
+
     /// <summary>
     /// What clients see for any token problem. Unknown, expired and used tokens look the same,
     /// so a caller cannot probe which tokens exist.

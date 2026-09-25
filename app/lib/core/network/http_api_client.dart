@@ -34,12 +34,17 @@ class HttpApiClient implements ApiClient {
     Uri baseUrl, {
     required String token,
     required String name,
+    required Set<DeviceRole> expectedRoles,
   }) {
     return _send(
       () => _client.post(
         baseUrl.resolve('/api/pair'),
         headers: {HttpHeaders.contentTypeHeader: 'application/json'},
-        body: jsonEncode({'token': token, 'name': name}),
+        body: jsonEncode({
+          'token': token,
+          'name': name,
+          'expectedRoles': [for (final role in expectedRoles) role.name],
+        }),
       ),
       expectedStatus: HttpStatus.created,
       parse: (json, _) {
@@ -155,6 +160,7 @@ class HttpApiClient implements ApiClient {
     return ApiFailure(switch (response.statusCode) {
       HttpStatus.unauthorized => ApiFailureKind.unauthorized,
       HttpStatus.badRequest => ApiFailureKind.rejected,
+      HttpStatus.conflict => ApiFailureKind.conflict,
       _ => ApiFailureKind.unexpected,
     });
   }

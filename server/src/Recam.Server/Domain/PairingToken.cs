@@ -42,7 +42,11 @@ public sealed class PairingToken
         return new IssuedPairingToken(token, secret);
     }
 
-    public Result Consume(DateTimeOffset now)
+    /// <summary>
+    /// Marks the token as used. A token for another role stays unused, so scanning it in the
+    /// wrong tab does not waste it.
+    /// </summary>
+    public Result Consume(DateTimeOffset now, IReadOnlyCollection<DeviceRole> acceptedRoles)
     {
         if (UsedAt is not null)
         {
@@ -52,6 +56,11 @@ public sealed class PairingToken
         if (now >= ExpiresAt)
         {
             return PairingErrors.TokenExpired;
+        }
+
+        if (!acceptedRoles.Contains(GrantsRole))
+        {
+            return PairingErrors.WrongRole;
         }
 
         UsedAt = now;

@@ -1,4 +1,5 @@
 using Recam.Server.Domain;
+using static Recam.Server.Tests.Support.ApiJson;
 
 namespace Recam.Server.Tests.Domain;
 
@@ -53,6 +54,6 @@ public sealed class DeviceIssuePairingTokenTests
     private static Device PairDevice(DeviceRole role)
     {
         var token = PairingToken.Issue(role, Now).Token;
-        return Device.Pair(token, "Test device", Now).Value.Device;
+        return Device.Pair(token, "Test device", AnyRole, Now).Value.Device;
     }
 }

@@ -275,10 +275,48 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > `SetupPage_FromLocalNetwork_ShowsPairingUriAsText`, `showPairingCodeDialog` (texto aparado,
   > cancelar, texto em branco) e `whenTappingCopyCode_putsPairingUriInClipboard`.
 
+- [x] **1.6.3 Pareamento na aba errada não gasta o token**
+  - Origem: teste do autor em 2026-09-25. O código do dono foi colado na aba Câmera. O servidor
+    consumiu o token e criou o dono; o app recusou o papel depois. Ficou um dono que nenhum
+    aparelho tem, e o servidor precisou ser zerado.
+  - Escopo: o app manda `expectedRoles` no `POST /api/pair` (aba Assistir: `owner`, `viewer`;
+    aba Câmera: `camera`). `PairingToken.Consume` recebe os papéis aceitos e, depois de checar
+    uso e validade, recusa com `pairing.wrong_role` (409) sem marcar o token como usado. O
+    endpoint repassa esse erro (os outros continuam virando `pairing.invalid_token`). Atualizar
+    `SPECS.md` 5.5.
+  - Aceite: `Pair_WithWrongExpectedRole_Returns409AndKeepsToken` (o mesmo token funciona depois
+    com o papel certo), `Consume_WithWrongRole_ReturnsWrongRoleAndKeepsToken`, e o app mapeando
+    409 para a mensagem de papel errado.
+  > Validação (2026-09-25): só código escrito. Gate verde (52 testes no servidor, 60 no app).
+  > O papel é checado depois de uso e validade, então um token vencido na aba errada continua
+  > respondendo "inválido". Testes no app: `withExpectedRoles_sendsThemInTheBody` e
+  > `withTokenForOtherTab_returnsWrongRoleAndSavesNothing`.
+
+- [ ] **1.6.4 Link `recam://pair` abre o app e pareia na aba certa**
+  - Origem: pedido do autor (2026-09-25): testar sem copiar e colar código. Também serve para
+    quem lê o QR com a câmera nativa do Android.
+  - Escopo: o QR ganha o parâmetro `r` com o papel que o token concede (`owner`, `viewer`,
+    `camera`); `SPECS.md` 5.2 atualizado, e `r` é opcional para o app. Android: intent filter
+    para `recam://pair`. App: dependência `app_links`; ao receber o link (app fechado ou
+    aberto), troca para a aba do papel (`camera` → Câmera, senão Assistir) e pareia sozinho se a
+    aba ainda não estiver pareada. Na aba Câmera o nome é o padrão do ARB.
+  - Aceite: teste do roteador de link (papel → aba, aba já pareada é ignorada), teste do parse
+    de `r`, teste de servidor do `r` na URI. `adb shell am start -d "recam://pair?..."` abre o
+    app no emulador e pareia.
+
+- [ ] **1.6.5 Script de desenvolvimento em um comando**
+  - Origem: pedido do autor (2026-09-25): não ficar rodando comando e copiando código.
+  - Escopo: `scripts/dev.ps1`. Sobe o servidor (`-Reset` zera os dados antes), espera o código
+    do dono no log, liga o emulador se nenhum estiver rodando, compila e instala o APK debug no
+    emulador e em todo celular conectado por USB, e manda o link do dono para o emulador com
+    `adb`. No fim, imprime em PT-BR o que fazer no celular câmera. Documentar no `README.md`.
+  - Aceite: `./scripts/dev.ps1 -Reset` numa máquina com o emulador criado termina com o
+    emulador pareado como dono, sem nenhum outro comando.
+
 - [ ] **1.6.2 [aparelho] Validar pareamento com emulador como dono e celular como câmera**
   - Origem: nova forma de teste (1.6.1).
-  - Escopo: servidor zerado (`docker compose down -v`). Emulador Android no PC cola a URI do log e
-    vira dono. O emulador abre "Adicionar câmera". O A10 lê esse QR na tela do PC pela aba Câmera.
+  - Escopo: `./scripts/dev.ps1 -Reset` (1.6.5) deixa o emulador pareado como dono. O emulador abre
+    "Adicionar câmera". O A10 lê esse QR na tela do PC pela aba Câmera.
   - Aceite: o emulador mostra "pareado" como dono e o A10 mostra "pareado" como câmera.
 
 - [ ] **1.7 [junto] Servidor: hub, presença e telemetria**

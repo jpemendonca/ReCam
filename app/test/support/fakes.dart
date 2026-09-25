@@ -9,7 +9,10 @@ class FakeApiClient implements ApiClient {
   final List<ApiResult<PairingTokenResult>> tokenResults = [];
 
   final List<Uri> healthCalls = [];
-  final List<({Uri baseUrl, String token, String name})> pairCalls = [];
+  final List<
+    ({Uri baseUrl, String token, String name, Set<DeviceRole> expectedRoles})
+  >
+  pairCalls = [];
 
   @override
   Future<bool> health(Uri baseUrl) async {
@@ -22,8 +25,14 @@ class FakeApiClient implements ApiClient {
     Uri baseUrl, {
     required String token,
     required String name,
+    required Set<DeviceRole> expectedRoles,
   }) async {
-    pairCalls.add((baseUrl: baseUrl, token: token, name: name));
+    pairCalls.add((
+      baseUrl: baseUrl,
+      token: token,
+      name: name,
+      expectedRoles: expectedRoles,
+    ));
     return pairResult;
   }
 

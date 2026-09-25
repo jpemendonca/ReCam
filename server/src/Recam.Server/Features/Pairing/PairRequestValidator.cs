@@ -19,11 +19,16 @@ public static class PairRequestValidator
             fields["name"] = [.. nameProblems];
         }
 
+        if (request.ExpectedRoles is not { Count: > 0 })
+        {
+            fields["expectedRoles"] = ["At least one expected role is required."];
+        }
+
         if (fields.Count > 0)
         {
             return DomainError.Validation(fields);
         }
 
-        return new ValidPairRequest(request.Token!.Trim(), request.Name!.Trim());
+        return new ValidPairRequest(request.Token!.Trim(), request.Name!.Trim(), request.ExpectedRoles!);
     }
 }

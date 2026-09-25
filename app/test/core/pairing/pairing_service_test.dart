@@ -30,6 +30,24 @@ void main() {
   );
 
   group('PairingService.pairFromQr', () {
+    test('withTokenForOtherTab_returnsWrongRoleAndSavesNothing', () async {
+      // arrange
+      api
+        ..healthyHosts = {'192.168.0.10'}
+        ..pairResult = ApiFailure(ApiFailureKind.conflict);
+
+      // act
+      final outcome = await pair(pairingQr());
+
+      // assert
+      expect((outcome as PairingFailed).reason, PairingFailure.wrongRole);
+      expect(api.pairCalls.single.expectedRoles, {
+        DeviceRole.owner,
+        DeviceRole.viewer,
+      });
+      expect(await store.read(PairingSlot.viewer), isNull);
+    });
+
     test('withSecondUrlReachable_pairsThroughIt', () async {
       // arrange
       api

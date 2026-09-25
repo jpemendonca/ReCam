@@ -67,6 +67,7 @@ class PairingService {
       serverUrl,
       token: payload.token,
       name: deviceName,
+      expectedRoles: acceptedRoles,
     );
     switch (result) {
       case ApiFailure(:final kind):
@@ -74,6 +75,7 @@ class PairingService {
           ApiFailureKind.unreachable => PairingFailure.serverUnreachable,
           ApiFailureKind.unauthorized => PairingFailure.tokenRejected,
           ApiFailureKind.rejected => PairingFailure.invalidInput,
+          ApiFailureKind.conflict => PairingFailure.wrongRole,
           ApiFailureKind.unexpected => PairingFailure.unexpected,
         });
       case ApiSuccess(:final value):

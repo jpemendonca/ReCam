@@ -30,14 +30,15 @@ public sealed class Device
     /// Consumes the token and creates the device with the role the token grants. The returned
     /// credential is the only copy of the secret; the device keeps its hash.
     /// </summary>
-    public static Result<PairedDevice> Pair(PairingToken token, string name, DateTimeOffset now)
+    public static Result<PairedDevice> Pair(
+        PairingToken token, string name, IReadOnlyCollection<DeviceRole> acceptedRoles, DateTimeOffset now)
     {
         if (DeviceName.Validate(name).Count > 0)
         {
             throw new ArgumentException("Device name must be validated before pairing.", nameof(name));
         }
 
-        var consumed = token.Consume(now);
+        var consumed = token.Consume(now, acceptedRoles);
         if (consumed.IsFailure)
         {
             return consumed.Error;

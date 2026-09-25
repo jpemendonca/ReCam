@@ -60,11 +60,13 @@ public static partial class PairingEndpoints
             return PairingErrors.InvalidToken.ToHttpResult();
         }
 
-        var paired = Device.Pair(token, validation.Value.Name, timeProvider.GetUtcNow());
+        var paired = Device.Pair(token, validation.Value.Name, validation.Value.ExpectedRoles, timeProvider.GetUtcNow());
         if (paired.IsFailure)
         {
             LogRejected(logger, paired.Error.Code);
-            return PairingErrors.InvalidToken.ToHttpResult();
+            return paired.Error == PairingErrors.WrongRole
+                ? paired.Error.ToHttpResult()
+                : PairingErrors.InvalidToken.ToHttpResult();
         }
 
         var device = paired.Value.Device;

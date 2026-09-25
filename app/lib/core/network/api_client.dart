@@ -7,6 +7,7 @@ abstract interface class ApiClient {
     Uri baseUrl, {
     required String token,
     required String name,
+    required Set<DeviceRole> expectedRoles,
   });
 
   Future<ApiResult<MeResult>> me(Uri baseUrl, String credential);
@@ -17,7 +18,13 @@ abstract interface class ApiClient {
   );
 }
 
-enum ApiFailureKind { unreachable, unauthorized, rejected, unexpected }
+enum ApiFailureKind {
+  unreachable,
+  unauthorized,
+  rejected,
+  conflict,
+  unexpected,
+}
 
 sealed class ApiResult<T> {}
 

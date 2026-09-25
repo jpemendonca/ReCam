@@ -5,9 +5,39 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:recam/core/network/api_client.dart';
 import 'package:recam/core/network/http_api_client.dart';
+import 'package:recam/core/pairing/device_role.dart';
 
 void main() {
   final baseUrl = Uri.parse('https://192.168.0.10:8443');
+
+  group('HttpApiClient.pair', () {
+    test('withExpectedRoles_sendsThemInTheBody', () async {
+      // arrange
+      late http.Request sent;
+      final client = HttpApiClient(
+        MockClient((request) async {
+          sent = request;
+          return http.Response('', 409);
+        }),
+      );
+
+      // act
+      final result = await client.pair(
+        baseUrl,
+        token: 'tok',
+        name: 'Kitchen',
+        expectedRoles: {DeviceRole.camera},
+      );
+
+      // assert
+      expect(jsonDecode(sent.body), {
+        'token': 'tok',
+        'name': 'Kitchen',
+        'expectedRoles': ['camera'],
+      });
+      expect((result as ApiFailure<PairResult>).kind, ApiFailureKind.conflict);
+    });
+  });
 
   group('HttpApiClient.createCameraPairingToken', () {
     test('withCreatedResponse_countsValidityFromServerDate', () async {
