@@ -24,6 +24,12 @@ public sealed class Device
 
     public DateTimeOffset? RevokedAt { get; private set; }
 
+    public int? BatteryLevel { get; private set; }
+
+    public bool? IsCharging { get; private set; }
+
+    public DateTimeOffset? TelemetryAt { get; private set; }
+
     public bool IsRevoked => RevokedAt is not null;
 
     /// <summary>
@@ -74,6 +80,30 @@ public sealed class Device
 
         return PairingToken.Issue(grantsRole, now, Id);
     }
+
+    public Result ReportTelemetry(int batteryLevel, bool isCharging, DateTimeOffset now)
+    {
+        if (Role != DeviceRole.Camera)
+        {
+            return DeviceErrors.NotACamera;
+        }
+
+        if (batteryLevel is < 0 or > 100)
+        {
+            return DeviceErrors.InvalidBatteryLevel;
+        }
+
+        BatteryLevel = batteryLevel;
+        IsCharging = isCharging;
+        TelemetryAt = now;
+        LastSeenAt = now;
+        return Result.Success();
+    }
+
+    public void MarkSeen(DateTimeOffset now) => LastSeenAt = now;
+
+    public CameraStatus ToCameraStatus(bool online, bool publishing) =>
+        new(Id, Name, online, publishing, BatteryLevel, IsCharging, TelemetryAt);
 
     public bool HasCredentialSecret(string secret) =>
         CryptographicOperations.FixedTimeEquals(SecretToken.Hash(secret), CredentialHash);

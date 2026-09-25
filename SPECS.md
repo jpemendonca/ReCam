@@ -71,6 +71,8 @@ server/src/Recam.Server/
     Auth/                 DeviceAuthenticationHandler, políticas
     Tls/                  CertificateStore
     Network/              PublicUrlResolver
+    Presence/             DevicePresence (conexões ativas por aparelho, em memória)
+    Realtime/             HubResult (retorno de erro esperado dos métodos do hub)
   Features/
     Health/               GET /health
     Setup/                token do dono, QR no log, página /setup
@@ -281,7 +283,7 @@ Cliente → servidor:
 
 | Método | Quem chama | Efeito |
 |---|---|---|
-| `ReportTelemetry(int batteryLevel, bool isCharging)` | Camera | grava no `Device` e avisa os visualizadores |
+| `ReportTelemetry(int batteryLevel, bool isCharging)` | Camera | grava no `Device` e avisa os visualizadores. Devolve `HubResult { ok, code, message }` |
 | `ReportPublishing(bool publishing)` | Camera | atualiza o estado e avisa os visualizadores |
 | `ReportTorch(bool on)` | Camera | avisa os visualizadores |
 | `WatchCamera(Guid cameraId)` | Owner, Viewer | abre um lease. Se for o primeiro, manda `StartPublishing` à câmera |
@@ -302,6 +304,12 @@ Servidor → cliente:
 - Quando a câmera reconecta e existe lease aberto, o servidor manda `StartPublishing` de novo.
 - A câmera manda telemetria ao conectar, a cada 60 s e quando o nível muda.
 - `CameraStatusDto` tem o mesmo formato do item de `GET /api/cameras`.
+- O `CameraStatus` fica em `Domain/` (`Device.ToCameraStatus`), porque as features `Devices` e
+  `Realtime` usam o mesmo formato e uma feature não pode depender da outra.
+- Erro esperado num método do hub volta como `HubResult` com `ok: false`. Chamar um método sem o
+  papel certo é recusado pelo SignalR com `HubException` (autorização, não erro de negócio).
+- Grupo `viewers`: conexões de dono e visualizador. Câmeras são alcançadas pelo id
+  (`Clients.User`).
 
 ## 6. Autenticação e autorização
 

@@ -348,7 +348,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     "Adicionar câmera". O A10 lê esse QR na tela do PC pela aba Câmera.
   - Aceite: o emulador mostra "pareado" como dono e o A10 mostra "pareado" como câmera.
 
-- [ ] **1.7 [junto] Servidor: hub, presença e telemetria**
+- [x] **1.7 [junto] Servidor: hub, presença e telemetria**
   - Origem: caminho principal, passo 5.
   - Escopo: `Features/Realtime/DeviceHub.cs` em `/hubs/devices`, autenticado por
     `access_token`. Presença em memória (online e offline, `LastSeenAt`). `ReportTelemetry`
@@ -356,6 +356,15 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Aceite: testes com cliente SignalR real contra a `WebApplicationFactory`:
     `ReportTelemetry_FromCamera_NotifiesViewers`, `ReportTelemetry_FromViewer_IsRejected`,
     `Cameras_AfterCameraDisconnects_ShowsOffline`.
+  > Validação (2026-09-25): só código escrito; nenhum celular conectou ao hub ainda (isso vem no
+  > 1.8). Gate verde, 63 testes no servidor, rodados três vezes sem falha. Decisões: presença em
+  > `Infrastructure/Presence` e `CameraStatus` no domínio, para `Devices` e `Realtime` não
+  > dependerem uma da outra; erro esperado do hub volta como `HubResult`; `access_token` na query
+  > só vale em `/hubs`; migração `CameraTelemetry`. Testes extras: `ReportTelemetry_WithInvalidLevel_ReturnsFailure`,
+  > `Cameras_AsCamera_Returns403`, `Negotiate_WithQueryToken_IsAccepted`,
+  > `Me_WithQueryToken_Returns401`, `DevicePresenceTests`, `DeviceTelemetryTests`. O helper de
+  > teste agora espera o setup do dono antes de criar tokens, porque o worker apagava o token de
+  > dono do teste numa corrida.
 
 - [ ] **1.8 App: modo câmera ocioso**
   - Origem: caminho principal, passo 4.

@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 using Recam.Server.Domain;
 using Recam.Server.Features.Pairing;
+using Recam.Server.Features.Setup;
 using Recam.Server.Infrastructure.Hosting;
 using Recam.Server.Infrastructure.Persistence;
 
@@ -39,6 +40,10 @@ public sealed class RecamApiFactory : WebApplicationFactory<Program>
     /// <summary>Stores a fresh pairing token and returns its secret, as a QR code would carry it.</summary>
     public async Task<string> CreatePairingTokenAsync(DeviceRole role)
     {
+        // The setup worker replaces unused owner tokens when it issues its own. Let it finish
+        // first, or it may delete the token this method is about to store.
+        await Services.GetRequiredService<OwnerSetup>().EnsureTokenAsync(CancellationToken.None);
+
         var issued = PairingToken.Issue(role, Time.GetUtcNow());
         await using var database = await CreateDatabaseAsync();
         database.PairingTokens.Add(issued.Token);

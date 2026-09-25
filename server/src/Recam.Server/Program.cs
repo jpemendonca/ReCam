@@ -1,6 +1,7 @@
 using Recam.Server.Features.Devices;
 using Recam.Server.Features.Health;
 using Recam.Server.Features.Pairing;
+using Recam.Server.Features.Realtime;
 using Recam.Server.Features.Setup;
 using Recam.Server.Infrastructure.Auth;
 using Recam.Server.Infrastructure.Hosting;
@@ -23,7 +24,8 @@ builder.Services
     .AddRecamPersistence(settings)
     .AddRecamAuth()
     .AddSetup()
-    .AddPairing();
+    .AddPairing()
+    .AddRealtime();
 
 var app = builder.Build();
 
@@ -35,6 +37,7 @@ app.MapHealthEndpoints();
 app.MapSetupEndpoints();
 app.MapPairingEndpoints();
 app.MapDeviceEndpoints();
+app.MapRealtimeEndpoints();
 
 await app.RunAsync();
 return 0;

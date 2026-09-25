@@ -49,7 +49,8 @@ Exceção única: `// arrange`, `// act`, `// assert` nos testes (seção 8).
 - Namespace com escopo de arquivo. Um tipo público por arquivo, com o mesmo nome do arquivo.
 - Classes são `sealed`, salvo quando existe herança no código.
 - DTOs de entrada e saída são `record`.
-- Métodos assíncronos terminam em `Async` e recebem `CancellationToken` quando o chamador tem
+- Métodos assíncronos terminam em `Async` (exceto métodos públicos de hub SignalR, cujo nome é o
+  protocolo) e recebem `CancellationToken` quando o chamador tem
   um. Proibido `.Result`, `.Wait()` e `async void`.
 - Hora vem de `TimeProvider` injetado. Proibido `DateTime.Now`, `DateTime.UtcNow` e
   `DateTimeOffset.UtcNow` fora do `Program.cs`.
