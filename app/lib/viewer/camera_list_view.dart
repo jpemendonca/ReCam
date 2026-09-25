@@ -17,6 +17,7 @@ class CameraListView extends StatefulWidget {
     required this.api,
     required this.session,
     required this.cameraList,
+    required this.onPairingLost,
     super.key,
   });
 
@@ -24,22 +25,36 @@ class CameraListView extends StatefulWidget {
   final PairedSession session;
   final CameraListFactory cameraList;
 
+  /// Runs once when the server refuses this pairing.
+  final Future<void> Function() onPairingLost;
+
   @override
   State<CameraListView> createState() => _CameraListViewState();
 }
 
 class _CameraListViewState extends State<CameraListView> {
   late final CameraListController _controller;
+  bool _pairingLostReported = false;
 
   @override
   void initState() {
     super.initState();
     _controller = widget.cameraList(widget.session);
+    _controller.addListener(_reportPairingLost);
     unawaited(_controller.start());
+  }
+
+  // Closes a live view left on top, so the Watch tab can show the pairing screen.
+  void _reportPairingLost() {
+    if (_pairingLostReported || !_controller.pairingLost || !mounted) return;
+    _pairingLostReported = true;
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    unawaited(widget.onPairingLost());
   }
 
   @override
   void dispose() {
+    _controller.removeListener(_reportPairingLost);
     unawaited(_controller.stop());
     _controller.dispose();
     super.dispose();

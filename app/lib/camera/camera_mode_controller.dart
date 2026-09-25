@@ -46,6 +46,9 @@ class CameraModeController extends ChangeNotifier {
 
   bool get connected => _hub.connected;
 
+  /// True when the server refused this camera's pairing; camera mode cannot go on.
+  bool get pairingLost => _hub.rejected;
+
   bool get publishing => _publishing;
 
   bool get torchOn => _torchOn;

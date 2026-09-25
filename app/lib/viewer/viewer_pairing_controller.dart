@@ -40,9 +40,17 @@ class ViewerPairingController extends ChangeNotifier {
       return;
     }
     _setState(ViewerPaired(session));
-    if (await _pairing.verify(_slot, session) == SessionStatus.revoked) {
-      _setState(ViewerNotPaired());
+    final status = await _pairing.verify(_slot, session);
+    if (status == SessionStatus.revoked ||
+        status == SessionStatus.serverChanged) {
+      _setState(ViewerNotPaired(lastFailure: PairingFailure.pairingLost));
     }
+  }
+
+  /// Forgets a pairing the server no longer accepts and asks for a new one.
+  Future<void> forget() async {
+    await _pairing.forget(_slot);
+    _setState(ViewerNotPaired(lastFailure: PairingFailure.pairingLost));
   }
 
   Future<void> submitQr(String rawQr, {required String deviceName}) async {

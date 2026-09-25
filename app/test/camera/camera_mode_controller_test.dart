@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/camera/camera_mode_controller.dart';
 import 'package:recam/core/device/battery_reader.dart';
+import 'package:recam/core/network/hub_client.dart';
 import 'package:recam/core/network/hub_session.dart';
 
 import '../support/fakes.dart';
@@ -207,6 +208,20 @@ void main() {
       // assert
       expect(controller.torchOn, isFalse);
       expect(torchReports().last, [false]);
+    });
+  });
+
+  group('CameraModeController pairing lost', () {
+    test('whenServerRejectsCredential_reportsPairingLost', () async {
+      // arrange
+      client.connectResults.add(HubConnectOutcome.rejected);
+
+      // act
+      await start();
+
+      // assert
+      expect(controller.pairingLost, isTrue);
+      expect(client.connectCalls, 1);
     });
   });
 

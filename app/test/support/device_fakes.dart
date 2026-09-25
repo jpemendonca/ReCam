@@ -2,7 +2,7 @@ part of 'fakes.dart';
 
 class FakeHubClient implements HubClient {
   /// Results for the next connect calls; when empty, connect succeeds.
-  final List<bool> connectResults = [];
+  final List<HubConnectOutcome> connectResults = [];
   final List<({String method, List<Object> args})> invocations = [];
   final Map<String, void Function(List<Object?> args)> handlers = {};
   int connectCalls = 0;
@@ -21,9 +21,11 @@ class FakeHubClient implements HubClient {
   void receive(String method, List<Object?> args) => handlers[method]!(args);
 
   @override
-  Future<bool> connect() async {
+  Future<HubConnectOutcome> connect() async {
     connectCalls++;
-    return connectResults.isEmpty ? true : connectResults.removeAt(0);
+    return connectResults.isEmpty
+        ? HubConnectOutcome.connected
+        : connectResults.removeAt(0);
   }
 
   @override

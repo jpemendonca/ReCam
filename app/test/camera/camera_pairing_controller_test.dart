@@ -115,4 +115,39 @@ void main() {
       expect(controller.state, isA<CameraNotPaired>());
     });
   });
+
+  group('CameraPairingController pairing lost', () {
+    test('load_withRevokedCredential_asksToPairAgain', () async {
+      // arrange
+      await store.write(
+        PairingSlot.camera,
+        pairedSession(role: DeviceRole.camera),
+      );
+      api.meResult = ApiFailure(ApiFailureKind.unauthorized);
+
+      // act
+      await controller.load();
+
+      // assert
+      final state = controller.state as CameraNotPaired;
+      expect(state.lastFailure, PairingFailure.pairingLost);
+    });
+
+    test('forget_deletesTheCameraPairingOnly', () async {
+      // arrange
+      await store.write(
+        PairingSlot.camera,
+        pairedSession(role: DeviceRole.camera),
+      );
+      await store.write(PairingSlot.viewer, pairedSession());
+
+      // act
+      await controller.forget();
+
+      // assert
+      expect(store.sessions.keys, [PairingSlot.viewer]);
+      final state = controller.state as CameraNotPaired;
+      expect(state.lastFailure, PairingFailure.pairingLost);
+    });
+  });
 }

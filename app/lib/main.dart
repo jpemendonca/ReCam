@@ -43,7 +43,7 @@ Future<void> main() async {
       viewerPairing: viewerPairing,
       api: api,
       cameraMode: (session) => CameraModeController(
-        hub: HubSession(client: SignalRHubClient(session)),
+        hub: HubSession(client: SignalRHubClient(session, pins)),
         battery: PluginBatteryReader(),
         screen: PluginScreenController(),
         keepAlive: ForegroundServiceKeepAlive(),
@@ -55,7 +55,7 @@ Future<void> main() async {
       cameraList: (session) => CameraListController(
         api: api,
         session: session,
-        hub: HubSession(client: SignalRHubClient(session)),
+        hub: HubSession(client: SignalRHubClient(session, pins)),
         viewerFactory: (cameraId) => WhepViewer(
           session: session,
           cameraId: cameraId,

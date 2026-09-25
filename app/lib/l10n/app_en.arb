@@ -91,5 +91,6 @@
   "cameraModeTorchOn": "Flashlight on.",
   "torchTurnOn": "Turn on flashlight",
   "torchTurnOff": "Turn off flashlight",
-  "torchFailed": "Could not switch the flashlight. Wait for the video to start."
+  "torchFailed": "Could not switch the flashlight. Wait for the video to start.",
+  "pairingErrorPairingLost": "This server changed or no longer knows this phone. Pair again."
 }

@@ -43,10 +43,14 @@ class CameraListController extends ChangeNotifier {
   final HubSession hub;
 
   CameraListState _state = CameraListLoading();
+  bool _credentialRefused = false;
 
   CameraListState get state => _state;
 
   bool get connected => hub.connected;
+
+  /// True when the server refused this viewer's pairing; the list can never load again.
+  bool get pairingLost => _credentialRefused || hub.rejected;
 
   Future<void> start() async {
     hub.client.on('CameraStatusChanged', _onStatusChanged);
@@ -61,6 +65,9 @@ class CameraListController extends ChangeNotifier {
     switch (result) {
       case ApiSuccess(:final value):
         _setState(CameraListLoaded(_sorted(value)));
+      case ApiFailure(kind: ApiFailureKind.unauthorized):
+        _credentialRefused = true;
+        notifyListeners();
       case ApiFailure():
         if (_state is! CameraListLoaded) _setState(CameraListFailed());
     }

@@ -1,24 +1,11 @@
-import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/core/network/pinned_http_overrides.dart';
 
 import '../../support/fakes.dart';
 
-class _FakeCertificate implements X509Certificate {
-  _FakeCertificate(this.der);
-
-  @override
-  final Uint8List der;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
 void main() {
   group('PinnedHttpOverrides.accepts', () {
-    final certificate = _FakeCertificate(Uint8List.fromList([1, 2, 3]));
+    final certificate = FakeCertificate([1, 2, 3]);
     final serverUrl = Uri.parse('https://192.168.0.10:8443');
 
     test('withMatchingFingerprint_acceptsCertificate', () {
@@ -75,6 +62,47 @@ void main() {
 
       // assert
       expect(accepted, isFalse);
+    });
+  });
+
+  group('PinnedHttpOverrides.certificateChanged', () {
+    final pinnedCertificate = FakeCertificate([1, 2, 3]);
+    final otherCertificate = FakeCertificate([4, 5, 6]);
+    final serverUrl = Uri.parse('https://192.168.0.10:8443');
+
+    test('afterDifferentCertificate_returnsTrue', () {
+      // arrange
+      final overrides = PinnedHttpOverrides()..pin(serverUrl, fingerprint);
+
+      // act
+      overrides.accepts(otherCertificate, '192.168.0.10', 8443);
+
+      // assert
+      expect(overrides.certificateChanged(serverUrl), isTrue);
+    });
+
+    test('afterPinnedCertificateAgain_returnsFalse', () {
+      // arrange
+      final overrides = PinnedHttpOverrides()..pin(serverUrl, fingerprint);
+      overrides.accepts(otherCertificate, '192.168.0.10', 8443);
+
+      // act
+      overrides.accepts(pinnedCertificate, '192.168.0.10', 8443);
+
+      // assert
+      expect(overrides.certificateChanged(serverUrl), isFalse);
+    });
+
+    test('afterPairingAgain_returnsFalse', () {
+      // arrange
+      final overrides = PinnedHttpOverrides()..pin(serverUrl, 'a' * 64);
+      overrides.accepts(otherCertificate, '192.168.0.10', 8443);
+
+      // act
+      overrides.pin(serverUrl, fingerprint);
+
+      // assert
+      expect(overrides.certificateChanged(serverUrl), isFalse);
     });
   });
 }

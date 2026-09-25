@@ -1,11 +1,18 @@
+import 'dart:io';
+
+import 'package:signalr_netcore/errors.dart';
 import 'package:signalr_netcore/signalr_client.dart';
 
 import '../storage/credential_store.dart';
+import 'pinned_http_overrides.dart';
+
+/// How a connection attempt ended. [unreachable] is worth retrying; [rejected] is not: the
+/// server refused the credential or is no longer the server this phone paired with.
+enum HubConnectOutcome { connected, unreachable, rejected }
 
 /// One connection to the server hub at /hubs/devices.
 abstract interface class HubClient {
-  /// Returns false when the server cannot be reached; the caller retries.
-  Future<bool> connect();
+  Future<HubConnectOutcome> connect();
 
   Future<void> disconnect();
 
@@ -31,8 +38,9 @@ bool isHubSuccess(Object? result) =>
 typedef HubClientFactory = HubClient Function(PairedSession session);
 
 class SignalRHubClient implements HubClient {
-  SignalRHubClient(PairedSession session)
-    : _connection = HubConnectionBuilder()
+  SignalRHubClient(PairedSession session, this._pins)
+    : _serverUrl = session.serverUrl,
+      _connection = HubConnectionBuilder()
           .withUrl(
             session.serverUrl.resolve('/hubs/devices').toString(),
             options: HttpConnectionOptions(
@@ -42,21 +50,29 @@ class SignalRHubClient implements HubClient {
           )
           .build();
 
+  final Uri _serverUrl;
+  final PinnedHttpOverrides _pins;
   final HubConnection _connection;
 
   @override
   set onClosed(void Function() callback) =>
       _connection.onclose(({error}) => callback());
 
-  // The SignalR client reports network failures as exceptions of several types; at this
-  // boundary they all mean "not connected, try again later".
+  // The SignalR client reports network failures as exceptions of several types; apart from
+  // a refused credential or a changed certificate, they all mean "try again later".
   @override
-  Future<bool> connect() async {
+  Future<HubConnectOutcome> connect() async {
     try {
       await _connection.start();
-      return true;
+      return HubConnectOutcome.connected;
+    } on HttpError catch (error) {
+      return error.statusCode == HttpStatus.unauthorized
+          ? HubConnectOutcome.rejected
+          : HubConnectOutcome.unreachable;
     } on Object {
-      return false;
+      return _pins.certificateChanged(_serverUrl)
+          ? HubConnectOutcome.rejected
+          : HubConnectOutcome.unreachable;
     }
   }
 

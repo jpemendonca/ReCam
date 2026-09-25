@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:recam/core/network/hub_client.dart';
 import 'package:recam/core/network/hub_session.dart';
 
 import '../../support/fakes.dart';
@@ -7,7 +8,11 @@ void main() {
   group('HubSession', () {
     test('whenServerIsDown_retriesWithBackoffUntilConnected', () async {
       // arrange
-      final client = FakeHubClient()..connectResults.addAll([false, false]);
+      final client = FakeHubClient()
+        ..connectResults.addAll([
+          HubConnectOutcome.unreachable,
+          HubConnectOutcome.unreachable,
+        ]);
       final delays = <Duration>[];
       final session = HubSession(
         client: client,
@@ -23,6 +28,22 @@ void main() {
       expect(delays, [const Duration(seconds: 1), const Duration(seconds: 2)]);
       expect(session.connected, isTrue);
       await session.stop();
+    });
+
+    test('whenConnectionIsRejected_stopsRetrying', () async {
+      // arrange
+      final client = FakeHubClient()
+        ..connectResults.add(HubConnectOutcome.rejected);
+      final session = HubSession(client: client, delay: (_) async {});
+
+      // act
+      session.start();
+      await settle();
+
+      // assert
+      expect(session.rejected, isTrue);
+      expect(session.connected, isFalse);
+      expect(client.connectCalls, 1);
     });
 
     test('whenConnectionDrops_reconnectsAndRunsOnConnectedAgain', () async {
@@ -117,7 +138,7 @@ void main() {
 /// A server that drops the first connection before connect() even returns.
 class _ClosesDuringConnect extends FakeHubClient {
   @override
-  Future<bool> connect() async {
+  Future<HubConnectOutcome> connect() async {
     final first = connectCalls == 0;
     final connected = await super.connect();
     if (first) drop();

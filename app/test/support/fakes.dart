@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io' show X509Certificate;
+import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart' show SizedBox, Widget;
 
@@ -131,6 +133,16 @@ PairedSession pairedSession({DeviceRole role = DeviceRole.owner}) =>
       role: role,
       serverName: 'ReCam',
     );
+
+class FakeCertificate implements X509Certificate {
+  FakeCertificate(List<int> der) : der = Uint8List.fromList(der);
+
+  @override
+  final Uint8List der;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 class FakeLinkSource implements LinkSource {
   final controller = StreamController<Uri>.broadcast();

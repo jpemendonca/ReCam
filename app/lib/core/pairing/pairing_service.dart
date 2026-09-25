@@ -11,6 +11,9 @@ enum PairingFailure {
   invalidInput,
   wrongRole,
   unexpected,
+
+  /// A saved pairing stopped working: the server was reinstalled or forgot this phone.
+  pairingLost,
 }
 
 sealed class PairingOutcome {}
@@ -27,7 +30,9 @@ final class PairingFailed extends PairingOutcome {
   final PairingFailure reason;
 }
 
-enum SessionStatus { valid, revoked, unknown }
+/// What the server says about a saved pairing. [revoked] and [serverChanged] are final: the
+/// pairing is forgotten. [unknown] means the server could not be asked.
+enum SessionStatus { valid, revoked, serverChanged, unknown }
 
 /// Pairs this phone with a server from a scanned QR code and keeps the result per tab.
 class PairingService {
@@ -105,19 +110,27 @@ class PairingService {
     return session;
   }
 
-  /// Asks the server whether the credential still works. A revoked device is forgotten.
+  /// Asks the server whether the credential still works. A revoked device, or a server whose
+  /// certificate no longer matches the pinned one, is forgotten.
   Future<SessionStatus> verify(PairingSlot slot, PairedSession session) async {
     final result = await _api.me(session.serverUrl, session.credential);
     switch (result) {
       case ApiSuccess():
         return SessionStatus.valid;
       case ApiFailure(kind: ApiFailureKind.unauthorized):
-        await _store.delete(slot);
+        await forget(slot);
         return SessionStatus.revoked;
+      case ApiFailure(kind: ApiFailureKind.unreachable)
+          when _pins.certificateChanged(session.serverUrl):
+        await forget(slot);
+        return SessionStatus.serverChanged;
       case ApiFailure():
         return SessionStatus.unknown;
     }
   }
+
+  /// Deletes the saved pairing of one tab. The server keeps the device until it is revoked.
+  Future<void> forget(PairingSlot slot) => _store.delete(slot);
 
   Future<Uri?> _firstReachable(List<Uri> urls) async {
     for (final url in urls) {

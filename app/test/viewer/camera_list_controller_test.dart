@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/core/network/api_client.dart';
+import 'package:recam/core/network/hub_client.dart';
 import 'package:recam/core/network/hub_session.dart';
 import 'package:recam/viewer/camera_list_controller.dart';
 
@@ -127,6 +128,42 @@ void main() {
 
       // assert
       expect(controller.state, isA<CameraListFailed>());
+    });
+  });
+
+  group('CameraListController pairing lost', () {
+    test('whenApiRefusesCredential_reportsPairingLost', () async {
+      // arrange
+      api.cameraResults.add(ApiFailure(ApiFailureKind.unauthorized));
+
+      // act
+      await controller.refresh();
+
+      // assert
+      expect(controller.pairingLost, isTrue);
+    });
+
+    test('whenHubRejectsConnection_reportsPairingLost', () async {
+      // arrange
+      hubClient.connectResults.add(HubConnectOutcome.rejected);
+
+      // act
+      await controller.start();
+      await settle();
+
+      // assert
+      expect(controller.pairingLost, isTrue);
+    });
+
+    test('whenServerIsOffline_keepsThePairing', () async {
+      // arrange
+      api.cameraResults.add(ApiFailure(ApiFailureKind.unreachable));
+
+      // act
+      await controller.refresh();
+
+      // assert
+      expect(controller.pairingLost, isFalse);
     });
   });
 }

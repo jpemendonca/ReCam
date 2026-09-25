@@ -36,6 +36,7 @@ class WatchTab extends StatelessWidget {
           api: api,
           session: session,
           cameraList: cameraList,
+          onPairingLost: pairing.forget,
         ),
       },
     );

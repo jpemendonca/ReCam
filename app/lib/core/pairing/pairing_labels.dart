@@ -9,6 +9,7 @@ String pairingFailureText(AppLocalizations l10n, PairingFailure failure) =>
       PairingFailure.serverUnreachable => l10n.pairingErrorUnreachable,
       PairingFailure.tokenRejected => l10n.pairingErrorTokenRejected,
       PairingFailure.wrongRole => l10n.pairingErrorWrongRole,
+      PairingFailure.pairingLost => l10n.pairingErrorPairingLost,
       PairingFailure.invalidInput ||
       PairingFailure.unexpected => l10n.pairingErrorUnexpected,
     };

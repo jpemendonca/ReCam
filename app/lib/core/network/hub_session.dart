@@ -8,7 +8,8 @@ import 'reconnect_backoff.dart';
 typedef Delay = Future<void> Function(Duration duration);
 
 /// Keeps a hub connection open: connects, and after any failure or drop waits with
-/// [ReconnectBackoff] and tries again until [stop].
+/// [ReconnectBackoff] and tries again until [stop]. A rejected connection ends the session:
+/// retrying with a credential the server refuses cannot work.
 ///
 /// A drop is noticed two ways: the client's close event, and a heartbeat every
 /// [heartbeatInterval]. The heartbeat is needed because the Dart SignalR client does not
@@ -33,6 +34,7 @@ class HubSession extends ChangeNotifier {
 
   bool _running = false;
   bool _connected = false;
+  bool _rejected = false;
   Completer<void>? _closed;
   Timer? _heartbeatTimer;
 
@@ -40,6 +42,9 @@ class HubSession extends ChangeNotifier {
   VoidCallback? onConnected;
 
   bool get connected => _connected;
+
+  /// True once the server refused this pairing; the session no longer retries.
+  bool get rejected => _rejected;
 
   void start() {
     if (_running) return;
@@ -75,7 +80,14 @@ class HubSession extends ChangeNotifier {
       // ends this round instead of being lost.
       final closed = Completer<void>();
       _closed = closed;
-      if (await client.connect()) {
+      final outcome = await client.connect();
+      if (outcome == HubConnectOutcome.rejected) {
+        _running = false;
+        _rejected = true;
+        notifyListeners();
+        return;
+      }
+      if (outcome == HubConnectOutcome.connected) {
         if (!_running) {
           await client.disconnect();
           return;

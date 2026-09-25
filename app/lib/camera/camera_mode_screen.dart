@@ -8,10 +8,17 @@ import 'camera_mode_controller.dart';
 /// Shown while the phone works as a camera: connection, battery and whether someone is
 /// watching, plus the button to stop.
 class CameraModeScreen extends StatefulWidget {
-  const CameraModeScreen({required this.create, super.key});
+  const CameraModeScreen({
+    required this.create,
+    required this.onPairingLost,
+    super.key,
+  });
 
   /// Builds the controller once, in initState; the route builder may run again.
   final CameraModeController Function() create;
+
+  /// Runs when the server refuses the pairing; the screen closes itself.
+  final VoidCallback onPairingLost;
 
   @override
   State<CameraModeScreen> createState() => _CameraModeScreenState();
@@ -20,6 +27,20 @@ class CameraModeScreen extends StatefulWidget {
 class _CameraModeScreenState extends State<CameraModeScreen> {
   late final CameraModeController _controller = widget.create();
   bool _started = false;
+  bool _leaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_leaveIfPairingLost);
+  }
+
+  void _leaveIfPairingLost() {
+    if (_leaving || !_controller.pairingLost || !mounted) return;
+    _leaving = true;
+    widget.onPairingLost();
+    Navigator.of(context).pop();
+  }
 
   @override
   void didChangeDependencies() {
@@ -37,6 +58,7 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
 
   @override
   void dispose() {
+    _controller.removeListener(_leaveIfPairingLost);
     unawaited(_controller.stop());
     _controller.dispose();
     super.dispose();

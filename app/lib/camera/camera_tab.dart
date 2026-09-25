@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../core/pairing/pairing_labels.dart';
@@ -51,6 +53,7 @@ class _CameraTabState extends State<CameraTab> {
         CameraPaired(:final session) => _Paired(
           session: session,
           cameraMode: widget.cameraMode,
+          onPairingLost: widget.pairing.forget,
         ),
       },
     );
@@ -124,10 +127,15 @@ class _NotPaired extends StatelessWidget {
 }
 
 class _Paired extends StatelessWidget {
-  const _Paired({required this.session, required this.cameraMode});
+  const _Paired({
+    required this.session,
+    required this.cameraMode,
+    required this.onPairingLost,
+  });
 
   final PairedSession session;
   final CameraModeFactory cameraMode;
+  final Future<void> Function() onPairingLost;
 
   @override
   Widget build(BuildContext context) {
@@ -148,8 +156,10 @@ class _Paired extends StatelessWidget {
           FilledButton.icon(
             onPressed: () => Navigator.of(context).push<void>(
               MaterialPageRoute(
-                builder: (_) =>
-                    CameraModeScreen(create: () => cameraMode(session)),
+                builder: (_) => CameraModeScreen(
+                  create: () => cameraMode(session),
+                  onPairingLost: () => unawaited(onPairingLost()),
+                ),
               ),
             ),
             icon: const Icon(Icons.videocam),

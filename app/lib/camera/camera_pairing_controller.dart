@@ -42,9 +42,17 @@ class CameraPairingController extends ChangeNotifier {
       return;
     }
     _setState(CameraPaired(session));
-    if (await _pairing.verify(_slot, session) == SessionStatus.revoked) {
-      _setState(CameraNotPaired());
+    final status = await _pairing.verify(_slot, session);
+    if (status == SessionStatus.revoked ||
+        status == SessionStatus.serverChanged) {
+      _setState(CameraNotPaired(lastFailure: PairingFailure.pairingLost));
     }
+  }
+
+  /// Forgets a pairing the server no longer accepts and asks for a new one.
+  Future<void> forget() async {
+    await _pairing.forget(_slot);
+    _setState(CameraNotPaired(lastFailure: PairingFailure.pairingLost));
   }
 
   /// Checks the camera name before the QR scan starts. Returns false and shows the

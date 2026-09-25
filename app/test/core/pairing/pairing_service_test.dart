@@ -10,16 +10,14 @@ import '../../support/fakes.dart';
 void main() {
   late FakeApiClient api;
   late MemoryCredentialStore store;
+  late PinnedHttpOverrides pins;
   late PairingService service;
 
   setUp(() {
     api = FakeApiClient();
     store = MemoryCredentialStore();
-    service = PairingService(
-      api: api,
-      store: store,
-      pins: PinnedHttpOverrides(),
-    );
+    pins = PinnedHttpOverrides();
+    service = PairingService(api: api, store: store, pins: pins);
   });
 
   Future<PairingOutcome> pair(String rawQr) => service.pairFromQr(
@@ -134,6 +132,22 @@ void main() {
 
       // assert
       expect(status, SessionStatus.revoked);
+      expect(store.sessions, isEmpty);
+    });
+
+    test('withDifferentCertificate_forgetsTheSession', () async {
+      // arrange
+      final session = pairedSession();
+      await store.write(PairingSlot.viewer, session);
+      await service.restore(PairingSlot.viewer);
+      pins.accepts(FakeCertificate([9, 9, 9]), '192.168.0.10', 8443);
+      api.meResult = ApiFailure(ApiFailureKind.unreachable);
+
+      // act
+      final status = await service.verify(PairingSlot.viewer, session);
+
+      // assert
+      expect(status, SessionStatus.serverChanged);
       expect(store.sessions, isEmpty);
     });
 

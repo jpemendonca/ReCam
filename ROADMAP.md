@@ -511,7 +511,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > `ReportTorch_FromCamera_NotifiesViewers`, `DeviceTorchTests`, testes da lanterna no
   > `LiveViewController`.
 
-- [ ] **1.12.3 Pareamento que não vale mais volta para a tela de pareamento**
+- [x] **1.12.3 Pareamento que não vale mais volta para a tela de pareamento**
   - Origem: teste no A10 em 2026-09-25. Depois de zerar o servidor, o A10 ficou em "Conectando ao
     servidor…" para sempre, mesmo fechando e abrindo o app. O servidor novo tem outro certificado;
     o pinning recusa a conexão antes de qualquer requisição, e o app trata isso como "servidor fora
@@ -522,6 +522,17 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     sozinho quando a credencial é recusada.
   - Aceite: testes do `PairingService.verify` (fingerprint diferente → pareamento inválido) e do
     modo câmera saindo com credencial recusada.
+  > Validação (2026-09-25): só código escrito. Não percorrido no aparelho. Gate verde (83 no
+  > servidor, 117 no app). O `PinnedHttpOverrides` lembra, por host e porta, se o último
+  > certificado apresentado não bateu com o pino; é assim que "servidor mudou" se separa de
+  > "servidor fora do ar" (os dois chegam como erro de rede). O `HubClient.connect` devolve
+  > `connected`, `unreachable` ou `rejected` (401 no negotiate ou certificado trocado), e a
+  > `HubSession` para de tentar quando é `rejected`. Ao abrir o app, `verify` esquece o pareamento
+  > com 401 ou certificado trocado. O modo câmera fecha sozinho e a aba Câmera volta ao
+  > pareamento; a aba Assistir faz o mesmo quando o hub recusa ou `GET /api/cameras` volta 401, e
+  > fecha um ao vivo que esteja aberto. As duas mostram "Este servidor mudou ou não reconhece mais
+  > este celular. Pareie de novo." Consequência aceita: alguém no meio da rede com outro
+  > certificado também faz o app esquecer o pareamento, mas não ganha acesso a nada.
 
 - [x] **1.12.4 Oferta WHEP pedindo vídeo**
   - Origem: teste do autor em 2026-09-25 (A10 câmera, 6A visualizador): a câmera transmitia, mas o
