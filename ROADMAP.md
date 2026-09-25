@@ -887,6 +887,8 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   - Escopo: A10 e 7A em modo câmera por 24 h, na tomada, com sessões de visualização
     espalhadas.
   - Aceite: nenhum dos dois cai sem reconectar. Anotar a temperatura máxima e as falhas.
+  > Bloqueado (2026-09-25): aguardando aparelho. São 24 h com o Samsung A10 e o Redmi 6A em modo
+  > câmera, na tomada; o agente não tem os celulares.
 
 ## Fase 3: gravação
 
