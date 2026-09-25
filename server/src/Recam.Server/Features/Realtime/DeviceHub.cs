@@ -17,6 +17,7 @@ namespace Recam.Server.Features.Realtime;
 public sealed class DeviceHub(
     IDbContextFactory<RecamDbContext> databaseFactory,
     DevicePresence presence,
+    WatchLeases leases,
     TimeProvider timeProvider) : Hub<IDeviceClient>
 {
     public const string Path = "/hubs/devices";
@@ -35,11 +36,18 @@ public sealed class DeviceHub(
             await PresenceChangedAsync(user.GetDeviceId(), Context.ConnectionAborted);
         }
 
+        // A camera that reconnects while someone watches resumes publishing on its own.
+        if (user.IsInRole(nameof(DeviceRole.Camera)) && leases.HasWatchers(user.GetDeviceId()))
+        {
+            await Clients.Caller.StartPublishing();
+        }
+
         await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
+        leases.RemoveConnection(Context.ConnectionId);
         var deviceId = Context.User!.GetDeviceId();
         if (presence.Disconnect(deviceId))
         {
@@ -66,6 +74,40 @@ public sealed class DeviceHub(
         return HubResult.Success;
     }
 
+    [Authorize(Policy = AuthExtensions.ViewerOrOwner)]
+    public async Task<HubResult> WatchCamera(Guid cameraId)
+    {
+        await using var database = await databaseFactory.CreateDbContextAsync(Context.ConnectionAborted);
+        var exists = await database.Devices.AnyAsync(
+            device => device.Id == cameraId && device.Role == DeviceRole.Camera && device.RevokedAt == null,
+            Context.ConnectionAborted);
+        if (!exists)
+        {
+            return MediaErrors.CameraNotFound.ToHubResult();
+        }
+
+        await leases.WatchAsync(Context.ConnectionId, cameraId);
+        return HubResult.Success;
+    }
+
+    [Authorize(Policy = AuthExtensions.ViewerOrOwner)]
+    public HubResult UnwatchCamera(Guid cameraId)
+    {
+        leases.Unwatch(Context.ConnectionId, cameraId);
+        return HubResult.Success;
+    }
+
+    [Authorize(Policy = AuthExtensions.CameraOnly)]
+    public async Task<HubResult> ReportPublishing(bool publishing)
+    {
+        var cameraId = Context.User!.GetDeviceId();
+        presence.SetPublishing(cameraId, publishing);
+        await using var database = await databaseFactory.CreateDbContextAsync(Context.ConnectionAborted);
+        var camera = await database.Devices.SingleAsync(device => device.Id == cameraId, Context.ConnectionAborted);
+        await NotifyViewersAsync(camera);
+        return HubResult.Success;
+    }
+
     private async Task PresenceChangedAsync(Guid deviceId, CancellationToken cancellationToken)
     {
         await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
@@ -79,5 +121,5 @@ public sealed class DeviceHub(
     }
 
     private Task NotifyViewersAsync(Device camera) =>
-        Clients.Group(ViewersGroup).CameraStatusChanged(camera.ToCameraStatus(presence.IsOnline(camera.Id), publishing: false));
+        Clients.Group(ViewersGroup).CameraStatusChanged(camera.ToCameraStatus(presence.IsOnline(camera.Id), presence.IsPublishing(camera.Id)));
 }

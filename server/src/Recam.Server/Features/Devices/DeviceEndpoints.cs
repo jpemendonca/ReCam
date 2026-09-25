@@ -32,7 +32,7 @@ public static class DeviceEndpoints
             .OrderBy(device => device.Name)
             .ToListAsync(cancellationToken);
         return TypedResults.Ok(cameras
-            .Select(camera => camera.ToCameraStatus(presence.IsOnline(camera.Id), publishing: false))
+            .Select(camera => camera.ToCameraStatus(presence.IsOnline(camera.Id), presence.IsPublishing(camera.Id)))
             .ToList());
     }
 }

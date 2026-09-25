@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +31,9 @@ public sealed class RecamApiFactory : WebApplicationFactory<Program>
     public FakeTimeProvider Time { get; } = new(new DateTimeOffset(2026, 9, 24, 12, 0, 0, TimeSpan.Zero));
 
     public IPAddress RemoteIpAddress { get; set; } = IPAddress.Loopback;
+
+    /// <summary>Real MediaMTX to proxy to (see <see cref="MediaMtxFixture"/>); unset when unused.</summary>
+    public Uri? MediaMtxUrl { get; init; }
 
     public async Task<RecamDbContext> CreateDatabaseAsync()
     {
@@ -71,9 +75,22 @@ public sealed class RecamApiFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting(ServerSettings.DataDirectoryKey, _dataDirectory.Path);
+        if (MediaMtxUrl is not null)
+        {
+            builder.UseSetting(ServerSettings.MediaMtxUrlKey, MediaMtxUrl.ToString());
+        }
+
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton<TimeProvider>(Time);
+
+            // SignalR reads the same TimeProvider for keep-alive and client timeouts; advancing the
+            // fake clock past them would drop connections in the middle of a test.
+            services.Configure<HubOptions>(options =>
+            {
+                options.ClientTimeoutInterval = TimeSpan.FromDays(1);
+                options.KeepAliveInterval = TimeSpan.FromHours(1);
+            });
             services.AddSingleton<IStartupFilter>(new RemoteIpStartupFilter(() => RemoteIpAddress));
         });
     }

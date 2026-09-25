@@ -5,6 +5,7 @@ public static class RealtimeEndpoints
     public static IServiceCollection AddRealtime(this IServiceCollection services)
     {
         services.AddSignalR();
+        services.AddSingleton<WatchLeases>();
         return services;
     }
 

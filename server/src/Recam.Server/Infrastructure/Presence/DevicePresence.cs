@@ -9,6 +9,7 @@ namespace Recam.Server.Infrastructure.Presence;
 public sealed class DevicePresence
 {
     private readonly ConcurrentDictionary<Guid, int> _connections = new();
+    private readonly ConcurrentDictionary<Guid, bool> _publishing = new();
 
     /// <summary>Returns true when this is the device's first connection (it just came online).</summary>
     public bool Connect(Guid deviceId) => _connections.AddOrUpdate(deviceId, 1, (_, count) => count + 1) == 1;
@@ -22,6 +23,7 @@ public sealed class DevicePresence
             {
                 if (_connections.TryRemove(new KeyValuePair<Guid, int>(deviceId, count)))
                 {
+                    _publishing.TryRemove(deviceId, out _);
                     return true;
                 }
             }
@@ -35,4 +37,19 @@ public sealed class DevicePresence
     }
 
     public bool IsOnline(Guid deviceId) => _connections.ContainsKey(deviceId);
+
+    /// <summary>What the camera last reported; cleared when it goes offline.</summary>
+    public void SetPublishing(Guid cameraId, bool publishing)
+    {
+        if (publishing)
+        {
+            _publishing[cameraId] = true;
+        }
+        else
+        {
+            _publishing.TryRemove(cameraId, out _);
+        }
+    }
+
+    public bool IsPublishing(Guid cameraId) => _publishing.ContainsKey(cameraId);
 }

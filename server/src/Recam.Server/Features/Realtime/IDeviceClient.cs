@@ -6,4 +6,8 @@ namespace Recam.Server.Features.Realtime;
 public interface IDeviceClient
 {
     Task CameraStatusChanged(CameraStatus status);
+
+    Task StartPublishing();
+
+    Task StopPublishing();
 }

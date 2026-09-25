@@ -11,6 +11,7 @@ services:
     environment:
       RECAM_PUBLIC_URLS: ${RECAM_PUBLIC_URLS:-}
       RECAM_HOST: ${RECAM_HOST:?Set RECAM_HOST in deploy/.env to this machine's LAN IP}
+      RECAM_MEDIAMTX_URL: http://mediamtx:8889
     volumes:
       - recam-data:/data
     restart: unless-stopped

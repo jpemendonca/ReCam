@@ -8,7 +8,14 @@ public static class HubClients
     /// <summary>Opens a real SignalR connection to the in-memory server as the given device.</summary>
     public static async Task<HubConnection> ConnectAsync(this RecamApiFactory factory, string credential)
     {
-        var connection = new HubConnectionBuilder()
+        var connection = factory.BuildConnection(credential);
+        await connection.StartAsync(TestContext.Current.CancellationToken);
+        return connection;
+    }
+
+    /// <summary>Builds the connection without opening it, so handlers can be added first.</summary>
+    public static HubConnection BuildConnection(this RecamApiFactory factory, string credential) =>
+        new HubConnectionBuilder()
             .WithUrl(new Uri(factory.Server.BaseAddress, "/hubs/devices"), options =>
             {
                 options.HttpMessageHandlerFactory = _ => factory.Server.CreateHandler();
@@ -16,7 +23,4 @@ public static class HubClients
                 options.AccessTokenProvider = () => Task.FromResult<string?>(credential);
             })
             .Build();
-        await connection.StartAsync(TestContext.Current.CancellationToken);
-        return connection;
-    }
 }

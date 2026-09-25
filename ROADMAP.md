@@ -403,7 +403,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
   > botão "Adicionar câmera" foi para o topo da lista (e aparece no meio quando está vazia).
   > `CameraInfo` é o mesmo formato para a API e para o hub.
 
-- [ ] **1.10 [junto] Servidor: proxy WHIP/WHEP e transmissão sob demanda**
+- [x] **1.10 [junto] Servidor: proxy WHIP/WHEP e transmissão sob demanda**
   - Origem: caminho principal, passo 6.
   - Escopo: `Features/Media/`: proxy conforme `SPECS.md` 5.5, com `IHttpClientFactory` e
     `RECAM_MEDIAMTX_URL` (padrão `http://127.0.0.1:8889`). `Features/Realtime/`: `WatchCamera`,
@@ -415,6 +415,15 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
     (prova que o proxy chega no MediaMTX). No hub, com `FakeTimeProvider`:
     `WatchCamera_FirstLease_SendsStartPublishing`, `UnwatchCamera_LastLease_SendsStopAfterGrace`,
     `WatchCamera_DuringGrace_CancelsStop`.
+  > Validação (2026-09-25): código escrito; testes contra MediaMTX 1.21.1 real (Testcontainers)
+  > com a mesma configuração de `deploy/`. Gate verde, 74 testes no servidor, 4 rodadas sem falha.
+  > O proxy chega ao MediaMTX: WHEP de câmera parada volta 404 do MediaMTX e WHIP com SDP inválido
+  > volta 400. Extras: `Whip_WithBogusOffer_ReachesMediaMtx`, `MediaMtxImage_MatchesComposeFiles`,
+  > `CameraReconnect_WithOpenLease_SendsStartPublishing`, `WatchCamera_UnknownCamera_ReturnsNotFound`,
+  > `ReportPublishing_True_ShowsPublishingInList`. Achados: o SignalR usa o mesmo `TimeProvider`
+  > do DI para timeouts (os testes aumentam esses timeouts); e `StartPublishing` pode chegar duas
+  > vezes quando o lease coincide com a conexão da câmera (a câmera deve ignorar o repetido).
+  > O compose de Windows passou a definir `RECAM_MEDIAMTX_URL=http://mediamtx:8889`.
 
 - [ ] **1.11 [opus] App: câmera transmite por WHIP**
   - Origem: caminho principal, passo 6.

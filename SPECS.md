@@ -302,6 +302,10 @@ Servidor → cliente:
 
 - Desconexão de um visualizador fecha os leases dele.
 - Quando a câmera reconecta e existe lease aberto, o servidor manda `StartPublishing` de novo.
+- A câmera trata `StartPublishing` e `StopPublishing` como idempotentes: o primeiro lease pode
+  coincidir com a conexão da câmera, e aí os dois caminhos mandam `StartPublishing`.
+- O servidor chega no MediaMTX por `RECAM_MEDIAMTX_URL` (padrão `http://127.0.0.1:8889`; no
+  `compose.bridge.yaml`, `http://mediamtx:8889`).
 - A câmera manda telemetria ao conectar, a cada 60 s e quando o nível muda.
 - `CameraStatusDto` tem o mesmo formato do item de `GET /api/cameras`.
 - O `CameraStatus` fica em `Domain/` (`Device.ToCameraStatus`), porque as features `Devices` e
