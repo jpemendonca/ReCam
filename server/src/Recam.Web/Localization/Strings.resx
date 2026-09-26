@@ -15,16 +15,55 @@
   <data name="AppTitle" xml:space="preserve">
     <value>ReCam</value>
   </data>
+  <data name="CodeIntro" xml:space="preserve">
+    <value>Type the first-time code the server prints in its log (docker compose logs server). This browser becomes the Monitor and shows your cameras.</value>
+  </data>
+  <data name="CodeLabel" xml:space="preserve">
+    <value>First-time code</value>
+  </data>
+  <data name="CodeNotLocal" xml:space="preserve">
+    <value>The code only works from the server's local network.</value>
+  </data>
+  <data name="CodeRemember" xml:space="preserve">
+    <value>Remember on this computer</value>
+  </data>
+  <data name="CodeSubmit" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="CodeTitle" xml:space="preserve">
+    <value>First time here</value>
+  </data>
+  <data name="CodeTooMany" xml:space="preserve">
+    <value>Too many tries. Wait a minute and try again.</value>
+  </data>
+  <data name="CodeWrong" xml:space="preserve">
+    <value>Wrong code. Check it in the server log; after five wrong tries the server prints a new one.</value>
+  </data>
+  <data name="MonitorText" xml:space="preserve">
+    <value>Paired as {0}.</value>
+  </data>
+  <data name="MonitorTitle" xml:space="preserve">
+    <value>This browser is the Monitor</value>
+  </data>
   <data name="NotFoundBack" xml:space="preserve">
     <value>Back to the start</value>
   </data>
   <data name="NotFoundTitle" xml:space="preserve">
     <value>Page not found</value>
   </data>
-  <data name="NotMonitorText" xml:space="preserve">
-    <value>Soon you will enter here the first-time code the server prints in its log, and this browser will show your cameras live.</value>
+  <data name="OfflineRetry" xml:space="preserve">
+    <value>Try again</value>
   </data>
-  <data name="NotMonitorTitle" xml:space="preserve">
-    <value>This browser is not a Monitor yet</value>
+  <data name="OfflineTitle" xml:space="preserve">
+    <value>No connection to the server</value>
+  </data>
+  <data name="ServerTakenText" xml:space="preserve">
+    <value>To watch in this browser, open ReCam on a Monitor phone and choose Connect browser.</value>
+  </data>
+  <data name="ServerTakenTitle" xml:space="preserve">
+    <value>This server already has a Monitor</value>
+  </data>
+  <data name="SignOut" xml:space="preserve">
+    <value>Sign out</value>
   </data>
 </root>

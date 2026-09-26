@@ -1,9 +1,84 @@
 @page "/"
+@implements IDisposable
 @inject IStringLocalizer<Strings> L
+@inject StartController Start
 
 <PageTitle>@L["AppTitle"]</PageTitle>
 
-<section class="card">
-    <h1>@L["NotMonitorTitle"]</h1>
-    <p>@L["NotMonitorText"]</p>
-</section>
+@switch (Start.State)
+{
+    case StartState.Loading:
+        <div class="loading" aria-hidden="true"></div>
+        break;
+
+    case StartState.NeedsCode:
+        <section class="card">
+            <h1>@L["CodeTitle"]</h1>
+            <p>@L["CodeIntro"]</p>
+            <form @onsubmit="SubmitAsync">
+                <label for="code">@L["CodeLabel"]</label>
+                <input id="code" class="code" @bind="code" autocomplete="off" autocapitalize="characters"
+                       spellcheck="false" maxlength="11" placeholder="ABCD-EFGH" />
+                <label class="check">
+                    <input type="checkbox" @bind="remember" />
+                    @L["CodeRemember"]
+                </label>
+                @if (Start.CodeError is { } error)
+                {
+                    <p class="error" role="alert">@ErrorText(error)</p>
+                }
+                <button type="submit" disabled="@Start.Busy">@L["CodeSubmit"]</button>
+            </form>
+        </section>
+        break;
+
+    case StartState.ServerTaken:
+        <section class="card">
+            <h1>@L["ServerTakenTitle"]</h1>
+            <p>@L["ServerTakenText"]</p>
+        </section>
+        break;
+
+    case StartState.Monitor:
+        <section class="card">
+            <h1>@L["MonitorTitle"]</h1>
+            <p>@L["MonitorText", Start.Me?.Name ?? string.Empty]</p>
+            <button class="secondary" @onclick="SignOutAsync" disabled="@Start.Busy">@L["SignOut"]</button>
+        </section>
+        break;
+
+    case StartState.Offline:
+        <section class="card">
+            <h1>@L["OfflineTitle"]</h1>
+            <button @onclick="LoadAsync" disabled="@Start.Busy">@L["OfflineRetry"]</button>
+        </section>
+        break;
+}
+
+@code {
+    private string code = string.Empty;
+    private bool remember = true;
+
+    protected override Task OnInitializedAsync()
+    {
+        Start.Changed += OnChanged;
+        return LoadAsync();
+    }
+
+    public void Dispose() => Start.Changed -= OnChanged;
+
+    private Task LoadAsync() => Start.LoadAsync(CancellationToken.None);
+
+    private Task SubmitAsync() => Start.SubmitCodeAsync(code, remember, CancellationToken.None);
+
+    private Task SignOutAsync() => Start.SignOutAsync(CancellationToken.None);
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private string ErrorText(FirstOpenOutcome error) => error switch
+    {
+        FirstOpenOutcome.NotLocal => L["CodeNotLocal"],
+        FirstOpenOutcome.TooManyAttempts => L["CodeTooMany"],
+        _ => L["CodeWrong"],
+    };
+}

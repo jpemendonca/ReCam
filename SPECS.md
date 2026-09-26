@@ -373,6 +373,7 @@ vez.
 | `GET /health` | qualquer um | — | `200 "ok"` |
 | `GET /setup` | só IP privado, sem header `X-Forwarded-For`, só enquanto não há dono | — | HTML com o QR em SVG e o texto em inglês e português. Com dono já pareado: página "already configured". Revisado (fase 6): redireciona para `/` |
 | `GET /` e arquivos do `Recam.Web` | qualquer um | — | o Monitor no navegador (fase 6) |
+| `GET /api/web/first-open` | qualquer um | — | `{ open }`: `true` enquanto não há Monitor ativo (fase 6) |
 | `POST /api/web/first-open` | só da rede local (mesma regra do `/setup`), só sem Monitor ativo, limite de 5 por minuto por IP | `{ code, remember }` | `204` e o cookie; o navegador vira `Owner` (fase 6) |
 | `POST /api/web/sign-out` | o próprio navegador | — | `204`, revoga o aparelho e apaga o cookie (fase 6) |
 | `POST /api/browser-links` | qualquer um, com limite por IP | — | `201 { id, qrUri, claim, expiresAt }`; o `claim` fica só no navegador (fase 6) |

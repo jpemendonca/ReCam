@@ -1,87 +1,92 @@
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Recam.Server.Domain;
+using Recam.Server.Infrastructure.Auth;
+using Recam.Server.Infrastructure.Http;
 using Recam.Server.Infrastructure.Network;
 using Recam.Server.Infrastructure.Persistence;
-using Recam.Server.Infrastructure.Presence;
-using Recam.Server.Infrastructure.Recordings;
+using Recam.Server.Infrastructure.Realtime;
 
 namespace Recam.Server.Features.Setup;
 
+/// <summary>
+/// How a browser becomes the first Monitor and how it leaves (SPECS.md 6). The old /setup page
+/// is gone; its address sends people to the browser Monitor.
+/// </summary>
 public static class SetupEndpoints
 {
+    private const string RateLimitPolicy = "first-open";
+
     public static IServiceCollection AddSetup(this IServiceCollection services)
     {
-        services.AddSingleton<OwnerSetup>();
-        services.AddHostedService<OwnerSetupWorker>();
+        services.AddSingleton<FirstOpen>();
+        services.AddHostedService<FirstOpenWorker>();
+        services.AddRateLimiter(options => options.AddPolicy(RateLimitPolicy, context =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 })));
         return services;
     }
 
     public static IEndpointRouteBuilder MapSetupEndpoints(this IEndpointRouteBuilder endpoints)
     {
-        endpoints.MapGet("/setup", GetSetupPageAsync);
+        endpoints.MapGet("/setup", () => TypedResults.Redirect("/"));
+        endpoints.MapGet("/api/web/first-open", GetStatusAsync);
+        endpoints.MapPost("/api/web/first-open", OpenAsync).RequireRateLimiting(RateLimitPolicy);
+        endpoints.MapPost("/api/web/sign-out", SignOutAsync).RequireAuthorization();
         return endpoints;
     }
 
-    /// <summary>
-    /// The server's only page: the first phone's QR code while nobody owns the server, then a
-    /// read-only panel of the paired devices.
-    /// </summary>
-    private static async Task<Results<ContentHttpResult, ProblemHttpResult>> GetSetupPageAsync(
+    private static async Task<Ok<FirstOpenStatusResponse>> GetStatusAsync(FirstOpen firstOpen, CancellationToken cancellationToken) =>
+        TypedResults.Ok(new FirstOpenStatusResponse(await firstOpen.IsOpenAsync(cancellationToken)));
+
+    private static async Task<IResult> OpenAsync(
+        FirstOpenRequest request,
         HttpContext context,
-        OwnerSetup ownerSetup,
-        IDbContextFactory<RecamDbContext> databaseFactory,
-        DevicePresence presence,
-        RecordingStore recordings,
+        FirstOpen firstOpen,
+        TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
         if (!IsDirectLocalRequest(context))
         {
-            return TypedResults.Problem(
-                title: "The setup page is only available from the local network. Use the QR code in the server log.",
-                statusCode: StatusCodes.Status403Forbidden);
+            return SetupErrors.NotLocal.ToHttpResult();
         }
 
-        var texts = SetupTexts.For(context.Request.GetTypedHeaders().AcceptLanguage);
-        var status = await ownerSetup.EnsureTokenAsync(cancellationToken);
-        var page = status switch
+        var headers = context.Request.GetTypedHeaders();
+        var name = BrowserDeviceName.From(context.Request.Headers.UserAgent, headers.AcceptLanguage);
+        var opened = await firstOpen.OpenAsync(request.Code, name, cancellationToken);
+        if (opened.IsFailure)
         {
-            OwnerSetupStatus.Pending pending => SetupPage.RenderPending(pending, texts),
-            OwnerSetupStatus.Configured => SetupPage.RenderPanel(
-                await LoadPanelAsync(databaseFactory, presence, cancellationToken),
-                await LoadRecordingUsageAsync(databaseFactory, recordings, cancellationToken),
-                texts),
-            _ => throw new InvalidOperationException($"Unknown setup status {status.GetType().Name}."),
-        };
-        context.Response.Headers.CacheControl = "no-store";
-        context.Response.Headers.Vary = "Accept-Language";
-        return TypedResults.Content(page, "text/html; charset=utf-8");
+            return opened.Error.ToHttpResult();
+        }
+
+        DeviceCookie.Append(context.Response, opened.Value.Credential, request.Remember, timeProvider.GetUtcNow());
+        return TypedResults.NoContent();
     }
 
-    private static async Task<RecordingUsage> LoadRecordingUsageAsync(
-        IDbContextFactory<RecamDbContext> databaseFactory, RecordingStore recordings, CancellationToken cancellationToken)
+    /// <summary>Leaving revokes the browser on the server, not only its cookie.</summary>
+    private static async Task<NoContent> SignOutAsync(
+        ClaimsPrincipal user,
+        HttpContext context,
+        IDbContextFactory<RecamDbContext> databaseFactory,
+        TimeProvider timeProvider,
+        IDeviceRemovals removals,
+        CancellationToken cancellationToken)
     {
         await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
-        var quota = await RecordingQuotas.LoadAsync(database, cancellationToken);
-        return new RecordingUsage(recordings.ListSegments().Sum(segment => segment.Bytes), quota.Bytes);
+        var deviceId = user.GetDeviceId();
+        var device = await database.Devices.SingleAsync(candidate => candidate.Id == deviceId, cancellationToken);
+        device.Revoke(timeProvider.GetUtcNow());
+        await database.SaveChangesAsync(cancellationToken);
+        await removals.DeviceRemovedAsync(device.Id, device.Role == DeviceRole.Camera);
+        DeviceCookie.Delete(context.Response);
+        return TypedResults.NoContent();
     }
 
-    private static async Task<List<PanelDevice>> LoadPanelAsync(
-        IDbContextFactory<RecamDbContext> databaseFactory, DevicePresence presence, CancellationToken cancellationToken)
-    {
-        await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
-        var devices = await database.Devices.AsNoTracking()
-            .Where(device => device.RevokedAt == null)
-            .ToListAsync(cancellationToken);
-        return devices
-            .OrderBy(device => device.Role == DeviceRole.Camera ? 0 : 1)
-            .ThenBy(device => device.Name, StringComparer.CurrentCultureIgnoreCase)
-            .Select(device => PanelDevice.From(device, presence))
-            .ToList();
-    }
-
-    // The page hands out the owner token. Behind a proxy the direct peer is the proxy itself,
-    // so forwarded requests are refused instead of trusted.
+    // The code only works from the local network. Behind a trusted proxy the forwarded client
+    // address is already in place; forwarded headers from anyone else are refused.
     private static bool IsDirectLocalRequest(HttpContext context) =>
         !context.Request.Headers.ContainsKey("X-Forwarded-For")
         && context.Connection.RemoteIpAddress is { } remote

@@ -10,7 +10,8 @@ namespace Recam.Server.Infrastructure.Auth;
 
 /// <summary>
 /// Authenticates "Authorization: Bearer &lt;device credential&gt;" (SPECS.md 5.4). Hub
-/// connections may send it as the access_token query value instead.
+/// connections may send it as the access_token query value instead, and a browser Monitor sends
+/// it in the <see cref="DeviceCookie"/>.
 /// </summary>
 public sealed class DeviceAuthenticationHandler(
     IOptionsMonitor<AuthenticationSchemeOptions> options,
@@ -25,10 +26,16 @@ public sealed class DeviceAuthenticationHandler(
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        var credential = ReadCredential();
+        var (credential, fromCookie) = ReadCredential();
         if (credential is null)
         {
             return AuthenticateResult.NoResult();
+        }
+
+        // Another site cannot add a custom header without CORS, which the server never allows.
+        if (fromCookie && ChangesState(Request.Method) && Request.Headers[DeviceCookie.WebHeader] != "1")
+        {
+            return AuthenticateResult.Fail($"A cookie request that changes state needs the {DeviceCookie.WebHeader} header.");
         }
 
         if (!DeviceCredential.TryParse(credential, out var deviceId, out var secret))
@@ -54,22 +61,30 @@ public sealed class DeviceAuthenticationHandler(
         return AuthenticateResult.Success(new AuthenticationTicket(principal, SchemeName));
     }
 
+    private static bool ChangesState(string method) =>
+        HttpMethods.IsPost(method) || HttpMethods.IsPut(method) || HttpMethods.IsPatch(method) || HttpMethods.IsDelete(method);
+
     // WebSockets opened by browsers and the SignalR clients cannot set headers, so the hub
     // also accepts the credential in the query string. Nowhere else, to keep it out of URLs.
-    private string? ReadCredential()
+    private (string? Credential, bool FromCookie) ReadCredential()
     {
         var header = Request.Headers.Authorization.ToString();
         if (header.StartsWith(BearerPrefix, StringComparison.OrdinalIgnoreCase))
         {
-            return header[BearerPrefix.Length..].Trim();
+            return (header[BearerPrefix.Length..].Trim(), false);
         }
 
         if (Request.Path.StartsWithSegments(HubPathPrefix, StringComparison.OrdinalIgnoreCase)
             && Request.Query["access_token"].ToString() is { Length: > 0 } token)
         {
-            return token;
+            return (token, false);
         }
 
-        return null;
+        if (Request.Cookies[DeviceCookie.Name] is { Length: > 0 } cookie)
+        {
+            return (cookie, true);
+        }
+
+        return (null, false);
     }
 }

@@ -8,9 +8,7 @@ namespace Recam.Server.Tests.Features.Setup;
 
 public sealed class ResetOwnerCommandTests
 {
-    private static readonly Uri SetupUri = new("/setup", UriKind.Relative);
-
-    [Fact(DisplayName = "reset-owner removes every Monitor, keeps the cameras, and the first-Monitor QR comes back")]
+    [Fact(DisplayName = "reset-owner removes every Monitor, keeps the cameras, and a first-time code comes back")]
     public async Task ResetOwner_WithOwner_RevokesAndCreatesSetupToken()
     {
         // arrange
@@ -18,8 +16,8 @@ public sealed class ResetOwnerCommandTests
         var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
         var viewer = await factory.PairDeviceAsync(DeviceRole.Viewer);
         var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
-        var ownerSetup = factory.Services.GetRequiredService<OwnerSetup>();
-        var before = await ownerSetup.EnsureTokenAsync(TestContext.Current.CancellationToken);
+        var firstOpen = factory.Services.GetRequiredService<FirstOpen>();
+        var openBefore = await firstOpen.IsOpenAsync(TestContext.Current.CancellationToken);
 
         // act
         int removed;
@@ -30,16 +28,14 @@ public sealed class ResetOwnerCommandTests
 
         // assert
         Assert.Equal(2, removed);
-        Assert.IsType<OwnerSetupStatus.Configured>(before);
-        Assert.IsType<OwnerSetupStatus.Pending>(await ownerSetup.EnsureTokenAsync(TestContext.Current.CancellationToken));
+        Assert.False(openBefore);
+        Assert.True(await firstOpen.IsOpenAsync(TestContext.Current.CancellationToken));
         await using var check = await factory.CreateDatabaseAsync();
         var devices = await check.Devices.ToDictionaryAsync(device => device.Id, TestContext.Current.CancellationToken);
         Assert.True(devices[owner.DeviceId].IsRevoked);
         Assert.True(devices[viewer.DeviceId].IsRevoked);
         Assert.False(devices[camera.DeviceId].IsRevoked);
-        using var client = factory.CreateClient();
-        var page = await client.GetStringAsync(SetupUri, TestContext.Current.CancellationToken);
-        Assert.Contains("<svg", page, StringComparison.Ordinal);
+        Assert.Matches("^[A-Z2-9]{4}-[A-Z2-9]{4}$", await factory.FirstOpenCodeAsync());
     }
 
     [Fact(DisplayName = "reset-owner on a server with no Monitor changes nothing")]

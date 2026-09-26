@@ -22,15 +22,10 @@ public static class WebEndpoints
     {
         app.Use((context, next) =>
         {
-            // The old /setup page carries its own inline style until bullet 6.2 removes it.
-            if (!context.Request.Path.StartsWithSegments("/setup"))
-            {
-                var headers = context.Response.Headers;
-                headers.ContentSecurityPolicy = ContentSecurityPolicy;
-                headers.XContentTypeOptions = "nosniff";
-                headers["Referrer-Policy"] = "no-referrer";
-            }
-
+            var headers = context.Response.Headers;
+            headers.ContentSecurityPolicy = ContentSecurityPolicy;
+            headers.XContentTypeOptions = "nosniff";
+            headers["Referrer-Policy"] = "no-referrer";
             return next(context);
         });
         return app;

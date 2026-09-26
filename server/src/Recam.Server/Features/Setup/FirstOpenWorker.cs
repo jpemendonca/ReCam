@@ -1,7 +1,10 @@
 namespace Recam.Server.Features.Setup;
 
-/// <summary>Renews the owner token before it expires, so the QR in the log is always valid.</summary>
-public sealed class OwnerSetupWorker(OwnerSetup ownerSetup, TimeProvider timeProvider) : BackgroundService
+/// <summary>
+/// Checks every 30 seconds whether the server has a Monitor, so a new code shows up in the log
+/// soon after the last Monitor leaves (or after reset-owner).
+/// </summary>
+public sealed class FirstOpenWorker(FirstOpen firstOpen, TimeProvider timeProvider) : BackgroundService
 {
     private static readonly TimeSpan CheckInterval = TimeSpan.FromSeconds(30);
 
@@ -10,7 +13,7 @@ public sealed class OwnerSetupWorker(OwnerSetup ownerSetup, TimeProvider timePro
         using var timer = new PeriodicTimer(CheckInterval, timeProvider);
         do
         {
-            await ownerSetup.EnsureTokenAsync(stoppingToken);
+            await firstOpen.RefreshAsync(stoppingToken);
         }
         while (await timer.WaitForNextTickAsync(stoppingToken));
     }

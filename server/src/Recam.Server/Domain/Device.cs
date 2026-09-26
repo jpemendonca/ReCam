@@ -78,6 +78,29 @@ public sealed class Device
     }
 
     /// <summary>
+    /// The browser that typed the first-time code becomes the owner. The rules that allow it
+    /// live in <see cref="FirstOpenCode"/>.
+    /// </summary>
+    internal static PairedDevice CreateFirstMonitor(string name, DateTimeOffset now)
+    {
+        if (DeviceName.Validate(name).Count > 0)
+        {
+            throw new ArgumentException("The browser's device name must be valid.", nameof(name));
+        }
+
+        var secret = SecretToken.Generate();
+        var device = new Device
+        {
+            Id = Guid.CreateVersion7(now),
+            Name = name.Trim(),
+            Role = DeviceRole.Owner,
+            CredentialHash = SecretToken.Hash(secret),
+            CreatedAt = now,
+        };
+        return new PairedDevice(device, DeviceCredential.Format(device.Id, secret));
+    }
+
+    /// <summary>
     /// Creates a pairing token on behalf of this device. Any active phone that watches (owner or
     /// viewer) may add cameras and other viewers, but never an owner: the server has a single one.
     /// </summary>

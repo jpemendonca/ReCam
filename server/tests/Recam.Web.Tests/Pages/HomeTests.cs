@@ -1,17 +1,26 @@
 using Microsoft.Extensions.DependencyInjection;
+using Recam.Web.Api;
 using Recam.Web.Pages;
+using Recam.Web.Start;
 using Recam.Web.Tests.Support;
 
 namespace Recam.Web.Tests.Pages;
 
 public sealed class HomeTests : BunitContext
 {
-    public HomeTests() => Services.AddLocalization();
+    private readonly FakeRecamApi _api = new();
 
-    [Theory(DisplayName = "The start page says this browser is not a Monitor yet, in the browser's language")]
-    [InlineData("en-US", "This browser is not a Monitor yet")]
-    [InlineData("pt-BR", "Este navegador ainda não é um Monitor")]
-    public void Render_InBrowserLanguage_ShowsNotMonitorTitle(string language, string expected)
+    public HomeTests()
+    {
+        Services.AddLocalization();
+        Services.AddSingleton<IRecamApi>(_api);
+        Services.AddTransient<StartController>();
+    }
+
+    [Theory(DisplayName = "Without a Monitor, the start page asks for the first-time code, in the browser's language")]
+    [InlineData("en-US", "First time here", "Remember on this computer")]
+    [InlineData("pt-BR", "Primeiro acesso", "Lembrar neste computador")]
+    public void Render_NoMonitor_ShowsCodeForm(string language, string title, string remember)
     {
         // arrange
         using var _ = Culture.Use(language);
@@ -20,6 +29,54 @@ public sealed class HomeTests : BunitContext
         var page = Render<Home>();
 
         // assert
-        Assert.Equal(expected, page.Find("h1").TextContent);
+        Assert.Equal(title, page.Find("h1").TextContent);
+        Assert.Contains(remember, page.Find("label.check").TextContent, StringComparison.Ordinal);
+        Assert.True(page.Find("label.check input").HasAttribute("checked"));
+    }
+
+    [Fact(DisplayName = "Typing the right code shows that this browser is the Monitor")]
+    public void Submit_RightCode_ShowsMonitor()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var page = Render<Home>();
+        page.Find("#code").Change(FakeRecamApi.Code);
+
+        // act
+        page.Find("form").Submit();
+
+        // assert
+        page.WaitForAssertion(() => Assert.Equal("Este navegador é o Monitor", page.Find("h1").TextContent));
+        Assert.Contains("Navegador · Chrome no Windows", page.Find("p").TextContent, StringComparison.Ordinal);
+    }
+
+    [Fact(DisplayName = "A wrong code shows the reason under the field")]
+    public void Submit_WrongCode_ShowsError()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var page = Render<Home>();
+        page.Find("#code").Change("ZZZZ-ZZZZ");
+
+        // act
+        page.Find("form").Submit();
+
+        // assert
+        page.WaitForAssertion(() => Assert.StartsWith("Código errado.", page.Find(".error").TextContent, StringComparison.Ordinal));
+    }
+
+    [Fact(DisplayName = "When another device is the Monitor, the page points to Connect browser")]
+    public void Render_OtherMonitor_ShowsServerTaken()
+    {
+        // arrange
+        using var _ = Culture.Use("en-US");
+        _api.OtherMonitor = true;
+
+        // act
+        var page = Render<Home>();
+
+        // assert
+        Assert.Equal("This server already has a Monitor", page.Find("h1").TextContent);
+        Assert.Contains("Connect browser", page.Find("p").TextContent, StringComparison.Ordinal);
     }
 }

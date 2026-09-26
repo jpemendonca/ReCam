@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -23,7 +24,7 @@ namespace Recam.Server.Tests.Support;
 /// Runs the whole API in memory with a throwaway data directory, a controllable clock and
 /// requests that look like they come from the local network.
 /// </summary>
-public sealed class RecamApiFactory : WebApplicationFactory<Program>
+public sealed partial class RecamApiFactory : WebApplicationFactory<Program>
 {
     private readonly TemporaryDirectory _dataDirectory = new();
 
@@ -52,10 +53,6 @@ public sealed class RecamApiFactory : WebApplicationFactory<Program>
     /// <summary>Stores a fresh pairing token and returns its secret, as a QR code would carry it.</summary>
     public async Task<string> CreatePairingTokenAsync(DeviceRole role)
     {
-        // The setup worker replaces unused owner tokens when it issues its own. Let it finish
-        // first, or it may delete the token this method is about to store.
-        await Services.GetRequiredService<OwnerSetup>().EnsureTokenAsync(CancellationToken.None);
-
         var issued = PairingToken.Issue(role, Time.GetUtcNow());
         await using var database = await CreateDatabaseAsync();
         database.PairingTokens.Add(issued.Token);
@@ -72,6 +69,23 @@ public sealed class RecamApiFactory : WebApplicationFactory<Program>
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<PairResponse>(ApiJson.Options))!;
     }
+
+    /// <summary>The first-time code the server printed last, as the operator reads it in the log.</summary>
+    public async Task<string> FirstOpenCodeAsync()
+    {
+        await Services.GetRequiredService<FirstOpen>().RefreshAsync(CancellationToken.None);
+        return FirstOpenCodesInLog().Last();
+    }
+
+    public IEnumerable<string> FirstOpenCodesInLog() =>
+        Logs.Messages
+            .Select(message => FirstOpenCodePattern().Match(message))
+            .Where(match => match.Success)
+            .Select(match => match.Groups[1].Value);
+
+    /// <summary>A client for the browser Monitor: HTTPS, no cookie jar, so tests see every cookie.</summary>
+    public HttpClient CreateBrowserClient() =>
+        CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost"), HandleCookies = false });
 
     public HttpClient CreateDeviceClient(string credential)
     {
@@ -119,6 +133,9 @@ public sealed class RecamApiFactory : WebApplicationFactory<Program>
             _dataDirectory.Dispose();
         }
     }
+
+    [GeneratedRegex("first-time code ([A-Z2-9]{4}-[A-Z2-9]{4})")]
+    private static partial Regex FirstOpenCodePattern();
 
     private sealed class RemoteIpStartupFilter(Func<IPAddress> remoteIpAddress) : IStartupFilter
     {

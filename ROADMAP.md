@@ -1153,7 +1153,7 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
   > 2,8 MB. O Dockerfile copia o projeto novo, mas a imagem não foi construída aqui. Gate verde
   > (197 testes no servidor e no web, 223 no app).
 
-- [ ] **6.2 Primeira abertura: o navegador vira Monitor**
+- [x] **6.2 Primeira abertura: o navegador vira Monitor**
   - Origem: ADR 0038.
   - Escopo:
     - Servidor: o código de primeira abertura (`SPECS.md` 6) substitui o token do dono. Regra no
@@ -1173,6 +1173,34 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
     cookie, código errado 5 vezes troca o código, com Monitor ativo recusa, fora da rede local
     recusa, cookie sem `X-Recam-Web` num `POST` recusa, sair revoga, o log mostra o código e
     nunca a credencial, `/setup` redireciona); bUnit da tela do código.
+  > Validação (2026-09-26): código escrito e percorrido no navegador do PC (Chromium headless contra
+  > o servidor rodando), sem celular. Servidor: `FirstOpenCode` no domínio (8 caracteres sem letras
+  > parecidas, `XXXX-XXXX`, conferido em tempo constante sem ligar para caixa, espaço e traço,
+  > gasto depois de 5 erros; com Monitor ativo recusa sem contar erro) e `Device.CreateFirstMonitor`.
+  > O serviço `FirstOpen` substituiu o `OwnerSetup`: guarda o código só em memória, imprime no log
+  > enquanto não há Monitor (novo a cada start, depois de 5 erros e depois que o último Monitor
+  > sai) e cria o dono. Rotas `GET`/`POST /api/web/first-open` (o `GET` diz só se ainda está aberto)
+  > e `POST /api/web/sign-out`; o nome do aparelho sai do `User-Agent` e do idioma
+  > ("Navegador · Chrome no Windows"). Cookie `recam_device` (`HttpOnly`, `Secure`,
+  > `SameSite=Strict`, 180 dias com "Lembrar neste computador", sessão sem) lido pelo
+  > `DeviceAuthenticationHandler`, que recusa `POST`/`PUT`/`PATCH`/`DELETE` pelo cookie sem
+  > `X-Recam-Web: 1`. Saíram o token e o QR do dono, a página e o painel do `/setup` (agora
+  > redireciona para `/`) e, com eles, o QRCoder do servidor, que só o QR do log usava (volta no
+  > 6.4, no `Recam.Web`). O `reset-owner` não imprime o código, ao contrário do que o bullet
+  > pedia: o código só existe na memória do servidor em execução, e o comando roda em outro
+  > processo; ele passou a dizer para olhar o log e abrir o endereço no navegador. Navegador:
+  > `IRecamApi`/`HttpRecamApi` (manda `X-Recam-Web: 1` sempre), `StartController` e a página
+  > inicial com o código, "Lembrar neste computador" (marcado por padrão), erros, "já tem um
+  > Monitor", "sem conexão" e a tela provisória "Este navegador é o Monitor" com **Sair**.
+  > Observado no Chromium: código errado mostrou o erro; o código certo, digitado em minúsculas,
+  > virou Monitor com o cookie como descrito; recarregar manteve; um segundo navegador viu "This
+  > server already has a Monitor"; **Sair** apagou o cookie e voltou ao formulário. Testes: domínio
+  > do código, nome do navegador, rotas (cookie e atributos, 180 dias, `/api/me` pelo cookie,
+  > credencial fora do log, 5 erros trocam o código, com Monitor 409, IP público 403,
+  > `X-Forwarded-For` sem proxy confiável 403, proxy confiável usa o IP real, cookie sem cabeçalho
+  > 401, sair revoga, `/setup` redireciona), `reset-owner` e bUnit/controller da página. Gate
+  > verde (210 testes no servidor e no web, 223 no app). O app ainda fala do QR do servidor na
+  > aba Monitor; muda no 6.8.
 
 - [ ] **6.3 Câmeras e vídeo ao vivo no navegador**
   - Origem: caminho principal, passos 4 e 5.
