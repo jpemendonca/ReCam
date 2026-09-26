@@ -29,6 +29,7 @@ public sealed partial class RecordingCleanupWorker(
             store.Delete(segment);
         }
 
+        store.DeleteOrphanMotion();
         store.DeleteEmptyCameraFolders();
         if (toDelete.Count > 0)
         {

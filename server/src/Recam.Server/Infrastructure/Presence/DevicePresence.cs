@@ -13,6 +13,10 @@ public sealed class DevicePresence
     private readonly ConcurrentDictionary<Guid, bool> _onlineCameras = new();
     private readonly ConcurrentDictionary<Guid, bool> _publishing = new();
     private readonly ConcurrentDictionary<Guid, int> _watchers = new();
+    private readonly ConcurrentDictionary<Guid, List<DateTimeOffset>> _torchChanges = new();
+
+    /// <summary>How long torch changes are remembered, for motion detection to ignore them.</summary>
+    public static readonly TimeSpan TorchMemory = TimeSpan.FromDays(3);
 
     /// <summary>Returns true when this is the device's first connection (it just came online).</summary>
     public bool Connect(Guid deviceId, bool isCamera)
@@ -80,6 +84,31 @@ public sealed class DevicePresence
     }
 
     public int Watchers(Guid cameraId) => _watchers.GetValueOrDefault(cameraId);
+
+    /// <summary>When the camera said its torch switched. The picture jumps then; that is not motion.</summary>
+    public void RecordTorchChange(Guid cameraId, DateTimeOffset at)
+    {
+        var changes = _torchChanges.GetOrAdd(cameraId, _ => []);
+        lock (changes)
+        {
+            changes.RemoveAll(change => change < at - TorchMemory);
+            changes.Add(at);
+        }
+    }
+
+    /// <summary>The camera's torch changes of the last days (in memory: a restart forgets them).</summary>
+    public IReadOnlyList<DateTimeOffset> TorchChanges(Guid cameraId)
+    {
+        if (!_torchChanges.TryGetValue(cameraId, out var changes))
+        {
+            return [];
+        }
+
+        lock (changes)
+        {
+            return [.. changes];
+        }
+    }
 
     /// <summary>Cameras with at least one live hub connection.</summary>
     public int OnlineCameras => _onlineCameras.Count;

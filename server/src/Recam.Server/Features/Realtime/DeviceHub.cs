@@ -202,6 +202,7 @@ public sealed partial class DeviceHub(
     [Authorize(Policy = AuthExtensions.CameraOnly)]
     public async Task<HubResult> ReportTorch(bool torchOn)
     {
+        presence.RecordTorchChange(Context.User!.GetDeviceId(), timeProvider.GetUtcNow());
         await Clients.Group(ViewersGroup).TorchChanged(Context.User!.GetDeviceId(), torchOn);
         return HubResult.Success;
     }

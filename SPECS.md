@@ -210,6 +210,18 @@ Desenho combinado com o autor em 2026-09-25 (Fase 3 do ROADMAP):
   do servidor cria `/recordings` com esse dono. O compose sobe o servidor primeiro
   (`depends_on`), e o Docker copia essa permissão para o volume novo. Validado em 2026-09-25 com o
   mesmo arranjo: o MediaMTX gravou como 1654 e o servidor apagou o segmento e a pasta.
+- **Movimento (Fase 7).** Um serviço `motion` (imagem `linuxserver/ffmpeg`, a mesma dos testes,
+  com o usuário do servidor e sem rede) roda `deploy/motion.sh`: a cada 20 s, para cada segmento
+  fechado (não o mais novo de cada câmera, salvo se ninguém escreve nele há 90 s), grava ao lado
+  um `<segmento>.motion` com uma linha por meio segundo, "segundos fração", onde fração é a parte
+  da imagem (em 160 px de largura, tons de cinza) que mudou mais de 30 de 255 níveis em relação ao
+  meio segundo anterior. O ruído do sensor fica abaixo disso. O .NET não processa vídeo: lê essas
+  notas e monta os eventos com a sensibilidade da câmera (`Device.MotionSensitivity`: baixa 3%,
+  média 1%, alta 0,3%; padrão média), emendando trechos a menos de 10 s e ignorando os 5 s depois
+  de a câmera avisar que a lanterna mudou (guardado em memória por três dias). Mudar a
+  sensibilidade vale para o que já foi gravado. A limpeza da cota apaga as notas junto com o
+  segmento e as notas que ficaram sem segmento. O evento aparece quando o segmento fecha, não na
+  hora.
 - **Codec.** O MediaMTX 1.21.1 grava H.264 em fMP4, mas não grava VP8: com VP8 ele registra "no
   supported tracks found, skipping recording" e só repassa (seção 11).
 
@@ -403,6 +415,8 @@ Estado em 2026-09-26 (conferido no bullet 6.9). As revisões do log 12 contam co
 | `GET /api/cameras/{id}/recording-days` | Monitores | — | `["AAAA-MM-DD"]`, dias UTC, do mais novo ao mais antigo |
 | `GET /api/cameras/{id}/recordings?day=AAAA-MM-DD` | Monitores | — | `[{ start, end, segments: [{ start, end, url }] }]` |
 | `GET /api/recordings/{cameraId}/{segmento}` | Monitores | `Range` | o arquivo `video/mp4` |
+| `GET /api/cameras/{id}/motion?day=AAAA-MM-DD` | Monitores | — | `{ sensitivity, events: [{ start, end, peak }] }` dos segmentos que começam no dia UTC (Fase 7) |
+| `PUT /api/cameras/{id}/motion-sensitivity` | Monitores | `{ sensitivity: "low" \| "medium" \| "high" }` | `204` (Fase 7) |
 | `GET /api/recordings/quota` | Monitores | — | `{ quotaMb, usedBytes, freeBytes }` |
 | `PUT /api/recordings/quota` | Monitores | `{ quotaMb }` | `204` |
 | `POST /whip/{cameraId}` | Camera, só com `cameraId` igual ao próprio id | SDP offer | proxy para `cam-` ou `rec-{cameraId}` no MediaMTX |
@@ -504,6 +518,9 @@ Servidor → cliente:
 - Dados em volume nomeado `recam-data`. O Dockerfile cria `/data` com dono não-root, e o
   Docker copia essa permissão para o volume no primeiro uso. As gravações ficam no volume
   `recam-recordings`, em `/recordings`, pelo mesmo mecanismo.
+- Serviço `motion` nos dois composes (seção 2.4): `linuxserver/ffmpeg` com tag exata, usuário
+  `1654:1654`, `network_mode: none`, `deploy/motion.sh` montado só leitura e o volume
+  `recam-recordings`. Não expõe porta.
 - Observabilidade opcional: `deploy/compose.observability.yaml` soma ao compose escolhido o
   Aspire Dashboard (`mcr.microsoft.com/dotnet/aspire-dashboard`, tag exata), com o painel em
   `127.0.0.1:18888` e o OTLP gRPC em `127.0.0.1:4317`, os dois só no loopback. Sem ele, o servidor
@@ -581,7 +598,7 @@ O agente nunca escreve valor real de segredo em arquivo nenhum.
 
 Cada item deste log tem um ADR em `docs/adr/` (índice em [`docs/adr/README.md`](docs/adr/README.md)),
 na ordem em que aparece aqui: as 16 decisões iniciais são os ADRs 0001 a 0016, e as revisões
-datadas, de cima para baixo, os ADRs 0017 a 0040. O ADR traz contexto, decisão e consequências; o
+datadas, de cima para baixo, os ADRs 0017 a 0041. O ADR traz contexto, decisão e consequências; o
 log continua sendo o resumo.
 
 Decisões iniciais (2026-09-24):
@@ -804,3 +821,11 @@ seguinte em `docs/adr/`:
 > "Ler QR code" (e "Colar código"), e o papel que o QR traz decide: câmera pede o nome e entra no
 > modo câmera; Monitor pareia com o nome "Monitor". O `r` do QR passa a ser obrigatório, com
 > `camera` ou `viewer`. O celular Monitor ganha no menu "Conectar navegador". Seções 1 e 5.2.
+
+> Revisão (2026-09-26): detecção de movimento nas gravações (bullet 7.2), seção 2.4. O desenho do
+> ROADMAP usava a nota `scene` do FFmpeg; medida em cenas de teste, ela é feita para corte de cena e
+> quase não vê movimento contínuo (uma forma do tamanho de uma pessoa andando deu o mesmo que a
+> cena parada). O serviço `motion` passou a medir a fração da imagem que mudou entre meios
+> segundos, com um limiar que deixa o ruído do sensor em zero (a caminhada dá cerca de 5%). Novo
+> serviço nos composes, sem porta nem rede; `Device.MotionSensitivity` (migração `CameraMotion`,
+> câmeras antigas começam em média); rotas de movimento na seção 5.5.

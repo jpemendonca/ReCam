@@ -32,6 +32,19 @@ services:
       - recam-recordings:/recordings
     restart: unless-stopped
 
+  motion:
+    # Scores motion in closed recording segments; the server turns the scores into events.
+    image: linuxserver/ffmpeg:9.0-cli-ls83
+    user: "1654:1654"
+    depends_on:
+      - server
+    network_mode: none
+    entrypoint: ["/bin/bash", "/motion.sh"]
+    volumes:
+      - ./motion.sh:/motion.sh:ro
+      - recam-recordings:/recordings
+    restart: unless-stopped
+
 volumes:
   recam-data:
   recam-recordings:

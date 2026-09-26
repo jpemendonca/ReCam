@@ -32,6 +32,7 @@ public static class RecordingEndpoints
             .RequireAuthorization(AuthExtensions.ViewerOrOwner);
         endpoints.MapGet("/api/recordings/{cameraId:guid}/{segment}", ServeSegment)
             .RequireAuthorization(AuthExtensions.ViewerOrOwner);
+        endpoints.MapMotionEndpoints();
         return endpoints;
     }
 

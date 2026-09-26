@@ -15,4 +15,10 @@ public static class RecordingFiles
         file.SetLength(bytes);
         return path;
     }
+
+    /// <summary>Writes the motion service's scores next to a segment: "seconds fraction" per line.</summary>
+    public static void WriteMotion(string segmentPath, params (double Seconds, double Changed)[] samples) =>
+        File.WriteAllLines(
+            segmentPath + ".motion",
+            samples.Select(sample => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{sample.Seconds:0.0} {sample.Changed:0.0000}")));
 }

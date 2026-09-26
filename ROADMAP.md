@@ -1428,7 +1428,7 @@ Decidido com o autor em 2026-09-25, logo depois da Fase 6. Vale no app e no nave
   > (abre, filtra, volta ao normal, guarda por câmera) no app e no navegador. Gate verde (276 no
   > servidor e no web, 240 no app).
 
-- [ ] **7.2 Detectar movimento nas gravações**
+- [x] **7.2 Detectar movimento nas gravações**
   - Origem: pedido do autor em 2026-09-25 (achar os momentos importantes sem assistir horas).
   - Escopo: só câmeras com "Gravar sempre". Desenho, sem o .NET processar vídeo:
     - Serviço `motion` novo nos dois composes, com a imagem FFmpeg que os testes já usam
@@ -1447,6 +1447,24 @@ Decidido com o autor em 2026-09-25, logo depois da Fase 6. Vale no app e no nave
   - Aceite: teste do domínio (notas para eventos em cada sensibilidade, lanterna ignorada),
     teste do endpoint e teste com Testcontainers rodando o script do `motion` num segmento gravado
     com movimento e noutro parado. Revisão do `SPECS.md` (seções 2.4 e 7) e ADR.
+  > Validação (2026-09-26): código escrito; o script rodou de verdade no container do FFmpeg, sem
+  > celular. Mudança no desenho, registrada no `SPECS.md` 12 e no ADR 0041: a nota `scene` do
+  > FFmpeg não serve (medida em cenas de teste, é feita para corte de cena e deu o mesmo para uma
+  > forma andando e para a cena parada). O `deploy/motion.sh` mede a fração da imagem que mudou
+  > mais de 30 de 255 níveis entre meios segundos (ruído do sensor: 0; forma do tamanho de uma
+  > pessoa andando: cerca de 5%). Serviço `motion` nos dois composes (mesma imagem e tag dos testes,
+  > usuário 1654, sem rede, script só leitura). Servidor: `MotionEvents` no domínio (baixa 3%,
+  > média 1%, alta 0,3%, emenda a menos de 10 s, ignora 5 s depois de a lanterna mudar),
+  > `Device.MotionSensitivity` com `SetMotionSensitivity` (migração `CameraMotion`, câmeras antigas
+  > em média), trocas de lanterna guardadas em memória no `DevicePresence` a partir do `ReportTorch`,
+  > `RecordingStore.ReadMotion`, a limpeza apagando as notas com o segmento e as órfãs, e as rotas
+  > `GET /api/cameras/{id}/motion?day=` e `PUT /api/cameras/{id}/motion-sensitivity`. Testes:
+  > domínio, store, rotas (eventos do dia, sensibilidade vale para trás, lanterna ignorada, só
+  > Monitor muda, valor obrigatório) e Testcontainers rodando o `motion.sh --once` sobre um segmento
+  > parado com ruído e um com a caminhada: o parado não deu evento nem em alta; a caminhada deu um
+  > evento de 5 s a 12 s. O compose com o serviço novo foi validado com `docker compose config`, mas
+  > não subido (a imagem do servidor não compila neste ambiente). Gate verde (288 no servidor e no
+  > web, 240 no app).
 
 - [ ] **7.3 Movimento na linha do tempo**
   - Origem: continuação do 7.2.

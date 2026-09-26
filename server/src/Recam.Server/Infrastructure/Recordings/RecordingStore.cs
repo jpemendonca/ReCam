@@ -13,6 +13,9 @@ public sealed partial class RecordingStore(ServerSettings settings)
 {
     public const string FileTimeFormat = "yyyy-MM-dd_HH-mm-ss-ffffff";
 
+    /// <summary>The motion service writes a segment's scores next to it, with this suffix.</summary>
+    public const string MotionSuffix = ".motion";
+
     public string Directory => settings.RecordingsDirectory;
 
     public IReadOnlyList<RecordingSegment> ListSegments()
@@ -54,11 +57,60 @@ public sealed partial class RecordingStore(ServerSettings settings)
     public string? PathOf(Guid cameraId, string fileName) =>
         TryParseStart(fileName) is null ? null : Path.Combine(Directory, CameraFolder(cameraId), fileName);
 
+    /// <summary>Deletes the file and its motion scores.</summary>
     public void Delete(RecordingSegment segment)
     {
         if (PathOf(segment.CameraId, segment.FileName) is { } path)
         {
             File.Delete(path);
+            File.Delete(path + MotionSuffix);
+        }
+    }
+
+    /// <summary>
+    /// The motion service's scores for a segment (deploy/motion.sh): one line per half second,
+    /// "seconds fraction". Empty until the service scored it.
+    /// </summary>
+    public IReadOnlyList<MotionSample> ReadMotion(RecordingSegment segment)
+    {
+        if (PathOf(segment.CameraId, segment.FileName) is not { } path || !File.Exists(path + MotionSuffix))
+        {
+            return [];
+        }
+
+        var samples = new List<MotionSample>();
+        foreach (var line in File.ReadLines(path + MotionSuffix))
+        {
+            var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 2
+                && double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds)
+                && double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var changed))
+            {
+                samples.Add(new MotionSample(segment.StartsAt.AddSeconds(seconds), changed));
+            }
+        }
+
+        return samples;
+    }
+
+    /// <summary>Removes motion scores whose segment is gone, deleted while it was being scored.</summary>
+    public void DeleteOrphanMotion()
+    {
+        var root = new DirectoryInfo(Directory);
+        if (!root.Exists)
+        {
+            return;
+        }
+
+        foreach (var cameraDirectory in root.EnumerateDirectories().Where(folder => TryParseCamera(folder.Name) is not null))
+        {
+            foreach (var scores in cameraDirectory.EnumerateFiles("*" + MotionSuffix))
+            {
+                if (!File.Exists(scores.FullName[..^MotionSuffix.Length]))
+                {
+                    scores.Delete();
+                }
+            }
         }
     }
 

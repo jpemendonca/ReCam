@@ -36,6 +36,9 @@ public sealed class Device
     /// <summary>"Record always": the camera publishes all the time and MediaMTX records it.</summary>
     public bool RecordingEnabled { get; private set; }
 
+    /// <summary>How much of the picture must change for motion to count in its recordings.</summary>
+    public MotionSensitivity MotionSensitivity { get; private set; } = MotionSensitivity.Medium;
+
     /// <summary>What the camera said about its encoder; null until it reports.</summary>
     public bool? SupportsH264 { get; private set; }
 
@@ -221,6 +224,23 @@ public sealed class Device
         }
 
         RecordingEnabled = enabled;
+        return Result.Success();
+    }
+
+    /// <summary>A Monitor sets how sensitive this camera's motion detection is.</summary>
+    public Result SetMotionSensitivity(Device requester, MotionSensitivity sensitivity)
+    {
+        if (!requester.IsMonitor || requester.IsRevoked)
+        {
+            return DeviceErrors.NotAMonitor;
+        }
+
+        if (Role != DeviceRole.Camera || IsRevoked)
+        {
+            return MediaErrors.CameraNotFound;
+        }
+
+        MotionSensitivity = sensitivity;
         return Result.Success();
     }
 

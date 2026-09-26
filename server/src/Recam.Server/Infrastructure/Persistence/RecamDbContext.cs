@@ -28,6 +28,12 @@ public sealed class RecamDbContext(DbContextOptions<RecamDbContext> options) : D
             device.Property(d => d.Name).HasMaxLength(40);
             device.Property(d => d.CredentialHash).HasMaxLength(32);
             device.HasIndex(d => d.Role);
+
+            // Cameras paired before motion detection start at medium. The sentinel is a value no
+            // camera has, so EF still writes "low" when someone picks it.
+            device.Property(d => d.MotionSensitivity)
+                .HasDefaultValue(MotionSensitivity.Medium)
+                .HasSentinel((MotionSensitivity)(-1));
         });
 
         modelBuilder.Entity<PairingToken>(token =>

@@ -46,3 +46,4 @@ no log do `SPECS.md` e ganha o próximo número aqui.
 | [0038](0038-navegador-primeiro-monitor.md) | Navegador como primeiro Monitor e primeiro celular como câmera | 2026-09-25 |
 | [0039](0039-monitor-web-blazor-webassembly.md) | Monitor web em Blazor WebAssembly, cliente do mesmo protocolo | 2026-09-25 |
 | [0040](0040-app-abre-em-ler-qr.md) | App abre em "Ler QR code" e o QR decide o papel | 2026-09-25 |
+| [0041](0041-deteccao-de-movimento.md) | Detecção de movimento pelas notas do serviço motion | 2026-09-26 |
