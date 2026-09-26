@@ -1790,6 +1790,45 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > `timeupdate` do vídeo e recomeça a cada arquivo. Testes de widget e bUnit cobrem a hora
   > andando e a troca de arquivo. Só código e teste; falta conferir no navegador e no Redmi 6A.
 
+## Fase 10: servidor numa VPS
+
+Decidido com o autor em 2026-09-26: rodar o servidor numa VPS, com as câmeras em casa e quem
+assiste em qualquer lugar. Certificado, tráfego e limite da VPS são responsabilidade de quem roda o
+servidor; o projeto só precisa funcionar nesse cenário e explicar como montar.
+
+- [ ] **10.1 Código de primeira abertura aceito de qualquer rede**
+  - Origem: decisão do autor em 2026-09-26. O código já basta: 8 caracteres entre 31, morre após
+    5 erros e só existe até o primeiro Monitor. A regra "só da rede local" impede usar numa VPS.
+  - Escopo: `POST /api/web/first-open` deixa de exigir IP da rede local. Mantém o limite de 5 por
+    minuto por IP e os 5 erros por código. Revisar `SPECS.md` (5.5, 6 e o log de decisões) e a
+    regra de token no `AGENTS.md`.
+  - Aceite: teste de integração com IP público virando Monitor com o código certo, e o limite de
+    tentativas continuando a valer.
+
+- [ ] **10.2 Servidor atrás de um proxy com certificado de verdade**
+  - Origem: VPS do autor, em 2026-09-26. Quem expõe na internet coloca um proxy (Caddy, Nginx
+    Proxy Manager) com certificado do Let's Encrypt na frente.
+  - Escopo: o servidor lê o IP real de `X-Forwarded-For` só quando vem de um proxy configurado
+    (senão o limite por IP vira um limite para todo mundo). O QR usa o endereço do proxy
+    (`RECAM_PUBLIC_URLS`). O app pareia com um servidor de certificado válido, sem depender do
+    fingerprint. O SignalR e o WHIP/WHEP passam pelo proxy. O vídeo continua direto na
+    `8189/udp`, fora do proxy.
+  - Fora do escopo: pôr o Caddy no compose. O exemplo de configuração fica no README.
+  - Aceite: teste do IP real atrás do proxy; teste do app aceitando certificado válido sem `f`.
+
+- [ ] **10.3 Guia de instalação numa VPS**
+  - Escopo: seção no README (inglês): portas a abrir (`443/tcp` no proxy, `8189/udp` no servidor),
+    `RECAM_HOST` com o IP público (que também vai para o `webrtcAdditionalHosts` do MediaMTX),
+    `RECAM_PUBLIC_URLS` com o domínio, exemplo de Caddyfile, e onde ver o código de primeira
+    abertura (`./Recam.Server code`).
+  - Aceite: o autor segue o guia do zero na VPS dele sem precisar de outra ajuda.
+
+- [ ] **10.4 [aparelho] Validar na VPS**
+  - Escopo: servidor na VPS do autor. Samsung A10 em casa, no Wi-Fi, como câmera. Redmi 6A no
+    4G assistindo. Navegador fora da rede de casa virando Monitor com o código.
+  - Aceite: ao vivo com som, lanterna, gravação e linha do tempo funcionando. Anotar o atraso e
+    qualquer falha como bullet novo.
+
 ## Fase 5: distribuição
 
 - [x] **5.1 Modo atrás de proxy reverso**
