@@ -150,6 +150,39 @@
   <data name="RecordingNeedsH264" xml:space="preserve">
     <value>Can't record: this phone has no H.264</value>
   </data>
+  <data name="RecordingsHours" xml:space="preserve">
+    <value>About {0} hours of one camera fit.</value>
+  </data>
+  <data name="RecordingsHowItWorks" xml:space="preserve">
+    <value>A camera records about 300 MB per hour. When the space is full, the oldest recordings are deleted, from any camera.</value>
+  </data>
+  <data name="RecordingsInUse" xml:space="preserve">
+    <value>In use: {0} of {1} GB.</value>
+  </data>
+  <data name="RecordingsLoadFailed" xml:space="preserve">
+    <value>Could not load the recordings space. Check the connection to the server.</value>
+  </data>
+  <data name="RecordingsOpen" xml:space="preserve">
+    <value>Recordings</value>
+  </data>
+  <data name="RecordingsSave" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="RecordingsSaveFailed" xml:space="preserve">
+    <value>Could not save. Check the connection to the server.</value>
+  </data>
+  <data name="RecordingsSaved" xml:space="preserve">
+    <value>Space for recordings saved.</value>
+  </data>
+  <data name="RecordingsSpace" xml:space="preserve">
+    <value>Space for recordings: {0} GB</value>
+  </data>
+  <data name="RecordingsSpaceOpen" xml:space="preserve">
+    <value>Recordings space</value>
+  </data>
+  <data name="RecordingsTitle" xml:space="preserve">
+    <value>Recordings</value>
+  </data>
   <data name="ServerTakenText" xml:space="preserve">
     <value>To watch in this browser, open ReCam on a Monitor phone and choose Connect browser.</value>
   </data>
@@ -158,6 +191,24 @@
   </data>
   <data name="SignOut" xml:space="preserve">
     <value>Sign out</value>
+  </data>
+  <data name="TimelineBarLabel" xml:space="preserve">
+    <value>Recorded hours of the day</value>
+  </data>
+  <data name="TimelineEmpty" xml:space="preserve">
+    <value>No recordings yet. Turn on Record always for this camera.</value>
+  </data>
+  <data name="TimelineLoadFailed" xml:space="preserve">
+    <value>Could not load the recordings. Check the connection to the server.</value>
+  </data>
+  <data name="TimelinePlaying" xml:space="preserve">
+    <value>Playing from {0}</value>
+  </data>
+  <data name="TimelineTapToPlay" xml:space="preserve">
+    <value>Tap the hours below to watch from that moment.</value>
+  </data>
+  <data name="TimelineTitle" xml:space="preserve">
+    <value>Recordings · {0}</value>
   </data>
   <data name="TorchFailed" xml:space="preserve">
     <value>Could not switch the flashlight. Wait for the video to start.</value>

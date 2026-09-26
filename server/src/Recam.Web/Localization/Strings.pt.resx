@@ -150,6 +150,39 @@
   <data name="RecordingNeedsH264" xml:space="preserve">
     <value>Não grava: este celular não tem H.264</value>
   </data>
+  <data name="RecordingsHours" xml:space="preserve">
+    <value>Cabem cerca de {0} horas de uma câmera.</value>
+  </data>
+  <data name="RecordingsHowItWorks" xml:space="preserve">
+    <value>Uma câmera grava cerca de 300 MB por hora. Quando o espaço enche, as gravações mais antigas são apagadas, de qualquer câmera.</value>
+  </data>
+  <data name="RecordingsInUse" xml:space="preserve">
+    <value>Em uso: {0} de {1} GB.</value>
+  </data>
+  <data name="RecordingsLoadFailed" xml:space="preserve">
+    <value>Não deu para carregar o espaço das gravações. Confira a conexão com o servidor.</value>
+  </data>
+  <data name="RecordingsOpen" xml:space="preserve">
+    <value>Gravações</value>
+  </data>
+  <data name="RecordingsSave" xml:space="preserve">
+    <value>Salvar</value>
+  </data>
+  <data name="RecordingsSaveFailed" xml:space="preserve">
+    <value>Não deu para salvar. Confira a conexão com o servidor.</value>
+  </data>
+  <data name="RecordingsSaved" xml:space="preserve">
+    <value>Espaço para gravações salvo.</value>
+  </data>
+  <data name="RecordingsSpace" xml:space="preserve">
+    <value>Espaço para gravações: {0} GB</value>
+  </data>
+  <data name="RecordingsSpaceOpen" xml:space="preserve">
+    <value>Espaço das gravações</value>
+  </data>
+  <data name="RecordingsTitle" xml:space="preserve">
+    <value>Gravações</value>
+  </data>
   <data name="ServerTakenText" xml:space="preserve">
     <value>Para assistir neste navegador, abra o ReCam num celular Monitor e escolha Conectar navegador.</value>
   </data>
@@ -158,6 +191,24 @@
   </data>
   <data name="SignOut" xml:space="preserve">
     <value>Sair</value>
+  </data>
+  <data name="TimelineBarLabel" xml:space="preserve">
+    <value>Horas gravadas do dia</value>
+  </data>
+  <data name="TimelineEmpty" xml:space="preserve">
+    <value>Nenhuma gravação ainda. Ligue Gravar sempre nesta câmera.</value>
+  </data>
+  <data name="TimelineLoadFailed" xml:space="preserve">
+    <value>Não deu para carregar as gravações. Confira a conexão com o servidor.</value>
+  </data>
+  <data name="TimelinePlaying" xml:space="preserve">
+    <value>Tocando a partir das {0}</value>
+  </data>
+  <data name="TimelineTapToPlay" xml:space="preserve">
+    <value>Toque nas horas aqui embaixo para assistir a partir daquele momento.</value>
+  </data>
+  <data name="TimelineTitle" xml:space="preserve">
+    <value>Gravações · {0}</value>
   </data>
   <data name="TorchFailed" xml:space="preserve">
     <value>Não deu para mudar a lanterna. Espere o vídeo começar.</value>

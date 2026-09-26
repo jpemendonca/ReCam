@@ -1257,13 +1257,30 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
   > pareado, sem servidor), SVG sem `style` e bUnit do primeiro uso (abre o vídeo sozinho) e da
   > página de adicionar. Gate verde (240 testes no servidor e no web, 223 no app).
 
-- [ ] **6.5 Gravações no navegador**
+- [x] **6.5 Gravações no navegador**
   - Origem: Monitor completo (ADR 0038).
   - Escopo: dias, barra das 24 h e reprodução com `<video>` direto nos segmentos (com `Range` e
     o cookie), passando para o próximo sozinho; **Espaço para gravações** com a mesma regra do
     app. Usa as rotas da Fase 3, sem mudar o servidor.
   - Aceite: testes do controller (dias locais a partir dos UTC, tocar a partir de um ponto,
     próximo segmento, cota) e bUnit da barra.
+  > Validação (2026-09-26): código escrito e percorrido no navegador do PC com arquivos gravados de
+  > verdade, sem celular. `TimelineController` (dias locais a partir dos dias UTC, dois dias UTC por
+  > dia local, tocar a partir do ponto clicado ou do próximo arquivo, passar para o próximo sozinho)
+  > e `QuotaController` (mínimo de 100 MB, teto no que o disco permite, 300 MB por hora). Página
+  > `/cameras/{id}/recordings` com os dias, a barra das 24 h em SVG (só atributos, por causa da
+  > CSP; 144 faixas de 10 min clicáveis) e um `<video>` que toca o segmento direto do servidor com
+  > o cookie e `#t=segundos` para começar no ponto, sem JavaScript nem relay; página `/recordings`
+  > com o espaço. Links "Gravações" no cartão da câmera e no vídeo ao vivo, "Espaço das gravações"
+  > na lista. Diferença do app, de propósito: ao abrir, a linha do tempo pula e tira da lista os
+  > dias locais que um dia UTC só toca pela borda, sem nada gravado (no fuso de São Paulo, o dia
+  > UTC de hoje cria "hoje" vazio quando tudo foi gravado ontem à noite). O app tem o mesmo
+  > defeito; virou o bullet 6.8.1. Observado no Chromium com fuso de São Paulo e dois segmentos
+  > VP9 em fMP4 gerados pelo FFmpeg (o Chromium daqui não toca H.264): a lista de dias mostrou "25
+  > de setembro", clicar no trecho tocou a partir das 21:31, e o segundo arquivo começou sozinho
+  > quando o primeiro acabou; a página de espaço mostrou "Em uso: 0,0 de 2,0 GB." e salvou 1,0 GB.
+  > Testes: controllers (fuso, dois dias UTC, ponto de início, próximo, cota, falhas) e bUnit das
+  > duas páginas. Gate verde (252 testes no servidor e no web, 223 no app).
 
 - [ ] **6.6 Aparelhos e Adicionar Monitor no navegador**
   - Origem: Monitor completo (ADR 0038).
@@ -1290,6 +1307,14 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
     `/setup` e do QR do servidor passam a falar do navegador. ARB em `en` e `pt`.
   - Aceite: testes do parse (sem `r`, `r=owner`), do roteamento pelo papel e widget test da
     primeira tela.
+
+- [ ] **6.8.1 App: linha do tempo abre num dia com gravação**
+  - Origem: achado no 6.5 (2026-09-26).
+  - Escopo: um dia UTC cobre partes de dois dias locais. Quando tudo foi gravado de noite (no fuso
+    de São Paulo, depois das 21h), a lista de dias do app mostra também "hoje", vazio, e abre nele.
+    Ao abrir, pular os dias vazios e tirá-los da lista, como o navegador faz.
+  - Aceite: teste do controller com gravação às 00:30 UTC e fuso -3: abre no dia anterior e a lista
+    não tem o dia vazio.
 
 - [ ] **6.9 README e mensagens do servidor**
   - Origem: caminho principal novo.

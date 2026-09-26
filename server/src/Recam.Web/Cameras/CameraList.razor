@@ -41,7 +41,10 @@
                         }
                     </a>
                     <p class="status">@Status(camera)</p>
-                    <RecordingToggle Camera="camera" />
+                    <div class="actions">
+                        <RecordingToggle Camera="camera" />
+                        <a class="link" href="cameras/@camera.Id/recordings">@L["RecordingsOpen"]</a>
+                    </div>
                 </li>
             }
         </ul>

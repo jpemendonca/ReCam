@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -85,6 +86,29 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
     {
         var status = await http.GetFromJsonAsync<TokenStatus>(new Uri($"api/pairing-tokens/{tokenId}", UriKind.Relative), Json, cancellationToken);
         return status?.Used == true;
+    }
+
+    public async Task<IReadOnlyList<DateOnly>> GetRecordingDaysAsync(Guid cameraId, CancellationToken cancellationToken)
+    {
+        var days = await http.GetFromJsonAsync<List<string>>(new Uri($"api/cameras/{cameraId}/recording-days", UriKind.Relative), Json, cancellationToken);
+        return [.. (days ?? []).Select(day => DateOnly.ParseExact(day, "yyyy-MM-dd", CultureInfo.InvariantCulture))];
+    }
+
+    public async Task<IReadOnlyList<RecordingPieceInfo>> GetRecordingsAsync(Guid cameraId, DateOnly utcDay, CancellationToken cancellationToken)
+    {
+        var day = utcDay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        return await http.GetFromJsonAsync<List<RecordingPieceInfo>>(
+            new Uri($"api/cameras/{cameraId}/recordings?day={day}", UriKind.Relative), Json, cancellationToken) ?? [];
+    }
+
+    public async Task<QuotaInfo> GetQuotaAsync(CancellationToken cancellationToken) =>
+        await http.GetFromJsonAsync<QuotaInfo>(new Uri("api/recordings/quota", UriKind.Relative), Json, cancellationToken)
+        ?? throw new HttpRequestException("The server answered an empty quota.");
+
+    public async Task SetQuotaAsync(int megabytes, CancellationToken cancellationToken)
+    {
+        using var response = await http.PutAsJsonAsync(new Uri("api/recordings/quota", UriKind.Relative), new { quotaMb = megabytes }, Json, cancellationToken);
+        response.EnsureSuccessStatusCode();
     }
 
     private sealed record FirstOpenStatus(bool Open);

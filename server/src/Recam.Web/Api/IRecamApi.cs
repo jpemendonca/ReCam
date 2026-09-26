@@ -18,6 +18,16 @@ public interface IRecamApi
     /// <summary>Whether a phone already paired with the QR this browser created.</summary>
     Task<bool> IsPairingTokenUsedAsync(Guid tokenId, CancellationToken cancellationToken);
 
+    /// <summary>UTC days with recordings of one camera, newest first.</summary>
+    Task<IReadOnlyList<DateOnly>> GetRecordingDaysAsync(Guid cameraId, CancellationToken cancellationToken);
+
+    /// <summary>The recorded stretches of one UTC day.</summary>
+    Task<IReadOnlyList<RecordingPieceInfo>> GetRecordingsAsync(Guid cameraId, DateOnly utcDay, CancellationToken cancellationToken);
+
+    Task<QuotaInfo> GetQuotaAsync(CancellationToken cancellationToken);
+
+    Task SetQuotaAsync(int megabytes, CancellationToken cancellationToken);
+
     /// <summary>The server's cameras, or null when this browser is no longer a Monitor.</summary>
     Task<IReadOnlyList<CameraInfo>?> GetCamerasAsync(CancellationToken cancellationToken);
 }

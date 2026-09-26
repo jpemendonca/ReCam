@@ -23,6 +23,14 @@ public sealed class FakeRecamApi : IRecamApi
 
     public TimeSpan TokenValidFor { get; set; } = TimeSpan.FromMinutes(10);
 
+    /// <summary>Recorded stretches by UTC day, for every camera.</summary>
+    public Dictionary<DateOnly, List<RecordingPieceInfo>> Recordings { get; } = [];
+
+    /// <summary>The UTC days asked for, in order.</summary>
+    public List<DateOnly> RecordingDaysAsked { get; } = [];
+
+    public QuotaInfo Quota { get; set; } = new(2048, 300L * 1024 * 1024, 10L * 1024 * 1024 * 1024);
+
     /// <summary>A phone scans the last QR; a camera also shows up in the list.</summary>
     public void UseLastToken(string cameraName = "Porta")
     {
@@ -83,6 +91,32 @@ public sealed class FakeRecamApi : IRecamApi
     {
         ThrowIfOffline();
         return Task.FromResult(Tokens.Any(entry => entry.Token.Id == tokenId && entry.Used));
+    }
+
+    public Task<IReadOnlyList<DateOnly>> GetRecordingDaysAsync(Guid cameraId, CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        return Task.FromResult<IReadOnlyList<DateOnly>>([.. Recordings.Keys.OrderDescending()]);
+    }
+
+    public Task<IReadOnlyList<RecordingPieceInfo>> GetRecordingsAsync(Guid cameraId, DateOnly utcDay, CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        RecordingDaysAsked.Add(utcDay);
+        return Task.FromResult<IReadOnlyList<RecordingPieceInfo>>(Recordings.GetValueOrDefault(utcDay) ?? []);
+    }
+
+    public Task<QuotaInfo> GetQuotaAsync(CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        return Task.FromResult(Quota);
+    }
+
+    public Task SetQuotaAsync(int megabytes, CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        Quota = Quota with { QuotaMb = megabytes };
+        return Task.CompletedTask;
     }
 
     public Task<IReadOnlyList<CameraInfo>?> GetCamerasAsync(CancellationToken cancellationToken)

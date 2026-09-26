@@ -45,6 +45,7 @@
         <CameraList SignedOut="LoadAsync">
             <HeaderActions>
                 <a class="button" href="add-camera">@L["AddCameraButton"]</a>
+                <a class="button secondary" href="recordings">@L["RecordingsSpaceOpen"]</a>
                 <button class="secondary" @onclick="SignOutAsync" disabled="@Start.Busy">@L["SignOut"]</button>
             </HeaderActions>
             <Empty>

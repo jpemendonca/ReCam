@@ -57,7 +57,8 @@ a.button:hover {
   filter: brightness(1.08);
 }
 
-button.secondary {
+button.secondary,
+a.button.secondary {
   background: transparent;
   color: var(--accent);
   border: 1px solid var(--line);

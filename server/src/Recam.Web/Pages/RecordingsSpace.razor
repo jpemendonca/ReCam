@@ -1,0 +1,66 @@
+@page "/recordings"
+@using System.Globalization
+@implements IDisposable
+@inject IStringLocalizer<Strings> L
+@inject QuotaController Quota
+
+<PageTitle>@L["RecordingsTitle"]</PageTitle>
+
+<div class="bar">
+    <a href="">← @L["LiveBack"]</a>
+    <h1>@L["RecordingsTitle"]</h1>
+</div>
+
+<section class="card">
+    @switch (Quota.State)
+    {
+        case QuotaState.Loading:
+            <div class="loading" aria-hidden="true"></div>
+            break;
+
+        case QuotaState.Failed:
+            <p class="error" role="alert">@L["RecordingsLoadFailed"]</p>
+            <button @onclick="Quota.LoadAsync">@L["OfflineRetry"]</button>
+            break;
+
+        default:
+            <p class="note">@L["RecordingsInUse", Gigabytes(Quota.Quota!.UsedBytes / 1024.0 / 1024.0), Gigabytes(Quota.Quota.QuotaMb)]</p>
+            <label for="space">@L["RecordingsSpace", Gigabytes(Quota.SelectedMegabytes)]</label>
+            <input id="space" type="range" min="@QuotaController.MinimumMegabytes" max="@Quota.MaxMegabytes" step="100"
+                   value="@Quota.SelectedMegabytes" @oninput="OnInput" />
+            <p>@L["RecordingsHours", QuotaController.HoursFor(Quota.SelectedMegabytes).ToString("0.#", CultureInfo.CurrentCulture)]</p>
+            <p class="note">@L["RecordingsHowItWorks"]</p>
+            <button @onclick="Quota.SaveAsync" disabled="@Quota.Saving">@L["RecordingsSave"]</button>
+            @if (Quota.Saved == true)
+            {
+                <p class="ok" role="status">@L["RecordingsSaved"]</p>
+            }
+            else if (Quota.Saved == false)
+            {
+                <p class="error" role="alert">@L["RecordingsSaveFailed"]</p>
+            }
+            break;
+    }
+</section>
+
+@code {
+    protected override Task OnInitializedAsync()
+    {
+        Quota.Changed += OnChanged;
+        return Quota.LoadAsync();
+    }
+
+    public void Dispose() => Quota.Changed -= OnChanged;
+
+    private static string Gigabytes(double megabytes) => (megabytes / 1024).ToString("0.0", CultureInfo.CurrentCulture);
+
+    private void OnInput(ChangeEventArgs change)
+    {
+        if (int.TryParse(change.Value?.ToString(), CultureInfo.InvariantCulture, out var megabytes))
+        {
+            Quota.Select(megabytes);
+        }
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+}

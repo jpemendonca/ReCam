@@ -1,0 +1,44 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.bar h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 560px;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-top: 16px;
+}
+
+input[type="range"] {
+  width: 100%;
+  margin: 12px 0;
+  accent-color: var(--accent);
+}
+
+.note {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.ok {
+  color: #2e7d32;
+}
+
+.error {
+  color: var(--danger);
+}

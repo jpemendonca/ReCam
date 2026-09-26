@@ -6,6 +6,7 @@ using Recam.Web.Cameras;
 using Recam.Web.Live;
 using Recam.Web.Pairing;
 using Recam.Web.Realtime;
+using Recam.Web.Recordings;
 using Recam.Web.Start;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -28,5 +29,7 @@ builder.Services.AddTransient<StartController>();
 builder.Services.AddScoped<CameraListController>();
 builder.Services.AddTransient<LiveController>();
 builder.Services.AddTransient<AddDeviceController>();
+builder.Services.AddTransient<TimelineController>();
+builder.Services.AddTransient<QuotaController>();
 
 await builder.Build().RunAsync();
