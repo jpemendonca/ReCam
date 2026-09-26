@@ -36,6 +36,18 @@
   <data name="AddFailed" xml:space="preserve">
     <value>Não deu para criar o QR code. Confira a conexão com o servidor.</value>
   </data>
+  <data name="AddMonitorButton" xml:space="preserve">
+    <value>Adicionar Monitor</value>
+  </data>
+  <data name="AddMonitorStep1" xml:space="preserve">
+    <value>No celular que vai assistir, instale o app ReCam.</value>
+  </data>
+  <data name="AddMonitorStep3" xml:space="preserve">
+    <value>Leia este QR code. O celular vira um Monitor e vê as câmeras.</value>
+  </data>
+  <data name="AddMonitorTitle" xml:space="preserve">
+    <value>Adicionar Monitor</value>
+  </data>
   <data name="AddQrLabel" xml:space="preserve">
     <value>QR code de pareamento</value>
   </data>
@@ -81,6 +93,9 @@
   <data name="CamerasTitle" xml:space="preserve">
     <value>Câmeras</value>
   </data>
+  <data name="CancelButton" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
   <data name="CodeIntro" xml:space="preserve">
     <value>Digite o código de primeira abertura que o servidor mostra no log (docker compose logs server). Este navegador vira o Monitor e mostra suas câmeras.</value>
   </data>
@@ -105,6 +120,24 @@
   <data name="CodeWrong" xml:space="preserve">
     <value>Código errado. Confira no log do servidor; depois de cinco erros ele mostra um código novo.</value>
   </data>
+  <data name="DevicesCameras" xml:space="preserve">
+    <value>Câmeras</value>
+  </data>
+  <data name="DevicesLoadFailed" xml:space="preserve">
+    <value>Não deu para carregar os aparelhos. Confira a conexão com o servidor.</value>
+  </data>
+  <data name="DevicesMonitors" xml:space="preserve">
+    <value>Monitores</value>
+  </data>
+  <data name="DevicesOpen" xml:space="preserve">
+    <value>Aparelhos</value>
+  </data>
+  <data name="DevicesThisBrowser" xml:space="preserve">
+    <value>Este navegador</value>
+  </data>
+  <data name="DevicesTitle" xml:space="preserve">
+    <value>Aparelhos</value>
+  </data>
   <data name="FirstCameraTitle" xml:space="preserve">
     <value>Adicione sua primeira câmera</value>
   </data>
@@ -128,6 +161,15 @@
   </data>
   <data name="LiveRetry" xml:space="preserve">
     <value>Tentar de novo</value>
+  </data>
+  <data name="NavCameras" xml:space="preserve">
+    <value>Câmeras</value>
+  </data>
+  <data name="NavDevices" xml:space="preserve">
+    <value>Aparelhos</value>
+  </data>
+  <data name="NavRecordings" xml:space="preserve">
+    <value>Gravações</value>
   </data>
   <data name="NotFoundBack" xml:space="preserve">
     <value>Voltar ao início</value>
@@ -182,6 +224,18 @@
   </data>
   <data name="RecordingsTitle" xml:space="preserve">
     <value>Gravações</value>
+  </data>
+  <data name="RemoveDeviceConfirm" xml:space="preserve">
+    <value>Remover</value>
+  </data>
+  <data name="RemoveDeviceFailed" xml:space="preserve">
+    <value>Não deu para remover o aparelho. Confira a conexão com o servidor.</value>
+  </data>
+  <data name="RemoveDeviceMessage" xml:space="preserve">
+    <value>Ele sai do servidor na hora. Para usar de novo, pareie outra vez com um QR code novo.</value>
+  </data>
+  <data name="RemoveDeviceTitle" xml:space="preserve">
+    <value>Remover {0}?</value>
   </data>
   <data name="ServerTakenText" xml:space="preserve">
     <value>Para assistir neste navegador, abra o ReCam num celular Monitor e escolha Conectar navegador.</value>

@@ -17,7 +17,12 @@ public sealed class StartController(IRecamApi api)
 
     public bool Busy { get; private set; }
 
+    private Task? _firstLoad;
+
     public event Action? Changed;
+
+    /// <summary>Loads once for the whole app; the layout and the start page share the answer.</summary>
+    public Task EnsureLoadedAsync(CancellationToken cancellationToken) => _firstLoad ??= LoadAsync(cancellationToken);
 
     public async Task LoadAsync(CancellationToken cancellationToken)
     {

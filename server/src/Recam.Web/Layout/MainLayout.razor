@@ -1,9 +1,40 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject IStringLocalizer<Strings> L
+@inject StartController Start
+@inject NavigationManager Navigation
 
 <header class="bar">
-    <span class="brand">@L["AppTitle"]</span>
+    <a class="brand" href="">@L["AppTitle"]</a>
+    @if (Start.State == StartState.Monitor)
+    {
+        <nav>
+            <NavLink href="" Match="NavLinkMatch.All">@L["NavCameras"]</NavLink>
+            <NavLink href="recordings">@L["NavRecordings"]</NavLink>
+            <NavLink href="devices">@L["NavDevices"]</NavLink>
+            <button class="signout" @onclick="SignOutAsync" disabled="@Start.Busy">@L["SignOut"]</button>
+        </nav>
+    }
 </header>
 <main class="content">
     @Body
 </main>
+
+@code {
+    protected override Task OnInitializedAsync()
+    {
+        Start.Changed += OnChanged;
+        return Start.EnsureLoadedAsync(CancellationToken.None);
+    }
+
+    public void Dispose() => Start.Changed -= OnChanged;
+
+    // Leaving starts the app over, so nothing of this Monitor stays in memory.
+    private async Task SignOutAsync()
+    {
+        await Start.SignOutAsync(CancellationToken.None);
+        Navigation.NavigateTo("", forceLoad: true);
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+}

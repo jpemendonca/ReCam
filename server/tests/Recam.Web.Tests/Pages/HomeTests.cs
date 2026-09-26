@@ -40,7 +40,7 @@ public sealed class HomeTests : BunitContext
         Assert.True(page.Find("label.check input").HasAttribute("checked"));
     }
 
-    [Fact(DisplayName = "Typing the right code opens the cameras, with Sign out")]
+    [Fact(DisplayName = "Typing the right code opens the cameras, with Add camera")]
     public void Submit_RightCode_ShowsMonitor()
     {
         // arrange
@@ -53,7 +53,7 @@ public sealed class HomeTests : BunitContext
 
         // assert
         page.WaitForAssertion(() => Assert.Equal("Câmeras", page.Find("h1").TextContent));
-        Assert.Equal("Sair", page.Find(".head button").TextContent);
+        Assert.Equal("Adicionar câmera", page.Find(".head a.button").TextContent);
     }
 
     [Fact(DisplayName = "A wrong code shows the reason under the field")]

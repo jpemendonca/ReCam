@@ -29,6 +29,11 @@ public sealed class FakeRecamApi : IRecamApi
     /// <summary>The UTC days asked for, in order.</summary>
     public List<DateOnly> RecordingDaysAsked { get; } = [];
 
+    /// <summary>Monitors besides this browser; cameras come from <see cref="Cameras"/>.</summary>
+    public List<DeviceInfo> OtherMonitors { get; } = [];
+
+    public List<Guid> Removed { get; } = [];
+
     public QuotaInfo Quota { get; set; } = new(2048, 300L * 1024 * 1024, 10L * 1024 * 1024 * 1024);
 
     /// <summary>A phone scans the last QR; a camera also shows up in the list.</summary>
@@ -117,6 +122,28 @@ public sealed class FakeRecamApi : IRecamApi
         ThrowIfOffline();
         Quota = Quota with { QuotaMb = megabytes };
         return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<DeviceInfo>> GetDevicesAsync(CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        var devices = Cameras.Select(camera => new DeviceInfo(camera.Id, camera.Name, "camera", camera.Online))
+            .Concat(Me is null ? [] : [new DeviceInfo(Me.DeviceId, Me.Name, Me.Role, true)])
+            .Concat(OtherMonitors);
+        return Task.FromResult<IReadOnlyList<DeviceInfo>>([.. devices]);
+    }
+
+    public Task<bool> RemoveDeviceAsync(Guid deviceId, CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        if (deviceId == Me?.DeviceId)
+        {
+            return Task.FromResult(false);
+        }
+
+        Removed.Add(deviceId);
+        var removed = Cameras.RemoveAll(camera => camera.Id == deviceId) + OtherMonitors.RemoveAll(monitor => monitor.Id == deviceId);
+        return Task.FromResult(removed > 0);
     }
 
     public Task<IReadOnlyList<CameraInfo>?> GetCamerasAsync(CancellationToken cancellationToken)

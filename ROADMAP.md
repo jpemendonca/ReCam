@@ -1282,12 +1282,26 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
   > Testes: controllers (fuso, dois dias UTC, ponto de início, próximo, cota, falhas) e bUnit das
   > duas páginas. Gate verde (252 testes no servidor e no web, 223 no app).
 
-- [ ] **6.6 Aparelhos e Adicionar Monitor no navegador**
+- [x] **6.6 Aparelhos e Adicionar Monitor no navegador**
   - Origem: Monitor completo (ADR 0038).
   - Escopo: **Aparelhos** (câmeras e Monitores, "Este navegador", remover com confirmação) e
     **Adicionar Monitor**, com o QR `r=viewer` para um celular virar Monitor. Usa as rotas da
     Fase 4.
   - Aceite: testes dos controllers e bUnit das duas telas.
+  > Validação (2026-09-26): código escrito e percorrido no navegador do PC, sem celular.
+  > `DevicesController` e a página `/devices`: câmeras e Monitores, "Este navegador" sem botão de
+  > remover (para isso existe **Sair**), e remover com confirmação na própria linha ("Remover
+  > Porta?", com o texto do app), sem `confirm()` do navegador. **Adicionar Monitor** (`/add-monitor`)
+  > reusa o painel do 6.4 com o QR `r=viewer` e passos de Monitor, e volta para os aparelhos quando
+  > o celular pareia. A lista de câmeras ganhou botões demais no cabeçalho, então a navegação
+  > (Câmeras, Gravações, Aparelhos) e o **Sair** foram para a barra do topo, que só aparece quando o
+  > navegador é Monitor; o `StartController` virou um só por app, e **Sair** recarrega o app para
+  > não sobrar nada na memória. Observado no Chromium: câmera e Monitor pareados pelos QRs em texto
+  > do navegador, a página de aparelhos listou os três com "Este navegador" no lugar certo, remover
+  > a câmera pediu confirmação e a tirou dos aparelhos e da lista de câmeras. Visto também: sem o
+  > MediaMTX rodando, o proxy WHEP responde 500 (exceção de conexão recusada), coisa de antes desta
+  > fase. Testes: bUnit dos aparelhos (marca deste navegador, remover confirmado e cancelado), do
+  > Adicionar Monitor e da barra do topo. Gate verde (259 testes no servidor e no web, 223 no app).
 
 - [ ] **6.7 Conectar navegador pelo celular**
   - Origem: ADR 0038 (segundo navegador, cookie apagado).

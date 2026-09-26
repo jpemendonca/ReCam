@@ -111,6 +111,21 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<IReadOnlyList<DeviceInfo>> GetDevicesAsync(CancellationToken cancellationToken) =>
+        await http.GetFromJsonAsync<List<DeviceInfo>>(new Uri("api/devices", UriKind.Relative), Json, cancellationToken) ?? [];
+
+    public async Task<bool> RemoveDeviceAsync(Guid deviceId, CancellationToken cancellationToken)
+    {
+        using var response = await http.DeleteAsync(new Uri($"api/devices/{deviceId}", UriKind.Relative), cancellationToken);
+        if (response.StatusCode is HttpStatusCode.NotFound or HttpStatusCode.Conflict)
+        {
+            return false;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return true;
+    }
+
     private sealed record FirstOpenStatus(bool Open);
 
     private sealed record CreatedToken(Guid Id, string QrUri, DateTimeOffset ExpiresAt);

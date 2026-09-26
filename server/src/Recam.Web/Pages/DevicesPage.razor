@@ -1,0 +1,75 @@
+@page "/devices"
+@implements IDisposable
+@inject IStringLocalizer<Strings> L
+@inject DevicesController Devices
+
+<PageTitle>@L["DevicesTitle"]</PageTitle>
+
+<div class="bar">
+    <a href="">← @L["LiveBack"]</a>
+    <h1>@L["DevicesTitle"]</h1>
+    <span class="spacer"></span>
+    <a class="button" href="add-monitor">@L["AddMonitorButton"]</a>
+</div>
+
+@if (Devices.Failed)
+{
+    <p class="error" role="alert">@L["DevicesLoadFailed"]</p>
+    <button @onclick="Devices.LoadAsync">@L["OfflineRetry"]</button>
+}
+else if (Devices.Loading && Devices.Cameras.Count + Devices.Monitors.Count == 0)
+{
+    <div class="loading" aria-hidden="true"></div>
+}
+else
+{
+    @if (Devices.RemoveFailed)
+    {
+        <p class="error" role="alert">@L["RemoveDeviceFailed"]</p>
+    }
+    <h2>@L["DevicesCameras"]</h2>
+    @DeviceList(Devices.Cameras)
+    <h2>@L["DevicesMonitors"]</h2>
+    @DeviceList(Devices.Monitors)
+}
+
+@code {
+    protected override Task OnInitializedAsync()
+    {
+        Devices.Changed += OnChanged;
+        return Devices.LoadAsync();
+    }
+
+    public void Dispose() => Devices.Changed -= OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private RenderFragment DeviceList(IReadOnlyList<DeviceInfo> devices) => @<ul class="devices">
+        @foreach (var device in devices)
+        {
+            <li class="device">
+                <span class="dot @(device.Online ? "on" : "off")"></span>
+                <span class="name">@device.Name</span>
+                <span class="state">@(device.Online ? L["CameraOnline"] : L["CameraOffline"])</span>
+                <span class="spacer"></span>
+                @if (device.Id == Devices.ThisBrowser)
+                {
+                    <span class="self">@L["DevicesThisBrowser"]</span>
+                }
+                else if (Devices.Confirming?.Id == device.Id)
+                {
+                    <div class="confirm" role="alertdialog">
+                        <strong>@L["RemoveDeviceTitle", device.Name]</strong>
+                        <p>@L["RemoveDeviceMessage"]</p>
+                        <button class="danger" @onclick="Devices.ConfirmRemoveAsync">@L["RemoveDeviceConfirm"]</button>
+                        <button class="secondary" @onclick="Devices.Cancel">@L["CancelButton"]</button>
+                    </div>
+                }
+                else
+                {
+                    <button class="secondary remove" @onclick="() => Devices.AskToRemove(device)">@L["RemoveDeviceConfirm"]</button>
+                }
+            </li>
+        }
+    </ul>;
+}

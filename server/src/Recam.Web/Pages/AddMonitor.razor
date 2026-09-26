@@ -1,0 +1,19 @@
+@page "/add-monitor"
+@inject IStringLocalizer<Strings> L
+@inject NavigationManager Navigation
+
+<PageTitle>@L["AddMonitorTitle"]</PageTitle>
+
+<div class="bar">
+    <a href="devices">← @L["DevicesTitle"]</a>
+    <h1>@L["AddMonitorTitle"]</h1>
+</div>
+
+<section class="card">
+    <AddDevicePanel Kind="DeviceKind.Monitor" Paired="Paired" />
+</section>
+
+@code {
+    // The new Monitor shows up in the device list.
+    private void Paired() => Navigation.NavigateTo("devices");
+}

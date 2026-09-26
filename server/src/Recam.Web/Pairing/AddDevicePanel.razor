@@ -4,12 +4,21 @@
 
 <div class="panel">
     <ol class="steps">
-        <li>@L["AddCameraStep1"]</li>
-        <li>@L["AddCameraStep2"]</li>
-        <li>@L["AddCameraStep3"]</li>
-        @if (Guided)
+        @if (Kind == DeviceKind.Camera)
         {
-            <li>@L["AddCameraStep4"]</li>
+            <li>@L["AddCameraStep1"]</li>
+            <li>@L["AddCameraStep2"]</li>
+            <li>@L["AddCameraStep3"]</li>
+            @if (Guided)
+            {
+                <li>@L["AddCameraStep4"]</li>
+            }
+        }
+        else
+        {
+            <li>@L["AddMonitorStep1"]</li>
+            <li>@L["AddCameraStep2"]</li>
+            <li>@L["AddMonitorStep3"]</li>
         }
     </ol>
 

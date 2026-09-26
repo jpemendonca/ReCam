@@ -28,6 +28,12 @@ public interface IRecamApi
 
     Task SetQuotaAsync(int megabytes, CancellationToken cancellationToken);
 
+    /// <summary>Every device still on the server, cameras first.</summary>
+    Task<IReadOnlyList<DeviceInfo>> GetDevicesAsync(CancellationToken cancellationToken);
+
+    /// <summary>Takes a device off the server. False when the server refuses (it no longer exists, or it is this browser).</summary>
+    Task<bool> RemoveDeviceAsync(Guid deviceId, CancellationToken cancellationToken);
+
     /// <summary>The server's cameras, or null when this browser is no longer a Monitor.</summary>
     Task<IReadOnlyList<CameraInfo>?> GetCamerasAsync(CancellationToken cancellationToken);
 }
