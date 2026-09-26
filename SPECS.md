@@ -505,7 +505,8 @@ Servidor → cliente:
 - A página `/setup` entrega o token do dono. Por isso ela só responde a conexões vindas
   diretamente de IP privado ou loopback, e recusa requisições com `X-Forwarded-For`. Quem roda
   atrás de proxy ou numa VPS usa o QR do log. Revisado (fase 6): a mesma regra de rede vale para
-  `POST /api/web/first-open`; o token do dono e o QR no log deixam de existir.
+  `POST /api/web/first-open`; o token do dono e o QR no log deixam de existir. Revisado
+  (2026-09-26, bullet 10.1): a regra de rede sai; o código vale de qualquer rede.
 
 ## 7. Deploy
 
@@ -592,7 +593,8 @@ O agente nunca escreve valor real de segredo em arquivo nenhum.
   (fase 2).
 - **Aviso de certificado no navegador**: o certificado é autoassinado, então o navegador avisa
   "não seguro" na primeira abertura, e a pessoa aceita uma vez. Atrás de proxy reverso com
-  certificado público (bullet 5.1), o aviso some. O README precisa ensinar esse passo.
+  certificado público (bullet 5.1), o aviso some. O guia fica em `docs/reverse-proxy.md`, citado
+  pelo README (bullet 10.2).
 - **Tamanho do Monitor web**: o Blazor WebAssembly baixa alguns MB na primeira abertura. Na rede
   local é rápido, e o navegador guarda em cache. Publicado com trimming e compressão.
 - **Docker no Windows**: sem rede host de verdade. O IP do PC precisa ser informado em

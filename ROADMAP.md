@@ -1811,7 +1811,7 @@ servidor; o projeto só precisa funcionar nesse cenário e explicar como montar.
   > a 10.2: o suporte a proxy já existe em boa parte (`RECAM_TRUSTED_PROXIES`, TLS desligável e QR
   > sem fingerprint); falta conferir o app e escrever o guia.
 
-- [ ] **10.2 Servidor atrás de um proxy com certificado de verdade**
+- [x] **10.2 Servidor atrás de um proxy com certificado de verdade**
   - Origem: VPS do autor, em 2026-09-26. Quem expõe na internet coloca um proxy (Caddy, Nginx
     Proxy Manager) com certificado do Let's Encrypt na frente.
   - Escopo: o servidor lê o IP real de `X-Forwarded-For` só quando vem de um proxy configurado
@@ -1822,6 +1822,13 @@ servidor; o projeto só precisa funcionar nesse cenário e explicar como montar.
   - Fora do escopo: pôr o Caddy no compose. O exemplo de configuração fica num guia à parte,
     em `docs/`, que o README só cita.
   - Aceite: teste do IP real atrás do proxy; teste do app aceitando certificado válido sem `f`.
+  > Validação (2026-09-26): o código já existia desde o 5.1: `RECAM_TLS=off`, `RECAM_TRUSTED_PROXIES`
+  > e QR sem fingerprint. O IP real atrás do proxy é coberto pelo teste novo da 10.1 (limite por
+  > cliente real). O app sem `f` usa as CAs do sistema, e o `PinnedHttpOverrides` só entra quando o
+  > certificado falha na validação padrão (teste de pareamento sem fingerprint). Novo:
+  > `docs/reverse-proxy.md`, com Caddyfile, `.env`, firewall (fechar a 8443 para fora) e o aviso de
+  > parear de novo os celulares. O README cita o guia. Só documentação e testes existentes; nunca
+  > percorrido com um proxy de verdade.
 
 - [ ] **10.3 Guia de instalação numa VPS**
   - Escopo: no quick start do README (inglês), começar rápido e com poucos comandos, em casa ou

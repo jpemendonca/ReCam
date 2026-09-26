@@ -37,6 +37,9 @@ You need one phone and one computer to start:
 5. **Liked it?** From the browser, **Add camera** adds another camera and **Add Monitor** lets your
    main phone watch too. Another browser can join with **Connect browser** on a Monitor phone.
 
+Want the padlock without the warning? Put a reverse proxy in front:
+[docs/reverse-proxy.md](docs/reverse-proxy.md).
+
 Lost every Monitor? `docker compose exec server ./Recam.Server reset-owner` removes them, and the
 server prints a new first-time code.
 
