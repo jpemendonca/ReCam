@@ -1743,6 +1743,9 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   - Origem: pedidos do autor em 2026-09-26.
   - Escopo: PC, Samsung A10 e Redmi 6A, percorrendo cada bullet das fases 8 e 9.
   - Aceite: tudo funciona; qualquer falha vira bullet novo.
+  > Bloqueado (2026-09-26): aguardando aparelho. Precisa do autor com o PC, o Samsung A10 e o
+  > Redmi 6A. Nada das fases 8 e 9 foi percorrido no aparelho; o que dá para rodar sem celular
+  > está nos testes e no gate.
 
 ## Fase 5: distribuição
 
