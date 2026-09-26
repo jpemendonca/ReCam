@@ -14,6 +14,7 @@ public sealed class RecordingsPagesTests : BunitContext
 {
     private readonly FakeRecamApi _api = new() { Me = new MeInfo(Guid.NewGuid(), "Navegador", "owner") };
     private readonly CameraInfo _camera = Support.Cameras.Make("Porta", recording: true);
+    private readonly FakeVideoClock _clock = new();
 
     public RecordingsPagesTests()
     {
@@ -24,6 +25,7 @@ public sealed class RecordingsPagesTests : BunitContext
         Services.AddSingleton<CameraListController>();
         Services.AddTransient(_ => new TimelineController(_api) { UtcOffsetOf = _ => TimeSpan.Zero });
         Services.AddTransient<QuotaController>();
+        Services.AddSingleton<IVideoClock>(_clock);
         Services.AddSingleton<IBrightenSurface>(new FakeBrightenSurface());
         Services.AddTransient<BrightenController>();
     }
@@ -72,6 +74,32 @@ public sealed class RecordingsPagesTests : BunitContext
 
         // assert
         page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.recorded")));
+    }
+
+    [Fact(DisplayName = "The clock over the recording starts from the file playing, and from the next file when it ends")]
+    public void Timeline_Clock_FollowsEachFile()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 5)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(2),
+        [
+            new RecordingSegmentInfo(start, start.AddMinutes(1), $"/api/recordings/{_camera.Id}/a.mp4"),
+            new RecordingSegmentInfo(start.AddMinutes(1), start.AddMinutes(2), $"/api/recordings/{_camera.Id}/b.mp4"),
+        ])];
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Equal(2, page.FindAll("rect.recorded").Count));
+        // The hour window opens on the latest recording, 13:37 to 14:37; slot 28 is 14:05:30.
+        page.FindAll("rect.slot")[28].Click();
+
+        // act
+        page.Find("video").TriggerEvent("onended", EventArgs.Empty);
+
+        // assert
+        page.WaitForAssertion(() => Assert.Equal(2, _clock.Followed.Count));
+        Assert.Equal([new DateTime(2026, 9, 25, 14, 5, 0), new DateTime(2026, 9, 25, 14, 6, 0)], _clock.Followed);
+        Assert.NotNull(page.Find(".player .video-clock"));
     }
 
     [Fact(DisplayName = "Motion shows on the bar; Next motion plays it and Motion only hides the rest")]

@@ -34,6 +34,7 @@ builder.Services.AddScoped<SoundChoice>();
 builder.Services.AddTransient<LiveController>();
 builder.Services.AddTransient<AddDeviceController>();
 builder.Services.AddTransient<TimelineController>();
+builder.Services.AddScoped<IVideoClock, JsVideoClock>();
 builder.Services.AddTransient<QuotaController>();
 builder.Services.AddTransient<DevicesController>();
 builder.Services.AddScoped<IBrightenSurface, JsBrightenSurface>();

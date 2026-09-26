@@ -1,0 +1,18 @@
+@using System.Globalization
+@implements IDisposable
+
+@* The time now over the live video, drawn on the page only. *@
+<span class="video-clock">@Now().ToString("HH:mm:ss", CultureInfo.InvariantCulture)</span>
+
+@code {
+    private Timer? timer;
+
+    /// <summary>The clock it reads. Fixed in tests.</summary>
+    [Parameter]
+    public Func<DateTime> Now { get; set; } = () => DateTime.Now;
+
+    protected override void OnInitialized() =>
+        timer = new Timer(_ => InvokeAsync(StateHasChanged), null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+
+    public void Dispose() => timer?.Dispose();
+}

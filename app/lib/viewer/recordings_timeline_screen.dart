@@ -1,3 +1,5 @@
+import 'video_clock.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -157,11 +159,23 @@ class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
                           ),
                         ),
                       )
-                    : Center(
-                        child: BrightenedVideo(
-                          controller: _brighten,
-                          child: _controller.player.buildVideo(),
-                        ),
+                    : Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Center(
+                            child: BrightenedVideo(
+                              controller: _brighten,
+                              child: _controller.player.buildVideo(),
+                            ),
+                          ),
+                          // The file's start plus where the player is: it follows every file.
+                          ValueListenableBuilder(
+                            valueListenable: _controller.player.position,
+                            builder: (context, now, _) => VideoClock(
+                              time: playing.start.add(now.position),
+                            ),
+                          ),
+                        ],
                       ),
               ),
             ),

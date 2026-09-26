@@ -5,6 +5,7 @@ import 'package:recam/l10n/generated/app_localizations.dart';
 import 'package:recam/viewer/brighten_controller.dart';
 import 'package:recam/viewer/recording_timeline_controller.dart';
 import 'package:recam/viewer/recordings_timeline_screen.dart';
+import 'package:recam/viewer/video_clock.dart';
 
 import '../support/fakes.dart';
 
@@ -319,6 +320,70 @@ void main() {
       expect(find.byIcon(Icons.play_arrow), findsOneWidget);
       expect(player.muted, isTrue);
       expect(find.byIcon(Icons.volume_off), findsOneWidget);
+    });
+
+    testWidgets('clock_followsThePlayerAndTheNextFile', (tester) async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      RecordingSegmentInfo file(int minute, String name) =>
+          RecordingSegmentInfo(
+            start: DateTime.utc(2026, 9, 25, 13, minute),
+            end: DateTime.utc(2026, 9, 25, 13, minute + 1),
+            url: '/api/recordings/cam/$name.mp4',
+          );
+      final api = FakeApiClient()
+        ..recordingDaysResult = [day]
+        ..recordingsByDay[day] = [
+          RecordingPieceInfo(
+            start: DateTime.utc(2026, 9, 25, 13, 44),
+            end: DateTime.utc(2026, 9, 25, 13, 46),
+            segments: [file(44, 'a'), file(45, 'b')],
+          ),
+        ];
+      final player = FakeRecordingPlayer();
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('pt'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RecordingsTimelineScreen(
+            brighten: () => BrightenController(
+              store: FakeAdjustmentStore(),
+              cameraId: 'cam',
+            ),
+            cameraName: 'Porch',
+            create: () => RecordingTimelineController(
+              api: api,
+              session: pairedSession(),
+              cameraId: 'cam',
+              player: player,
+              segments: FakeSegmentSource(),
+              utcOffsetOf: (_) => Duration.zero,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
+      await tester.pumpAndSettle();
+      final bar = tester.getRect(find.byKey(const Key('timeline-hours')));
+      // The window opens at 13:16 to 14:16; 28.5 minutes in is 13:44:30.
+      await tester.tapAt(bar.centerLeft + Offset(bar.width * 28.5 / 60, 0));
+      await tester.pumpAndSettle();
+      final opened = tester.widget<VideoClock>(find.byType(VideoClock)).time;
+
+      // act
+      await player.seekTo(const Duration(seconds: 45));
+      await tester.pump();
+      final moved = tester.widget<VideoClock>(find.byType(VideoClock)).time;
+      player.finish();
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(opened, DateTime.utc(2026, 9, 25, 13, 44, 30));
+      expect(moved, DateTime.utc(2026, 9, 25, 13, 44, 45));
+      expect(player.plays.last.url.path, endsWith('b.mp4'));
+      expect(find.text('13:45:00'), findsOneWidget);
     });
 
     testWidgets('withoutRecordings_saysHowToStart', (tester) async {

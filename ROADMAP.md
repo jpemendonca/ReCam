@@ -1774,7 +1774,7 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > voltar com som, navegador bloqueando) e de controller no app. Só código e teste; falta
   > conferir no navegador e no Redmi 6A.
 
-- [ ] **9.6 Relógio por cima do vídeo**
+- [x] **9.6 Relógio por cima do vídeo**
   - Origem: teste do autor em 2026-09-26 (9.3): na gravação, o player do navegador parece parar
     ou reiniciar a cada arquivo de 1 minuto, mesmo emendando. Uma hora na imagem ajuda a se
     guiar.
@@ -1784,6 +1784,11 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
     câmera.
   - Aceite: testes bUnit e de widget com a hora da gravação avançando e passando de um arquivo
     para o seguinte.
+  > Validação (2026-09-26): hora no canto superior direito, com fundo escuro. App: `LiveClock`
+  > no ao vivo e `VideoClock` na gravação, somando o início do arquivo à posição do player.
+  > Navegador: `LiveClock.razor` no ao vivo; na gravação, o `clock.js` atualiza a hora no
+  > `timeupdate` do vídeo e recomeça a cada arquivo. Testes de widget e bUnit cobrem a hora
+  > andando e a troca de arquivo. Só código e teste; falta conferir no navegador e no Redmi 6A.
 
 ## Fase 5: distribuição
 

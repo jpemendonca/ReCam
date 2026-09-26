@@ -156,4 +156,14 @@ public sealed class LiveViewTests : BunitContext
         Assert.True(_video.Muted);
         Assert.Equal("Ativar som", page.Find("button.sound").TextContent);
     }
+
+    [Fact(DisplayName = "The live video shows the time now in a corner")]
+    public void Clock_ShowsTimeNow()
+    {
+        // act
+        var clock = Render<LiveClock>(parameters => parameters.Add(c => c.Now, () => new DateTime(2026, 9, 26, 21, 5, 9)));
+
+        // assert
+        Assert.Equal("21:05:09", clock.Find(".video-clock").TextContent);
+    }
 }

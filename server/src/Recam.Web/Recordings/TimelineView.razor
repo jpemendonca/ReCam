@@ -4,6 +4,7 @@
 @inject TimelineController Timeline
 @inject BrightenController Brighten
 @inject CameraListController Cameras
+@inject IVideoClock VideoClock
 
 @if (Timeline.Failed)
 {
@@ -110,7 +111,10 @@ else
         <p class="playing-from">@L["TimelinePlaying", Timeline.PlayingFrom!.Value.ToString("t", CultureInfo.CurrentCulture)]</p>
         @* One <video> for every file: replacing it, or letting it shrink while the next file loads,
            made the page jump to the top on "Next motion". *@
-        <video @ref="video" src="@source" controls autoplay playsinline @onended="Timeline.PlayNext"></video>
+        <div class="player">
+            <video @ref="video" src="@source" controls autoplay playsinline @onended="Timeline.PlayNext"></video>
+            <span class="video-clock" @ref="clock"></span>
+        </div>
         <div class="brighten-row">
             <BrightenControls Controller="Brighten" />
         </div>
@@ -158,6 +162,8 @@ else
 
     private Guid loaded;
     private ElementReference video;
+    private ElementReference clock;
+    private TimelineSegment? clockFollows;
 
     /// <summary>The camera whose recordings show; changing it loads the other camera.</summary>
     [Parameter, EditorRequired]
@@ -195,6 +201,17 @@ else
         if (Timeline.Source is not null)
         {
             await Brighten.ApplyAsync(video);
+        }
+
+        // The clock restarts from each file's start, so it keeps going when the next file plays.
+        if (Timeline.Playing is not { } playing)
+        {
+            clockFollows = null;
+        }
+        else if (playing != clockFollows)
+        {
+            clockFollows = playing;
+            await VideoClock.FollowAsync(video, clock, playing.Start);
         }
     }
 

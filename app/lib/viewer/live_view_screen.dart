@@ -1,3 +1,5 @@
+import 'video_clock.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -110,6 +112,7 @@ class _LiveViewScreenState extends State<LiveViewScreen> {
               controller: _brighten,
               child: _controller.viewer.buildVideo(),
             ),
+            const LiveClock(),
             ListenableBuilder(
               listenable: _brighten,
               builder: (context, _) => _brighten.open
