@@ -12,7 +12,7 @@ namespace Recam.Server.Tests.Features.Media;
 /// </summary>
 public sealed class MediaMtxRecordingTests : IAsyncLifetime
 {
-    // FFmpeg's WHIP muxer publishes H.264 only; it stands in for the camera phone.
+    // FFmpeg's WHIP muxer publishes H.264 and Opus; it stands in for the camera phone.
     public const string PublisherImage = "linuxserver/ffmpeg:9.0-cli-ls83";
     private const string ServerUser = "1654:1654";
     private const string MediaMtxAlias = "mediamtx";
@@ -72,16 +72,35 @@ public sealed class MediaMtxRecordingTests : IAsyncLifetime
         Assert.DoesNotContain(files, file => file.Contains($"cam-{cameraId}", StringComparison.Ordinal));
     }
 
-    private IContainer Publisher(string path) =>
+    private IContainer Publisher(string path, bool withAudio = false) =>
         new ContainerBuilder(PublisherImage)
             .WithEntrypoint("ffmpeg")
-            .WithCommand(
+            .WithCommand([
                 "-hide_banner", "-loglevel", "warning", "-re",
                 "-f", "lavfi", "-i", "testsrc=size=640x360:rate=15", "-t", "6",
+                .. withAudio ? ["-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000", "-t", "6"] : Array.Empty<string>(),
                 "-c:v", "libx264", "-profile:v", "baseline", "-bf", "0", "-g", "15", "-pix_fmt", "yuv420p",
-                "-f", "whip", $"http://{MediaMtxAlias}:8889/{path}/whip")
+                .. withAudio ? ["-c:a", "libopus", "-ar", "48000", "-ac", "2"] : Array.Empty<string>(),
+                "-f", "whip", $"http://{MediaMtxAlias}:8889/{path}/whip"])
             .WithNetwork(_network)
             .Build();
+
+    [Fact(DisplayName = "The camera's Opus audio is recorded in the same fMP4 file as the video")]
+    public async Task Publish_WithAudio_RecordsOpusTrack()
+    {
+        // arrange
+        var cameraId = Guid.NewGuid().ToString("N");
+
+        // act
+        await RunToEndAsync(Publisher($"rec-{cameraId}", withAudio: true));
+        var tracks = await RunToEndAsync(Tool(
+            $"for f in $(find /recordings/rec-{cameraId} -type f); do grep -c -a -e avc1 \"$f\"; grep -c -a -e Opus \"$f\"; done"));
+
+        // assert
+        var counts = tracks.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        Assert.Equal(2, counts.Length);
+        Assert.All(counts, count => Assert.NotEqual("0", count));
+    }
 
     private IContainer Tool(string script) =>
         new ContainerBuilder(PublisherImage)

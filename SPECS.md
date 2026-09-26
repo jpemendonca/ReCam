@@ -178,7 +178,8 @@ Para rodar num celular fraco e não ser morto pelo Android:
 
 - Ocioso: só a conexão SignalR aberta. Nenhuma câmera aberta, nenhum encoder rodando.
 - Ao receber `StartPublishing`: abre a câmera traseira a 1280x720, 15 fps, via `flutter_webrtc`.
-  H.264 preferido via `setCodecPreferences`, sem trilha de áudio, `maxBitrate` 700 kbps no
+  H.264 preferido via `setCodecPreferences`, trilha de áudio Opus quando o microfone foi
+  permitido (sem ele, só vídeo; revisado em 2026-09-26, bullet 9.1), `maxBitrate` 700 kbps no
   sender. Publica por WHIP.
 - Ao receber `StopPublishing`: fecha a conexão e libera a câmera.
 - O vídeo nunca passa pelo Dart. Câmera, encoder de hardware e rede ficam no código nativo do

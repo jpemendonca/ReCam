@@ -27,7 +27,7 @@ abstract interface class WebRtcPublisher {
   Future<bool> canSendH264();
 }
 
-/// Publishes with WHIP through the server proxy: no audio, H.264 first, at the current
+/// Publishes with WHIP through the server proxy: Opus audio when there is a microphone, H.264 first, at the current
 /// [VideoQuality] (SPECS.md 2.3). Frames go from the camera to the hardware encoder to the network inside
 /// libwebrtc; none pass through Dart.
 class WhipPublisher implements WebRtcPublisher {
@@ -90,6 +90,18 @@ class WhipPublisher implements WebRtcPublisher {
     );
     _sender = transceiver.sender;
     await _preferH264(transceiver);
+    final audio = feed.audioTrack;
+    if (audio != null) {
+      // Opus is libwebrtc's default for audio, and what the recordings keep.
+      await connection.addTransceiver(
+        track: audio,
+        kind: RTCRtpMediaType.RTCRtpMediaTypeAudio,
+        init: RTCRtpTransceiverInit(
+          direction: TransceiverDirection.SendOnly,
+          streams: [feed.stream],
+        ),
+      );
+    }
 
     // Without these flags the Android plugin adds receive-only audio and video lines, and
     // MediaMTX refuses an offer with more than one video track.

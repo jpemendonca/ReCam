@@ -18,7 +18,8 @@ abstract interface class CameraCapture {
   Future<void> close();
 }
 
-/// Opens the camera with `flutter_webrtc` at 1280x720 and 15 fps, no audio (SPECS.md 2.3).
+/// Opens the camera with `flutter_webrtc` at 1280x720 and 15 fps, with the microphone when it
+/// is allowed (SPECS.md 2.3). Without it, the camera still sends video.
 class PluginCameraCapture implements CameraCapture {
   static const frameRate = 15;
 
@@ -29,17 +30,29 @@ class PluginCameraCapture implements CameraCapture {
     final current = _feed;
     if (current != null) return current;
     // Camera failures arrive as exceptions of several types; all mean "no camera".
+    final stream =
+        await _getUserMedia(withAudio: true) ??
+        await _getUserMedia(withAudio: false);
+    return stream == null ? null : _feed = PluginCameraFeed(stream);
+  }
+
+  /// What the camera asks the phone for: the back camera at 720p and, when asked, the
+  /// microphone.
+  static Map<String, Object> constraints({required bool withAudio}) => {
+    'audio': withAudio,
+    'video': {
+      'facingMode': 'environment',
+      'width': 1280,
+      'height': 720,
+      'frameRate': frameRate,
+    },
+  };
+
+  Future<MediaStream?> _getUserMedia({required bool withAudio}) async {
     try {
-      final stream = await navigator.mediaDevices.getUserMedia({
-        'audio': false,
-        'video': {
-          'facingMode': 'environment',
-          'width': 1280,
-          'height': 720,
-          'frameRate': frameRate,
-        },
-      });
-      return _feed = PluginCameraFeed(stream);
+      return await navigator.mediaDevices.getUserMedia(
+        constraints(withAudio: withAudio),
+      );
     } on Object {
       return null;
     }
@@ -63,6 +76,9 @@ class PluginCameraFeed implements CameraFeed {
   final MediaStream stream;
 
   MediaStreamTrack? get videoTrack => stream.getVideoTracks().firstOrNull;
+
+  /// Null when the microphone was not allowed.
+  MediaStreamTrack? get audioTrack => stream.getAudioTracks().firstOrNull;
 
   @override
   Widget buildPreview() => _LocalPreview(stream: stream);

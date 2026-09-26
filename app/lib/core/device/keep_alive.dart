@@ -14,8 +14,10 @@ class ForegroundServiceKeepAlive implements KeepAlive {
 
   @override
   Future<void> start({required String title, required String text}) async {
-    // Android 14+ refuses a camera foreground service without the camera permission.
+    // Android 14+ refuses a camera or microphone foreground service without its permission.
     await Permission.camera.request();
+    // Sound is optional: without the microphone the camera still sends video.
+    final microphone = await Permission.microphone.request();
     await FlutterForegroundTask.requestNotificationPermission();
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
@@ -31,7 +33,10 @@ class ForegroundServiceKeepAlive implements KeepAlive {
     if (await FlutterForegroundTask.isRunningService) return;
     await FlutterForegroundTask.startService(
       serviceId: _serviceId,
-      serviceTypes: [ForegroundServiceTypes.camera],
+      serviceTypes: [
+        ForegroundServiceTypes.camera,
+        if (microphone.isGranted) ForegroundServiceTypes.microphone,
+      ],
       notificationTitle: title,
       notificationText: text,
       callback: startKeepAliveTask,

@@ -1701,13 +1701,24 @@ app e no navegador quando o bullet não disser outra coisa.
 Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revisa a regra "nada de
 áudio no MVP" do `AGENTS.md` e do `SPECS.md`.
 
-- [ ] **9.1 A câmera manda áudio, e a gravação guarda o som**
+- [x] **9.1 A câmera manda áudio, e a gravação guarda o som**
   - Origem: pedido do autor em 2026-09-26.
   - Escopo: a câmera publica uma trilha de áudio (Opus, mono) junto com o vídeo, sempre ligada. O
     MediaMTX grava o som no mesmo arquivo. Conferir que a gravação em fMP4 aceita Opus e registrar
     no `SPECS.md`. Permissão de microfone pedida junto com a da câmera.
   - Aceite: teste com Testcontainers achando a trilha de áudio no segmento gravado; teste do
     publisher pedindo áudio.
+  > Validação (2026-09-26): código escrito; a gravação do som foi comprovada com o MediaMTX real,
+  > mas não percorrida no aparelho. A câmera abre o microfone junto com a câmera (`getUserMedia` com
+  > áudio) e publica uma trilha de áudio SendOnly; o libwebrtc usa Opus. Se o microfone for negado,
+  > a câmera abre sem áudio e manda só vídeo. A permissão do microfone é pedida junto com a da
+  > câmera, antes do serviço em primeiro plano, que passa a ser `camera|microphone` quando ela é
+  > dada (o Android 14 recusa o tipo microfone sem a permissão). Manifesto: `RECORD_AUDIO` e
+  > `FOREGROUND_SERVICE_MICROPHONE`. O MediaMTX grava o Opus no mesmo fMP4 do vídeo, sem mudar o
+  > `mediamtx.yml`. Revisão no SPECS 2.3. Testes: Testcontainers publica H.264 com Opus por WHIP
+  > (FFmpeg) e acha as duas trilhas (`avc1` e `Opus`) no segmento gravado; as restrições de captura
+  > pedem o microfone e a câmera traseira. O publisher em si fala com o plugin nativo e não tem
+  > teste.
 
 - [ ] **9.2 Ouvir ao vivo e nas gravações**
   - Origem: pedido do autor em 2026-09-26.
