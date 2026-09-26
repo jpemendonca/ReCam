@@ -29,6 +29,14 @@ public sealed class FakeRecamApi : IRecamApi
     /// <summary>The UTC days asked for, in order.</summary>
     public List<DateOnly> RecordingDaysAsked { get; } = [];
 
+    /// <summary>Motion events by UTC day, found with <see cref="MotionSensitivity"/>.</summary>
+    public Dictionary<DateOnly, List<MotionEventInfo>> Motion { get; } = [];
+
+    /// <summary>What the next motion answers after the sensitivity changes, by UTC day.</summary>
+    public Dictionary<DateOnly, List<MotionEventInfo>> MotionAfterChange { get; } = [];
+
+    public string MotionSensitivity { get; set; } = "medium";
+
     /// <summary>Monitors besides this browser; cameras come from <see cref="Cameras"/>.</summary>
     public List<DeviceInfo> OtherMonitors { get; } = [];
 
@@ -143,6 +151,24 @@ public sealed class FakeRecamApi : IRecamApi
         ThrowIfOffline();
         RecordingDaysAsked.Add(utcDay);
         return Task.FromResult<IReadOnlyList<RecordingPieceInfo>>(Recordings.GetValueOrDefault(utcDay) ?? []);
+    }
+
+    public Task<MotionInfo> GetMotionAsync(Guid cameraId, DateOnly utcDay, CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        return Task.FromResult(new MotionInfo(MotionSensitivity, Motion.GetValueOrDefault(utcDay) ?? []));
+    }
+
+    public Task SetMotionSensitivityAsync(Guid cameraId, string sensitivity, CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        MotionSensitivity = sensitivity;
+        foreach (var (day, events) in MotionAfterChange)
+        {
+            Motion[day] = events;
+        }
+
+        return Task.CompletedTask;
     }
 
     public Task<QuotaInfo> GetQuotaAsync(CancellationToken cancellationToken)

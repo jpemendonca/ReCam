@@ -165,6 +165,39 @@ class FakeApiClient implements ApiClient {
     return ApiSuccess(recordingsByDay[utcDay] ?? const []);
   }
 
+  MotionSensitivity motionSensitivity = MotionSensitivity.medium;
+  final Map<DateTime, List<MotionEventInfo>> motionByDay = {};
+
+  /// What the motion answers after the sensitivity changes, by UTC day.
+  final Map<DateTime, List<MotionEventInfo>> motionAfterChange = {};
+  ApiFailureKind? sensitivityFailure;
+
+  @override
+  Future<ApiResult<MotionInfo>> motion(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+    DateTime utcDay,
+  ) async => ApiSuccess(
+    MotionInfo(
+      sensitivity: motionSensitivity,
+      events: motionByDay[utcDay] ?? const [],
+    ),
+  );
+
+  @override
+  Future<ApiFailureKind?> setMotionSensitivity(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+    MotionSensitivity sensitivity,
+  ) async {
+    if (sensitivityFailure != null) return sensitivityFailure;
+    motionSensitivity = sensitivity;
+    motionByDay.addAll(motionAfterChange);
+    return null;
+  }
+
   final List<DeviceRole> tokenRoles = [];
 
   /// Answers for the next "was it used" questions; when empty, not used yet.

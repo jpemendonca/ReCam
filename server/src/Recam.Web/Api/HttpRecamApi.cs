@@ -118,6 +118,20 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
             new Uri($"api/cameras/{cameraId}/recordings?day={day}", UriKind.Relative), Json, cancellationToken) ?? [];
     }
 
+    public async Task<MotionInfo> GetMotionAsync(Guid cameraId, DateOnly utcDay, CancellationToken cancellationToken)
+    {
+        var day = utcDay.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        return await http.GetFromJsonAsync<MotionInfo>(new Uri($"api/cameras/{cameraId}/motion?day={day}", UriKind.Relative), Json, cancellationToken)
+            ?? throw new HttpRequestException("The server answered empty motion.");
+    }
+
+    public async Task SetMotionSensitivityAsync(Guid cameraId, string sensitivity, CancellationToken cancellationToken)
+    {
+        using var response = await http.PutAsJsonAsync(
+            new Uri($"api/cameras/{cameraId}/motion-sensitivity", UriKind.Relative), new { sensitivity }, Json, cancellationToken);
+        response.EnsureSuccessStatusCode();
+    }
+
     public async Task<QuotaInfo> GetQuotaAsync(CancellationToken cancellationToken) =>
         await http.GetFromJsonAsync<QuotaInfo>(new Uri("api/recordings/quota", UriKind.Relative), Json, cancellationToken)
         ?? throw new HttpRequestException("The server answered an empty quota.");

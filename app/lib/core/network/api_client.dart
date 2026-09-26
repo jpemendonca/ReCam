@@ -61,6 +61,22 @@ abstract interface class ApiClient {
     DateTime utcDay,
   );
 
+  /// The motion events of one UTC day, with the camera's sensitivity.
+  Future<ApiResult<MotionInfo>> motion(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+    DateTime utcDay,
+  );
+
+  /// Returns null when the server saved the camera's new sensitivity.
+  Future<ApiFailureKind?> setMotionSensitivity(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+    MotionSensitivity sensitivity,
+  );
+
   /// Lets a browser in as a Monitor ("Connect browser"). Returns null when the server
   /// approved; [ApiFailureKind.rejected] when the code expired, was used or is wrong.
   Future<ApiFailureKind?> approveBrowserLink(
@@ -120,6 +136,25 @@ class RecordingPieceInfo {
   final DateTime start;
   final DateTime end;
   final List<RecordingSegmentInfo> segments;
+}
+
+/// How little movement counts as motion. High finds the smallest movements.
+enum MotionSensitivity { low, medium, high }
+
+/// Something moved in the recording between [start] and [end]. Times in UTC.
+class MotionEventInfo {
+  const MotionEventInfo({required this.start, required this.end});
+
+  final DateTime start;
+  final DateTime end;
+}
+
+/// A camera's motion in one UTC day, and the sensitivity that found it.
+class MotionInfo {
+  const MotionInfo({required this.sensitivity, required this.events});
+
+  final MotionSensitivity sensitivity;
+  final List<MotionEventInfo> events;
 }
 
 /// The space all recordings may take together, and the disk around it.

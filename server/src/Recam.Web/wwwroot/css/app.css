@@ -6,6 +6,7 @@
   --line: #e3e6eb;
   --accent: #1f6feb;
   --danger: #c62828;
+  --motion: #e08600;
   color-scheme: light;
 }
 
@@ -18,6 +19,7 @@
     --line: #262a33;
     --accent: #5b9bff;
     --danger: #ef5350;
+    --motion: #ffb74d;
     color-scheme: dark;
   }
 }

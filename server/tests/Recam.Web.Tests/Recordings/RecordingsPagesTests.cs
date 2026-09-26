@@ -49,6 +49,56 @@ public sealed class RecordingsPagesTests : BunitContext
         Assert.Equal("Gravações · Porta", page.Find("h1").TextContent);
     }
 
+    [Fact(DisplayName = "Motion shows on the bar; Next motion plays it and Motion only hides the rest")]
+    public void Timeline_Motion_MarkedAndPlayed()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20),
+            [new RecordingSegmentInfo(start, start.AddMinutes(20), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        _api.Motion[day] = [new MotionEventInfo(start.AddMinutes(10), start.AddMinutes(13), 0.04)];
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.motion")));
+
+        // act
+        page.Find("button.next-motion").Click();
+        var source = page.Find("video").GetAttribute("src");
+        page.Find("input.only-motion").Change(true);
+
+        // assert
+        Assert.Equal($"api/recordings/{_camera.Id}/a.mp4#t=595", source);
+        Assert.Equal("Movimentos neste dia: 1", page.Find(".motion-summary").TextContent);
+        Assert.Empty(page.FindAll("rect.recorded"));
+        var mark = page.Find("rect.motion");
+        Assert.Equal(("850", "3", "36"), (mark.GetAttribute("x"), mark.GetAttribute("width"), mark.GetAttribute("height")));
+    }
+
+    [Fact(DisplayName = "Choosing another sensitivity saves it and redraws the motion")]
+    public void Timeline_Sensitivity_Saved()
+    {
+        // arrange
+        using var _ = Culture.Use("en-US");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20),
+            [new RecordingSegmentInfo(start, start.AddMinutes(20), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        _api.Motion[day] = [new MotionEventInfo(start.AddMinutes(10), start.AddMinutes(13), 0.04)];
+        _api.MotionAfterChange[day] = [];
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Equal("medium", page.Find("select.sensitivity").GetAttribute("value")));
+
+        // act
+        page.Find("select.sensitivity").Change("low");
+
+        // assert
+        page.WaitForAssertion(() => Assert.Equal("No motion on this day.", page.Find(".motion-summary").TextContent));
+        Assert.Equal("low", _api.MotionSensitivity);
+        Assert.Empty(page.FindAll("rect.motion"));
+        Assert.True(page.Find("button.next-motion").HasAttribute("disabled"));
+    }
+
     [Fact(DisplayName = "A camera without recordings says how to start")]
     public void Timeline_NoRecordings_SaysTurnOnRecordAlways()
     {

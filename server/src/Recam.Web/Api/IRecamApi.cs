@@ -29,6 +29,11 @@ public interface IRecamApi
     /// <summary>The recorded stretches of one UTC day.</summary>
     Task<IReadOnlyList<RecordingPieceInfo>> GetRecordingsAsync(Guid cameraId, DateOnly utcDay, CancellationToken cancellationToken);
 
+    /// <summary>The motion events of one UTC day, with the camera's sensitivity.</summary>
+    Task<MotionInfo> GetMotionAsync(Guid cameraId, DateOnly utcDay, CancellationToken cancellationToken);
+
+    Task SetMotionSensitivityAsync(Guid cameraId, string sensitivity, CancellationToken cancellationToken);
+
     Task<QuotaInfo> GetQuotaAsync(CancellationToken cancellationToken);
 
     Task SetQuotaAsync(int megabytes, CancellationToken cancellationToken);

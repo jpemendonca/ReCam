@@ -313,10 +313,7 @@ class HttpApiClient implements ApiClient {
     String cameraId,
     DateTime utcDay,
   ) {
-    final day =
-        '${utcDay.year.toString().padLeft(4, '0')}-'
-        '${utcDay.month.toString().padLeft(2, '0')}-'
-        '${utcDay.day.toString().padLeft(2, '0')}';
+    final day = _dayParameter(utcDay);
     return _sendJson(
       () => _client.get(
         baseUrl.resolve('/api/cameras/$cameraId/recordings?day=$day'),
@@ -330,6 +327,87 @@ class HttpApiClient implements ApiClient {
       },
     );
   }
+
+  @override
+  Future<ApiResult<MotionInfo>> motion(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+    DateTime utcDay,
+  ) {
+    final day = _dayParameter(utcDay);
+    return _sendJson(
+      () => _client.get(
+        baseUrl.resolve('/api/cameras/$cameraId/motion?day=$day'),
+        headers: {HttpHeaders.authorizationHeader: 'Bearer $credential'},
+      ),
+      expectedStatus: HttpStatus.ok,
+      parse: (json, _) {
+        if (json case {
+          'sensitivity': final String name,
+          'events': final List<Object?> rawEvents,
+        }) {
+          final sensitivity = MotionSensitivity.values.asNameMap()[name];
+          final events = [
+            for (final item in rawEvents)
+              if (item case {
+                'start': final Object? start,
+                'end': final Object? end,
+              })
+                if ((_parseTime(start), _parseTime(end)) case (
+                  final DateTime from,
+                  final DateTime to,
+                ))
+                  MotionEventInfo(start: from, end: to),
+          ];
+          if (sensitivity == null || events.length != rawEvents.length) {
+            return null;
+          }
+          return MotionInfo(sensitivity: sensitivity, events: events);
+        }
+        return null;
+      },
+    );
+  }
+
+  @override
+  Future<ApiFailureKind?> setMotionSensitivity(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+    MotionSensitivity sensitivity,
+  ) async {
+    final http.Response response;
+    try {
+      response = await _client
+          .put(
+            baseUrl.resolve('/api/cameras/$cameraId/motion-sensitivity'),
+            headers: {
+              HttpHeaders.contentTypeHeader: 'application/json',
+              HttpHeaders.authorizationHeader: 'Bearer $credential',
+            },
+            body: jsonEncode({'sensitivity': sensitivity.name}),
+          )
+          .timeout(timeout);
+    } on IOException {
+      return ApiFailureKind.unreachable;
+    } on http.ClientException {
+      return ApiFailureKind.unreachable;
+    } on TimeoutException {
+      return ApiFailureKind.unreachable;
+    }
+    return switch (response.statusCode) {
+      HttpStatus.noContent => null,
+      HttpStatus.unauthorized => ApiFailureKind.unauthorized,
+      HttpStatus.badRequest => ApiFailureKind.rejected,
+      _ => ApiFailureKind.unexpected,
+    };
+  }
+
+  static String _dayParameter(DateTime utcDay) =>
+      '${utcDay.year.toString().padLeft(4, '0')}-'
+      '${utcDay.month.toString().padLeft(2, '0')}-'
+      '${utcDay.day.toString().padLeft(2, '0')}';
 
   static RecordingPieceInfo? _parsePiece(Object? json) {
     if (json is! Map<String, Object?>) return null;

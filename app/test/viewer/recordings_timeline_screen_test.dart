@@ -73,6 +73,83 @@ void main() {
       expect(find.byKey(const Key('recording-video')), findsOneWidget);
     });
 
+    testWidgets('motion_isMarkedOnTheBarAndPlayedByNextMotion', (tester) async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      final api = FakeApiClient()
+        ..recordingDaysResult = [day]
+        ..recordingsByDay[day] = [
+          RecordingPieceInfo(
+            start: DateTime.utc(2026, 9, 25, 12),
+            end: DateTime.utc(2026, 9, 25, 13),
+            segments: [
+              RecordingSegmentInfo(
+                start: DateTime.utc(2026, 9, 25, 12),
+                end: DateTime.utc(2026, 9, 25, 13),
+                url: '/api/recordings/cam/noon.mp4',
+              ),
+            ],
+          ),
+        ]
+        ..motionByDay[day] = [
+          MotionEventInfo(
+            start: DateTime.utc(2026, 9, 25, 12, 30),
+            end: DateTime.utc(2026, 9, 25, 12, 31),
+          ),
+        ]
+        ..motionAfterChange[day] = [];
+      final player = FakeRecordingPlayer();
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RecordingsTimelineScreen(
+            brighten: () => BrightenController(
+              store: FakeAdjustmentStore(),
+              cameraId: 'cam',
+            ),
+            cameraName: 'Porch',
+            create: () => RecordingTimelineController(
+              api: api,
+              session: pairedSession(),
+              cameraId: 'cam',
+              player: player,
+              segments: FakeSegmentSource(),
+              utcOffsetOf: (_) => Duration.zero,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final bar = tester.getRect(find.byKey(const Key('timeline-hours')));
+      final mark = tester.getRect(find.byKey(const Key('motion-mark')));
+
+      // act
+      await tester.scrollUntilVisible(
+        find.text('Low'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(find.byKey(const Key('next-motion')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('only-motion')));
+      await tester.pumpAndSettle();
+      final onlyMotion = tester.getRect(find.byKey(const Key('motion-mark')));
+      await tester.tap(find.text('Low'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(mark.left - bar.left, closeTo(bar.width * 12.5 / 24, 1));
+      expect(mark.height, lessThan(onlyMotion.height));
+      expect(
+        player.plays.single.from,
+        const Duration(minutes: 29, seconds: 55),
+      );
+      expect(api.motionSensitivity, MotionSensitivity.low);
+      expect(find.byKey(const Key('motion-mark')), findsNothing);
+      expect(find.text('No motion on this day.'), findsOneWidget);
+    });
+
     testWidgets('withoutRecordings_saysHowToStart', (tester) async {
       // arrange
       final api = FakeApiClient();

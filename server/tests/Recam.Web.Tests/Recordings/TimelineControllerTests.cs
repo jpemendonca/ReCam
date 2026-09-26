@@ -99,6 +99,111 @@ public sealed class TimelineControllerTests
         Assert.False(controller.Loading);
     }
 
+    [Fact(DisplayName = "Next and previous motion play from five seconds before each event, in order")]
+    public async Task NextAndPreviousMotion_WalkEvents()
+    {
+        // arrange
+        var utcDay = new DateOnly(2026, 9, 25);
+        AddPiece(utcDay, At(utcDay, 15, 0), 30);
+        AddMotion(utcDay, (At(utcDay, 15, 5), 20), (At(utcDay, 15, 20), 40));
+        var controller = NewController();
+        await controller.LoadAsync(_cameraId);
+
+        // act
+        controller.PlayNextMotion();
+        var first = controller.PlayingFrom;
+        controller.PlayNextMotion();
+        var second = controller.PlayingFrom;
+        controller.PlayNextMotion();
+        var afterLast = controller.PlayingFrom;
+        controller.PlayPreviousMotion();
+
+        // assert
+        Assert.Equal([new MotionMark(new DateTime(2026, 9, 25, 12, 5, 0), new DateTime(2026, 9, 25, 12, 5, 20)),
+            new MotionMark(new DateTime(2026, 9, 25, 12, 20, 0), new DateTime(2026, 9, 25, 12, 20, 40))], controller.Motion);
+        Assert.Equal(new DateTime(2026, 9, 25, 12, 4, 55), first);
+        Assert.Equal(new DateTime(2026, 9, 25, 12, 19, 55), second);
+        Assert.Equal(second, afterLast);
+        Assert.Equal(first, controller.PlayingFrom);
+        Assert.EndsWith("segment-4.mp4#t=55", controller.Source, StringComparison.Ordinal);
+    }
+
+    [Fact(DisplayName = "With Motion only, a file that ends skips to the next motion instead of the next file")]
+    public async Task PlayNext_OnlyMotion_SkipsToNextMotion()
+    {
+        // arrange
+        var utcDay = new DateOnly(2026, 9, 25);
+        AddPiece(utcDay, At(utcDay, 15, 0), 30);
+        AddMotion(utcDay, (At(utcDay, 15, 5).AddSeconds(10), 5), (At(utcDay, 15, 20), 40));
+        var controller = NewController();
+        await controller.LoadAsync(_cameraId);
+        controller.OnlyMotion = true;
+        controller.PlayNextMotion();
+
+        // act
+        controller.PlayNext();
+
+        // assert
+        Assert.Equal(new DateTime(2026, 9, 25, 12, 19, 55), controller.PlayingFrom);
+    }
+
+    [Fact(DisplayName = "With Motion only, motion that goes past the end of a file continues in the next one")]
+    public async Task PlayNext_OnlyMotionAcrossFiles_PlaysNextFile()
+    {
+        // arrange
+        var utcDay = new DateOnly(2026, 9, 25);
+        AddPiece(utcDay, At(utcDay, 15, 0), 30);
+        AddMotion(utcDay, (At(utcDay, 15, 5).AddSeconds(50), 30));
+        var controller = NewController();
+        await controller.LoadAsync(_cameraId);
+        controller.OnlyMotion = true;
+        controller.PlayNextMotion();
+
+        // act
+        controller.PlayNext();
+
+        // assert
+        Assert.Same(controller.Timeline[6], controller.Playing);
+        Assert.EndsWith("segment-6.mp4#t=0", controller.Source, StringComparison.Ordinal);
+    }
+
+    [Fact(DisplayName = "Changing the sensitivity saves it and finds the day's motion again")]
+    public async Task SetSensitivity_ReloadsMotion()
+    {
+        // arrange
+        var utcDay = new DateOnly(2026, 9, 25);
+        AddPiece(utcDay, At(utcDay, 15, 0), 30);
+        AddMotion(utcDay, (At(utcDay, 15, 5), 20));
+        var controller = NewController();
+        await controller.LoadAsync(_cameraId);
+        _api.MotionAfterChange[utcDay] = [];
+
+        // act
+        await controller.SetSensitivityAsync("low");
+
+        // assert
+        Assert.Equal("low", _api.MotionSensitivity);
+        Assert.Equal("low", controller.Sensitivity);
+        Assert.Empty(controller.Motion);
+        Assert.False(controller.SensitivityFailed);
+    }
+
+    [Fact(DisplayName = "Without the server, changing the sensitivity says it failed")]
+    public async Task SetSensitivity_Offline_Failed()
+    {
+        // arrange
+        var controller = NewController();
+        await controller.LoadAsync(_cameraId);
+        _api.Offline = true;
+
+        // act
+        await controller.SetSensitivityAsync("high");
+
+        // assert
+        Assert.True(controller.SensitivityFailed);
+        Assert.Equal("medium", _api.MotionSensitivity);
+    }
+
     private static DateTimeOffset At(DateOnly day, int hour, int minute) =>
         new(day.ToDateTime(new TimeOnly(hour, minute)), TimeSpan.Zero);
 
@@ -110,4 +215,7 @@ public sealed class TimelineControllerTests
             .ToList();
         _api.Recordings[utcDay] = [new RecordingPieceInfo(start, start.AddMinutes(minutes), segments)];
     }
+
+    private void AddMotion(DateOnly utcDay, params (DateTimeOffset Start, int Seconds)[] events) =>
+        _api.Motion[utcDay] = [.. events.Select(found => new MotionEventInfo(found.Start, found.Start.AddSeconds(found.Seconds), 0.05))];
 }

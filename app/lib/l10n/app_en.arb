@@ -210,5 +210,22 @@
   "brightenButton": "Brighten",
   "brightenBrightness": "Brightness",
   "brightenContrast": "Contrast",
-  "brightenReset": "Back to normal"
+  "brightenReset": "Back to normal",
+  "motionPrevious": "Previous motion",
+  "motionNext": "Next motion",
+  "motionOnly": "Motion only",
+  "motionSensitivity": "Sensitivity",
+  "motionLow": "Low",
+  "motionMedium": "Medium",
+  "motionHigh": "High",
+  "motionNone": "No motion on this day.",
+  "motionSummary": "Motion on this day: {count}",
+  "@motionSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "motionSensitivityFailed": "Could not change the sensitivity. Check the connection to the server."
 }

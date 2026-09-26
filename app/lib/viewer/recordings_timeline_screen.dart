@@ -3,13 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../core/network/api_client.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'brighten_controller.dart';
 import 'brighten_panel.dart';
 import 'recording_timeline_controller.dart';
 
 /// One camera's recordings: the days, the 24 hours of the chosen day with the recorded stretches
-/// marked, and the player. Tapping the hours plays from that moment.
+/// and the motion marked, and the player. Tapping the hours plays from that moment.
 class RecordingsTimelineScreen extends StatefulWidget {
   const RecordingsTimelineScreen({
     required this.cameraName,
@@ -131,8 +132,11 @@ class _RecordingsTimelineScreenState extends State<RecordingsTimelineScreen> {
                 const SizedBox(height: 16),
                 if (_controller.loading)
                   const Center(child: CircularProgressIndicator())
-                else if (day != null)
+                else if (day != null) ...[
                   _HourBar(controller: _controller, day: day),
+                  const SizedBox(height: 16),
+                  _MotionControls(controller: _controller),
+                ],
               ],
             ],
           );
@@ -142,12 +146,106 @@ class _RecordingsTimelineScreenState extends State<RecordingsTimelineScreen> {
   }
 }
 
-/// The 24 hours of a day, recorded stretches filled in. A tap plays from that time.
+/// Walks the day's motion, filters the bar to it and sets how much movement counts.
+class _MotionControls extends StatelessWidget {
+  const _MotionControls({required this.controller});
+
+  final RecordingTimelineController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final motion = controller.motion;
+    final sensitivity = controller.sensitivity;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          motion.isEmpty ? l10n.motionNone : l10n.motionSummary(motion.length),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('previous-motion'),
+                onPressed: motion.isEmpty
+                    ? null
+                    : () => unawaited(controller.playPreviousMotion()),
+                icon: const Icon(Icons.skip_previous),
+                label: Text(l10n.motionPrevious),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton.icon(
+                key: const Key('next-motion'),
+                onPressed: motion.isEmpty
+                    ? null
+                    : () => unawaited(controller.playNextMotion()),
+                icon: const Icon(Icons.skip_next),
+                label: Text(l10n.motionNext),
+              ),
+            ),
+          ],
+        ),
+        SwitchListTile(
+          key: const Key('only-motion'),
+          contentPadding: EdgeInsets.zero,
+          title: Text(l10n.motionOnly),
+          value: controller.onlyMotion,
+          onChanged: (value) => controller.onlyMotion = value,
+        ),
+        Text(l10n.motionSensitivity),
+        const SizedBox(height: 8),
+        if (sensitivity != null)
+          SegmentedButton<MotionSensitivity>(
+            segments: [
+              ButtonSegment(
+                value: MotionSensitivity.low,
+                label: Text(l10n.motionLow),
+              ),
+              ButtonSegment(
+                value: MotionSensitivity.medium,
+                label: Text(l10n.motionMedium),
+              ),
+              ButtonSegment(
+                value: MotionSensitivity.high,
+                label: Text(l10n.motionHigh),
+              ),
+            ],
+            selected: {sensitivity},
+            onSelectionChanged: (chosen) =>
+                unawaited(controller.setSensitivity(chosen.single)),
+          ),
+        if (controller.sensitivityFailed) ...[
+          const SizedBox(height: 8),
+          Text(
+            l10n.motionSensitivityFailed,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// The 24 hours of a day, recorded stretches filled in and motion marked below them (only the
+/// motion with "Motion only"). A tap plays from that time.
 class _HourBar extends StatelessWidget {
   const _HourBar({required this.controller, required this.day});
 
   final RecordingTimelineController controller;
   final DateTime day;
+
+  static const _barHeight = 56.0;
+  static const _trackTop = 12.0;
+  static const _motionHeight = 10.0;
+  static const _motionColor = Color(0xFFE08600);
+
+  double _x(DateTime time, double width) =>
+      time.difference(day).inMilliseconds / Duration.millisecondsPerDay * width;
 
   @override
   Widget build(BuildContext context) {
@@ -169,17 +267,41 @@ class _HourBar extends StatelessWidget {
               );
               unawaited(controller.playAt(tapped));
             },
-            child: CustomPaint(
-              size: Size(constraints.maxWidth, 56),
-              painter: _HourBarPainter(
-                day: day,
-                segments: controller.timeline,
-                playing: controller.playing,
-                track: colors.surfaceContainerHighest,
-                recorded: colors.primary,
-                current: colors.error,
-                ticks: colors.outline,
-              ),
+            child: Stack(
+              children: [
+                CustomPaint(
+                  size: Size(constraints.maxWidth, _barHeight),
+                  painter: _HourBarPainter(
+                    day: day,
+                    segments: controller.onlyMotion
+                        ? const []
+                        : controller.timeline,
+                    playing: controller.playing,
+                    track: colors.surfaceContainerHighest,
+                    recorded: colors.primary,
+                    current: colors.error,
+                    ticks: colors.outline,
+                  ),
+                ),
+                for (final mark in controller.motion)
+                  Positioned(
+                    left: _x(mark.start, constraints.maxWidth),
+                    width:
+                        (_x(mark.end, constraints.maxWidth) -
+                                _x(mark.start, constraints.maxWidth))
+                            .clamp(2, constraints.maxWidth),
+                    top: controller.onlyMotion
+                        ? _trackTop
+                        : _barHeight - _trackTop - _motionHeight,
+                    height: controller.onlyMotion
+                        ? _barHeight - 2 * _trackTop
+                        : _motionHeight,
+                    child: const ColoredBox(
+                      key: Key('motion-mark'),
+                      color: _motionColor,
+                    ),
+                  ),
+              ],
             ),
           ),
         ),

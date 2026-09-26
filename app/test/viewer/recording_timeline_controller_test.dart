@@ -20,6 +20,17 @@ RecordingPieceInfo _piece(List<DateTime> starts) => RecordingPieceInfo(
   ],
 );
 
+/// Thirty one-minute segments from 15:00 UTC (12:00 in Brasília).
+RecordingPieceInfo _halfHour() => _piece([
+  for (var minute = 0; minute < 30; minute++)
+    DateTime.utc(2026, 9, 25, 15, minute),
+]);
+
+MotionEventInfo _motion(DateTime start, int seconds) => MotionEventInfo(
+  start: start,
+  end: start.add(Duration(seconds: seconds)),
+);
+
 void main() {
   late FakeApiClient api;
   late FakeRecordingPlayer player;
@@ -171,6 +182,108 @@ void main() {
       // assert
       expect(player.plays, hasLength(2));
       expect(controller.playing?.start, DateTime.utc(2026, 9, 25, 10, 1));
+    });
+
+    test('nextAndPreviousMotion_playFromFiveSecondsBeforeEachEvent', () async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      api.recordingsByDay[day] = [_halfHour()];
+      api.motionByDay[day] = [
+        _motion(DateTime.utc(2026, 9, 25, 15, 5), 20),
+        _motion(DateTime.utc(2026, 9, 25, 15, 20), 40),
+      ];
+      await controller.selectDay(day);
+
+      // act
+      await controller.playNextMotion();
+      final first = controller.playingFrom;
+      await controller.playNextMotion();
+      final second = controller.playingFrom;
+      await controller.playNextMotion();
+      final afterLast = controller.playingFrom;
+      await controller.playPreviousMotion();
+
+      // assert
+      expect(controller.motion.map((mark) => mark.start), [
+        DateTime.utc(2026, 9, 25, 12, 5),
+        DateTime.utc(2026, 9, 25, 12, 20),
+      ]);
+      expect(first, DateTime.utc(2026, 9, 25, 12, 4, 55));
+      expect(second, DateTime.utc(2026, 9, 25, 12, 19, 55));
+      expect(afterLast, second);
+      expect(controller.playingFrom, first);
+      expect(player.plays.last.from, const Duration(seconds: 55));
+    });
+
+    test('onlyMotion_whenASegmentEnds_skipsToTheNextMotion', () async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      api.recordingsByDay[day] = [_halfHour()];
+      api.motionByDay[day] = [
+        _motion(DateTime.utc(2026, 9, 25, 15, 5, 10), 5),
+        _motion(DateTime.utc(2026, 9, 25, 15, 20), 40),
+      ];
+      await controller.selectDay(day);
+      controller.onlyMotion = true;
+      await controller.playNextMotion();
+
+      // act
+      player.finish();
+      await settle();
+
+      // assert
+      expect(controller.playingFrom, DateTime.utc(2026, 9, 25, 12, 19, 55));
+    });
+
+    test('onlyMotion_motionPastTheSegmentEnd_playsTheNextSegment', () async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      api.recordingsByDay[day] = [_halfHour()];
+      api.motionByDay[day] = [
+        _motion(DateTime.utc(2026, 9, 25, 15, 5, 50), 30),
+      ];
+      await controller.selectDay(day);
+      controller.onlyMotion = true;
+      await controller.playNextMotion();
+
+      // act
+      player.finish();
+      await settle();
+
+      // assert
+      expect(controller.playing?.start, DateTime.utc(2026, 9, 25, 12, 6));
+      expect(player.plays.last.from, Duration.zero);
+    });
+
+    test('setSensitivity_savesItAndFindsTheMotionAgain', () async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      api.recordingsByDay[day] = [_halfHour()];
+      api.motionByDay[day] = [_motion(DateTime.utc(2026, 9, 25, 15, 5), 20)];
+      api.motionAfterChange[day] = [];
+      await controller.selectDay(day);
+
+      // act
+      await controller.setSensitivity(MotionSensitivity.low);
+
+      // assert
+      expect(api.motionSensitivity, MotionSensitivity.low);
+      expect(controller.sensitivity, MotionSensitivity.low);
+      expect(controller.motion, isEmpty);
+      expect(controller.sensitivityFailed, isFalse);
+    });
+
+    test('setSensitivity_withoutTheServer_saysItFailed', () async {
+      // arrange
+      await controller.selectDay(DateTime.utc(2026, 9, 25));
+      api.sensitivityFailure = ApiFailureKind.unreachable;
+
+      // act
+      await controller.setSensitivity(MotionSensitivity.high);
+
+      // assert
+      expect(controller.sensitivityFailed, isTrue);
+      expect(controller.sensitivity, MotionSensitivity.medium);
     });
 
     test('dispose_releasesThePlayerAndTheRelay', () async {

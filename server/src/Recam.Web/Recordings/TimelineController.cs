@@ -4,11 +4,16 @@ namespace Recam.Web.Recordings;
 
 /// <summary>
 /// A camera's recordings, day by day, in this computer's time zone, and playback that starts
-/// where the person clicks and moves on to the next file by itself. Same behavior as the app.
+/// where the person clicks and moves on to the next file by itself, and the motion the server
+/// found in them. Same behavior as the app.
 /// </summary>
 public sealed class TimelineController(IRecamApi api)
 {
+    /// <summary>Motion plays from a little before the event, so the start of it shows.</summary>
+    public static readonly TimeSpan MotionLead = TimeSpan.FromSeconds(5);
+
     private List<TimelineSegment> _timeline = [];
+    private List<MotionMark> _motion = [];
     private int? _playing;
     private Guid _cameraId;
 
@@ -21,6 +26,17 @@ public sealed class TimelineController(IRecamApi api)
     public DateOnly? SelectedDay { get; private set; }
 
     public IReadOnlyList<TimelineSegment> Timeline => _timeline;
+
+    /// <summary>Motion events of the selected day, in order.</summary>
+    public IReadOnlyList<MotionMark> Motion => _motion;
+
+    /// <summary>The camera's motion sensitivity: "low", "medium" or "high".</summary>
+    public string? Sensitivity { get; private set; }
+
+    /// <summary>The bar shows only motion, and a file that ends goes on to the next motion.</summary>
+    public bool OnlyMotion { get; set; }
+
+    public bool SensitivityFailed { get; private set; }
 
     public bool Loading { get; private set; } = true;
 
@@ -83,12 +99,10 @@ public sealed class TimelineController(IRecamApi api)
         Source = null;
         PlayingFrom = null;
         SetLoading();
-        var windowStart = new DateTimeOffset(day.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
-        windowStart -= UtcOffsetOf(windowStart);
-        var windowEnd = windowStart.AddDays(1);
-        var utcDays = new SortedSet<DateOnly> { DateOnly.FromDateTime(windowStart.UtcDateTime), DateOnly.FromDateTime(windowEnd.AddTicks(-1).UtcDateTime) };
+        var (windowStart, windowEnd, utcDays) = Window(day);
         var segments = new List<TimelineSegment>();
         var piece = 0;
+        List<MotionMark> motion;
         try
         {
             foreach (var utcDay in utcDays)
@@ -101,6 +115,8 @@ public sealed class TimelineController(IRecamApi api)
                     piece++;
                 }
             }
+
+            motion = await LoadMotionAsync(day);
         }
         catch (HttpRequestException)
         {
@@ -116,8 +132,54 @@ public sealed class TimelineController(IRecamApi api)
         }
 
         _timeline = segments;
+        _motion = motion;
         Loading = false;
         Changed?.Invoke();
+    }
+
+    /// <summary>Saves the camera's sensitivity and finds the day's motion again with it.</summary>
+    public async Task SetSensitivityAsync(string sensitivity)
+    {
+        SensitivityFailed = false;
+        try
+        {
+            await api.SetMotionSensitivityAsync(_cameraId, sensitivity, CancellationToken.None);
+            Sensitivity = sensitivity;
+            if (SelectedDay is { } day)
+            {
+                var motion = await LoadMotionAsync(day);
+                if (SelectedDay == day)
+                {
+                    _motion = motion;
+                }
+            }
+        }
+        catch (HttpRequestException)
+        {
+            SensitivityFailed = true;
+        }
+
+        Changed?.Invoke();
+    }
+
+    /// <summary>Plays the first motion after the one playing, or the day's first.</summary>
+    public void PlayNextMotion()
+    {
+        var next = PlayingFrom is { } from ? _motion.Find(mark => mark.Start - MotionLead > from.AddSeconds(1)) : _motion.FirstOrDefault();
+        if (next is not null)
+        {
+            PlayAt(next.Start - MotionLead);
+        }
+    }
+
+    /// <summary>Plays the motion before the one playing, or the day's last.</summary>
+    public void PlayPreviousMotion()
+    {
+        var previous = PlayingFrom is { } from ? _motion.FindLast(mark => mark.Start - MotionLead < from.AddSeconds(-1)) : _motion.LastOrDefault();
+        if (previous is not null)
+        {
+            PlayAt(previous.Start - MotionLead);
+        }
     }
 
     /// <summary>Plays from a wall-clock time on the selected day. In a gap, starts at the next recording.</summary>
@@ -136,9 +198,22 @@ public sealed class TimelineController(IRecamApi api)
     /// <summary>The &lt;video&gt; reached the end of a file: the next one follows.</summary>
     public void PlayNext()
     {
-        if (_playing is { } current && current + 1 < _timeline.Count)
+        if (_playing is not { } current || current + 1 >= _timeline.Count)
+        {
+            return;
+        }
+
+        if (!OnlyMotion)
         {
             Play(current + 1, TimeSpan.Zero);
+            return;
+        }
+
+        // Motion that goes on past this file continues in the next one; otherwise, skips ahead.
+        var ended = _timeline[current].End;
+        if (_motion.Find(mark => mark.End > ended) is { } next)
+        {
+            PlayAt(next.Start - MotionLead > ended ? next.Start - MotionLead : ended);
         }
     }
 
@@ -149,6 +224,31 @@ public sealed class TimelineController(IRecamApi api)
         PlayingFrom = segment.Start + from;
         Source = $"{segment.Url.TrimStart('/')}#t={(int)from.TotalSeconds}";
         Changed?.Invoke();
+    }
+
+    private async Task<List<MotionMark>> LoadMotionAsync(DateOnly day)
+    {
+        var (windowStart, windowEnd, utcDays) = Window(day);
+        var marks = new List<MotionMark>();
+        foreach (var utcDay in utcDays)
+        {
+            var motion = await api.GetMotionAsync(_cameraId, utcDay, CancellationToken.None);
+            Sensitivity = motion.Sensitivity;
+            marks.AddRange(motion.Events
+                .Where(found => found.Start >= windowStart && found.Start < windowEnd)
+                .Select(found => new MotionMark(Wall(found.Start), Wall(found.End))));
+        }
+
+        return marks;
+    }
+
+    // The UTC instants a day on this computer's calendar spans, and the UTC days that hold them.
+    private (DateTimeOffset Start, DateTimeOffset End, SortedSet<DateOnly> UtcDays) Window(DateOnly day)
+    {
+        var start = new DateTimeOffset(day.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+        start -= UtcOffsetOf(start);
+        var end = start.AddDays(1);
+        return (start, end, [DateOnly.FromDateTime(start.UtcDateTime), DateOnly.FromDateTime(end.AddTicks(-1).UtcDateTime)]);
     }
 
     // A UTC day covers parts of one or two days on this computer's calendar.

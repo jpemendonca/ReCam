@@ -123,5 +123,15 @@
   "brightenButton": "Clarear",
   "brightenBrightness": "Brilho",
   "brightenContrast": "Contraste",
-  "brightenReset": "Voltar ao normal"
+  "brightenReset": "Voltar ao normal",
+  "motionPrevious": "Movimento anterior",
+  "motionNext": "Próximo movimento",
+  "motionOnly": "Só movimento",
+  "motionSensitivity": "Sensibilidade",
+  "motionLow": "Baixa",
+  "motionMedium": "Média",
+  "motionHigh": "Alta",
+  "motionNone": "Sem movimento neste dia.",
+  "motionSummary": "Movimentos neste dia: {count}",
+  "motionSensitivityFailed": "Não deu para mudar a sensibilidade. Confira a conexão com o servidor."
 }

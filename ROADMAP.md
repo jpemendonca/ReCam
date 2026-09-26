@@ -1466,7 +1466,7 @@ Decidido com o autor em 2026-09-25, logo depois da Fase 6. Vale no app e no nave
   > não subido (a imagem do servidor não compila neste ambiente). Gate verde (288 no servidor e no
   > web, 240 no app).
 
-- [ ] **7.3 Movimento na linha do tempo**
+- [x] **7.3 Movimento na linha do tempo**
   - Origem: continuação do 7.2.
   - Escopo: na tela de gravações, os eventos de movimento aparecem destacados na barra das 24 h,
     com botões "Movimento anterior" e "Próximo movimento" que tocam a partir de alguns segundos
@@ -1474,6 +1474,23 @@ Decidido com o autor em 2026-09-25, logo depois da Fase 6. Vale no app e no nave
     tela, no app e no navegador. Textos nos ARB e nos `.resx`.
   - Aceite: testes dos controllers (navegar entre eventos, filtro, trocar sensibilidade) e testes
     das marcas na barra (widget test no app, bUnit no navegador).
+  > Validação (2026-09-26): código escrito e o caminho percorrido no navegador; no app, só testes.
+  > Navegador: `TimelineController` carrega os eventos dos mesmos dias UTC da linha do tempo e os
+  > põe no relógio do computador; marcas laranja na base da barra (a barra inteira com "Só
+  > movimento", que também esconde os trechos gravados e, no fim de um arquivo, segue para o
+  > próximo movimento, ou para o arquivo seguinte se o movimento continua nele); "Movimento
+  > anterior" e "Próximo movimento" tocam a partir de 5 s antes; seletor de sensibilidade que salva
+  > e recarrega os eventos. App: o mesmo no `RecordingTimelineController` (`playingFrom`,
+  > `motion`, `onlyMotion`, `setSensitivity`), `ApiClient.motion`/`setMotionSensitivity`, marcas
+  > sobre a barra, botões, chave "Só movimento" e `SegmentedButton` de sensibilidade; textos em ARB
+  > e resx, en e pt. SPECS 2.4 descreve a tela. Testes: 5 de controller e 2 bUnit no navegador; 5
+  > de controller e 1 widget test no app. Observado no Chromium contra o servidor de dev: dois
+  > segmentos VP9 com a cena da pessoa andando, pontuados pelo `deploy/motion.sh --once` na imagem
+  > real, viraram duas marcas na barra e "Movimentos neste dia: 2"; "Próximo movimento" tocou o
+  > primeiro (22:38, `#t=0`, vídeo 640 px andando) e depois o segundo (22:48); "Movimento
+  > anterior" voltou ao primeiro; "Só movimento" tirou os trechos gravados e as marcas ocuparam a
+  > barra; a sensibilidade trocada para Alta continuou Alta depois de recarregar a página. Falta
+  > ver o app num celular (junto com o 6.10).
 
 ## Fase 5: distribuição
 

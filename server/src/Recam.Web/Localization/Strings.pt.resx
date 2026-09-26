@@ -177,6 +177,36 @@
   <data name="LiveRetry" xml:space="preserve">
     <value>Tentar de novo</value>
   </data>
+  <data name="MotionHigh" xml:space="preserve">
+    <value>Alta</value>
+  </data>
+  <data name="MotionLow" xml:space="preserve">
+    <value>Baixa</value>
+  </data>
+  <data name="MotionMedium" xml:space="preserve">
+    <value>Média</value>
+  </data>
+  <data name="MotionNext" xml:space="preserve">
+    <value>Próximo movimento</value>
+  </data>
+  <data name="MotionNone" xml:space="preserve">
+    <value>Sem movimento neste dia.</value>
+  </data>
+  <data name="MotionOnly" xml:space="preserve">
+    <value>Só movimento</value>
+  </data>
+  <data name="MotionPrevious" xml:space="preserve">
+    <value>Movimento anterior</value>
+  </data>
+  <data name="MotionSensitivity" xml:space="preserve">
+    <value>Sensibilidade</value>
+  </data>
+  <data name="MotionSensitivityFailed" xml:space="preserve">
+    <value>Não deu para mudar a sensibilidade. Confira a conexão com o servidor.</value>
+  </data>
+  <data name="MotionSummary" xml:space="preserve">
+    <value>Movimentos neste dia: {0}</value>
+  </data>
   <data name="NavCameras" xml:space="preserve">
     <value>Câmeras</value>
   </data>

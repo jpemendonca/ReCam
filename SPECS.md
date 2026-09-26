@@ -221,7 +221,10 @@ Desenho combinado com o autor em 2026-09-25 (Fase 3 do ROADMAP):
   de a câmera avisar que a lanterna mudou (guardado em memória por três dias). Mudar a
   sensibilidade vale para o que já foi gravado. A limpeza da cota apaga as notas junto com o
   segmento e as notas que ficaram sem segmento. O evento aparece quando o segmento fecha, não na
-  hora.
+  hora. Na linha do tempo (app e navegador), os eventos ficam marcados na barra das 24 h;
+  "Movimento anterior" e "Próximo movimento" tocam a partir de 5 s antes do evento; "Só movimento"
+  deixa na barra só os eventos e, quando um segmento termina, segue para o próximo movimento em vez
+  do próximo segmento. A sensibilidade se escolhe na mesma tela.
 - **Codec.** O MediaMTX 1.21.1 grava H.264 em fMP4, mas não grava VP8: com VP8 ele registra "no
   supported tracks found, skipping recording" e só repassa (seção 11).
 
