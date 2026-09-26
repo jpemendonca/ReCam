@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/core/network/api_client.dart';
 import 'package:recam/l10n/generated/app_localizations.dart';
+import 'package:recam/viewer/brighten_controller.dart';
 import 'package:recam/viewer/recording_timeline_controller.dart';
 import 'package:recam/viewer/recordings_timeline_screen.dart';
 
@@ -32,6 +33,10 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: RecordingsTimelineScreen(
+            brighten: () => BrightenController(
+              store: FakeAdjustmentStore(),
+              cameraId: 'cam',
+            ),
             cameraName: 'Porch',
             create: () => RecordingTimelineController(
               api: api,
@@ -78,6 +83,10 @@ void main() {
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: RecordingsTimelineScreen(
+            brighten: () => BrightenController(
+              store: FakeAdjustmentStore(),
+              cameraId: 'cam',
+            ),
             cameraName: 'Porch',
             create: () => RecordingTimelineController(
               api: api,

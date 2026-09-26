@@ -6,7 +6,9 @@ import '../core/media/webrtc_viewer.dart';
 import '../core/network/api_client.dart';
 import '../core/network/hub_client.dart';
 import '../core/network/hub_session.dart';
+import '../core/storage/adjustment_store.dart';
 import '../core/storage/credential_store.dart';
+import 'brighten_controller.dart';
 import 'live_view_controller.dart';
 import 'recording_timeline_controller.dart';
 
@@ -36,12 +38,14 @@ class CameraListController extends ChangeNotifier {
     required this.hub,
     required this._viewerFactory,
     required this._timelineFactory,
+    required this._adjustments,
   });
 
   final ApiClient _api;
   final PairedSession _session;
   final WebRtcViewerFactory _viewerFactory;
   final RecordingTimelineFactory _timelineFactory;
+  final AdjustmentStore _adjustments;
 
   /// The viewer's hub connection; the live view reuses it for its watch lease.
   final HubSession hub;
@@ -103,6 +107,10 @@ class CameraListController extends ChangeNotifier {
   /// The recordings of one camera.
   RecordingTimelineController openRecordings(String cameraId) =>
       _timelineFactory(cameraId);
+
+  /// One camera's "Brighten" setting, for its live view and its recordings.
+  BrightenController openBrighten(String cameraId) =>
+      BrightenController(store: _adjustments, cameraId: cameraId);
 
   /// A live view of one camera, sharing this list's hub connection for the watch lease.
   LiveViewController openLive(String cameraId) => LiveViewController(

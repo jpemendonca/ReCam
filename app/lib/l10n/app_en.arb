@@ -206,5 +206,9 @@
   "firstRunIntro": "On the computer, open the server address in the browser and choose Add camera, to film with this phone, or Add Monitor, to watch on it. Then scan the QR code that shows up.",
   "firstRunNameTitle": "Name this camera",
   "firstRunNameHint": "This is how it shows in the camera list.",
-  "firstRunNameConfirm": "Confirm"
+  "firstRunNameConfirm": "Confirm",
+  "brightenButton": "Brighten",
+  "brightenBrightness": "Brightness",
+  "brightenContrast": "Contrast",
+  "brightenReset": "Back to normal"
 }

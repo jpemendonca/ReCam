@@ -23,6 +23,7 @@ import 'core/network/http_api_client.dart';
 import 'core/network/pinned_http_overrides.dart';
 import 'core/pairing/pairing_link.dart';
 import 'core/pairing/pairing_service.dart';
+import 'core/storage/adjustment_store.dart';
 import 'core/storage/secure_credential_store.dart';
 import 'viewer/camera_list_controller.dart';
 import 'viewer/recording_timeline_controller.dart';
@@ -78,6 +79,7 @@ Future<void> main() async {
           player: VideoPlayerRecordingPlayer(),
           segments: RecordingRelay(session: session),
         ),
+        adjustments: SecureAdjustmentStore(),
       ),
       links: AppLinkSource(),
       ready: ready,

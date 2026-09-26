@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart' show Key, SizedBox, Widget;
 
+import 'package:recam/core/media/image_adjustment.dart';
+import 'package:recam/core/storage/adjustment_store.dart';
 import 'package:recam/core/device/battery_optimization.dart';
 import 'package:recam/core/device/battery_reader.dart';
 import 'package:recam/core/device/keep_alive.dart';
@@ -262,4 +264,22 @@ class FakeLinkSource implements LinkSource {
 
   @override
   Stream<Uri> get links => controller.stream;
+}
+
+/// Brighten settings in memory.
+class FakeAdjustmentStore implements AdjustmentStore {
+  final Map<String, ImageAdjustment> saved = {};
+
+  @override
+  Future<ImageAdjustment> read(String cameraId) async =>
+      saved[cameraId] ?? ImageAdjustment.normal;
+
+  @override
+  Future<void> write(String cameraId, ImageAdjustment adjustment) async {
+    if (adjustment.isNormal) {
+      saved.remove(cameraId);
+    } else {
+      saved[cameraId] = adjustment;
+    }
+  }
 }

@@ -119,5 +119,9 @@
   "firstRunIntro": "No computador, abra o endereço do servidor no navegador e escolha Adicionar câmera, para filmar com este celular, ou Adicionar Monitor, para assistir por ele. Depois leia o QR code que aparecer.",
   "firstRunNameTitle": "Dê um nome a esta câmera",
   "firstRunNameHint": "É assim que ela aparece na lista de câmeras.",
-  "firstRunNameConfirm": "Confirmar"
+  "firstRunNameConfirm": "Confirmar",
+  "brightenButton": "Clarear",
+  "brightenBrightness": "Brilho",
+  "brightenContrast": "Contraste",
+  "brightenReset": "Voltar ao normal"
 }

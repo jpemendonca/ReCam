@@ -29,6 +29,7 @@ void main() {
         player: FakeRecordingPlayer(),
         segments: FakeSegmentSource(),
       ),
+      adjustments: FakeAdjustmentStore(),
     );
   });
 

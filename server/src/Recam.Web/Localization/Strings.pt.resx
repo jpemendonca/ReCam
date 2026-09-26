@@ -60,6 +60,18 @@
   <data name="AppTitle" xml:space="preserve">
     <value>ReCam</value>
   </data>
+  <data name="BrightenBrightness" xml:space="preserve">
+    <value>Brilho</value>
+  </data>
+  <data name="BrightenButton" xml:space="preserve">
+    <value>Clarear</value>
+  </data>
+  <data name="BrightenContrast" xml:space="preserve">
+    <value>Contraste</value>
+  </data>
+  <data name="BrightenReset" xml:space="preserve">
+    <value>Voltar ao normal</value>
+  </data>
   <data name="CameraBattery" xml:space="preserve">
     <value>Bateria {0}%</value>
   </data>

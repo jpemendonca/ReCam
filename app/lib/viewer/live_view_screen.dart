@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../l10n/generated/app_localizations.dart';
+import 'brighten_controller.dart';
+import 'brighten_panel.dart';
 import 'live_view_controller.dart';
 
 class LiveViewScreen extends StatefulWidget {
   const LiveViewScreen({
     required this.cameraName,
     required this.create,
+    required this.brighten,
     this.recordingSwitch,
     this.recordingsButton,
     super.key,
@@ -25,23 +28,29 @@ class LiveViewScreen extends StatefulWidget {
   /// Builds the controller once, in initState; the route builder may run again.
   final LiveViewController Function() create;
 
+  /// This camera's "Brighten" setting on this phone.
+  final BrightenController Function() brighten;
+
   @override
   State<LiveViewScreen> createState() => _LiveViewScreenState();
 }
 
 class _LiveViewScreenState extends State<LiveViewScreen> {
   late final LiveViewController _controller = widget.create();
+  late final BrightenController _brighten = widget.brighten();
 
   @override
   void initState() {
     super.initState();
     unawaited(_controller.start());
+    unawaited(_brighten.load());
   }
 
   @override
   void dispose() {
     unawaited(_controller.close());
     _controller.dispose();
+    _brighten.dispose();
     super.dispose();
   }
 
@@ -63,6 +72,7 @@ class _LiveViewScreenState extends State<LiveViewScreen> {
         actions: [
           ?widget.recordingSwitch,
           ?widget.recordingsButton,
+          BrightenButton(controller: _brighten),
           ListenableBuilder(
             listenable: _controller,
             builder: (context, _) {
@@ -85,7 +95,19 @@ class _LiveViewScreenState extends State<LiveViewScreen> {
         builder: (context, _) => Stack(
           fit: StackFit.expand,
           children: [
-            _controller.viewer.buildVideo(),
+            BrightenedVideo(
+              controller: _brighten,
+              child: _controller.viewer.buildVideo(),
+            ),
+            ListenableBuilder(
+              listenable: _brighten,
+              builder: (context, _) => _brighten.open
+                  ? Align(
+                      alignment: Alignment.bottomCenter,
+                      child: BrightenPanel(controller: _brighten),
+                    )
+                  : const SizedBox.shrink(),
+            ),
             switch (_controller.state) {
               LivePlaying() => const SizedBox.shrink(),
               LiveConnecting() => Center(

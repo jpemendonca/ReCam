@@ -66,6 +66,7 @@ class _CameraListViewState extends State<CameraListView> {
       builder: (_) => LiveViewScreen(
         cameraName: camera.name,
         create: () => _controller.openLive(camera.id),
+        brighten: () => _controller.openBrighten(camera.id),
         recordingSwitch: RecordingSwitch(
           list: _controller,
           cameraId: camera.id,
@@ -83,6 +84,7 @@ class _CameraListViewState extends State<CameraListView> {
       builder: (_) => RecordingsTimelineScreen(
         cameraName: camera.name,
         create: () => _controller.openRecordings(camera.id),
+        brighten: () => _controller.openBrighten(camera.id),
       ),
     ),
   );

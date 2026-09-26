@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Recam.Web;
 using Recam.Web.Api;
+using Recam.Web.Brighten;
 using Recam.Web.Cameras;
 using Recam.Web.Devices;
 using Recam.Web.Live;
@@ -34,5 +35,7 @@ builder.Services.AddTransient<AddDeviceController>();
 builder.Services.AddTransient<TimelineController>();
 builder.Services.AddTransient<QuotaController>();
 builder.Services.AddTransient<DevicesController>();
+builder.Services.AddScoped<IBrightenSurface, JsBrightenSurface>();
+builder.Services.AddTransient<BrightenController>();
 
 await builder.Build().RunAsync();

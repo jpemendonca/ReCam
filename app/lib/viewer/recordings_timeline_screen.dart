@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../l10n/generated/app_localizations.dart';
+import 'brighten_controller.dart';
+import 'brighten_panel.dart';
 import 'recording_timeline_controller.dart';
 
 /// One camera's recordings: the days, the 24 hours of the chosen day with the recorded stretches
@@ -12,6 +14,7 @@ class RecordingsTimelineScreen extends StatefulWidget {
   const RecordingsTimelineScreen({
     required this.cameraName,
     required this.create,
+    required this.brighten,
     super.key,
   });
 
@@ -20,6 +23,9 @@ class RecordingsTimelineScreen extends StatefulWidget {
   /// Builds the controller once, in initState; the route builder may run again.
   final RecordingTimelineController Function() create;
 
+  /// This camera's "Brighten" setting on this phone.
+  final BrightenController Function() brighten;
+
   @override
   State<RecordingsTimelineScreen> createState() =>
       _RecordingsTimelineScreenState();
@@ -27,16 +33,19 @@ class RecordingsTimelineScreen extends StatefulWidget {
 
 class _RecordingsTimelineScreenState extends State<RecordingsTimelineScreen> {
   late final RecordingTimelineController _controller = widget.create();
+  late final BrightenController _brighten = widget.brighten();
 
   @override
   void initState() {
     super.initState();
     unawaited(_controller.load());
+    unawaited(_brighten.load());
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _brighten.dispose();
     super.dispose();
   }
 
@@ -45,7 +54,10 @@ class _RecordingsTimelineScreenState extends State<RecordingsTimelineScreen> {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.timelineTitle(widget.cameraName))),
+      appBar: AppBar(
+        title: Text(l10n.timelineTitle(widget.cameraName)),
+        actions: [BrightenButton(controller: _brighten)],
+      ),
       body: ListenableBuilder(
         listenable: _controller,
         builder: (context, _) {
@@ -69,8 +81,19 @@ class _RecordingsTimelineScreenState extends State<RecordingsTimelineScreen> {
                             ),
                           ),
                         )
-                      : Center(child: _controller.player.buildVideo()),
+                      : Center(
+                          child: BrightenedVideo(
+                            controller: _brighten,
+                            child: _controller.player.buildVideo(),
+                          ),
+                        ),
                 ),
+              ),
+              ListenableBuilder(
+                listenable: _brighten,
+                builder: (context, _) => _brighten.open
+                    ? BrightenPanel(controller: _brighten)
+                    : const SizedBox.shrink(),
               ),
               if (playing != null) ...[
                 const SizedBox(height: 8),

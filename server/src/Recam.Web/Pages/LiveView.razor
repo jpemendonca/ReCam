@@ -3,6 +3,7 @@
 @inject IStringLocalizer<Strings> L
 @inject CameraListController Cameras
 @inject LiveController Live
+@inject BrightenController Brighten
 @inject NavigationManager Navigation
 
 <PageTitle>@(camera?.Name ?? L["AppTitle"])</PageTitle>
@@ -41,6 +42,7 @@
         <RecordingToggle Camera="camera" />
     }
     <a href="cameras/@CameraId/recordings">@L["RecordingsOpen"]</a>
+    <BrightenControls Controller="Brighten" />
 </div>
 @if (torchFailed)
 {
@@ -59,12 +61,15 @@
     {
         Cameras.Changed += OnChanged;
         Live.Changed += OnChanged;
+        Brighten.Changed += OnChanged;
+        await Brighten.LoadAsync(CameraId);
         await Cameras.StartAsync(CancellationToken.None);
         Refresh();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        await Brighten.ApplyAsync(video);
         if (firstRender)
         {
             await Live.OpenAsync(CameraId, video);
@@ -75,6 +80,7 @@
     {
         Cameras.Changed -= OnChanged;
         Live.Changed -= OnChanged;
+        Brighten.Changed -= OnChanged;
         await Live.DisposeAsync();
     }
 

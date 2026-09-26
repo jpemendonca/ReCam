@@ -76,6 +76,7 @@ void main() {
             player: FakeRecordingPlayer(),
             segments: FakeSegmentSource(),
           ),
+          adjustments: FakeAdjustmentStore(),
         ),
         links: links,
         readCode: (_) async => codesToRead.removeAt(0),

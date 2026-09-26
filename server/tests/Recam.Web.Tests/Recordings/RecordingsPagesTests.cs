@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Recam.Web.Api;
+using Recam.Web.Brighten;
 using Recam.Web.Cameras;
 using Recam.Web.Pages;
 using Recam.Web.Realtime;
@@ -22,6 +23,8 @@ public sealed class RecordingsPagesTests : BunitContext
         Services.AddSingleton<CameraListController>();
         Services.AddTransient(_ => new TimelineController(_api) { UtcOffsetOf = _ => TimeSpan.Zero });
         Services.AddTransient<QuotaController>();
+        Services.AddSingleton<IBrightenSurface>(new FakeBrightenSurface());
+        Services.AddTransient<BrightenController>();
     }
 
     [Fact(DisplayName = "The timeline draws the recorded stretch, and clicking the hours plays it")]

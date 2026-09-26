@@ -4,6 +4,7 @@
 @inject IStringLocalizer<Strings> L
 @inject CameraListController Cameras
 @inject TimelineController Timeline
+@inject BrightenController Brighten
 
 <PageTitle>@Title</PageTitle>
 
@@ -61,7 +62,10 @@ else
     @if (Timeline.Source is { } source)
     {
         <p class="playing-from">@L["TimelinePlaying", Timeline.PlayingFrom!.Value.ToString("t", CultureInfo.CurrentCulture)]</p>
-        <video @key="source" src="@source" controls autoplay playsinline muted @onended="Timeline.PlayNext"></video>
+        <video @key="source" @ref="video" src="@source" controls autoplay playsinline muted @onended="Timeline.PlayNext"></video>
+        <div class="brighten-row">
+            <BrightenControls Controller="Brighten" />
+        </div>
     }
 }
 
@@ -71,13 +75,17 @@ else
     [Parameter]
     public Guid CameraId { get; set; }
 
+    private ElementReference video;
+
     private string Title => L["TimelineTitle", Cameras.Camera(CameraId)?.Name ?? string.Empty];
 
     protected override async Task OnInitializedAsync()
     {
         Timeline.Changed += OnChanged;
         Cameras.Changed += OnChanged;
+        Brighten.Changed += OnChanged;
         _ = Cameras.StartAsync(CancellationToken.None);
+        await Brighten.LoadAsync(CameraId);
         await Timeline.LoadAsync(CameraId);
     }
 
@@ -85,6 +93,16 @@ else
     {
         Timeline.Changed -= OnChanged;
         Cameras.Changed -= OnChanged;
+        Brighten.Changed -= OnChanged;
+    }
+
+    // The <video> is new for each file, so the filter goes on again after every render.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Timeline.Source is not null)
+        {
+            await Brighten.ApplyAsync(video);
+        }
     }
 
     private static int Minutes(DateTime wall) => (int)wall.TimeOfDay.TotalMinutes;

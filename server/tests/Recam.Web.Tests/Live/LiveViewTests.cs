@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Recam.Web.Api;
+using Recam.Web.Brighten;
 using Recam.Web.Cameras;
 using Recam.Web.Live;
 using Recam.Web.Pages;
@@ -22,6 +23,8 @@ public sealed class LiveViewTests : BunitContext
         Services.AddSingleton<ILiveVideo>(_video);
         Services.AddSingleton<CameraListController>();
         Services.AddTransient<LiveController>();
+        Services.AddSingleton<IBrightenSurface>(new FakeBrightenSurface());
+        Services.AddTransient<BrightenController>();
     }
 
     [Fact(DisplayName = "The live view plays, shows the camera's name and switches the torch")]

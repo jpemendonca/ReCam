@@ -1,0 +1,35 @@
+@using System.Globalization
+@inject IStringLocalizer<Strings> L
+
+<button class="secondary brighten @(Controller.Open ? "on" : string.Empty)" @onclick="Controller.Toggle" aria-pressed="@Controller.Open">
+    @L["BrightenButton"]
+</button>
+@if (Controller.Open)
+{
+    <div class="panel">
+        <label>
+            <span>@L["BrightenBrightness"] @Percent(Controller.Adjustment.Brightness)</span>
+            <input class="brightness" type="range" min="@Min(ImageAdjustment.MinBrightness)" max="@Min(ImageAdjustment.MaxBrightness)" step="10"
+                   value="@Min(Controller.Adjustment.Brightness)" @oninput="e => Controller.SetBrightnessAsync(Value(e))" />
+        </label>
+        <label>
+            <span>@L["BrightenContrast"] @Percent(Controller.Adjustment.Contrast)</span>
+            <input class="contrast" type="range" min="@Min(ImageAdjustment.MinContrast)" max="@Min(ImageAdjustment.MaxContrast)" step="10"
+                   value="@Min(Controller.Adjustment.Contrast)" @oninput="e => Controller.SetContrastAsync(Value(e))" />
+        </label>
+        <button class="secondary reset" @onclick="Controller.ResetAsync" disabled="@Controller.Adjustment.IsNormal">@L["BrightenReset"]</button>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public BrightenController Controller { get; set; } = default!;
+
+    // The sliders work in whole percents; the adjustment keeps factors (1 = as it arrives).
+    private static int Min(double factor) => (int)Math.Round(factor * 100);
+
+    private static string Percent(double factor) => string.Create(CultureInfo.CurrentCulture, $"{Min(factor)}%");
+
+    private static double Value(ChangeEventArgs change) =>
+        int.TryParse(change.Value?.ToString(), CultureInfo.InvariantCulture, out var percent) ? percent / 100.0 : 1;
+}

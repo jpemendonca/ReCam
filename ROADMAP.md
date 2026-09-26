@@ -1401,7 +1401,7 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
 
 Decidido com o autor em 2026-09-25, logo depois da Fase 6. Vale no app e no navegador.
 
-- [ ] **7.1 Clarear a imagem no Monitor**
+- [x] **7.1 Clarear a imagem no Monitor**
   - Origem: pedido do autor em 2026-09-25 (ver melhor com pouca luz).
   - Escopo: botão "Clarear" no vídeo ao vivo e no player da linha do tempo, no app e no
     navegador (no navegador, filtro CSS no `<video>`). Liga um filtro de
@@ -1412,6 +1412,21 @@ Decidido com o autor em 2026-09-25, logo depois da Fase 6. Vale no app e no nave
     Sem servidor e sem dependência nova.
   - Aceite: teste do controller (ligar, ajustar, voltar ao normal, lembrar por câmera) e widget
     test do filtro aplicado no vídeo ao vivo, no app e no navegador (bUnit).
+  > Validação (2026-09-26): código escrito; no navegador, percorrido no Chromium com vídeo de
+  > verdade; no app, só código e testes (sem celular). Brilho de 100% a 300% e contraste de 50% a
+  > 200%, só na tela de quem assiste, guardados por câmera no próprio Monitor, com **Voltar ao
+  > normal**. App: `ImageAdjustment` (matriz de cor: contraste em volta do cinza médio, depois
+  > brilho), `AdjustmentStore` no `flutter_secure_storage` que o app já usa (sem dependência nova),
+  > `BrightenController`, botão **Clarear** na barra do vídeo ao vivo e da linha do tempo, painel
+  > com os dois controles e o vídeo embrulhado num `ColorFiltered`. Navegador: o filtro CSS vai
+  > pelo CSSOM a partir do módulo `wwwroot/js/brighten.js`, porque a CSP bloqueia `style` inline, e o
+  > ajuste fica no `localStorage`; `BrightenController` e o componente `BrightenControls` no vídeo
+  > ao vivo e no player das gravações (reaplicado a cada arquivo). Observado no Chromium: câmera
+  > falsa publicando no MediaMTX real, vídeo ao vivo tocando; **Clarear** abriu os controles, e com
+  > 200% e 130% o `<video>` ficou com `brightness(2) contrast(1.3)` sem erro de CSP; depois de
+  > recarregar a página o filtro voltou sozinho. Testes: controller, codificação e widget/bUnit
+  > (abre, filtra, volta ao normal, guarda por câmera) no app e no navegador. Gate verde (276 no
+  > servidor e no web, 240 no app).
 
 - [ ] **7.2 Detectar movimento nas gravações**
   - Origem: pedido do autor em 2026-09-25 (achar os momentos importantes sem assistir horas).
