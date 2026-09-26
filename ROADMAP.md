@@ -1492,6 +1492,120 @@ Decidido com o autor em 2026-09-25, logo depois da Fase 6. Vale no app e no nave
   > barra; a sensibilidade trocada para Alta continuou Alta depois de recarregar a página. Falta
   > ver o app num celular (junto com o 6.10).
 
+## Fase 8: ajustes do teste de 2026-09-26
+
+Pedidos do autor depois de testar as fases 3, 6 e 7 no PC, no Samsung A10 e no Redmi 6A. Valem no
+app e no navegador quando o bullet não disser outra coisa.
+
+- [ ] **8.1 Um papel por celular**
+  - Origem: teste do autor em 2026-09-26: o Redmi 6A, pareado como câmera e depois como Monitor,
+    aparecia na própria lista como câmera offline, e abrir essa câmera ficava carregando.
+  - Escopo: o celular é Câmera ou Monitor, nunca os dois. A barra de abas some; o app mostra só a
+    tela do papel dele. Ler um QR do outro papel pergunta "Este celular é uma câmera. Virar
+    Monitor?" (e o contrário); confirmando, o app sai do servidor no papel antigo (`DELETE
+    /api/me`) e pareia no novo. "Reiniciar o app" continua no menu ⋮ dos dois papéis e volta à
+    tela inicial zerada. Revisão no `SPECS.md` 12 (a decisão "um app com duas abas" muda).
+  - Aceite: widget tests do app pareado como Câmera e como Monitor sem barra de abas, da troca de
+    papel confirmada (sai do servidor e pareia) e cancelada (nada muda).
+
+- [ ] **8.2 Abas do Monitor: Câmeras, Gravações, Aparelhos e Configurações**
+  - Origem: teste do autor em 2026-09-26.
+  - Escopo: no app (Monitor) e no navegador, quatro abas. Câmeras fica como está. Aparelhos fica
+    como está. Configurações, por enquanto, só com o espaço de gravação (a tela que hoje se chama
+    "Gravações" no menu ⋮), com o texto deixando claro que o valor é o total de todas as câmeras
+    e que o espaço fica no servidor, não no celular, e o aviso "com N câmeras gravando, cabem
+    cerca de X horas". Gravações é o 8.4. "Adicionar Monitor", "Conectar navegador" e "Reiniciar o
+    app" ficam no menu ⋮ do app.
+  - Aceite: widget tests das abas no app e testes bUnit (ou o que o `Recam.Web.Tests` já usa) das
+    abas no navegador; teste do texto de horas com 1 e com 3 câmeras gravando.
+
+- [ ] **8.3 Espaço de gravação pedido depois da primeira câmera**
+  - Origem: teste do autor em 2026-09-26.
+  - Escopo: logo depois que a primeira câmera pareia, o Monitor que mostrou o QR (app ou navegador)
+    pergunta quanto espaço as gravações podem usar, com 2 GB marcado e o máximo igual ao espaço
+    livre no servidor, e o mesmo texto do 8.2 (total, no servidor). Pular mantém 2 GB. Não pergunta
+    de novo nas câmeras seguintes.
+  - Aceite: testes do fluxo pedindo na primeira câmera e não pedindo na segunda.
+
+- [ ] **8.4 Aba Gravações**
+  - Origem: teste do autor em 2026-09-26: "quero de fato poder ver minhas gravações".
+  - Escopo: a aba lista as câmeras com gravação e, ao escolher uma, mostra a linha do tempo dela
+    (a mesma do 8.5). O acesso de hoje, pela câmera, continua.
+  - Aceite: testes da aba no app e no navegador escolhendo uma câmera e abrindo a linha do tempo.
+
+- [ ] **8.5 Linha do tempo com zoom**
+  - Origem: teste do autor em 2026-09-26: difícil tocar no momento certo e ver onde teve movimento.
+  - Escopo: no app e no navegador, janela visível de 1 min, 15 min, 1 h ou 3 h (abre em 1 h),
+    arrastar para os lados para andar no tempo, a hora aparecendo embaixo do dedo ou do mouse
+    antes de soltar, marcas de movimento bem visíveis na faixa. No topo, o espaço usado ("Em uso
+    1,2 de 2 GB · cabem cerca de 6 h").
+  - Aceite: testes do cálculo de posição e hora para cada zoom (função pura), do arrastar e dos
+    widgets nos dois lados.
+
+- [ ] **8.6 Player do app com pausar e avançar**
+  - Origem: teste do autor em 2026-09-26: no app só dá para assistir, no navegador dá para pausar e
+    avançar.
+  - Escopo: no player de gravação do app, pausar, continuar, barra para avançar e voltar dentro do
+    trecho, seguindo para o próximo segmento como hoje.
+  - Aceite: widget test dos controles com o player falso.
+
+- [ ] **8.7 Correção: a tela pula para o topo no "Próximo movimento" do navegador**
+  - Origem: teste do autor em 2026-09-26.
+  - Escopo: no navegador, "Movimento anterior" e "Próximo movimento" trocam o vídeo sem redesenhar a
+    página inteira e sem mudar a rolagem.
+  - Aceite: teste que confirma que só o player e a posição mudam (sem navegação), e conferência no
+    Chromium.
+
+- [ ] **8.8 Cards de câmera no navegador**
+  - Origem: teste do autor em 2026-09-26.
+  - Escopo: cards maiores, o card inteiro clicável para abrir o ao vivo, com efeito ao passar o
+    mouse (leve elevação e cursor de clique). Bolinha verde quando a câmera transmite imagem,
+    vermelha quando não transmite (parada ou offline). Símbolo de gravação quando "Gravar sempre"
+    está ligado e de lanterna acesa (8.10). Embaixo, "Ver imagem" abre uma miniatura ao vivo,
+    desligada por padrão, que fecha sozinha ao sair da tela ou depois de 2 minutos.
+  - Aceite: testes do card (cores, símbolos, miniatura abrindo e fechando no tempo) e conferência
+    no Chromium.
+
+- [ ] **8.9 Código de primeira abertura fácil de achar**
+  - Origem: teste do autor em 2026-09-26: o código só aparecia no log.
+  - Escopo: quem sobe o container à mão já vê, sem procurar, o endereço e o código juntos ("Abra
+    https://<ip>:8443 e digite o código XXXX-XXXX"), em destaque no início do log. Um comando curto
+    para mostrar de novo (ex.: `docker compose exec server ./Recam.Server code`). O README ensina
+    os dois.
+  - Aceite: teste do comando e do texto do log.
+
+- [ ] **8.10 Correção: estado da lanterna**
+  - Origem: teste do autor em 2026-09-26: com a lanterna já acesa, o navegador mostrava "Ligar
+    lanterna", e o primeiro clique não fazia nada.
+  - Escopo: o servidor guarda em memória o estado que a câmera informa (`ReportTorch`) e o manda
+    no status da câmera (`torchOn`); zera quando a câmera para de transmitir ou cai. O botão do ao
+    vivo abre no estado certo, no app e no navegador, e o card mostra o ícone (8.8).
+  - Aceite: testes do hub (estado guardado, enviado, zerado) e dos controllers.
+
+## Fase 9: áudio
+
+Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revisa a regra "nada de
+áudio no MVP" do `AGENTS.md` e do `SPECS.md`.
+
+- [ ] **9.1 A câmera manda áudio, e a gravação guarda o som**
+  - Origem: pedido do autor em 2026-09-26.
+  - Escopo: a câmera publica uma trilha de áudio (Opus, mono) junto com o vídeo, sempre ligada. O
+    MediaMTX grava o som no mesmo arquivo. Conferir que a gravação em fMP4 aceita Opus e registrar
+    no `SPECS.md`. Permissão de microfone pedida junto com a da câmera.
+  - Aceite: teste com Testcontainers achando a trilha de áudio no segmento gravado; teste do
+    publisher pedindo áudio.
+
+- [ ] **9.2 Ouvir ao vivo e nas gravações**
+  - Origem: pedido do autor em 2026-09-26.
+  - Escopo: no ao vivo e no player de gravação, no app e no navegador, o som toca, com um botão
+    para tirar o som. O navegador começa sem som até o primeiro clique (regra dos navegadores).
+  - Aceite: testes dos controllers e dos widgets do botão de som.
+
+- [ ] **9.3 [aparelho] Validar as fases 8 e 9**
+  - Origem: pedidos do autor em 2026-09-26.
+  - Escopo: PC, Samsung A10 e Redmi 6A, percorrendo cada bullet das fases 8 e 9.
+  - Aceite: tudo funciona; qualquer falha vira bullet novo.
+
 ## Fase 5: distribuição
 
 - [x] **5.1 Modo atrás de proxy reverso**
@@ -1600,6 +1714,11 @@ Decidido com o autor em 2026-09-25, logo depois da Fase 6. Vale no app e no nave
 Itens que dependem de decisão futura. O loop para antes daqui.
 
 - Acesso fora da rede local.
+- Gravar câmera sem H.264 (o Redmi 6A, MediaTek, cai para VP8, que o MediaMTX não grava). Caminho
+  provável: converter para H.264 no servidor com FFmpeg. Bom candidato a contribuição externa
+  (2026-09-26).
+- Tocar um som na câmera (sirene, campainha) pelo Monitor (2026-09-26).
+- Falar pela câmera: áudio do Monitor tocando no celular câmera (2026-09-26).
 - Detecção de movimento e notificações.
 - iOS.
 - Fallback por TCP ou HLS.

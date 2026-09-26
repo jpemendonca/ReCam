@@ -107,7 +107,7 @@ Regras do domínio:
 - Portas expostas pelo servidor: `8443/tcp` e `8189/udp`. Porta nova exige bullet e revisão do
   `SPECS.md`.
 - Vídeo com H.264 preferido (VP8 como reserva), teto de 1280x720 a 15 fps e 700 kbps. Nada de
-  áudio no MVP.
+  áudio no MVP. Revisado em 2026-09-26: a Fase 9 do ROADMAP traz o áudio (gravar e ouvir ao vivo).
 - Token e credencial nunca aparecem em log, nem truncados. No banco, só o hash. Única exceção:
   o código de primeira abertura, que o servidor imprime no log enquanto não existe Monitor ativo
   (`Features/Setup/`). Ele só serve para o primeiro navegador virar Monitor, e só na rede local.

@@ -832,3 +832,10 @@ seguinte em `docs/adr/`:
 > segundos, com um limiar que deixa o ruído do sensor em zero (a caminhada dá cerca de 5%). Novo
 > serviço nos composes, sem porta nem rede; `Device.MotionSensitivity` (migração `CameraMotion`,
 > câmeras antigas começam em média); rotas de movimento na seção 5.5.
+
+> Revisão (2026-09-26): depois do teste do autor com o PC, o Samsung A10 e o Redmi 6A:
+> - Um papel por celular (bullet 8.1). A decisão "um app com duas abas" deixa de valer: o celular é
+>   Câmera ou Monitor, e ler o QR do outro papel troca o papel, saindo do servidor no antigo.
+> - Áudio entra (Fase 9): a câmera publica Opus mono junto com o vídeo, a gravação guarda o som e o
+>   Monitor ouve ao vivo. O "sem trilha de áudio" do 2.3 muda quando o 9.1 for feito.
+> - O estado da lanterna passa a ficar em memória no servidor (8.10), o que revisa a nota do 1.13.
