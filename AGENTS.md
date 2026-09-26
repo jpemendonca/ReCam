@@ -118,6 +118,13 @@ Regras do domínio:
   `pt`. Nunca string literal em componente.
 - O Monitor web não carrega nada de fora do servidor: sem CDN, sem fonte do Google, sem script de
   terceiros. Tudo o que o navegador baixa sai da porta 8443.
+- Regra de negócio nova fica no domínio (`Domain/`, `Features/`), nunca só num arquivo em `/data`
+  ou num comando de linha como `./Recam.Server code` e `reset-owner`. Esses dois só expõem o que
+  o domínio já decide.
+- Limite configurável (espaço de gravação, número de câmeras, tempo de guarda) fica no banco, não
+  em constante nem em variável de ambiente.
+- Gravação é lida e apagada por uma abstração em `Infrastructure/`. Feature e tela nunca acessam
+  a pasta de gravações direto.
 
 ## Mapa do repositório
 
