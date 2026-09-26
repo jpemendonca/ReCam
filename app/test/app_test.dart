@@ -5,6 +5,7 @@ import 'package:recam/camera/battery_guide.dart';
 import 'package:recam/camera/camera_mode_controller.dart';
 import 'package:recam/camera/camera_mode_screen.dart';
 import 'package:recam/camera/camera_pairing_controller.dart';
+import 'package:recam/core/language/language_controller.dart';
 import 'package:recam/core/network/api_client.dart';
 import 'package:recam/core/network/pinned_http_overrides.dart';
 import 'package:recam/core/pairing/device_role.dart';
@@ -26,6 +27,7 @@ void main() {
   late ViewerPairingController viewerPairing;
   late FakeLinkSource links;
   late List<String?> codesToRead;
+  late MemoryLanguageStore languages;
 
   setUp(() {
     api = FakeApiClient();
@@ -39,6 +41,7 @@ void main() {
     viewerPairing = ViewerPairingController(pairing: pairing);
     links = FakeLinkSource();
     codesToRead = [];
+    languages = MemoryLanguageStore();
   });
 
   tearDown(() {
@@ -49,6 +52,8 @@ void main() {
   Future<void> openApp(WidgetTester tester) async {
     await cameraPairing.load();
     await viewerPairing.load();
+    final language = LanguageController(languages);
+    await language.load();
     await tester.pumpWidget(
       RecamApp(
         cameraPairing: cameraPairing,
@@ -82,10 +87,26 @@ void main() {
         links: links,
         readCode: (_) async => codesToRead.removeAt(0),
         ready: Future.value(),
+        language: language,
       ),
     );
     await tester.pumpAndSettle();
   }
+
+  group('RecamApp language', () {
+    testWidgets('withPortugueseChosen_opensInPortugueseWhateverThePhone', (
+      tester,
+    ) async {
+      // arrange
+      languages.saved = AppLanguage.portuguese;
+
+      // act
+      await openApp(tester);
+
+      // assert
+      expect(find.text('Boas-vindas ao ReCam'), findsOneWidget);
+    });
+  });
 
   group('RecamApp pairing links', () {
     testWidgets('withMonitorLink_opensWatchTabAndPairs', (tester) async {

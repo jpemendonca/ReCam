@@ -25,3 +25,7 @@
 .error {
   color: var(--danger);
 }
+
+.card + .card {
+  margin-top: 16px;
+}

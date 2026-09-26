@@ -164,5 +164,9 @@
   "playerBack": "Voltar 10 segundos",
   "playerForward": "Avançar 10 segundos",
   "soundOn": "Ativar som",
-  "soundOff": "Tirar som"
+  "soundOff": "Tirar som",
+  "languageTitle": "Idioma",
+  "languageDevice": "Do celular",
+  "languagePortuguese": "Português",
+  "languageEnglish": "English"
 }

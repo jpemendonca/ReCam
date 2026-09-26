@@ -11,6 +11,7 @@ import 'core/device/battery_optimization.dart';
 import 'core/device/battery_reader.dart';
 import 'core/device/keep_alive.dart';
 import 'core/device/screen_controller.dart';
+import 'core/language/language_controller.dart';
 import 'core/media/camera_capture.dart';
 import 'core/media/recording_player.dart';
 import 'core/media/recording_relay.dart';
@@ -44,11 +45,15 @@ Future<void> main() async {
   final cameraPairing = CameraPairingController(pairing: pairing);
   final viewerPairing = ViewerPairingController(pairing: pairing);
   final ready = Future.wait([cameraPairing.load(), viewerPairing.load()]);
+  // Read before the first frame, so the app never flashes in the other language.
+  final language = LanguageController(SecureLanguageStore());
+  await language.load();
   runApp(
     RecamApp(
       cameraPairing: cameraPairing,
       viewerPairing: viewerPairing,
       api: api,
+      language: language,
       cameraMode: (session) => CameraModeController(
         hub: HubSession(client: SignalRHubClient(session, pins)),
         battery: PluginBatteryReader(),

@@ -1,0 +1,10 @@
+.language {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 600;
+}
+
+select {
+  max-width: 240px;
+}

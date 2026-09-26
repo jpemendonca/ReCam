@@ -3,6 +3,9 @@
   <PropertyGroup>
     <!-- English is the neutral language; only Portuguese ships as a satellite assembly. -->
     <SatelliteResourceLanguages>pt</SatelliteResourceLanguages>
+    <!-- The language picked in Settings can differ from the browser's; Blazor then needs every
+         culture's data, not only the browser's. -->
+    <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
   </PropertyGroup>
 
   <ItemGroup>

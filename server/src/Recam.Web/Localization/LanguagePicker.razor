@@ -1,0 +1,27 @@
+@inject IStringLocalizer<Strings> L
+@inject ILanguageStore Store
+@inject NavigationManager Navigation
+
+<label class="language">
+    @L["LanguageTitle"]
+    <select value="@choice" @onchange="ChooseAsync">
+        <option value="@LanguageChoice.Browser">@L["LanguageBrowser"]</option>
+        @* Each language in its own name, so a person lost in the other one still finds theirs. *@
+        <option value="@LanguageChoice.Portuguese">Português</option>
+        <option value="@LanguageChoice.English">English</option>
+    </select>
+</label>
+
+@code {
+    private string choice = LanguageChoice.Browser;
+
+    protected override async Task OnInitializedAsync() => choice = await Store.ReadAsync();
+
+    // Blazor sets the culture once, at startup: the page loads again in the new language.
+    private async Task ChooseAsync(ChangeEventArgs change)
+    {
+        choice = change.Value?.ToString() ?? LanguageChoice.Browser;
+        await Store.SaveAsync(choice);
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+    }
+}

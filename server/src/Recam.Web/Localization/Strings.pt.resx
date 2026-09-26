@@ -177,6 +177,12 @@
   <data name="HubReconnecting" xml:space="preserve">
     <value>Reconectando…</value>
   </data>
+  <data name="LanguageBrowser" xml:space="preserve">
+    <value>Do navegador</value>
+  </data>
+  <data name="LanguageTitle" xml:space="preserve">
+    <value>Idioma</value>
+  </data>
   <data name="LiveBack" xml:space="preserve">
     <value>Câmeras</value>
   </data>

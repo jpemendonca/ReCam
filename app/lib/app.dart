@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'camera/battery_guide.dart';
 import 'camera/camera_mode_controller.dart';
 import 'camera/camera_pairing_controller.dart';
+import 'core/language/language_controller.dart';
 import 'core/network/api_client.dart';
 import 'core/pairing/pairing_link.dart';
 import 'core/scanner/qr_scanner_screen.dart';
@@ -21,6 +22,7 @@ class RecamApp extends StatelessWidget {
     required this.cameraList,
     required this.links,
     required this.ready,
+    required this.language,
     this.readCode = readPairingCode,
     super.key,
   });
@@ -34,10 +36,22 @@ class RecamApp extends StatelessWidget {
   final LinkSource links;
   final Future<void> ready;
   final PairingCodeReader readCode;
+  final LanguageController language;
 
   @override
   Widget build(BuildContext context) {
+    return LanguageScope(
+      controller: language,
+      child: ListenableBuilder(
+        listenable: language,
+        builder: (context, _) => _app(),
+      ),
+    );
+  }
+
+  Widget _app() {
     return MaterialApp(
+      locale: language.language.locale,
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

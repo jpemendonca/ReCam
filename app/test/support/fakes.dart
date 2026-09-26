@@ -10,6 +10,7 @@ import 'package:recam/core/device/battery_optimization.dart';
 import 'package:recam/core/device/battery_reader.dart';
 import 'package:recam/core/device/keep_alive.dart';
 import 'package:recam/core/device/screen_controller.dart';
+import 'package:recam/core/language/language_controller.dart';
 import 'package:recam/core/media/camera_capture.dart';
 import 'package:recam/core/media/recording_player.dart';
 import 'package:recam/core/media/recording_relay.dart';
@@ -315,4 +316,14 @@ class FakeAdjustmentStore implements AdjustmentStore {
       saved[cameraId] = adjustment;
     }
   }
+}
+
+class MemoryLanguageStore implements LanguageStore {
+  AppLanguage saved = AppLanguage.device;
+
+  @override
+  Future<AppLanguage> read() async => saved;
+
+  @override
+  Future<void> write(AppLanguage language) async => saved = language;
 }

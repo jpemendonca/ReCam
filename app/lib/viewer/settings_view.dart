@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../core/language/language_picker.dart';
 import '../core/network/api_client.dart';
 import '../core/storage/credential_store.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -85,79 +86,95 @@ class _SettingsViewState extends State<SettingsView> {
           );
     return ListenableBuilder(
       listenable: _controller,
-      builder: (context, _) => switch (_controller.state) {
-        RecordingsLoading() => const Center(child: CircularProgressIndicator()),
-        RecordingsFailed() => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(l10n.recordingsLoadFailed, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: _controller.load,
-                child: Text(l10n.retryButton),
-              ),
-            ],
-          ),
-        ),
-        RecordingsReady(:final quota, :final selectedMegabytes) => ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            Text(
-              l10n.recordingsSpaceTitle,
-              style: Theme.of(context).textTheme.titleLarge,
+      builder: (context, _) => ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          switch (_controller.state) {
+            RecordingsLoading() => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
             ),
-            if (widget.onDone != null) ...[
-              const SizedBox(height: 8),
-              Text(l10n.firstSpaceIntro),
-            ],
-            const SizedBox(height: 8),
-            Text(l10n.settingsSpaceScope),
-            const SizedBox(height: 16),
-            Text(
-              l10n.recordingsInUse(
-                gigabytes(quota.usedBytes / RecordingQuota.bytesPerMegabyte),
-                gigabytes(quota.megabytes),
-              ),
+            RecordingsFailed() => Column(
+              children: [
+                Text(l10n.recordingsLoadFailed, textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: _controller.load,
+                  child: Text(l10n.retryButton),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            Text(
-              l10n.recordingsSpace(gigabytes(selectedMegabytes)),
-              style: Theme.of(context).textTheme.titleMedium,
+            RecordingsReady(:final quota, :final selectedMegabytes) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.recordingsSpaceTitle,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                if (widget.onDone != null) ...[
+                  const SizedBox(height: 8),
+                  Text(l10n.firstSpaceIntro),
+                ],
+                const SizedBox(height: 8),
+                Text(l10n.settingsSpaceScope),
+                const SizedBox(height: 16),
+                Text(
+                  l10n.recordingsInUse(
+                    gigabytes(
+                      quota.usedBytes / RecordingQuota.bytesPerMegabyte,
+                    ),
+                    gigabytes(quota.megabytes),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  l10n.recordingsSpace(gigabytes(selectedMegabytes)),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Slider(
+                  value: selectedMegabytes.toDouble(),
+                  min: RecordingsController.minimumMegabytes.toDouble(),
+                  max: quota.maxMegabytes
+                      .clamp(RecordingsController.minimumMegabytes + 1, 1 << 30)
+                      .toDouble(),
+                  onChanged: (value) => _controller.select(value.round()),
+                ),
+                Text(hoursText(selectedMegabytes)),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.recordingsHowItWorks,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 24),
+                if (widget.onDone case final onDone?) ...[
+                  FilledButton(
+                    onPressed: _controller.saving ? null : _save,
+                    child: Text(l10n.firstSpaceSave),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: onDone,
+                    child: Text(l10n.firstSpaceSkip),
+                  ),
+                ] else
+                  FilledButton(
+                    onPressed:
+                        _controller.saving ||
+                            selectedMegabytes == quota.megabytes
+                        ? null
+                        : _save,
+                    child: Text(l10n.recordingsSave),
+                  ),
+              ],
             ),
-            Slider(
-              value: selectedMegabytes.toDouble(),
-              min: RecordingsController.minimumMegabytes.toDouble(),
-              max: quota.maxMegabytes
-                  .clamp(RecordingsController.minimumMegabytes + 1, 1 << 30)
-                  .toDouble(),
-              onChanged: (value) => _controller.select(value.round()),
-            ),
-            Text(hoursText(selectedMegabytes)),
-            const SizedBox(height: 8),
-            Text(
-              l10n.recordingsHowItWorks,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 24),
-            if (widget.onDone case final onDone?) ...[
-              FilledButton(
-                onPressed: _controller.saving ? null : _save,
-                child: Text(l10n.firstSpaceSave),
-              ),
-              const SizedBox(height: 8),
-              TextButton(onPressed: onDone, child: Text(l10n.firstSpaceSkip)),
-            ] else
-              FilledButton(
-                onPressed:
-                    _controller.saving || selectedMegabytes == quota.megabytes
-                    ? null
-                    : _save,
-                child: Text(l10n.recordingsSave),
-              ),
+          },
+          // The language is this phone's choice; it has no place in the first-space screen.
+          if (widget.onDone == null) ...[
+            const SizedBox(height: 32),
+            const LanguagePicker(),
           ],
-        ),
-      },
+        ],
+      ),
     );
   }
 }

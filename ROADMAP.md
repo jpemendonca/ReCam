@@ -1807,13 +1807,22 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > ao script, janela seguindo o vídeo). Só código e teste; o JS nunca rodou num navegador de
   > verdade.
 
-- [ ] **9.8 Escolher o idioma nas Configurações**
+- [x] **9.8 Escolher o idioma nas Configurações**
   - Origem: pedido do autor em 2026-09-26. Hoje o app segue o idioma do celular e o navegador segue
     o do navegador, sem opção de trocar.
   - Escopo: na aba Configurações do app e do navegador, escolher entre "Idioma do aparelho",
     "Português" e "English". A escolha fica só naquele aparelho (no app, no armazenamento local;
     no navegador, no `localStorage`) e vale na hora, sem reinstalar.
   - Aceite: testes de widget e bUnit trocando o idioma e vendo o texto mudar.
+  > Validação (2026-09-26): app: seletor "Do celular / Português / English" no fim da aba
+  > Configurações (não aparece na tela do primeiro espaço), guardado no armazenamento seguro e
+  > lido antes do primeiro quadro; o `MaterialApp` troca o `locale` na hora. Navegador: seletor na
+  > página Configurações; a escolha fica no `localStorage`, o `Program.cs` aplica a cultura antes de
+  > subir, e trocar recarrega a página (o Blazor só define a cultura uma vez). Foi preciso ligar
+  > `BlazorWebAssemblyLoadAllGlobalizationData`: sem ele o inglês quebrava a página com o navegador
+  > em português. Percorrido num navegador de verdade (cópia temporária do servidor sem TLS):
+  > inglês, português e sem escolha mostram a página certa. Testes de widget, de app e bUnit.
+  > Falta conferir no Redmi 6A.
 
 ## Fase 10: servidor numa VPS
 

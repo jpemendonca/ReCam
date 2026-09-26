@@ -291,5 +291,9 @@
   "playerBack": "Back 10 seconds",
   "playerForward": "Ahead 10 seconds",
   "soundOn": "Turn sound on",
-  "soundOff": "Turn sound off"
+  "soundOff": "Turn sound off",
+  "languageTitle": "Language",
+  "languageDevice": "Phone's language",
+  "languagePortuguese": "Português",
+  "languageEnglish": "English"
 }

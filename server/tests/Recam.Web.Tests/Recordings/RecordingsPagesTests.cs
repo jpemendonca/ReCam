@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Recam.Web.Api;
 using Recam.Web.Brighten;
 using Recam.Web.Cameras;
+using Recam.Web.Localization;
 using Recam.Web.Pages;
 using Recam.Web.Realtime;
 using Recam.Web.Recordings;
@@ -26,6 +27,7 @@ public sealed class RecordingsPagesTests : BunitContext
         Services.AddTransient(_ => new TimelineController(_api) { UtcOffsetOf = _ => TimeSpan.Zero });
         Services.AddTransient<QuotaController>();
         Services.AddSingleton<IVideoClock>(_clock);
+        Services.AddSingleton<ILanguageStore>(new FakeLanguageStore());
         Services.AddSingleton<IBrightenSurface>(new FakeBrightenSurface());
         Services.AddTransient<BrightenController>();
     }
