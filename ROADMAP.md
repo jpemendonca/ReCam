@@ -1393,6 +1393,9 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
     **Conectar navegador** num segundo navegador.
   - Aceite: os passos funcionam. Anotar o atraso percebido no navegador, a temperatura da câmera
     depois de 30 min e qualquer falha, que vira bullet novo.
+  > Bloqueado (2026-09-26): aguardando aparelho. Precisa do autor com o PC, o Samsung A10 e o Redmi
+  > 6A; o agente percorreu no Chromium tudo o que não depende de celular (código, lista, vídeo ao
+  > vivo com câmera falsa, adicionar câmera e Monitor, gravações, aparelhos, conectar navegador).
 
 ## Fase 7: ver melhor e achar movimento
 
