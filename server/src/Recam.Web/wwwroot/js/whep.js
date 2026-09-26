@@ -81,6 +81,10 @@ export async function stop(id) {
 
 // Browsers only autoplay silent video, so the live view starts muted and a button turns the
 // sound on. The muted property, not the attribute, is what the element obeys after loading.
+// Before any click on the page, unmuting would pause the video, so it stays silent; returns
+// whether it ended up muted.
 export function setMuted(video, muted) {
-  video.muted = muted;
+  const clicked = !navigator.userActivation || navigator.userActivation.hasBeenActive;
+  video.muted = muted || !clicked;
+  return video.muted;
 }

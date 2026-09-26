@@ -13,6 +13,9 @@ public interface ILiveVideo : IAsyncDisposable
 
     Task StopAsync();
 
-    /// <summary>Turns the camera's sound on or off in the &lt;video&gt;.</summary>
-    Task SetMutedAsync(ElementReference video, bool muted);
+    /// <summary>
+    /// Turns the camera's sound on or off in the &lt;video&gt;. Returns whether it ended up muted:
+    /// before any click on the page, the browser keeps it silent.
+    /// </summary>
+    Task<bool> SetMutedAsync(ElementReference video, bool muted);
 }

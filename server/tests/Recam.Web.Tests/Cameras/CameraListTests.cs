@@ -22,6 +22,7 @@ public sealed class CameraListTests : BunitContext
         Services.AddSingleton<CameraListController>();
         Services.AddSingleton(_video);
         Services.AddTransient<ILiveVideo>(provider => provider.GetRequiredService<FakeLiveVideo>());
+        Services.AddSingleton<SoundChoice>();
         Services.AddTransient<LiveController>();
     }
 

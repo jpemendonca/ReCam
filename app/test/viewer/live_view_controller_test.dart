@@ -44,6 +44,25 @@ void main() {
       expect(viewer.muted, isFalse);
       expect(controller.muted, isFalse);
     });
+
+    test('leftMuted_startsSilentAndShowsIt', () async {
+      // arrange
+      final silent = FakeViewer()..startResults.add(true);
+      final live = LiveViewController(
+        hub: HubSession(client: FakeHubClient(), delay: (_) async {}),
+        viewer: silent,
+        cameraId: 'cam-1',
+        muted: true,
+      );
+
+      // act
+      await live.start();
+
+      // assert
+      expect(live.muted, isTrue);
+      expect(silent.muted, isTrue);
+      live.dispose();
+    });
   });
 
   group('LiveViewController torch', () {

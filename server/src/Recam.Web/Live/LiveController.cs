@@ -8,13 +8,14 @@ namespace Recam.Web.Live;
 /// retries WHEP while the camera is still opening (the stream only exists once it publishes),
 /// and switches the camera's torch, showing what the camera reports about it.
 /// </summary>
-public sealed class LiveController(IDeviceHub hub, ILiveVideo video) : IAsyncDisposable
+public sealed class LiveController(IDeviceHub hub, ILiveVideo video, SoundChoice sound) : IAsyncDisposable
 {
     public const int MaxAttempts = 20;
 
     private ElementReference _element;
     private Guid _cameraId;
     private bool _open;
+    private bool _withSound;
     private bool _closed;
     private int _generation;
 
@@ -22,7 +23,7 @@ public sealed class LiveController(IDeviceHub hub, ILiveVideo video) : IAsyncDis
 
     public bool TorchOn { get; private set; }
 
-    /// <summary>Starts true: browsers only autoplay silent video.</summary>
+    /// <summary>Starts true: browsers only autoplay silent video. Turns false only when the sound really plays.</summary>
     public bool Muted { get; private set; } = true;
 
     /// <summary>Wait between WHEP attempts while the camera opens.</summary>
@@ -30,11 +31,15 @@ public sealed class LiveController(IDeviceHub hub, ILiveVideo video) : IAsyncDis
 
     public event Action? Changed;
 
-    /// <summary>Opens the live video; <paramref name="torchOn"/> is the torch as the server last heard it.</summary>
-    public async Task OpenAsync(Guid cameraId, ElementReference element, bool torchOn = false)
+    /// <summary>
+    /// Opens the live video; <paramref name="torchOn"/> is the torch as the server last heard it.
+    /// <paramref name="withSound"/> plays the sound when the person left it on; previews stay silent.
+    /// </summary>
+    public async Task OpenAsync(Guid cameraId, ElementReference element, bool torchOn = false, bool withSound = false)
     {
         _cameraId = cameraId;
         TorchOn = torchOn;
+        _withSound = withSound;
         _element = element;
         _open = true;
         hub.TorchChanged += OnTorchChanged;
@@ -56,11 +61,11 @@ public sealed class LiveController(IDeviceHub hub, ILiveVideo video) : IAsyncDis
     /// </summary>
     public async Task<bool> SetTorchAsync(bool on) => (await hub.SetTorchAsync(_cameraId, on)).Ok;
 
-    /// <summary>Turns the camera's sound on or off.</summary>
+    /// <summary>Turns the camera's sound on or off, and remembers it for the next live views.</summary>
     public async Task ToggleMutedAsync()
     {
-        Muted = !Muted;
-        await video.SetMutedAsync(_element, Muted);
+        sound.Wanted = Muted;
+        Muted = await video.SetMutedAsync(_element, !Muted);
         Changed?.Invoke();
     }
 
@@ -99,6 +104,11 @@ public sealed class LiveController(IDeviceHub hub, ILiveVideo video) : IAsyncDis
             {
                 if (!_closed && generation == _generation)
                 {
+                    if (_withSound && sound.Wanted)
+                    {
+                        Muted = await video.SetMutedAsync(_element, false);
+                    }
+
                     SetState(LiveState.Playing);
                 }
 

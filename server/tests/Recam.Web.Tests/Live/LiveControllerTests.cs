@@ -8,6 +8,7 @@ public sealed class LiveControllerTests : IAsyncDisposable
 {
     private readonly FakeDeviceHub _hub = new();
     private readonly FakeLiveVideo _video = new();
+    private readonly SoundChoice _sound = new();
     private readonly Guid _cameraId = Guid.NewGuid();
 
     public ValueTask DisposeAsync() => _video.DisposeAsync();
@@ -17,7 +18,7 @@ public sealed class LiveControllerTests : IAsyncDisposable
     {
         // arrange
         _video.RefusalsBeforePlaying = 3;
-        await using var controller = new LiveController(_hub, _video) { RetryInterval = TimeSpan.Zero };
+        await using var controller = new LiveController(_hub, _video, _sound) { RetryInterval = TimeSpan.Zero };
 
         // act
         await controller.OpenAsync(_cameraId, default(ElementReference));
@@ -33,7 +34,7 @@ public sealed class LiveControllerTests : IAsyncDisposable
     {
         // arrange
         _video.RefusalsBeforePlaying = LiveController.MaxAttempts;
-        await using var controller = new LiveController(_hub, _video) { RetryInterval = TimeSpan.Zero };
+        await using var controller = new LiveController(_hub, _video, _sound) { RetryInterval = TimeSpan.Zero };
         await controller.OpenAsync(_cameraId, default(ElementReference));
         var failed = controller.State;
 
@@ -49,7 +50,7 @@ public sealed class LiveControllerTests : IAsyncDisposable
     public async Task Dispose_StopsVideoAndUnwatches()
     {
         // arrange
-        var controller = new LiveController(_hub, _video) { RetryInterval = TimeSpan.Zero };
+        var controller = new LiveController(_hub, _video, _sound) { RetryInterval = TimeSpan.Zero };
         await controller.OpenAsync(_cameraId, default(ElementReference));
 
         // act
@@ -64,7 +65,7 @@ public sealed class LiveControllerTests : IAsyncDisposable
     public async Task Torch_FollowsCameraAndReportsRefusal()
     {
         // arrange
-        await using var controller = new LiveController(_hub, _video) { RetryInterval = TimeSpan.Zero };
+        await using var controller = new LiveController(_hub, _video, _sound) { RetryInterval = TimeSpan.Zero };
         await controller.OpenAsync(_cameraId, default(ElementReference));
         var accepted = await controller.SetTorchAsync(true);
         var beforeReport = controller.TorchOn;
@@ -86,7 +87,7 @@ public sealed class LiveControllerTests : IAsyncDisposable
     public async Task Ended_Reconnects()
     {
         // arrange
-        await using var controller = new LiveController(_hub, _video) { RetryInterval = TimeSpan.Zero };
+        await using var controller = new LiveController(_hub, _video, _sound) { RetryInterval = TimeSpan.Zero };
         await controller.OpenAsync(_cameraId, default(ElementReference));
 
         // act

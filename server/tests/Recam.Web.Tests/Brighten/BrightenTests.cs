@@ -24,6 +24,7 @@ public sealed class BrightenTests : BunitContext
         Services.AddSingleton<ILiveVideo>(new FakeLiveVideo());
         Services.AddSingleton<IBrightenSurface>(_surface);
         Services.AddSingleton<CameraListController>();
+        Services.AddSingleton<SoundChoice>();
         Services.AddTransient<LiveController>();
         Services.AddTransient<BrightenController>();
     }

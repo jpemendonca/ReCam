@@ -125,12 +125,17 @@ class CameraListController extends ChangeNotifier {
   BrightenController openBrighten(String cameraId) =>
       BrightenController(store: _adjustments, cameraId: cameraId);
 
+  // The sound as the person left the last live view.
+  bool _liveMuted = false;
+
   /// A live view of one camera, sharing this list's hub connection for the watch lease.
   LiveViewController openLive(String cameraId) => LiveViewController(
     hub: hub,
     viewer: _viewerFactory(cameraId),
     cameraId: cameraId,
     torchOn: camera(cameraId)?.torchOn ?? false,
+    muted: _liveMuted,
+    onMutedChanged: (muted) => _liveMuted = muted,
   );
 
   Future<void> stop() async {

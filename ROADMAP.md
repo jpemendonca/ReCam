@@ -1759,7 +1759,7 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > até o dia ser escolhido. O teste bUnit novo segura a lista de dias e os trechos, falha sem a
   > correção e passa com ela. Só código e teste; falta o autor conferir no navegador.
 
-- [ ] **9.5 O botão de som do ao vivo lembra a escolha**
+- [x] **9.5 O botão de som do ao vivo lembra a escolha**
   - Origem: teste do autor em 2026-09-26 (9.3): no navegador, ativar o som, sair e voltar para a
     câmera mostra "Ativar som" de novo. É o mesmo problema que a lanterna tinha antes da 8.10.
   - Escopo: o ao vivo abre com o som no estado que a pessoa deixou, e o botão mostra a ação
@@ -1767,6 +1767,23 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   - Cuidado: o navegador só toca som depois de um clique na página. Se ele bloquear, o ao vivo
     fica sem som e o botão mostra "Ativar som", sem mentir.
   - Aceite: testes bUnit e de widget de sair e voltar com o som ligado.
+  > Validação (2026-09-26): navegador: `SoundChoice` guarda a escolha enquanto a aba está aberta,
+  > e o ao vivo reabre com ela. O `whep.js` só tira o mudo depois de algum clique na página e
+  > devolve o estado real, então o botão não mente. A miniatura dos cards continua muda. App: a
+  > lista de câmeras guarda a escolha, e o próximo ao vivo abre igual. Testes bUnit (sair e
+  > voltar com som, navegador bloqueando) e de controller no app. Só código e teste; falta
+  > conferir no navegador e no Redmi 6A.
+
+- [ ] **9.6 Relógio por cima do vídeo**
+  - Origem: teste do autor em 2026-09-26 (9.3): na gravação, o player do navegador parece parar
+    ou reiniciar a cada arquivo de 1 minuto, mesmo emendando. Uma hora na imagem ajuda a se
+    guiar.
+  - Escopo: um relógio discreto num canto do vídeo, desenhado na tela de quem assiste, no app e
+    no navegador. No ao vivo, a hora atual. Na gravação, a hora do trecho somada à posição do
+    vídeo, andando junto e seguindo ao trocar de arquivo. Nada muda no vídeo gravado nem na
+    câmera.
+  - Aceite: testes bUnit e de widget com a hora da gravação avançando e passando de um arquivo
+    para o seguinte.
 
 ## Fase 5: distribuição
 

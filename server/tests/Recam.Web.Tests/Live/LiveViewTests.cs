@@ -22,6 +22,7 @@ public sealed class LiveViewTests : BunitContext
         Services.AddSingleton<IDeviceHub>(_hub);
         Services.AddSingleton<ILiveVideo>(_video);
         Services.AddSingleton<CameraListController>();
+        Services.AddSingleton<SoundChoice>();
         Services.AddTransient<LiveController>();
         Services.AddSingleton<IBrightenSurface>(new FakeBrightenSurface());
         Services.AddTransient<BrightenController>();
@@ -115,5 +116,44 @@ public sealed class LiveViewTests : BunitContext
         Assert.Equal("Ativar som", before);
         Assert.False(_video.Muted);
         Assert.Equal("Tirar som", page.Find("button.sound").TextContent);
+    }
+
+    [Fact(DisplayName = "Leaving with the sound on and coming back opens with the sound on and the button to turn it off")]
+    public async Task Sound_LeftOn_ComesBackOn()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var camera = Support.Cameras.Make("Porta", publishing: true);
+        _api.Cameras.Add(camera);
+        var first = Render<LiveView>(parameters => parameters.Add(view => view.CameraId, camera.Id));
+        first.WaitForAssertion(() => Assert.Empty(first.FindAll(".overlay")));
+        first.Find("button.sound").Click();
+        await DisposeComponentsAsync();
+
+        // act
+        var again = Render<LiveView>(parameters => parameters.Add(view => view.CameraId, camera.Id));
+
+        // assert
+        again.WaitForAssertion(() => Assert.Equal("Tirar som", again.Find("button.sound").TextContent));
+        Assert.False(_video.Muted);
+    }
+
+    [Fact(DisplayName = "When the browser keeps the sound off, the button offers to turn it on instead of lying")]
+    public void Sound_BrowserBlocks_ButtonTurnsItOn()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var camera = Support.Cameras.Make("Porta", publishing: true);
+        _api.Cameras.Add(camera);
+        Services.GetRequiredService<SoundChoice>().Wanted = true;
+        _video.BlocksSound = true;
+
+        // act
+        var page = Render<LiveView>(parameters => parameters.Add(view => view.CameraId, camera.Id));
+
+        // assert
+        page.WaitForAssertion(() => Assert.Empty(page.FindAll(".overlay")));
+        Assert.True(_video.Muted);
+        Assert.Equal("Ativar som", page.Find("button.sound").TextContent);
     }
 }

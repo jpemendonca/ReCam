@@ -18,10 +18,13 @@ public sealed class FakeLiveVideo : ILiveVideo
 
     public bool? Muted { get; private set; }
 
-    public Task SetMutedAsync(ElementReference video, bool muted)
+    /// <summary>Like a browser before any click on the page: the sound stays off.</summary>
+    public bool BlocksSound { get; set; }
+
+    public Task<bool> SetMutedAsync(ElementReference video, bool muted)
     {
-        Muted = muted;
-        return Task.CompletedTask;
+        Muted = muted || BlocksSound;
+        return Task.FromResult(Muted.Value);
     }
 
     public Task<bool> StartAsync(ElementReference video, Guid cameraId)

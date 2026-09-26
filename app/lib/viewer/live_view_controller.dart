@@ -26,6 +26,8 @@ class LiveViewController extends ChangeNotifier {
     this.maxAttempts = 20,
     this.retryInterval = const Duration(seconds: 1),
     this._torchOn = false,
+    this._muted = false,
+    this.onMutedChanged,
   }) : _delay = delay ?? Future<void>.delayed;
 
   final HubSession _hub;
@@ -34,6 +36,9 @@ class LiveViewController extends ChangeNotifier {
   final Delay _delay;
   final int maxAttempts;
   final Duration retryInterval;
+
+  /// Lets the list remember the choice, so the next live view opens the same way.
+  final void Function(bool muted)? onMutedChanged;
 
   LiveViewState _state = LiveConnecting();
 
@@ -48,18 +53,21 @@ class LiveViewController extends ChangeNotifier {
 
   bool get torchOn => _torchOn;
 
-  bool _muted = false;
+  /// Starts as the person left the last live view.
+  bool _muted;
 
   /// The camera's sound plays unless the person turns it off.
   bool get muted => _muted;
 
   Future<void> toggleMuted() async {
     _muted = !_muted;
+    onMutedChanged?.call(_muted);
     notifyListeners();
     await _viewer.setMuted(_muted);
   }
 
   Future<void> start() async {
+    if (_muted) await _viewer.setMuted(true);
     _viewer.onEnded = () => unawaited(_retryAfterDrop());
     _hub.client.on('TorchChanged', _onTorchChanged);
     await _hub.client.invoke('WatchCamera', [cameraId]);

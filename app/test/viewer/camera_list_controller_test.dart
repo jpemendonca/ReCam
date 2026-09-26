@@ -207,6 +207,20 @@ void main() {
       expect(live.torchOn, isTrue);
       live.dispose();
     });
+
+    test('openLive_afterMutingOne_opensTheNextMuted', () async {
+      // arrange
+      final first = controller.openLive('a');
+      await first.toggleMuted();
+      first.dispose();
+
+      // act
+      final again = controller.openLive('a');
+
+      // assert
+      expect(again.muted, isTrue);
+      again.dispose();
+    });
   });
 
   group('CameraListController removal', () {
