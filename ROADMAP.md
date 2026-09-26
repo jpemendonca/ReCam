@@ -1657,13 +1657,25 @@ app e no navegador quando o bullet não disser outra coisa.
   > 8.10, que é quem passa a guardar esse estado. Testes: cores da bolinha, clique no card abrindo o
   > ao vivo, miniatura que abre, assiste e fecha sozinha devolvendo o lease.
 
-- [ ] **8.9 Código de primeira abertura fácil de achar**
+- [x] **8.9 Código de primeira abertura fácil de achar**
   - Origem: teste do autor em 2026-09-26: o código só aparecia no log.
   - Escopo: quem sobe o container à mão já vê, sem procurar, o endereço e o código juntos ("Abra
     https://<ip>:8443 e digite o código XXXX-XXXX"), em destaque no início do log. Um comando curto
     para mostrar de novo (ex.: `docker compose exec server ./Recam.Server code`). O README ensina
     os dois.
   - Aceite: teste do comando e do texto do log.
+  > Validação (2026-09-26): só código escrito. Não rodado num container. Ao subir sem Monitor, o log
+  > mostra um bloco emoldurado ("==================== ReCam ====================") com o endereço
+  > para abrir, o código e como ver de novo; aparece direto em `docker compose up` sem `-d` e no
+  > começo de `docker compose logs server`. O comando novo `docker compose exec server
+  > ./Recam.Server code` mostra o mesmo bloco a qualquer momento: como roda em outro processo, o
+  > servidor passou a guardar o código em `/data/first-open-code` enquanto não há Monitor e a apagar
+  > o arquivo quando um navegador vira Monitor. Com Monitor, o comando diz que não há código e
+  > aponta o `reset-owner`. README (passo 2) e a exceção de segredo do `AGENTS.md` atualizados;
+  > revisão no SPECS 12. Com `docker compose up -d` o terminal continua sem mostrar nada: quem sobe
+  > assim roda o comando `code`, como o README ensina. Testes: o comando mostra o endereço e o mesmo
+  > código do log (que sai emoldurado), e depois de um navegador virar Monitor o arquivo some e o
+  > comando diz que já há Monitor.
 
 - [ ] **8.10 Correção: estado da lanterna**
   - Origem: teste do autor em 2026-09-26: com a lanterna já acesa, o navegador mostrava "Ligar

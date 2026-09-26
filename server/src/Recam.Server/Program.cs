@@ -18,6 +18,11 @@ if (args is [HealthcheckCommand.Argument])
     return await HealthcheckCommand.RunAsync(CancellationToken.None);
 }
 
+if (args is [FirstOpenCodeCommand.Argument])
+{
+    return await FirstOpenCodeCommand.RunAsync(CancellationToken.None);
+}
+
 if (args is [ResetOwnerCommand.Argument])
 {
     return await ResetOwnerCommand.RunAsync(CancellationToken.None);

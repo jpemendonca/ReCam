@@ -840,3 +840,10 @@ seguinte em `docs/adr/`:
 > - Áudio entra (Fase 9): a câmera publica Opus mono junto com o vídeo, a gravação guarda o som e o
 >   Monitor ouve ao vivo. O "sem trilha de áudio" do 2.3 muda quando o 9.1 for feito.
 > - O estado da lanterna passa a ficar em memória no servidor (8.10), o que revisa a nota do 1.13.
+
+> Revisão (2026-09-26): o código de primeira abertura sai no log num bloco emoldurado, com o
+> endereço e o passo a passo, e também fica em `/data/first-open-code` enquanto não existe
+> Monitor ativo (apagado quando um navegador vira Monitor). O comando
+> `docker compose exec server ./Recam.Server code` lê esse arquivo e mostra o bloco de novo, ou diz
+> que o servidor já tem Monitor (bullet 8.9). O código continua não sendo credencial e só vale na
+> rede local.

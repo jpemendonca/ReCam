@@ -23,8 +23,10 @@ You need one phone and one computer to start:
    macOS with Docker Desktop, copy `.env.example` to `.env`, set `RECAM_HOST` to the computer's
    network address and run `docker compose -f compose.bridge.yaml up -d`. Allow ports 8443/tcp and
    8189/udp in the firewall.
-2. **Read the first-time code.** Run `docker compose logs server`. Until there is a Monitor, the
-   server prints a line like `type the first-time code ABCD-EFGH`.
+2. **Read the first-time code.** Run `docker compose exec server ./Recam.Server code` (with Docker
+   Desktop, `docker compose -f compose.bridge.yaml exec server ./Recam.Server code`). It shows the
+   address to open and a code like `ABCD-EFGH`. The same framed block is at the top of
+   `docker compose logs server`, and in the output of `docker compose up` without `-d`.
 3. **Open the browser on the computer** at `https://<server-ip>:8443`. The certificate is
    self-signed, so the browser warns once: choose to proceed (in Chrome, **Advanced** and then
    **Proceed**). Type the code. This browser is now the Monitor and shows an **Add camera** QR

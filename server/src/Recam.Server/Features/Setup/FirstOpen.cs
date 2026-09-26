@@ -35,11 +35,11 @@ public sealed partial class FirstOpen(
             await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
             if (await HasMonitorAsync(database, cancellationToken))
             {
-                _code = null;
+                Forget();
             }
             else if (_code is null)
             {
-                _code = IssueCode();
+                _code = await IssueCodeAsync(cancellationToken);
             }
         }
         finally
@@ -56,7 +56,7 @@ public sealed partial class FirstOpen(
         {
             await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
             var hasMonitor = await HasMonitorAsync(database, cancellationToken);
-            _code ??= hasMonitor ? null : IssueCode();
+            _code ??= hasMonitor ? null : await IssueCodeAsync(cancellationToken);
             if (_code is null)
             {
                 return SetupErrors.AlreadyHasMonitor;
@@ -67,7 +67,7 @@ public sealed partial class FirstOpen(
             {
                 if (_code.IsSpent)
                 {
-                    _code = IssueCode();
+                    _code = await IssueCodeAsync(cancellationToken);
                 }
 
                 return opened.Error;
@@ -75,7 +75,7 @@ public sealed partial class FirstOpen(
 
             database.Devices.Add(opened.Value.Device);
             await database.SaveChangesAsync(cancellationToken);
-            _code = null;
+            Forget();
             LogOpened(logger, opened.Value.Device.Id, opened.Value.Device.Name);
             return opened.Value;
         }
@@ -92,21 +92,27 @@ public sealed partial class FirstOpen(
             device => (device.Role == DeviceRole.Owner || device.Role == DeviceRole.Viewer) && device.RevokedAt == null,
             cancellationToken);
 
-    private FirstOpenCode IssueCode()
+    private async Task<FirstOpenCode> IssueCodeAsync(CancellationToken cancellationToken)
     {
         var code = FirstOpenCode.Issue();
         var urls = PublicUrlResolver.Resolve(settings, PublicUrlResolver.DetectLocalAddresses())
             .Select(url => url.GetLeftPart(UriPartial.Authority));
-        LogCode(logger, string.Join(", ", urls), code.Display);
+        await FirstOpenCodeFile.WriteAsync(settings.DataDirectory, code.Display, cancellationToken);
+        LogCode(logger, Environment.NewLine + FirstOpenCodeCommand.Banner(string.Join(", ", urls), code.Display));
         return code;
     }
 
+    private void Forget()
+    {
+        _code = null;
+        FirstOpenCodeFile.Delete(settings.DataDirectory);
+    }
+
     // The only log line allowed to carry a secret (AGENTS.md): the operator reads it to claim the
-    // server. It is not a credential and only works from the local network.
-    [LoggerMessage(Level = LogLevel.Warning, Message =
-        "No Monitor yet. On a computer in this network, open {ServerUrls} in the browser, accept the " +
-        "certificate warning and type the first-time code {Code}")]
-    private static partial void LogCode(ILogger logger, string serverUrls, string code);
+    // server. It is not a credential and only works from the local network. A framed block, so it
+    // stands out among the other lines of docker compose up.
+    [LoggerMessage(Level = LogLevel.Warning, Message = "{Banner}")]
+    private static partial void LogCode(ILogger logger, string banner);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Browser {DeviceId} ({Name}) is now the Monitor")]
     private static partial void LogOpened(ILogger logger, Guid deviceId, string name);
