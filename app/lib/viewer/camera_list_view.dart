@@ -87,6 +87,7 @@ class _CameraListViewState extends State<CameraListView> {
     MaterialPageRoute(
       builder: (_) => RecordingsTimelineScreen(
         cameraName: camera.name,
+        recordingCameras: _controller.recordingCameras,
         create: () => _controller.openRecordings(camera.id),
         brighten: () => _controller.openBrighten(camera.id),
       ),
@@ -312,6 +313,7 @@ class _RecordingsTabState extends State<_RecordingsTab> {
     CameraInfo selected,
   ) => RecordingsTimelinePane(
     key: ValueKey(selected.id),
+    recordingCameras: widget.list.recordingCameras,
     create: () => widget.list.openRecordings(selected.id),
     brighten: () => widget.list.openBrighten(selected.id),
     header: DropdownButton<String>(

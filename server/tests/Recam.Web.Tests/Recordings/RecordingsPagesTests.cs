@@ -41,11 +41,12 @@ public sealed class RecordingsPagesTests : BunitContext
         page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.recorded")));
 
         // act
-        page.FindAll("rect.slot")[84].Click();
+        // The hour window opens on the latest recording, 13:36 to 14:36; slot 29 is 14:05:30.
+        page.FindAll("rect.slot")[29].Click();
 
         // assert
-        Assert.Equal("845", page.Find("rect.recorded").GetAttribute("x"));
-        Assert.Equal($"api/recordings/{_camera.Id}/a.mp4#t=0", page.Find("video").GetAttribute("src"));
+        Assert.Equal("483.33", page.Find("rect.recorded").GetAttribute("x"));
+        Assert.Equal($"api/recordings/{_camera.Id}/a.mp4#t=30", page.Find("video").GetAttribute("src"));
         Assert.Equal("Tocando a partir das 14:05", page.Find(".playing-from").TextContent);
         Assert.Equal("Gravações · Porta", page.Find("h1").TextContent);
     }
@@ -73,7 +74,8 @@ public sealed class RecordingsPagesTests : BunitContext
         Assert.Equal("Movimentos neste dia: 1", page.Find(".motion-summary").TextContent);
         Assert.Empty(page.FindAll("rect.recorded"));
         var mark = page.Find("rect.motion");
-        Assert.Equal(("850", "3", "36"), (mark.GetAttribute("x"), mark.GetAttribute("width"), mark.GetAttribute("height")));
+        // The hour window opens on the latest recording, 13:50 to 14:50.
+        Assert.Equal(("333.33", "50", "36"), (mark.GetAttribute("x"), mark.GetAttribute("width"), mark.GetAttribute("height")));
     }
 
     [Fact(DisplayName = "Choosing another sensitivity saves it and redraws the motion")]
@@ -185,5 +187,35 @@ public sealed class RecordingsPagesTests : BunitContext
         page.WaitForAssertion(() => Assert.EndsWith($"/cameras/{_camera.Id}", navigation.Uri, StringComparison.Ordinal));
         Assert.Equal(4096, _api.Quota.QuotaMb);
         Assert.Equal($"cameras/{_camera.Id}", page.Find("a.skip").GetAttribute("href"));
+    }
+
+    [Fact(DisplayName = "Zoom, the arrows and dragging move the window; the space in use shows on top")]
+    public void Timeline_ZoomArrowsAndDrag_MoveTheWindow()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(30),
+            [new RecordingSegmentInfo(start, start.AddMinutes(30), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Equal("14:00 – 15:00", page.Find(".window").TextContent));
+
+        // act
+        page.FindAll("button.zoom")[1].Click();
+        var zoomed = page.Find(".window").TextContent;
+        page.Find("button.earlier").Click();
+        var earlier = page.Find(".window").TextContent;
+        page.FindAll("rect.slot")[10].MouseDown();
+        page.FindAll("rect.slot")[30].MouseUp();
+        var dragged = page.Find(".window").TextContent;
+        page.FindAll("rect.slot")[0].MouseOver();
+
+        // assert
+        Assert.Equal("14:22 – 14:37", zoomed);
+        Assert.Equal("14:07 – 14:22", earlier);
+        Assert.Equal("14:02 – 14:17", dragged);
+        Assert.Equal("14:02", page.Find(".hover-time").TextContent);
+        Assert.Equal("Em uso: 0,3 de 2 GB · cabem cerca de 6,8 h", page.Find(".space").TextContent);
     }
 }

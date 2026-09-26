@@ -72,9 +72,13 @@ class RecordingTimelineController extends ChangeNotifier {
   MotionSensitivity? _sensitivity;
   bool _onlyMotion = false;
   bool _sensitivityFailed = false;
+  RecordingQuota? _quota;
 
   /// Days with recordings, newest first, as dates on the phone's calendar.
   List<DateTime> get days => _days;
+
+  /// The space all recordings share on the server; null until it loads or when it fails.
+  RecordingQuota? get quota => _quota;
 
   DateTime? get selectedDay => _selectedDay;
 
@@ -108,6 +112,7 @@ class RecordingTimelineController extends ChangeNotifier {
 
   Future<void> load() async {
     _setLoading();
+    unawaited(_loadQuota());
     final result = await _api.recordingDays(
       _session.serverUrl,
       _session.credential,
@@ -140,6 +145,17 @@ class RecordingTimelineController extends ChangeNotifier {
   }
 
   /// Loads one day on the phone's calendar, which may span two UTC days on the server.
+  Future<void> _loadQuota() async {
+    final result = await _api.recordingQuota(
+      _session.serverUrl,
+      _session.credential,
+    );
+    if (result case ApiSuccess(:final value)) {
+      _quota = value;
+      notifyListeners();
+    }
+  }
+
   Future<void> selectDay(DateTime day) async {
     _selectedDay = day;
     _playing = null;

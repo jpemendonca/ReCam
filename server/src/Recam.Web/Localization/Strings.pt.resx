@@ -327,8 +327,14 @@
   <data name="TimelineBarLabel" xml:space="preserve">
     <value>Horas gravadas do dia</value>
   </data>
+  <data name="TimelineEarlier" xml:space="preserve">
+    <value>Antes</value>
+  </data>
   <data name="TimelineEmpty" xml:space="preserve">
     <value>Nenhuma gravação ainda. Ligue Gravar sempre nesta câmera.</value>
+  </data>
+  <data name="TimelineLater" xml:space="preserve">
+    <value>Depois</value>
   </data>
   <data name="TimelineLoadFailed" xml:space="preserve">
     <value>Não deu para carregar as gravações. Confira a conexão com o servidor.</value>
@@ -336,11 +342,26 @@
   <data name="TimelinePlaying" xml:space="preserve">
     <value>Tocando a partir das {0}</value>
   </data>
+  <data name="TimelineSpace" xml:space="preserve">
+    <value>Em uso: {0} de {1} GB · cabem cerca de {2} h</value>
+  </data>
   <data name="TimelineTapToPlay" xml:space="preserve">
     <value>Toque nas horas aqui embaixo para assistir a partir daquele momento.</value>
   </data>
   <data name="TimelineTitle" xml:space="preserve">
     <value>Gravações · {0}</value>
+  </data>
+  <data name="TimelineZoomHour" xml:space="preserve">
+    <value>1 h</value>
+  </data>
+  <data name="TimelineZoomMinute" xml:space="preserve">
+    <value>1 min</value>
+  </data>
+  <data name="TimelineZoomQuarterHour" xml:space="preserve">
+    <value>15 min</value>
+  </data>
+  <data name="TimelineZoomThreeHours" xml:space="preserve">
+    <value>3 h</value>
   </data>
   <data name="TorchFailed" xml:space="preserve">
     <value>Não deu para mudar a lanterna. Espere o vídeo começar.</value>

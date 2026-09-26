@@ -150,5 +150,13 @@
   "firstSpaceTitle": "Sua primeira câmera está pronta",
   "firstSpaceIntro": "Quanto espaço as gravações podem usar no servidor? Dá para mudar depois em Configurações.",
   "firstSpaceSave": "Salvar e continuar",
-  "firstSpaceSkip": "Pular (fica em 2 GB)"
+  "firstSpaceSkip": "Pular (fica em 2 GB)",
+  "timelineZoomMinute": "1 min",
+  "timelineZoomQuarterHour": "15 min",
+  "timelineZoomHour": "1 h",
+  "timelineZoomThreeHours": "3 h",
+  "timelineEarlier": "Antes",
+  "timelineLater": "Depois",
+  "timelineWindow": "{from} – {to}",
+  "timelineSpace": "Em uso: {used} de {total} GB · cabem cerca de {hours} h"
 }

@@ -50,12 +50,16 @@ public sealed class TimelineController(IRecamApi api)
     /// <summary>What the &lt;video&gt; plays: the file, and where to start with a media fragment.</summary>
     public string? Source { get; private set; }
 
+    /// <summary>The space all recordings share on the server; null until it loads or when it fails.</summary>
+    public QuotaInfo? Quota { get; private set; }
+
     public event Action? Changed;
 
     public async Task LoadAsync(Guid cameraId)
     {
         _cameraId = cameraId;
         SetLoading();
+        await LoadQuotaAsync();
         try
         {
             var days = LocalDays(await api.GetRecordingDaysAsync(cameraId, CancellationToken.None));
@@ -88,6 +92,19 @@ public sealed class TimelineController(IRecamApi api)
             Loading = false;
             Failed = true;
             Changed?.Invoke();
+        }
+    }
+
+    // The space line is a detail: without it the recordings still show.
+    private async Task LoadQuotaAsync()
+    {
+        try
+        {
+            Quota = await api.GetQuotaAsync(CancellationToken.None);
+        }
+        catch (HttpRequestException)
+        {
+            Quota = null;
         }
     }
 

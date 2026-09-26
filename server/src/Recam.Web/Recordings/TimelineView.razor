@@ -3,6 +3,7 @@
 @inject IStringLocalizer<Strings> L
 @inject TimelineController Timeline
 @inject BrightenController Brighten
+@inject CameraListController Cameras
 
 @if (Timeline.Failed)
 {
@@ -28,34 +29,58 @@ else
         }
     </div>
 
+    @if (Timeline.Quota is { } quota)
+    {
+        <p class="space">@SpaceText(quota)</p>
+    }
     <p class="note">@L["TimelineTapToPlay"]</p>
 
-    <svg class="hours" viewBox="0 0 1440 36" preserveAspectRatio="none" role="img" aria-label="@L["TimelineBarLabel"]">
-        <rect class="track" x="0" y="0" width="1440" height="36" rx="6" />
+    <div class="zooms">
+        @foreach (var zoom in TimelineZoom.All)
+        {
+            <button class="@(zoom == Window.Zoom ? "zoom selected" : "zoom")" @onclick="() => ZoomTo(zoom)">@ZoomLabel(zoom)</button>
+        }
+    </div>
+    <div class="window-row">
+        <button class="secondary earlier" title="@L["TimelineEarlier"]" aria-label="@L["TimelineEarlier"]"
+                @onclick="() => Move(-1)" disabled="@Window.AtDayStart">‹</button>
+        <span class="window">@Clock(Window.Start) – @Clock(Window.End)</span>
+        <button class="secondary later" title="@L["TimelineLater"]" aria-label="@L["TimelineLater"]"
+                @onclick="() => Move(1)" disabled="@Window.AtDayEnd">›</button>
+    </div>
+
+    <svg class="hours" viewBox="0 0 @Width 36" preserveAspectRatio="none" role="img" aria-label="@L["TimelineBarLabel"]"
+         @onmouseleave="() => hovered = null">
+        <rect class="track" x="0" y="0" width="@Width" height="36" rx="6" />
         @if (!Timeline.OnlyMotion)
         {
-            @foreach (var segment in Timeline.Timeline)
+            @foreach (var segment in Timeline.Timeline.Where(Shows))
             {
                 <rect class="@(segment == Timeline.Playing ? "recorded playing" : "recorded")"
-                      x="@Minutes(segment.Start)" y="0" width="@Width(segment.Start, segment.End)" height="36" />
+                      x="@X(segment.Start)" y="0" width="@SpanWidth(segment.Start, segment.End, 1)" height="36" />
             }
         }
-        @foreach (var mark in Timeline.Motion)
+        @foreach (var mark in Timeline.Motion.Where(mark => mark.End > Window.Start && mark.Start < Window.End))
         {
-            <rect class="motion" x="@Minutes(mark.Start)" y="@(Timeline.OnlyMotion ? 0 : 24)" width="@Width(mark.Start, mark.End)" height="@(Timeline.OnlyMotion ? 36 : 12)" />
+            <rect class="motion" x="@X(mark.Start)" y="@(Timeline.OnlyMotion ? 0 : 24)" width="@SpanWidth(mark.Start, mark.End, 3)" height="@(Timeline.OnlyMotion ? 36 : 12)" />
         }
-        @for (var slot = 0; slot < 1440; slot += SlotMinutes)
+        @for (var slot = 0; slot < Slots; slot++)
         {
-            var start = slot;
-            <rect class="slot" x="@start" y="0" width="@SlotMinutes" height="36" @onclick="() => PlayAtMinute(start)" />
+            var index = slot;
+            <rect class="slot" x="@F(index * SlotWidth)" y="0" width="@F(SlotWidth)" height="36"
+                  @onclick="() => PlaySlot(index)" @onmousedown="() => pressed = index" @onmouseup="() => Release(index)"
+                  @onmouseover="() => hovered = index">
+                <title>@Clock(SlotTime(index))</title>
+            </rect>
         }
     </svg>
     <div class="ticks" aria-hidden="true">
-        @for (var hour = 0; hour <= 24; hour += 3)
+        @foreach (var tick in Window.Ticks)
         {
-            <span>@hour</span>
+            <span style="left: @F(Window.FractionOf(tick) * 100)%">@Clock(tick)</span>
         }
     </div>
+    <p class="hover-time" aria-live="polite">@(hovered is { } over ? Clock(SlotTime(over)) : string.Empty)</p>
 
     <div class="motion-row">
         <button class="secondary previous-motion" @onclick="Timeline.PlayPreviousMotion" disabled="@(Timeline.Motion.Count == 0)">@L["MotionPrevious"]</button>
@@ -90,7 +115,43 @@ else
 }
 
 @code {
-    private const int SlotMinutes = 10;
+    // The bar has this many clickable slots, whatever the zoom: one per second at 1 minute, one per
+    // three minutes at 3 hours.
+    private const int Slots = 60;
+    private const double Width = 1000;
+    private const double SlotWidth = Width / Slots;
+
+    private TimelineWindow? window;
+    private bool windowHasData;
+    private DateTime? windowFollows;
+    private int? pressed;
+    private int? hovered;
+
+    // The window opens on what plays, or else on the day's latest recording, and follows playback
+    // that jumps out of it (the next motion, the next file).
+    private TimelineWindow Window
+    {
+        get
+        {
+            var day = Timeline.SelectedDay!.Value.ToDateTime(TimeOnly.MinValue);
+            var hasData = Timeline.Timeline.Count > 0;
+            var playing = Timeline.PlayingFrom;
+            var zoom = window?.Zoom ?? TimelineZoom.Hour;
+            if (window is null || window.Day != day || (hasData && !windowHasData))
+            {
+                window = TimelineWindow.Around(day, zoom, playing ?? (hasData ? Timeline.Timeline[^1].End : day));
+                windowHasData = hasData;
+                windowFollows = playing;
+            }
+            else if (playing is { } from && from != windowFollows && (from < window.Start || from >= window.End))
+            {
+                window = TimelineWindow.Around(day, zoom, from);
+                windowFollows = from;
+            }
+
+            return window;
+        }
+    }
 
     private Guid loaded;
     private ElementReference video;
@@ -103,6 +164,7 @@ else
     {
         Timeline.Changed += OnChanged;
         Brighten.Changed += OnChanged;
+        Cameras.Changed += OnChanged;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -121,6 +183,7 @@ else
     {
         Timeline.Changed -= OnChanged;
         Brighten.Changed -= OnChanged;
+        Cameras.Changed -= OnChanged;
     }
 
     // The <video> is new for each file, so the filter goes on again after every render.
@@ -132,17 +195,55 @@ else
         }
     }
 
-    private static int Minutes(DateTime wall) => (int)wall.TimeOfDay.TotalMinutes;
+    private bool Shows(TimelineSegment segment) => segment.End > Window.Start && segment.Start < Window.End;
 
-    // A day's last stretch may end on the next midnight; short ones still show.
-    private static int Width(DateTime start, DateTime end) => Math.Max((int)(end - start).TotalMinutes, 2);
+    private string X(DateTime time) => F(Math.Clamp(Window.FractionOf(time), 0, 1) * Width);
 
-    private void PlayAtMinute(int minute)
+    // Clipped to the window; short stretches and motion keep a visible width.
+    private string SpanWidth(DateTime start, DateTime end, double minimum)
     {
-        if (Timeline.SelectedDay is { } day)
+        var left = Math.Clamp(Window.FractionOf(start), 0, 1);
+        var right = Math.Clamp(Window.FractionOf(end), 0, 1);
+        return F(Math.Max((right - left) * Width, minimum));
+    }
+
+    private static string F(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private DateTime SlotTime(int slot) => Window.TimeAt((slot + 0.5) / Slots);
+
+    private string Clock(DateTime time) =>
+        time.ToString(Window.Zoom == TimelineZoom.Minute ? "T" : "t", CultureInfo.CurrentCulture);
+
+    private string ZoomLabel(TimelineZoom zoom) => L[zoom == TimelineZoom.Minute ? "TimelineZoomMinute"
+        : zoom == TimelineZoom.QuarterHour ? "TimelineZoomQuarterHour"
+        : zoom == TimelineZoom.Hour ? "TimelineZoomHour"
+        : "TimelineZoomThreeHours"];
+
+    // The space is shared, so the hours it holds shrink with every camera that records.
+    private string SpaceText(QuotaInfo quota)
+    {
+        var recording = Cameras.Cameras.Count(camera => camera.Recording);
+        return L["TimelineSpace",
+            (quota.UsedBytes / 1024.0 / 1024 / 1024).ToString("0.#", CultureInfo.CurrentCulture),
+            (quota.QuotaMb / 1024.0).ToString("0.#", CultureInfo.CurrentCulture),
+            QuotaController.HoursFor(quota.QuotaMb, recording).ToString("0.#", CultureInfo.CurrentCulture)];
+    }
+
+    private void ZoomTo(TimelineZoom zoom) => window = Window.ZoomTo(zoom);
+
+    private void Move(int windows) => window = Window.Step(windows);
+
+    private void PlaySlot(int slot) => Timeline.PlayAt(SlotTime(slot));
+
+    // Pressing on one slot and letting go on another drags the window.
+    private void Release(int slot)
+    {
+        if (pressed is { } from && from != slot)
         {
-            Timeline.PlayAt(day.ToDateTime(TimeOnly.MinValue).AddMinutes(minute));
+            window = Window.PanBy((double)(slot - from) / Slots);
         }
+
+        pressed = null;
     }
 
     private void OnChanged() => InvokeAsync(StateHasChanged);

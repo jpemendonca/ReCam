@@ -8,6 +8,8 @@ import '../l10n/generated/app_localizations.dart';
 import 'brighten_controller.dart';
 import 'brighten_panel.dart';
 import 'recording_timeline_controller.dart';
+import 'recordings_controller.dart';
+import 'timeline_window.dart';
 
 /// One camera's recordings on a screen of their own, opened from the camera.
 class RecordingsTimelineScreen extends StatelessWidget {
@@ -15,10 +17,14 @@ class RecordingsTimelineScreen extends StatelessWidget {
     required this.cameraName,
     required this.create,
     required this.brighten,
+    this.recordingCameras = 1,
     super.key,
   });
 
   final String cameraName;
+
+  /// How many cameras record now; they share the recording space.
+  final int recordingCameras;
 
   /// Builds the controller once, in initState; the route builder may run again.
   final RecordingTimelineController Function() create;
@@ -30,6 +36,7 @@ class RecordingsTimelineScreen extends StatelessWidget {
   Widget build(BuildContext context) => RecordingsTimelinePane(
     create: create,
     brighten: brighten,
+    recordingCameras: recordingCameras,
     title: AppLocalizations.of(context).timelineTitle(cameraName),
   );
 }
@@ -42,10 +49,14 @@ class RecordingsTimelinePane extends StatefulWidget {
   const RecordingsTimelinePane({
     required this.create,
     required this.brighten,
+    this.recordingCameras = 1,
     this.title,
     this.header,
     super.key,
   });
+
+  /// How many cameras record now; the hours the space holds are shared among them.
+  final int recordingCameras;
 
   /// Builds the controller once, in initState.
   final RecordingTimelineController Function() create;
@@ -94,6 +105,21 @@ class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
         actions: [BrightenButton(controller: _brighten)],
       ),
       body: list,
+    );
+  }
+
+  String _spaceText(
+    AppLocalizations l10n,
+    String locale,
+    RecordingQuota quota,
+  ) {
+    final number = NumberFormat('0.#', locale);
+    return l10n.timelineSpace(
+      number.format(quota.usedBytes / RecordingQuota.bytesPerMegabyte / 1024),
+      number.format(quota.megabytes / 1024),
+      number.format(
+        RecordingsController.hoursFor(quota.megabytes, widget.recordingCameras),
+      ),
     );
   }
 
@@ -178,6 +204,15 @@ class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
                 ),
               ),
               const SizedBox(height: 16),
+              if (_controller.quota case final quota?) ...[
+                Text(
+                  _spaceText(l10n, locale, quota),
+                  key: const Key('timeline-space'),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 8),
+              ],
               if (_controller.loading)
                 const Center(child: CircularProgressIndicator())
               else if (day != null) ...[
@@ -278,87 +313,229 @@ class _MotionControls extends StatelessWidget {
   }
 }
 
-/// The 24 hours of a day, recorded stretches filled in and motion marked below them (only the
-/// motion with "Motion only"). A tap plays from that time.
-class _HourBar extends StatelessWidget {
+/// A stretch of the day (1 minute to 3 hours), recorded stretches filled in and motion marked
+/// below them (only the motion with "Motion only"). Tap plays from that time; dragging moves
+/// the stretch; pressing and holding shows the time under the finger and plays it on release.
+class _HourBar extends StatefulWidget {
   const _HourBar({required this.controller, required this.day});
 
   final RecordingTimelineController controller;
   final DateTime day;
 
+  @override
+  State<_HourBar> createState() => _HourBarState();
+}
+
+class _HourBarState extends State<_HourBar> {
   static const _barHeight = 56.0;
   static const _trackTop = 12.0;
   static const _motionHeight = 10.0;
+  static const _minimumMark = 3.0;
   static const _motionColor = Color(0xFFE08600);
 
-  double _x(DateTime time, double width) =>
-      time.difference(day).inMilliseconds / Duration.millisecondsPerDay * width;
+  late TimelineWindow _window = _initialWindow(TimelineZoom.hour);
+
+  /// The x of the finger while it is held down, to show the time under it.
+  double? _pressX;
+
+  // Opens on what is playing, or else on the day's latest recording.
+  TimelineWindow _initialWindow(TimelineZoom zoom) {
+    final controller = widget.controller;
+    final focus =
+        controller.playingFrom ??
+        (controller.timeline.isEmpty
+            ? widget.day
+            : controller.timeline.last.end);
+    return TimelineWindow.around(widget.day, zoom, focus);
+  }
+
+  @override
+  void didUpdateWidget(_HourBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.day != widget.day) _window = _initialWindow(_window.zoom);
+  }
+
+  void _playAt(double x, double width) =>
+      unawaited(widget.controller.playAt(_window.timeAt(x, width)));
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final locale = Localizations.localeOf(context).toString();
     final colors = Theme.of(context).colorScheme;
+    final controller = widget.controller;
+    final withSeconds = _window.zoom == TimelineZoom.minute;
+    String clock(DateTime time) => withSeconds
+        ? DateFormat.Hms(locale).format(time)
+        : DateFormat.Hm(locale).format(time);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        SegmentedButton<TimelineZoom>(
+          key: const Key('timeline-zoom'),
+          showSelectedIcon: false,
+          segments: [
+            ButtonSegment(
+              value: TimelineZoom.minute,
+              label: Text(l10n.timelineZoomMinute),
+            ),
+            ButtonSegment(
+              value: TimelineZoom.quarterHour,
+              label: Text(l10n.timelineZoomQuarterHour),
+            ),
+            ButtonSegment(
+              value: TimelineZoom.hour,
+              label: Text(l10n.timelineZoomHour),
+            ),
+            ButtonSegment(
+              value: TimelineZoom.threeHours,
+              label: Text(l10n.timelineZoomThreeHours),
+            ),
+          ],
+          selected: {_window.zoom},
+          onSelectionChanged: (zoom) =>
+              setState(() => _window = _window.zoomTo(zoom.single)),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            IconButton(
+              key: const Key('timeline-earlier'),
+              tooltip: l10n.timelineEarlier,
+              onPressed: _window.atDayStart
+                  ? null
+                  : () => setState(() => _window = _window.step(-1)),
+              icon: const Icon(Icons.chevron_left),
+            ),
+            Expanded(
+              child: Text(
+                l10n.timelineWindow(clock(_window.start), clock(_window.end)),
+                key: const Key('timeline-window'),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            IconButton(
+              key: const Key('timeline-later'),
+              tooltip: l10n.timelineLater,
+              onPressed: _window.atDayEnd
+                  ? null
+                  : () => setState(() => _window = _window.step(1)),
+              icon: const Icon(Icons.chevron_right),
+            ),
+          ],
+        ),
         LayoutBuilder(
-          builder: (context, constraints) => GestureDetector(
-            key: const Key('timeline-hours'),
-            onTapUp: (details) {
-              final fraction = (details.localPosition.dx / constraints.maxWidth)
-                  .clamp(0.0, 1.0);
-              final tapped = day.add(
-                Duration(
-                  milliseconds: (fraction * Duration.millisecondsPerDay)
-                      .round(),
-                ),
-              );
-              unawaited(controller.playAt(tapped));
-            },
-            child: Stack(
-              children: [
-                CustomPaint(
-                  size: Size(constraints.maxWidth, _barHeight),
-                  painter: _HourBarPainter(
-                    day: day,
-                    segments: controller.onlyMotion
-                        ? const []
-                        : controller.timeline,
-                    playing: controller.playing,
-                    track: colors.surfaceContainerHighest,
-                    recorded: colors.primary,
-                    current: colors.error,
-                    ticks: colors.outline,
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final pressX = _pressX;
+            return GestureDetector(
+              key: const Key('timeline-hours'),
+              onTapUp: (details) => _playAt(details.localPosition.dx, width),
+              onHorizontalDragUpdate: (details) => setState(
+                () => _window = _window.panBy(details.delta.dx, width),
+              ),
+              onLongPressStart: (details) =>
+                  setState(() => _pressX = details.localPosition.dx),
+              onLongPressMoveUpdate: (details) =>
+                  setState(() => _pressX = details.localPosition.dx),
+              onLongPressEnd: (details) {
+                _playAt(details.localPosition.dx, width);
+                setState(() => _pressX = null);
+              },
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClipRect(
+                    child: SizedBox(
+                      width: width,
+                      height: _barHeight,
+                      child: Stack(
+                        children: [
+                          CustomPaint(
+                            size: Size(width, _barHeight),
+                            painter: _HourBarPainter(
+                              window: _window,
+                              segments: controller.onlyMotion
+                                  ? const []
+                                  : controller.timeline,
+                              playing: controller.playing,
+                              track: colors.surfaceContainerHighest,
+                              recorded: colors.primary,
+                              current: colors.error,
+                              ticks: colors.outline,
+                            ),
+                          ),
+                          for (final mark in controller.motion)
+                            if (mark.end.isAfter(_window.start) &&
+                                mark.start.isBefore(_window.end))
+                              Positioned(
+                                left: _window.xOf(mark.start, width),
+                                width:
+                                    (_window.xOf(mark.end, width) -
+                                            _window.xOf(mark.start, width))
+                                        .clamp(_minimumMark, 1e9),
+                                top: controller.onlyMotion
+                                    ? _trackTop
+                                    : _barHeight - _trackTop - _motionHeight,
+                                height: controller.onlyMotion
+                                    ? _barHeight - 2 * _trackTop
+                                    : _motionHeight,
+                                child: const ColoredBox(
+                                  key: Key('motion-mark'),
+                                  color: _motionColor,
+                                ),
+                              ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-                for (final mark in controller.motion)
+                  if (pressX != null)
+                    Positioned(
+                      left: (pressX - 40).clamp(0, width - 80),
+                      top: -30,
+                      width: 80,
+                      child: Container(
+                        key: const Key('timeline-pointer-time'),
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        decoration: BoxDecoration(
+                          color: colors.inverseSurface,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          clock(_window.timeAt(pressX, width)),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: colors.onInverseSurface),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 4),
+        LayoutBuilder(
+          builder: (context, constraints) => SizedBox(
+            height: 18,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                for (final tick in _window.ticks)
                   Positioned(
-                    left: _x(mark.start, constraints.maxWidth),
-                    width:
-                        (_x(mark.end, constraints.maxWidth) -
-                                _x(mark.start, constraints.maxWidth))
-                            .clamp(2, constraints.maxWidth),
-                    top: controller.onlyMotion
-                        ? _trackTop
-                        : _barHeight - _trackTop - _motionHeight,
-                    height: controller.onlyMotion
-                        ? _barHeight - 2 * _trackTop
-                        : _motionHeight,
-                    child: const ColoredBox(
-                      key: Key('motion-mark'),
-                      color: _motionColor,
+                    left: (_window.xOf(tick, constraints.maxWidth) - 30).clamp(
+                      0,
+                      constraints.maxWidth - 60,
+                    ),
+                    width: 60,
+                    child: Text(
+                      clock(tick),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ),
               ],
             ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            for (final hour in const ['0h', '6h', '12h', '18h', '24h'])
-              Text(hour, style: Theme.of(context).textTheme.bodySmall),
-          ],
         ),
       ],
     );
@@ -367,7 +544,7 @@ class _HourBar extends StatelessWidget {
 
 class _HourBarPainter extends CustomPainter {
   _HourBarPainter({
-    required this.day,
+    required this.window,
     required this.segments,
     required this.playing,
     required this.track,
@@ -376,7 +553,7 @@ class _HourBarPainter extends CustomPainter {
     required this.ticks,
   });
 
-  final DateTime day;
+  final TimelineWindow window;
   final List<TimelineSegment> segments;
   final TimelineSegment? playing;
   final Color track;
@@ -386,20 +563,22 @@ class _HourBarPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    double x(DateTime time) =>
-        time.difference(day).inMilliseconds /
-        Duration.millisecondsPerDay *
-        size.width;
+    double x(DateTime time) => window.xOf(time, size.width);
     final bar = Rect.fromLTWH(0, 12, size.width, size.height - 24);
     canvas.drawRect(bar, Paint()..color = track);
     for (final segment in segments) {
+      if (!segment.end.isAfter(window.start) ||
+          !segment.start.isBefore(window.end)) {
+        continue;
+      }
       final paint = Paint()..color = segment == playing ? current : recorded;
+      final left = x(segment.start).clamp(0.0, size.width);
       canvas.drawRect(
         Rect.fromLTRB(
-          x(segment.start),
+          left,
           bar.top,
-          // At least a pixel, so a one-minute stretch is still visible.
-          (x(segment.end)).clamp(x(segment.start) + 1, size.width),
+          // At least a pixel, so a short stretch is still visible.
+          x(segment.end).clamp(left + 1, size.width),
           bar.bottom,
         ),
         paint,
@@ -408,8 +587,8 @@ class _HourBarPainter extends CustomPainter {
     final tick = Paint()
       ..color = ticks
       ..strokeWidth = 1;
-    for (var hour = 0; hour <= 24; hour += 3) {
-      final dx = hour / 24 * size.width;
+    for (final time in window.ticks) {
+      final dx = x(time);
       canvas.drawLine(Offset(dx, bar.bottom), Offset(dx, bar.bottom + 6), tick);
     }
   }
@@ -418,5 +597,5 @@ class _HourBarPainter extends CustomPainter {
   bool shouldRepaint(_HourBarPainter oldDelegate) =>
       oldDelegate.segments != segments ||
       oldDelegate.playing != playing ||
-      oldDelegate.day != day;
+      oldDelegate.window != window;
 }

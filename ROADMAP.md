@@ -1582,7 +1582,7 @@ app e no navegador quando o bullet não disser outra coisa.
   > navegador, a aba carrega a câmera que grava e depois a escolhida; os testes antigos da linha do
   > tempo seguem valendo.
 
-- [ ] **8.5 Linha do tempo com zoom**
+- [x] **8.5 Linha do tempo com zoom**
   - Origem: teste do autor em 2026-09-26: difícil tocar no momento certo e ver onde teve movimento.
   - Escopo: no app e no navegador, janela visível de 1 min, 15 min, 1 h ou 3 h (abre em 1 h),
     arrastar para os lados para andar no tempo, a hora aparecendo embaixo do dedo ou do mouse
@@ -1590,6 +1590,21 @@ app e no navegador quando o bullet não disser outra coisa.
     1,2 de 2 GB · cabem cerca de 6 h").
   - Aceite: testes do cálculo de posição e hora para cada zoom (função pura), do arrastar e dos
     widgets nos dois lados.
+  > Validação (2026-09-26): só código escrito. Não percorrido no aparelho nem aberto no navegador. A
+  > barra deixou de mostrar o dia inteiro: mostra uma janela de 1 min, 15 min, 1 h (padrão) ou 3 h,
+  > escolhida em botões acima dela, com "‹ Antes" e "Depois ›" e o intervalo escrito no meio ("14:00
+  > – 15:00"; com 1 min, com segundos). A janela abre no que está tocando ou, sem nada tocando, na
+  > última gravação do dia, e acompanha a reprodução quando ela pula para fora (próximo movimento,
+  > próximo arquivo). Marcas de movimento têm largura mínima para não sumirem. No topo, "Em uso: 0,3
+  > de 2 GB · cabem cerca de 6,8 h" (as horas divididas pelas câmeras que gravam). A conta de
+  > janela, posição e hora é uma função pura nos dois lados (`TimelineWindow` e `TimelineZoom`, em
+  > Dart e em C#), testada por zoom. App: arrastar para os lados anda no tempo, tocar toca, e
+  > segurar mostra a hora sob o dedo e toca ao soltar. Navegador, sem JavaScript: a barra tem 60
+  > fatias clicáveis em qualquer zoom (1 s a 3 min cada), passar o mouse mostra a hora embaixo da
+  > barra (e no balão do navegador), clicar toca, e apertar numa fatia e soltar em outra arrasta.
+  > Testes: `TimelineWindow` nos dois lados (centro, borda do dia, posição por zoom, arrastar, zoom
+  > mantendo o centro, passo, marcas), e na tela: zoom, setas, arrastar, hora sob o dedo/mouse,
+  > espaço em uso e as posições novas das marcas.
 
 - [ ] **8.6 Player do app com pausar e avançar**
   - Origem: teste do autor em 2026-09-26: no app só dá para assistir, no navegador dá para pausar e

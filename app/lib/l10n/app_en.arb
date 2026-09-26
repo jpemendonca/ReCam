@@ -254,5 +254,36 @@
   "firstSpaceTitle": "Your first camera is ready",
   "firstSpaceIntro": "How much space may the recordings take on the server? You can change it later in Settings.",
   "firstSpaceSave": "Save and continue",
-  "firstSpaceSkip": "Skip (keeps 2 GB)"
+  "firstSpaceSkip": "Skip (keeps 2 GB)",
+  "timelineZoomMinute": "1 min",
+  "timelineZoomQuarterHour": "15 min",
+  "timelineZoomHour": "1 h",
+  "timelineZoomThreeHours": "3 h",
+  "timelineEarlier": "Earlier",
+  "timelineLater": "Later",
+  "timelineWindow": "{from} – {to}",
+  "@timelineWindow": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "timelineSpace": "In use: {used} of {total} GB · about {hours} h fit",
+  "@timelineSpace": {
+    "placeholders": {
+      "used": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "hours": {
+        "type": "String"
+      }
+    }
+  }
 }

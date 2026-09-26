@@ -327,8 +327,14 @@
   <data name="TimelineBarLabel" xml:space="preserve">
     <value>Recorded hours of the day</value>
   </data>
+  <data name="TimelineEarlier" xml:space="preserve">
+    <value>Earlier</value>
+  </data>
   <data name="TimelineEmpty" xml:space="preserve">
     <value>No recordings yet. Turn on Record always for this camera.</value>
+  </data>
+  <data name="TimelineLater" xml:space="preserve">
+    <value>Later</value>
   </data>
   <data name="TimelineLoadFailed" xml:space="preserve">
     <value>Could not load the recordings. Check the connection to the server.</value>
@@ -336,11 +342,26 @@
   <data name="TimelinePlaying" xml:space="preserve">
     <value>Playing from {0}</value>
   </data>
+  <data name="TimelineSpace" xml:space="preserve">
+    <value>In use: {0} of {1} GB · about {2} h fit</value>
+  </data>
   <data name="TimelineTapToPlay" xml:space="preserve">
     <value>Tap the hours below to watch from that moment.</value>
   </data>
   <data name="TimelineTitle" xml:space="preserve">
     <value>Recordings · {0}</value>
+  </data>
+  <data name="TimelineZoomHour" xml:space="preserve">
+    <value>1 h</value>
+  </data>
+  <data name="TimelineZoomMinute" xml:space="preserve">
+    <value>1 min</value>
+  </data>
+  <data name="TimelineZoomQuarterHour" xml:space="preserve">
+    <value>15 min</value>
+  </data>
+  <data name="TimelineZoomThreeHours" xml:space="preserve">
+    <value>3 h</value>
   </data>
   <data name="TorchFailed" xml:space="preserve">
     <value>Could not switch the flashlight. Wait for the video to start.</value>

@@ -121,6 +121,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('3 h'));
+      await tester.pumpAndSettle();
       final bar = tester.getRect(find.byKey(const Key('timeline-hours')));
       final mark = tester.getRect(find.byKey(const Key('motion-mark')));
 
@@ -139,7 +143,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // assert
-      expect(mark.left - bar.left, closeTo(bar.width * 12.5 / 24, 1));
+      // The 3-hour window opens on the latest recording, 11:30 to 14:30.
+      expect(mark.left - bar.left, closeTo(bar.width / 3, 1));
       expect(mark.height, lessThan(onlyMotion.height));
       expect(
         player.plays.single.from,
@@ -148,6 +153,98 @@ void main() {
       expect(api.motionSensitivity, MotionSensitivity.low);
       expect(find.byKey(const Key('motion-mark')), findsNothing);
       expect(find.text('No motion on this day.'), findsOneWidget);
+    });
+
+    testWidgets('zoomDragAndHold_moveTheWindowAndShowTheTime', (tester) async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      final api = FakeApiClient()
+        ..recordingDaysResult = [day]
+        ..recordingsByDay[day] = [
+          RecordingPieceInfo(
+            start: DateTime.utc(2026, 9, 25, 12),
+            end: DateTime.utc(2026, 9, 25, 13),
+            segments: [
+              RecordingSegmentInfo(
+                start: DateTime.utc(2026, 9, 25, 12),
+                end: DateTime.utc(2026, 9, 25, 13),
+                url: '/api/recordings/cam/noon.mp4',
+              ),
+            ],
+          ),
+        ]
+        ..quotaResult = ApiSuccess(
+          const RecordingQuota(
+            megabytes: 2048,
+            usedBytes: 300 * 1024 * 1024,
+            freeBytes: 10 * 1024 * 1024 * 1024,
+          ),
+        );
+      final player = FakeRecordingPlayer();
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RecordingsTimelineScreen(
+            brighten: () => BrightenController(
+              store: FakeAdjustmentStore(),
+              cameraId: 'cam',
+            ),
+            cameraName: 'Porch',
+            create: () => RecordingTimelineController(
+              api: api,
+              session: pairedSession(),
+              cameraId: 'cam',
+              player: player,
+              segments: FakeSegmentSource(),
+              utcOffsetOf: (_) => Duration.zero,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('timeline-hours')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.pumpAndSettle();
+      final opened = tester
+          .widget<Text>(find.byKey(const Key('timeline-window')))
+          .data;
+      await tester.tap(find.text('15 min'));
+      await tester.pumpAndSettle();
+      final zoomed = tester
+          .widget<Text>(find.byKey(const Key('timeline-window')))
+          .data;
+      final bar = tester.getRect(find.byKey(const Key('timeline-hours')));
+
+      // act
+      await tester.drag(
+        find.byKey(const Key('timeline-hours')),
+        Offset(bar.width / 3, 0),
+      );
+      await tester.pumpAndSettle();
+      final dragged = tester
+          .widget<Text>(find.byKey(const Key('timeline-window')))
+          .data;
+      final gesture = await tester.startGesture(bar.center);
+      await tester.pump(const Duration(seconds: 1));
+      final held = find.byKey(const Key('timeline-pointer-time'));
+      final shown = held.evaluate().length;
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(opened, '12:30 – 13:30');
+      expect(zoomed, '12:52 – 13:07');
+      expect(dragged, '12:47 – 13:02');
+      expect(
+        find.text('In use: 0.3 of 2 GB · about 6.8 h fit'),
+        findsOneWidget,
+      );
+      expect(shown, 1);
+      expect(player.plays, hasLength(1));
     });
 
     testWidgets('withoutRecordings_saysHowToStart', (tester) async {
