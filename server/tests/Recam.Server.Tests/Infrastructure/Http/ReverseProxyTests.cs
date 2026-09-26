@@ -106,7 +106,7 @@ public sealed class ReverseProxyTests
             .Build();
 
         // act
-        var exception = Record.Exception(() => ServerSettings.From(configuration, "/"));
+        var exception = Record.Exception(() => ServerSettings.From(configuration, AppContext.BaseDirectory));
 
         // assert
         Assert.IsType<InvalidOperationException>(exception);
