@@ -2,6 +2,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY Directory.Build.props ./
 COPY src/Recam.Server/Recam.Server.csproj src/Recam.Server/
+COPY src/Recam.Web/Recam.Web.csproj src/Recam.Web/
 RUN dotnet restore src/Recam.Server/Recam.Server.csproj
 COPY src/ src/
 RUN dotnet publish src/Recam.Server/Recam.Server.csproj -c Release -o /app --no-restore

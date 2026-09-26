@@ -1,0 +1,78 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #16181d;
+  --muted: #5b6270;
+  --line: #e3e6eb;
+  --accent: #1f6feb;
+  --danger: #c62828;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1115;
+    --surface: #171a21;
+    --text: #e8eaee;
+    --muted: #9aa3b2;
+    --line: #262a33;
+    --accent: #5b9bff;
+    --danger: #ef5350;
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+a {
+  color: var(--accent);
+}
+
+/* Blazor moves focus to the page title on navigation, for screen readers. */
+h1:focus {
+  outline: none;
+}
+
+.loading {
+  width: 40px;
+  height: 40px;
+  margin: 30vh auto 0;
+  border: 4px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+#blazor-error-ui {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 24px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+#blazor-error-ui .reload {
+  color: #fff;
+  margin-left: 12px;
+  text-decoration: none;
+}

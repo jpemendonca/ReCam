@@ -1123,7 +1123,7 @@ Desenho em `SPECS.md` 2.5 e no caminho principal do `AGENTS.md`, decidido pelo a
 (ADRs 0038 a 0040). O navegador vira o primeiro Monitor com o código do log, e o primeiro celular é
 sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho novo só fecha no 6.8.
 
-- [ ] **6.1 Esqueleto do Monitor web**
+- [x] **6.1 Esqueleto do Monitor web**
   - Origem: ADR 0039.
   - Escopo: projeto `server/src/Recam.Web` (Blazor WebAssembly) e `server/tests/Recam.Web.Tests`
     (bUnit), na `Recam.slnx`. O `Recam.Server` serve o `Recam.Web` na raiz (feature `Web`), com
@@ -1136,6 +1136,22 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
   - Fora: entrar, câmeras, vídeo. O `/setup` continua como está até o 6.2.
   - Aceite: teste de integração (a raiz entrega o app com a CSP) e teste
     bUnit da página inicial em `en` e `pt`. Gate rodando os dois projetos de teste.
+  > Validação (2026-09-26): código escrito e percorrido no navegador do PC (Chromium headless),
+  > sem celular. `Recam.Web` (Blazor WebAssembly) com layout, página inicial, "Página não
+  > encontrada", tema claro e escuro e textos em `Strings.resx`/`Strings.pt.resx`; o idioma vem do
+  > navegador. O `Recam.Server` serve o app na raiz pela feature `Web` (`MapStaticAssets` e o
+  > `index.html` para as rotas do cliente, nunca para `/api`, `/hubs`, `/whip`, `/whep`, `/setup` e
+  > `/health`), com CSP sem `unsafe-inline` (`script-src 'self' 'wasm-unsafe-eval'`), `nosniff` e
+  > `no-referrer`; o `/setup` fica fora da CSP até o 6.2 tirá-lo. O `index.html` usa
+  > `_framework/blazor.webassembly.js` sem fingerprint e sem import map inline: com o
+  > `OverrideHtmlAssetPlaceholders`, o publish deixava o placeholder cru e o app não subia em
+  > produção. Dependências: `Microsoft.AspNetCore.Components.WebAssembly`,
+  > `...WebAssembly.Server`, `Microsoft.Extensions.Localization` (para o `IStringLocalizer`) e
+  > `bunit`. Observado: em Development e no publish Release rodando como Production, o Chromium
+  > abriu a página em pt e em en sem erro de CSP no console; rota desconhecida do cliente mostrou
+  > "Page not found"; `/api/...` desconhecido deu 404 em JSON. O download comprimido do app é de
+  > 2,8 MB. O Dockerfile copia o projeto novo, mas a imagem não foi construída aqui. Gate verde
+  > (197 testes no servidor e no web, 223 no app).
 
 - [ ] **6.2 Primeira abertura: o navegador vira Monitor**
   - Origem: ADR 0038.

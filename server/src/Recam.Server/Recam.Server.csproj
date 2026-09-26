@@ -5,6 +5,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -15,6 +16,10 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.19.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0" />
     <PackageReference Include="QRCoder" Version="1.8.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Recam.Web\Recam.Web.csproj" />
   </ItemGroup>
 
 </Project>

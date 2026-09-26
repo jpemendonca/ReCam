@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle" xml:space="preserve">
+    <value>ReCam</value>
+  </data>
+  <data name="NotFoundBack" xml:space="preserve">
+    <value>Voltar ao início</value>
+  </data>
+  <data name="NotFoundTitle" xml:space="preserve">
+    <value>Página não encontrada</value>
+  </data>
+  <data name="NotMonitorText" xml:space="preserve">
+    <value>Em breve você vai digitar aqui o código de primeira abertura que o servidor mostra no log, e este navegador vai mostrar suas câmeras ao vivo.</value>
+  </data>
+  <data name="NotMonitorTitle" xml:space="preserve">
+    <value>Este navegador ainda não é um Monitor</value>
+  </data>
+</root>

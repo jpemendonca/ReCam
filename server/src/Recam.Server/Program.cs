@@ -5,6 +5,7 @@ using Recam.Server.Features.Pairing;
 using Recam.Server.Features.Realtime;
 using Recam.Server.Features.Recordings;
 using Recam.Server.Features.Setup;
+using Recam.Server.Features.Web;
 using Recam.Server.Infrastructure.Auth;
 using Recam.Server.Infrastructure.Hosting;
 using Recam.Server.Infrastructure.Http;
@@ -44,6 +45,7 @@ await app.ApplyMigrationsAsync();
 app.StartRecamMetrics();
 
 app.UseRecamHttp(settings);
+app.UseWebSecurityHeaders();
 
 app.MapHealthEndpoints();
 app.MapSetupEndpoints();
@@ -52,6 +54,7 @@ app.MapDeviceEndpoints();
 app.MapRealtimeEndpoints();
 app.MapMediaProxyEndpoints();
 app.MapRecordingEndpoints();
+app.MapWebEndpoints();
 
 await app.RunAsync();
 return 0;
