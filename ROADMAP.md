@@ -1606,12 +1606,19 @@ app e no navegador quando o bullet não disser outra coisa.
   > mantendo o centro, passo, marcas), e na tela: zoom, setas, arrastar, hora sob o dedo/mouse,
   > espaço em uso e as posições novas das marcas.
 
-- [ ] **8.6 Player do app com pausar e avançar**
+- [x] **8.6 Player do app com pausar e avançar**
   - Origem: teste do autor em 2026-09-26: no app só dá para assistir, no navegador dá para pausar e
     avançar.
   - Escopo: no player de gravação do app, pausar, continuar, barra para avançar e voltar dentro do
     trecho, seguindo para o próximo segmento como hoje.
   - Aceite: widget test dos controles com o player falso.
+  > Validação (2026-09-26): só código escrito. Não percorrido no aparelho. Embaixo do vídeo da
+  > gravação, no app, ficaram "Voltar 10 segundos", pausar/continuar, "Avançar 10 segundos", uma
+  > barra para andar dentro do arquivo que toca e o tempo ("0:12 / 1:00"). Arrastar a barra só move
+  > o vídeo ao soltar. Ao chegar no fim do arquivo, segue para o próximo, como antes. O
+  > `RecordingPlayer` (em `lib/core/media/`) ganhou `position` (um `ValueListenable` com posição,
+  > duração e se toca), `pause`, `resume` e `seekTo`, implementados sobre o `VideoPlayerController`.
+  > Teste: pausar troca o ícone e avançar pede +10 s ao player.
 
 - [ ] **8.7 Correção: a tela pula para o topo no "Próximo movimento" do navegador**
   - Origem: teste do autor em 2026-09-26.

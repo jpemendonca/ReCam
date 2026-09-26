@@ -139,6 +139,8 @@ void main() {
       await tester.tap(find.byKey(const Key('only-motion')));
       await tester.pumpAndSettle();
       final onlyMotion = tester.getRect(find.byKey(const Key('motion-mark')));
+      await tester.ensureVisible(find.text('Low'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Low'));
       await tester.pumpAndSettle();
 
@@ -245,6 +247,74 @@ void main() {
       );
       expect(shown, 1);
       expect(player.plays, hasLength(1));
+    });
+
+    testWidgets('playerControls_pauseAndJumpTenSeconds', (tester) async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      final api = FakeApiClient()
+        ..recordingDaysResult = [day]
+        ..recordingsByDay[day] = [
+          RecordingPieceInfo(
+            start: DateTime.utc(2026, 9, 25, 12),
+            end: DateTime.utc(2026, 9, 25, 14),
+            segments: [
+              RecordingSegmentInfo(
+                start: DateTime.utc(2026, 9, 25, 12),
+                end: DateTime.utc(2026, 9, 25, 14),
+                url: '/api/recordings/cam/noon.mp4',
+              ),
+            ],
+          ),
+        ];
+      final player = FakeRecordingPlayer();
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RecordingsTimelineScreen(
+            brighten: () => BrightenController(
+              store: FakeAdjustmentStore(),
+              cameraId: 'cam',
+            ),
+            cameraName: 'Porch',
+            create: () => RecordingTimelineController(
+              api: api,
+              session: pairedSession(),
+              cameraId: 'cam',
+              player: player,
+              segments: FakeSegmentSource(),
+              utcOffsetOf: (_) => Duration.zero,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('timeline-hours')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
+      await tester.pumpAndSettle();
+      final bar = tester.getRect(find.byKey(const Key('timeline-hours')));
+      // The window opens at 13:30 to 14:30; a quarter in is 13:45, inside the recording.
+      await tester.tapAt(bar.centerLeft + Offset(bar.width / 4, 0));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('player-toggle')));
+      await tester.pumpAndSettle();
+      final start = player.position.value.position;
+
+      // act
+      await tester.tap(find.byKey(const Key('player-toggle')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('player-forward')));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(player.position.value.playing, isFalse);
+      expect(player.seeks.single, start + const Duration(seconds: 10));
+      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
     });
 
     testWidgets('withoutRecordings_saysHowToStart', (tester) async {

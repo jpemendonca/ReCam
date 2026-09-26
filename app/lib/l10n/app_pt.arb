@@ -158,5 +158,9 @@
   "timelineEarlier": "Antes",
   "timelineLater": "Depois",
   "timelineWindow": "{from} – {to}",
-  "timelineSpace": "Em uso: {used} de {total} GB · cabem cerca de {hours} h"
+  "timelineSpace": "Em uso: {used} de {total} GB · cabem cerca de {hours} h",
+  "playerPause": "Pausar",
+  "playerResume": "Continuar",
+  "playerBack": "Voltar 10 segundos",
+  "playerForward": "Avançar 10 segundos"
 }

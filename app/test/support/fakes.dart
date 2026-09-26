@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io' show X509Certificate;
 import 'dart:typed_data';
 
-import 'package:flutter/widgets.dart' show Key, SizedBox, Widget;
+import 'package:flutter/widgets.dart' show Key, SizedBox, ValueNotifier, Widget;
 
 import 'package:recam/core/media/image_adjustment.dart';
 import 'package:recam/core/storage/adjustment_store.dart';

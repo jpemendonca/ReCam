@@ -285,5 +285,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "playerPause": "Pause",
+  "playerResume": "Play",
+  "playerBack": "Back 10 seconds",
+  "playerForward": "Ahead 10 seconds"
 }

@@ -136,7 +136,37 @@ class FakePublisher implements WebRtcPublisher {
 
 class FakeRecordingPlayer implements RecordingPlayer {
   final List<({Uri url, Duration from})> plays = [];
+  final List<Duration> seeks = [];
   bool disposed = false;
+
+  @override
+  final ValueNotifier<PlaybackPosition> position = ValueNotifier(
+    const PlaybackPosition(),
+  );
+
+  @override
+  Future<void> pause() async => position.value = PlaybackPosition(
+    position: position.value.position,
+    duration: position.value.duration,
+  );
+
+  @override
+  Future<void> resume() async => position.value = PlaybackPosition(
+    position: position.value.position,
+    duration: position.value.duration,
+    playing: true,
+  );
+
+  @override
+  Future<void> seekTo(Duration to) async {
+    seeks.add(to);
+    position.value = PlaybackPosition(
+      position: to,
+      duration: position.value.duration,
+      playing: position.value.playing,
+    );
+  }
+
   void Function()? _finished;
 
   /// Simulates the current segment reaching its end.
@@ -146,8 +176,14 @@ class FakeRecordingPlayer implements RecordingPlayer {
   set onFinished(void Function() callback) => _finished = callback;
 
   @override
-  Future<void> play(Uri url, {Duration from = Duration.zero}) async =>
-      plays.add((url: url, from: from));
+  Future<void> play(Uri url, {Duration from = Duration.zero}) async {
+    plays.add((url: url, from: from));
+    position.value = PlaybackPosition(
+      position: from,
+      duration: from + const Duration(minutes: 1),
+      playing: true,
+    );
+  }
 
   @override
   Widget buildVideo() => const SizedBox(key: Key('recording-video'));

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../core/media/recording_player.dart';
 import '../core/network/api_client.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'brighten_controller.dart';
@@ -171,6 +172,7 @@ class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
                   : const SizedBox.shrink(),
             ),
             if (playing != null) ...[
+              _PlayerControls(player: _controller.player),
               const SizedBox(height: 8),
               Text(
                 l10n.timelinePlaying(
@@ -221,6 +223,99 @@ class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
                 _MotionControls(controller: _controller),
               ],
             ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Pause, 10 seconds back and ahead, and a bar to move within the file playing.
+class _PlayerControls extends StatefulWidget {
+  const _PlayerControls({required this.player});
+
+  final RecordingPlayer player;
+
+  @override
+  State<_PlayerControls> createState() => _PlayerControlsState();
+}
+
+class _PlayerControlsState extends State<_PlayerControls> {
+  static const _jump = Duration(seconds: 10);
+
+  /// Where the person drags the bar to, before letting go.
+  double? _dragging;
+
+  String _clock(Duration time) {
+    final minutes = time.inMinutes;
+    final seconds = (time.inSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  Future<void> _jumpBy(PlaybackPosition now, Duration by) {
+    final to = now.position + by;
+    return widget.player.seekTo(
+      to < Duration.zero
+          ? Duration.zero
+          : to > now.duration
+          ? now.duration
+          : to,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return ValueListenableBuilder(
+      valueListenable: widget.player.position,
+      builder: (context, now, _) {
+        final length = now.duration.inMilliseconds.toDouble();
+        final at = (_dragging ?? now.position.inMilliseconds.toDouble()).clamp(
+          0.0,
+          length <= 0 ? 0.0 : length,
+        );
+        return Row(
+          children: [
+            IconButton(
+              key: const Key('player-back'),
+              tooltip: l10n.playerBack,
+              onPressed: () => unawaited(_jumpBy(now, -_jump)),
+              icon: const Icon(Icons.replay_10),
+            ),
+            IconButton(
+              key: const Key('player-toggle'),
+              tooltip: now.playing ? l10n.playerPause : l10n.playerResume,
+              onPressed: () => unawaited(
+                now.playing ? widget.player.pause() : widget.player.resume(),
+              ),
+              icon: Icon(now.playing ? Icons.pause : Icons.play_arrow),
+            ),
+            IconButton(
+              key: const Key('player-forward'),
+              tooltip: l10n.playerForward,
+              onPressed: () => unawaited(_jumpBy(now, _jump)),
+              icon: const Icon(Icons.forward_10),
+            ),
+            Expanded(
+              child: Slider(
+                key: const Key('player-seek'),
+                value: at,
+                max: length <= 0 ? 1 : length,
+                onChanged: length <= 0
+                    ? null
+                    : (value) => setState(() => _dragging = value),
+                onChangeEnd: (value) {
+                  setState(() => _dragging = null);
+                  unawaited(
+                    widget.player.seekTo(Duration(milliseconds: value.round())),
+                  );
+                },
+              ),
+            ),
+            Text(
+              '${_clock(Duration(milliseconds: at.round()))} / '
+              '${_clock(now.duration)}',
+            ),
           ],
         );
       },
