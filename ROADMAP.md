@@ -1333,7 +1333,7 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
   > e rotas do link no servidor, controller e página no navegador, parse, controller e tela no app.
   > Gate verde (273 testes no servidor e no web, 230 no app).
 
-- [ ] **6.8 App abre em "Ler QR code"**
+- [x] **6.8 App abre em "Ler QR code"**
   - Origem: ADR 0040.
   - Escopo: a primeira tela do app troca "Filmar"/"Assistir" por **Ler QR code** e **Colar
     código**. O `r` passa a ser obrigatório no parse (`camera` ou `viewer`). QR de câmera pede o
@@ -1341,6 +1341,20 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
     `/setup` e do QR do servidor passam a falar do navegador. ARB em `en` e `pt`.
   - Aceite: testes do parse (sem `r`, `r=owner`), do roteamento pelo papel e widget test da
     primeira tela.
+  > Validação (2026-09-26): só código escrito. Não percorrido no aparelho (fica para o 6.10). A
+  > primeira tela do app virou "Boas-vindas ao ReCam", com um texto dizendo para abrir o endereço
+  > do servidor no navegador e escolher **Adicionar câmera** ou **Adicionar Monitor**, e um único
+  > botão **Ler QR code** (o **Colar código** continua dentro do leitor). QR de câmera abre o passo
+  > "Dê um nome a esta câmera", com o nome padrão "Câmera" e **Confirmar**, e depois entra no modo
+  > câmera; QR de Monitor pareia na hora com o nome "Monitor"; QR que não é do ReCam mostra "Este não
+  > é um QR code de pareamento do ReCam." O `QrPayload` passou a exigir `r` com `camera` ou `viewer`
+  > (erro `invalidRole`; `owner` não vale mais). Textos revistos em `en` e `pt`: "Filmar"/"Assistir"
+  > e as dicas antigas saíram; "não pareado" da aba Monitor, "não pareado" da aba Câmera e as
+  > instruções de Adicionar câmera e de Adicionar Monitor falam do navegador e do **Ler QR code**;
+  > "Adicionar monitor" virou "Adicionar Monitor", como no glossário; "Recam" virou "ReCam" no erro
+  > de QR. Testes: parse (sem `r`, `r=owner`), primeira tela (só um botão, câmera pede nome, Monitor
+  > pareia direto, código errado, nome vazio) e o app inteiro no primeiro uso. Gate verde (273 testes
+  > no servidor e no web, 232 no app).
 
 - [ ] **6.8.1 App: linha do tempo abre num dia com gravação**
   - Origem: achado no 6.5 (2026-09-26).

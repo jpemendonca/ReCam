@@ -5,8 +5,8 @@ import 'qr_payload.dart';
 
 enum PairingLinkTarget { camera, viewer }
 
-/// Picks the tab that should pair with a `recam://pair` link, or null when the
-/// link is not a pairing link. Links without a role hint go to the viewer tab.
+/// Picks the tab that should pair with a `recam://pair` link, by the role it carries, or null
+/// when the link is not a valid pairing link.
 PairingLinkTarget? pairingLinkTarget(String link) {
   final parsed = QrPayload.parse(link);
   if (parsed is! QrParseOk) return null;

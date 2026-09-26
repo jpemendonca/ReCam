@@ -17,15 +17,26 @@ void main() {
       expect((result as QrParseOk).payload.role, DeviceRole.camera);
     });
 
-    test('withoutRoleHint_leavesRoleEmpty', () {
+    test('withoutRole_isInvalid', () {
       // arrange
-      final raw = pairingQr();
+      final raw = pairingQr(role: null);
 
       // act
       final result = QrPayload.parse(raw);
 
       // assert
-      expect((result as QrParseOk).payload.role, isNull);
+      expect((result as QrParseFailed).errors, [QrError.invalidRole]);
+    });
+
+    test('withOwnerRole_isInvalid', () {
+      // arrange
+      final raw = pairingQr(role: 'owner');
+
+      // act
+      final result = QrPayload.parse(raw);
+
+      // assert
+      expect((result as QrParseFailed).errors, [QrError.invalidRole]);
     });
 
     test('withValidUri_returnsPayload', () {
@@ -61,7 +72,8 @@ void main() {
 
     test('withoutToken_returnsMissingTokenError', () {
       // arrange
-      const raw = 'recam://pair?v=1&u=https%3A%2F%2F192.168.0.10%3A8443';
+      const raw =
+          'recam://pair?v=1&r=camera&u=https%3A%2F%2F192.168.0.10%3A8443';
 
       // act
       final result = QrPayload.parse(raw);
@@ -72,7 +84,7 @@ void main() {
 
     test('withoutUrl_returnsMissingUrlError', () {
       // arrange
-      const raw = 'recam://pair?v=1&t=abc';
+      const raw = 'recam://pair?v=1&r=camera&t=abc';
 
       // act
       final result = QrPayload.parse(raw);
@@ -83,7 +95,8 @@ void main() {
 
     test('withMalformedUrl_returnsMissingUrlError', () {
       // arrange
-      const raw = 'recam://pair?v=1&t=abc&u=not-a-url&u=ftp%3A%2F%2Fhost';
+      const raw =
+          'recam://pair?v=1&r=camera&t=abc&u=not-a-url&u=ftp%3A%2F%2Fhost';
 
       // act
       final result = QrPayload.parse(raw);
@@ -105,7 +118,7 @@ void main() {
 
     test('withUnsupportedVersion_returnsUnsupportedVersionError', () {
       // arrange
-      const raw = 'recam://pair?v=2&t=abc&u=https%3A%2F%2Fhost%3A8443';
+      const raw = 'recam://pair?v=2&t=abc&r=viewer&u=https%3A%2F%2Fhost%3A8443';
 
       // act
       final result = QrPayload.parse(raw);
@@ -127,6 +140,7 @@ void main() {
         QrError.missingToken,
         QrError.missingUrl,
         QrError.invalidFingerprint,
+        QrError.invalidRole,
       ]);
     });
 

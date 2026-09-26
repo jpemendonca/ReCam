@@ -55,7 +55,7 @@ void main() {
       expect(find.text('Add camera'), findsOneWidget);
       expect(
         find.text(
-          'On the phone that will film, open ReCam, choose Film and scan this QR code.',
+          'On the phone that will film, open ReCam, tap Scan QR code and scan this QR code.',
         ),
         findsOneWidget,
       );

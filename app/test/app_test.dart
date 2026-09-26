@@ -86,7 +86,7 @@ void main() {
   }
 
   group('RecamApp pairing links', () {
-    testWidgets('withOwnerLink_opensWatchTabAndPairsAsOwner', (tester) async {
+    testWidgets('withMonitorLink_opensWatchTabAndPairs', (tester) async {
       // arrange
       api
         ..healthyHosts = {'192.168.0.10'}
@@ -94,7 +94,7 @@ void main() {
       await openApp(tester);
 
       // act
-      links.controller.add(Uri.parse(pairingQr(role: 'owner')));
+      links.controller.add(Uri.parse(pairingQr(role: 'viewer')));
       await tester.pumpAndSettle();
 
       // assert
@@ -131,7 +131,7 @@ void main() {
       await openApp(tester);
 
       // act
-      links.controller.add(Uri.parse(pairingQr(role: 'owner')));
+      links.controller.add(Uri.parse(pairingQr(role: 'viewer')));
       await tester.pumpAndSettle();
 
       // assert
@@ -242,7 +242,7 @@ void main() {
 
       // assert
       expect(store.sessions, isEmpty);
-      expect(find.text('This phone will be used to:'), findsOneWidget);
+      expect(find.text('Welcome to ReCam'), findsOneWidget);
     });
 
     testWidgets('resetApp_whenCancelled_keepsThePairings', (tester) async {
@@ -264,7 +264,7 @@ void main() {
   });
 
   group('RecamApp first run', () {
-    testWidgets('withNothingPaired_asksWhatThePhoneIsFor', (tester) async {
+    testWidgets('withNothingPaired_offersScanQrCode', (tester) async {
       // arrange
       // (empty store)
 
@@ -272,43 +272,46 @@ void main() {
       await openApp(tester);
 
       // assert
-      expect(find.text('This phone will be used to:'), findsOneWidget);
-      expect(find.text('Film'), findsOneWidget);
-      expect(find.text('Watch'), findsOneWidget);
+      expect(find.text('Welcome to ReCam'), findsOneWidget);
+      expect(find.text('Scan QR code'), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
     });
 
-    testWidgets('forWatching_readsCodeAndShowsTheCameraList', (tester) async {
+    testWidgets('monitorCode_pairsAsMonitorAndShowsTheCameraList', (
+      tester,
+    ) async {
       // arrange
       api
         ..healthyHosts = {'192.168.0.10'}
-        ..pairResult = ApiSuccess(pairResult());
-      codesToRead.add(pairingQr(role: 'owner'));
+        ..pairResult = ApiSuccess(pairResult(role: DeviceRole.viewer));
+      codesToRead.add(pairingQr(role: 'viewer'));
       await openApp(tester);
 
       // act
-      await tester.tap(find.text('Watch'));
+      await tester.tap(find.text('Scan QR code'));
       await tester.pumpAndSettle();
 
       // assert
       expect(codesToRead, isEmpty);
       expect(api.pairCalls.single.name, 'Monitor');
-      expect(find.text('This phone will be used to:'), findsNothing);
+      expect(find.text('Welcome to ReCam'), findsNothing);
       expect(find.text('Paired with ReCam'), findsOneWidget);
       expect(find.byType(NavigationBar), findsOneWidget);
     });
 
-    testWidgets('asCamera_readsCodeAndOpensCameraMode', (tester) async {
+    testWidgets('cameraCode_asksNameAndOpensCameraMode', (tester) async {
       // arrange
       api
         ..healthyHosts = {'192.168.0.10'}
         ..pairResult = ApiSuccess(pairResult(role: DeviceRole.camera));
       codesToRead.add(pairingQr(role: 'camera'));
       await openApp(tester);
+      await tester.tap(find.text('Scan QR code'));
+      await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'Garage');
 
       // act
-      await tester.tap(find.text('Film'));
+      await tester.tap(find.text('Confirm'));
       await tester.pumpAndSettle();
 
       // assert
@@ -323,12 +326,12 @@ void main() {
       await openApp(tester);
 
       // act
-      await tester.tap(find.text('Watch'));
+      await tester.tap(find.text('Scan QR code'));
       await tester.pumpAndSettle();
 
       // assert
       expect(api.pairCalls, isEmpty);
-      expect(find.text('This phone will be used to:'), findsOneWidget);
+      expect(find.text('Welcome to ReCam'), findsOneWidget);
     });
 
     testWidgets('whenCodeIsNotReCam_showsTheErrorOnFirstRun', (tester) async {
@@ -337,11 +340,11 @@ void main() {
       await openApp(tester);
 
       // act
-      await tester.tap(find.text('Watch'));
+      await tester.tap(find.text('Scan QR code'));
       await tester.pumpAndSettle();
 
       // assert
-      expect(find.text('This phone will be used to:'), findsOneWidget);
+      expect(find.text('Welcome to ReCam'), findsOneWidget);
       expect(find.text('This is not a ReCam pairing QR code.'), findsOneWidget);
     });
   });

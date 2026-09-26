@@ -3,13 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/first_run_screen.dart';
 import 'package:recam/l10n/generated/app_localizations.dart';
 
+import 'support/fakes.dart';
+
 void main() {
-  Future<void> open(
-    WidgetTester tester, {
-    required Locale locale,
-    Future<void> Function(String name)? onCamera,
-    Future<void> Function()? onWatch,
-  }) async {
+  late List<String?> codes;
+  late List<(String, String?)> paired;
+
+  Future<void> open(WidgetTester tester, {required Locale locale}) async {
     await tester.pumpWidget(
       MaterialApp(
         locale: locale,
@@ -17,8 +17,8 @@ void main() {
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
           body: FirstRunScreen(
-            onCamera: onCamera ?? (_) async {},
-            onWatch: onWatch ?? () async {},
+            readCode: () async => codes.removeAt(0),
+            onPair: (code, name) async => paired.add((code, name)),
           ),
         ),
       ),
@@ -26,87 +26,99 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  group('FirstRunScreen', () {
-    testWidgets('inPortuguese_offersFilmarAndAssistir', (tester) async {
-      // arrange
-      // (Portuguese locale)
+  setUp(() {
+    codes = [];
+    paired = [];
+  });
 
+  group('FirstRunScreen', () {
+    testWidgets('inPortuguese_offersOnlyLerQrCode', (tester) async {
       // act
       await open(tester, locale: const Locale('pt'));
 
       // assert
-      expect(find.text('Este celular vai ser usado para:'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Filmar'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Assistir'), findsOneWidget);
-      expect(find.byIcon(Icons.videocam), findsOneWidget);
-      expect(find.byIcon(Icons.live_tv), findsOneWidget);
-      expect(find.widgetWithText(TextField, 'Câmera'), findsOneWidget);
+      expect(find.text('Boas-vindas ao ReCam'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Ler QR code'), findsOneWidget);
+      expect(find.byType(FilledButton), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+      expect(find.textContaining('Adicionar câmera'), findsOneWidget);
     });
 
-    testWidgets('inEnglish_offersFilmAndWatch', (tester) async {
-      // arrange
-      // (English locale)
-
+    testWidgets('inEnglish_offersOnlyScanQrCode', (tester) async {
       // act
       await open(tester, locale: const Locale('en'));
 
       // assert
-      expect(find.text('This phone will be used to:'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Film'), findsOneWidget);
-      expect(find.widgetWithText(FilledButton, 'Watch'), findsOneWidget);
+      expect(find.text('Welcome to ReCam'), findsOneWidget);
+      expect(find.widgetWithText(FilledButton, 'Scan QR code'), findsOneWidget);
     });
 
-    testWidgets('filmar_passesTheCameraName', (tester) async {
+    testWidgets('cameraCode_asksTheNameThenPairs', (tester) async {
       // arrange
-      String? name;
-      await open(
-        tester,
-        locale: const Locale('pt'),
-        onCamera: (value) async => name = value,
-      );
+      final code = pairingQr(role: 'camera');
+      codes.add(code);
+      await open(tester, locale: const Locale('pt'));
+      await tester.tap(find.text('Ler QR code'));
+      await tester.pumpAndSettle();
+      final asked = find.text('Dê um nome a esta câmera').evaluate().length;
       await tester.enterText(find.byType(TextField), 'Varanda');
 
       // act
-      await tester.tap(find.text('Filmar'));
+      await tester.tap(find.text('Confirmar'));
       await tester.pump();
 
       // assert
-      expect(name, 'Varanda');
+      expect(asked, 1);
+      expect(paired, [(code, 'Varanda')]);
     });
 
-    testWidgets('showsAssistirAboveFilmarWithTheNewHint', (tester) async {
+    testWidgets('monitorCode_pairsRightAwayWithoutName', (tester) async {
       // arrange
-      // (Portuguese locale)
-
-      // act
+      final code = pairingQr(role: 'viewer');
+      codes.add(code);
       await open(tester, locale: const Locale('pt'));
 
+      // act
+      await tester.tap(find.text('Ler QR code'));
+      await tester.pumpAndSettle();
+
       // assert
-      final watch = tester.getTopLeft(find.text('Assistir'));
-      final film = tester.getTopLeft(find.text('Filmar'));
-      expect(watch.dy, lessThan(film.dy));
+      expect(paired, [(code, null)]);
+      expect(find.byType(TextField), findsNothing);
+    });
+
+    testWidgets('notReCamCode_saysSoAndPairsNothing', (tester) async {
+      // arrange
+      codes.add('hello');
+      await open(tester, locale: const Locale('pt'));
+
+      // act
+      await tester.tap(find.text('Ler QR code'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(paired, isEmpty);
       expect(
-        find.text(
-          'Depois leia o QR code do Adicionar câmera, no celular que for assistir.',
-        ),
+        find.text('Este não é um QR code de pareamento do ReCam.'),
         findsOneWidget,
       );
     });
 
-    testWidgets('inEnglish_showsTheNewFilmHint', (tester) async {
+    testWidgets('emptyName_isRefused', (tester) async {
       // arrange
-      // (English locale)
+      codes.add(pairingQr(role: 'camera'));
+      await open(tester, locale: const Locale('pt'));
+      await tester.tap(find.text('Ler QR code'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '  ');
 
       // act
-      await open(tester, locale: const Locale('en'));
+      await tester.tap(find.text('Confirmar'));
+      await tester.pump();
 
       // assert
-      expect(
-        find.text(
-          'Then scan the QR code from Add camera on the phone that will watch.',
-        ),
-        findsOneWidget,
-      );
+      expect(paired, isEmpty);
+      expect(find.text('Digite um nome.'), findsOneWidget);
     });
   });
 }

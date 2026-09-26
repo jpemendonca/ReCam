@@ -6,14 +6,17 @@ enum QrError {
   missingToken,
   missingUrl,
   invalidFingerprint,
+
+  /// No `r`, or a role a QR code cannot grant (only camera and viewer can).
+  invalidRole,
 }
 
 class QrPayload {
   const QrPayload({
     required this.token,
     required this.serverUrls,
+    required this.role,
     this.fingerprint,
-    this.role,
   });
 
   static const int supportedVersion = 1;
@@ -22,9 +25,9 @@ class QrPayload {
   final String? fingerprint;
   final List<Uri> serverUrls;
 
-  /// Role the token grants, as announced by the server. Only a hint to pick the tab;
-  /// the server still decides.
-  final DeviceRole? role;
+  /// Role the token grants, as announced by the server: camera or viewer. It picks what this
+  /// phone becomes (SPECS.md 5.2); the server still decides.
+  final DeviceRole role;
 
   static final _fingerprintPattern = RegExp(r'^[0-9a-f]{64}$');
 
@@ -55,13 +58,18 @@ class QrPayload {
       errors.add(QrError.invalidFingerprint);
     }
 
+    final role = DeviceRole.tryParse(query['r']?.firstOrNull);
+    if (role != DeviceRole.camera && role != DeviceRole.viewer) {
+      errors.add(QrError.invalidRole);
+    }
+
     if (errors.isNotEmpty) return QrParseFailed(errors);
     return QrParseOk(
       QrPayload(
         token: token!,
         fingerprint: fingerprint,
         serverUrls: serverUrls,
-        role: DeviceRole.tryParse(query['r']?.firstOrNull),
+        role: role!,
       ),
     );
   }

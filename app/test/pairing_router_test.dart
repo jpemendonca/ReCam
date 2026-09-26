@@ -90,13 +90,13 @@ void main() {
       expect(camera.state, isA<CameraNotPaired>());
     });
 
-    test('ownerQr_fromCameraTab_pairsTheWatchTab', () async {
+    test('monitorQr_fromCameraTab_pairsTheWatchTab', () async {
       // arrange
       api.pairResult = ApiSuccess(pairResult());
 
       // act
       final target = await scan(
-        pairingQr(role: 'owner'),
+        pairingQr(role: 'viewer'),
         PairingLinkTarget.camera,
       );
 

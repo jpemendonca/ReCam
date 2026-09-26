@@ -276,9 +276,9 @@ class _HomeShellState extends State<HomeShell> {
             ),
             if (firstRun)
               FirstRunScreen(
-                onCamera: (name) =>
-                    _scan(from: PairingLinkTarget.camera, cameraName: name),
-                onWatch: () => _scan(from: PairingLinkTarget.viewer),
+                readCode: () => widget.readCode(context),
+                onPair: (code, cameraName) =>
+                    _route(code, cameraName: cameraName),
                 failure: switch ((cameraState, viewerState)) {
                   (CameraNotPaired(:final lastFailure?), _) => lastFailure,
                   (_, ViewerNotPaired(:final lastFailure?)) => lastFailure,

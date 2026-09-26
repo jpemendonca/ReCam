@@ -218,7 +218,7 @@ String pairingQr({
   String token = 'tok',
   String? fingerprint = fingerprint,
   List<String> urls = const ['https://192.168.0.10:8443'],
-  String? role,
+  String? role = 'viewer',
 }) {
   final query = [
     'v=1',
