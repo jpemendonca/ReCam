@@ -1790,6 +1790,31 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > `timeupdate` do vídeo e recomeça a cada arquivo. Testes de widget e bUnit cobrem a hora
   > andando e a troca de arquivo. Só código e teste; falta conferir no navegador e no Redmi 6A.
 
+- [x] **9.7 Traço na linha do tempo acompanhando o vídeo**
+  - Origem: pedido do autor em 2026-09-26, testando as gravações.
+  - Escopo: um traço vertical fino na barra da linha do tempo, na hora que o vídeo está tocando
+    (início do arquivo mais a posição do player), no app e no navegador. Anda com o vídeo, segue
+    para o próximo arquivo e leva a janela junto quando sai dela. Tocar ou clicar em outro ponto
+    da barra continua tocando dali, e o traço pula para lá. No navegador, o `clock.js` que já
+    acompanha o `timeupdate` move o traço, sem ida ao .NET a cada quadro.
+  - Aceite: testes de widget e bUnit do traço andando, trocando de arquivo e movendo a janela.
+  > Validação (2026-09-26): app: traço vermelho na barra, na hora do vídeo; a janela vai junto
+  > quando a reprodução pula para fora dela ou o vídeo passa da borda, mas não enquanto a pessoa
+  > olha outro trecho. Corrigido de passagem: tocar recriava a barra e voltava o zoom para 1 h (a
+  > área do player surge acima dela); a barra ganhou chave fixa. Navegador: `<line>` no SVG movido
+  > pelo `clock.js`, que só avisa o .NET quando o vídeo sai da janela. Testes: widget (traço
+  > andando, janela seguindo, zoom mantido), `TimelineWindow.contains` e bUnit (janela informada
+  > ao script, janela seguindo o vídeo). Só código e teste; o JS nunca rodou num navegador de
+  > verdade.
+
+- [ ] **9.8 Escolher o idioma nas Configurações**
+  - Origem: pedido do autor em 2026-09-26. Hoje o app segue o idioma do celular e o navegador segue
+    o do navegador, sem opção de trocar.
+  - Escopo: na aba Configurações do app e do navegador, escolher entre "Idioma do aparelho",
+    "Português" e "English". A escolha fica só naquele aparelho (no app, no armazenamento local;
+    no navegador, no `localStorage`) e vale na hora, sem reinstalar.
+  - Aceite: testes de widget e bUnit trocando o idioma e vendo o texto mudar.
+
 ## Fase 10: servidor numa VPS
 
 Decidido com o autor em 2026-09-26: rodar o servidor numa VPS, com as câmeras em casa e quem

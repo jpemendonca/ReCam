@@ -143,4 +143,24 @@ void main() {
       expect(ticks, hasLength(6));
     });
   });
+
+  group('TimelineWindow.contains', () {
+    test('includesTheStartAndLeavesOutTheEnd', () {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      final window = TimelineWindow.around(
+        day,
+        TimelineZoom.hour,
+        DateTime.utc(2026, 9, 25, 12, 30),
+      );
+
+      // act
+      final start = window.contains(window.start);
+      final end = window.contains(window.end);
+
+      // assert
+      expect(start, isTrue);
+      expect(end, isFalse);
+    });
+  });
 }

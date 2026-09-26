@@ -75,6 +75,8 @@ else
                 <title>@Clock(SlotTime(index))</title>
             </rect>
         }
+        @* Moved by clock.js as the video plays. *@
+        <line class="playhead" @ref="playhead" x1="0" x2="0" y1="0" y2="36" style="visibility: hidden" />
     </svg>
     <div class="ticks" aria-hidden="true">
         @foreach (var tick in Window.Ticks)
@@ -164,6 +166,8 @@ else
     private ElementReference video;
     private ElementReference clock;
     private TimelineSegment? clockFollows;
+    private ElementReference playhead;
+    private TimelineWindow? windowShown;
 
     /// <summary>The camera whose recordings show; changing it loads the other camera.</summary>
     [Parameter, EditorRequired]
@@ -174,6 +178,7 @@ else
         Timeline.Changed += OnChanged;
         Brighten.Changed += OnChanged;
         Cameras.Changed += OnChanged;
+        VideoClock.HeadLeftWindow += OnHeadLeftWindow;
     }
 
     protected override async Task OnParametersSetAsync()
@@ -193,6 +198,7 @@ else
         Timeline.Changed -= OnChanged;
         Brighten.Changed -= OnChanged;
         Cameras.Changed -= OnChanged;
+        VideoClock.HeadLeftWindow -= OnHeadLeftWindow;
     }
 
     // The filter goes on again after every render: the file, and the <video>, may have changed.
@@ -203,15 +209,26 @@ else
             await Brighten.ApplyAsync(video);
         }
 
-        // The clock restarts from each file's start, so it keeps going when the next file plays.
+        if (window is { } shown && shown != windowShown)
+        {
+            windowShown = shown;
+            await VideoClock.ShowWindowAsync(shown, Width);
+        }
+
+        // The clock and the line restart from each file's start, so they keep going when the next
+        // file plays.
         if (Timeline.Playing is not { } playing)
         {
-            clockFollows = null;
+            if (clockFollows is not null)
+            {
+                clockFollows = null;
+                await VideoClock.StopAsync();
+            }
         }
         else if (playing != clockFollows)
         {
             clockFollows = playing;
-            await VideoClock.FollowAsync(video, clock, playing.Start);
+            await VideoClock.FollowAsync(video, clock, playhead, playing.Start);
         }
     }
 
@@ -267,4 +284,14 @@ else
     }
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    // The video ran past the edge of the window: the window goes along.
+    private void OnHeadLeftWindow(DateTime head) => InvokeAsync(() =>
+    {
+        if (window is { } shown)
+        {
+            window = TimelineWindow.Around(shown.Day, shown.Zoom, head);
+            StateHasChanged();
+        }
+    });
 }

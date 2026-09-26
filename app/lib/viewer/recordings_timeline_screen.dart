@@ -232,7 +232,13 @@ class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
               if (_controller.loading)
                 const Center(child: CircularProgressIndicator())
               else if (day != null) ...[
-                _HourBar(controller: _controller, day: day),
+                // Keyed: the player appears above it when playback starts, and the zoom and
+                // window must survive that.
+                _HourBar(
+                  key: const Key('timeline-bar'),
+                  controller: _controller,
+                  day: day,
+                ),
                 const SizedBox(height: 16),
                 _MotionControls(controller: _controller),
               ],
@@ -437,7 +443,7 @@ class _MotionControls extends StatelessWidget {
 /// below them (only the motion with "Motion only"). Tap plays from that time; dragging moves
 /// the stretch; pressing and holding shows the time under the finger and plays it on release.
 class _HourBar extends StatefulWidget {
-  const _HourBar({required this.controller, required this.day});
+  const _HourBar({super.key, required this.controller, required this.day});
 
   final RecordingTimelineController controller;
   final DateTime day;
@@ -457,6 +463,40 @@ class _HourBarState extends State<_HourBar> {
 
   /// The x of the finger while it is held down, to show the time under it.
   double? _pressX;
+
+  /// Where the video is on the bar: the playing file's start plus the player's position.
+  DateTime? _head;
+  DateTime? _headFrom;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.player.position.addListener(_follow);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.player.position.removeListener(_follow);
+    super.dispose();
+  }
+
+  // Moves the line with the video. The window goes along when playback jumps elsewhere (a tap,
+  // the next motion) or runs past its edge, but not while the person looks at another stretch.
+  void _follow() {
+    final controller = widget.controller;
+    final playing = controller.playing;
+    final head = playing?.start.add(controller.player.position.value.position);
+    final previous = _head;
+    final jumped = controller.playingFrom != _headFrom;
+    setState(() {
+      _head = head;
+      _headFrom = controller.playingFrom;
+      if (head == null || _window.contains(head)) return;
+      if (jumped || (previous != null && _window.contains(previous))) {
+        _window = TimelineWindow.around(widget.day, _window.zoom, head);
+      }
+    });
+  }
 
   // Opens on what is playing, or else on the day's latest recording.
   TimelineWindow _initialWindow(TimelineZoom zoom) {
@@ -605,6 +645,19 @@ class _HourBarState extends State<_HourBar> {
                                   color: _motionColor,
                                 ),
                               ),
+                          if (controller.playing != null &&
+                              _head != null &&
+                              _window.contains(_head!))
+                            Positioned(
+                              left: _window.xOf(_head!, width) - 1,
+                              width: 2,
+                              top: 0,
+                              height: _barHeight,
+                              child: ColoredBox(
+                                key: const Key('timeline-playhead'),
+                                color: colors.error,
+                              ),
+                            ),
                         ],
                       ),
                     ),

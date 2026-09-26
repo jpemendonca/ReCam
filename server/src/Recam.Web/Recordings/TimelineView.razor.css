@@ -133,6 +133,13 @@
   pointer-events: none;
 }
 
+.playhead {
+  stroke: var(--danger);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
 .video-clock:empty {
   display: none;
 }

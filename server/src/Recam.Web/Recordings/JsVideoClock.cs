@@ -7,12 +7,27 @@ namespace Recam.Web.Recordings;
 public sealed class JsVideoClock(IJSRuntime js) : IVideoClock, IAsyncDisposable
 {
     private IJSObjectReference? _module;
+    private DotNetObjectReference<JsVideoClock>? _listener;
+    private DateTime _day;
 
-    public async Task FollowAsync(ElementReference video, ElementReference label, DateTime fileStart)
+    public event Action<DateTime>? HeadLeftWindow;
+
+    public async Task FollowAsync(ElementReference video, ElementReference clock, ElementReference line, DateTime fileStart) =>
+        await (await ModuleAsync()).InvokeVoidAsync("follow", video, clock, line, (fileStart - _day).TotalSeconds);
+
+    public async Task StopAsync() => await (await ModuleAsync()).InvokeVoidAsync("stop");
+
+    // Times go to the script as seconds after the day's midnight.
+    public async Task ShowWindowAsync(TimelineWindow window, double width)
     {
-        _module ??= await js.InvokeAsync<IJSObjectReference>("import", "./js/clock.js");
-        await _module.InvokeVoidAsync("follow", video, label, fileStart.TimeOfDay.TotalSeconds);
+        _day = window.Day;
+        _listener ??= DotNetObjectReference.Create(this);
+        await (await ModuleAsync()).InvokeVoidAsync(
+            "showWindow", (window.Start - _day).TotalSeconds, (window.End - _day).TotalSeconds, width, _listener);
     }
+
+    [JSInvokable]
+    public void OnHeadLeft(double secondsOfDay) => HeadLeftWindow?.Invoke(_day.AddSeconds(secondsOfDay));
 
     public async ValueTask DisposeAsync()
     {
@@ -20,5 +35,10 @@ public sealed class JsVideoClock(IJSRuntime js) : IVideoClock, IAsyncDisposable
         {
             await _module.DisposeAsync();
         }
+
+        _listener?.Dispose();
     }
+
+    private async Task<IJSObjectReference> ModuleAsync() =>
+        _module ??= await js.InvokeAsync<IJSObjectReference>("import", "./js/clock.js");
 }

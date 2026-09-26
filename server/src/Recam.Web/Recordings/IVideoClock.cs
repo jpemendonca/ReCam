@@ -2,9 +2,24 @@ using Microsoft.AspNetCore.Components;
 
 namespace Recam.Web.Recordings;
 
-/// <summary>The clock over a recording, kept by the browser as the video plays. Faked in tests.</summary>
+/// <summary>
+/// Follows a recording as it plays, kept by the browser: the clock over the video and the line
+/// on the timeline bar. Faked in tests.
+/// </summary>
 public interface IVideoClock
 {
-    /// <summary>Shows <paramref name="fileStart"/> plus the video's position in <paramref name="label"/>.</summary>
-    Task FollowAsync(ElementReference video, ElementReference label, DateTime fileStart);
+    /// <summary>
+    /// Called when the video runs past the edge of the bar's window, with the time it reached, so
+    /// the window can go along.
+    /// </summary>
+    event Action<DateTime>? HeadLeftWindow;
+
+    /// <summary>A new file plays: the clock and the line count from <paramref name="fileStart"/>.</summary>
+    Task FollowAsync(ElementReference video, ElementReference clock, ElementReference line, DateTime fileStart);
+
+    /// <summary>Nothing plays any more: the line goes away.</summary>
+    Task StopAsync();
+
+    /// <summary>The bar shows <paramref name="window"/>, <paramref name="width"/> units wide.</summary>
+    Task ShowWindowAsync(TimelineWindow window, double width);
 }

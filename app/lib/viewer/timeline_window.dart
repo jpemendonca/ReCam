@@ -70,6 +70,9 @@ class TimelineWindow {
 
   bool get atDayStart => !start.isAfter(day);
 
+  /// Whether [time] falls inside the window.
+  bool contains(DateTime time) => !time.isBefore(start) && time.isBefore(end);
+
   bool get atDayEnd => !end.isBefore(_dayEnd(day));
 
   /// The tick times inside the window, on round multiples of the zoom's tick.

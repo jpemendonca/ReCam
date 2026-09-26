@@ -386,6 +386,77 @@ void main() {
       expect(find.text('13:45:00'), findsOneWidget);
     });
 
+    testWidgets('playhead_followsTheVideoAndTakesTheWindowAlong', (
+      tester,
+    ) async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      final api = FakeApiClient()
+        ..recordingDaysResult = [day]
+        ..recordingsByDay[day] = [
+          RecordingPieceInfo(
+            start: DateTime.utc(2026, 9, 25, 13, 45),
+            end: DateTime.utc(2026, 9, 25, 13, 47),
+            segments: [
+              RecordingSegmentInfo(
+                start: DateTime.utc(2026, 9, 25, 13, 45),
+                end: DateTime.utc(2026, 9, 25, 13, 47),
+                url: '/api/recordings/cam/b.mp4',
+              ),
+            ],
+          ),
+        ];
+      final player = FakeRecordingPlayer();
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('pt'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RecordingsTimelineScreen(
+            brighten: () => BrightenController(
+              store: FakeAdjustmentStore(),
+              cameraId: 'cam',
+            ),
+            cameraName: 'Porch',
+            create: () => RecordingTimelineController(
+              api: api,
+              session: pairedSession(),
+              cameraId: 'cam',
+              player: player,
+              segments: FakeSegmentSource(),
+              utcOffsetOf: (_) => Duration.zero,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
+      await tester.pumpAndSettle();
+      // One minute around the latest recording: 13:46:30 to 13:47:30.
+      await tester.tap(find.text('1 min'));
+      await tester.pumpAndSettle();
+      final bar = tester.getRect(find.byKey(const Key('timeline-hours')));
+      // 10 seconds in is 13:46:40.
+      await tester.tapAt(bar.centerLeft + Offset(bar.width / 6, 0));
+      await tester.pumpAndSettle();
+      final opened = tester.getRect(find.byKey(const Key('timeline-playhead')));
+
+      // act
+      await player.seekTo(const Duration(minutes: 2, seconds: 20));
+      await tester.pump();
+      final moved = tester.getRect(find.byKey(const Key('timeline-playhead')));
+      await player.seekTo(const Duration(minutes: 2, seconds: 55));
+      await tester.pump();
+
+      // assert
+      // Playing did not reset the zoom the person chose.
+      expect(opened.center.dx, closeTo(bar.left + bar.width / 6, 1));
+      expect(moved.center.dx, closeTo(bar.left + bar.width * 5 / 6, 1));
+      // 13:47:55 ran past the edge, so the window went along with it.
+      expect(find.text('13:47:25 – 13:48:25'), findsOneWidget);
+      expect(find.byKey(const Key('timeline-playhead')), findsOneWidget);
+    });
+
     testWidgets('withoutRecordings_saysHowToStart', (tester) async {
       // arrange
       final api = FakeApiClient();

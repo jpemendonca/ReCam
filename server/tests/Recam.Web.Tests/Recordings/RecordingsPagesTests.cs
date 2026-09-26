@@ -102,6 +102,31 @@ public sealed class RecordingsPagesTests : BunitContext
         Assert.NotNull(page.Find(".player .video-clock"));
     }
 
+    [Fact(DisplayName = "The line on the bar follows the window shown, and the window goes along when the video runs past it")]
+    public void Timeline_Playhead_WindowFollowsVideo()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 5)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(1),
+            [new RecordingSegmentInfo(start, start.AddMinutes(1), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.recorded")));
+        page.FindAll("button.zoom")[0].Click();
+        page.FindAll("rect.slot")[10].Click();
+        var shown = _clock.Windows[^1];
+
+        // act
+        _clock.RunPast(new DateTime(2026, 9, 25, 14, 6, 10));
+
+        // assert
+        Assert.Equal((new DateTime(2026, 9, 25, 14, 5, 30), new DateTime(2026, 9, 25, 14, 6, 30)), (shown.Start, shown.End));
+        page.WaitForAssertion(() => Assert.Equal("14:05:40 – 14:06:40", page.Find(".window").TextContent));
+        Assert.Equal(new DateTime(2026, 9, 25, 14, 5, 40), _clock.Windows[^1].Start);
+        Assert.NotNull(page.Find("svg line.playhead"));
+    }
+
     [Fact(DisplayName = "Motion shows on the bar; Next motion plays it and Motion only hides the rest")]
     public void Timeline_Motion_MarkedAndPlayed()
     {
