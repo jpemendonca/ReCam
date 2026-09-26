@@ -82,13 +82,14 @@
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
 
-    // The first camera's live video opens by itself: the moment the person sees it works.
+    // After the first camera, the person chooses the recording space; then its live video
+    // opens by itself, the moment the person sees it works.
     private async Task FirstCameraPairedAsync()
     {
         await Cameras.RefreshAsync(CancellationToken.None);
         if (Cameras.Cameras is [var first])
         {
-            Navigation.NavigateTo($"cameras/{first.Id}");
+            Navigation.NavigateTo($"first-space/{first.Id}");
         }
     }
 

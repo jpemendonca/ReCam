@@ -1548,13 +1548,23 @@ app e no navegador quando o bullet não disser outra coisa.
   > abrindo a linha do tempo, Configurações com a frase do servidor, Aparelhos removendo; no
   > navegador, a barra com Configurações, as horas com 2 câmeras e a lista da aba Gravações.
 
-- [ ] **8.3 Espaço de gravação pedido depois da primeira câmera**
+- [x] **8.3 Espaço de gravação pedido depois da primeira câmera**
   - Origem: teste do autor em 2026-09-26.
   - Escopo: logo depois que a primeira câmera pareia, o Monitor que mostrou o QR (app ou navegador)
     pergunta quanto espaço as gravações podem usar, com 2 GB marcado e o máximo igual ao espaço
     livre no servidor, e o mesmo texto do 8.2 (total, no servidor). Pular mantém 2 GB. Não pergunta
     de novo nas câmeras seguintes.
   - Aceite: testes do fluxo pedindo na primeira câmera e não pedindo na segunda.
+  > Validação (2026-09-26): só código escrito. Não percorrido no aparelho nem aberto no navegador.
+  > "Primeira câmera" é a lista vazia antes de adicionar: o Monitor que mostrou o QR sabe disso sem
+  > mudar o servidor. Navegador: quando a primeira câmera pareia, a página vai para
+  > `/first-space/{câmera}` ("Sua primeira câmera está pronta"), com a mesma barrinha das
+  > Configurações (virou o componente `SpaceEditor`, usado pelas duas páginas), 2 GB marcados e o
+  > máximo igual ao livre no servidor; "Salvar e continuar" salva e abre o ao vivo da câmera, "Pular
+  > (fica em 2 GB)" abre o ao vivo sem salvar. App: depois do QR da primeira câmera fechar, abre a
+  > mesma tela (o `SettingsView` com `onDone`), com os mesmos dois botões. Câmeras seguintes não
+  > perguntam. Testes: no navegador, a primeira câmera leva ao `/first-space` e salvar abre o ao
+  > vivo com a cota salva; no app, a primeira câmera pergunta e salva 2048, a segunda não pergunta.
 
 - [ ] **8.4 Aba Gravações**
   - Origem: teste do autor em 2026-09-26: "quero de fato poder ver minhas gravações".

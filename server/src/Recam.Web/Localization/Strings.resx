@@ -156,6 +156,18 @@
   <data name="FirstCameraTitle" xml:space="preserve">
     <value>Add your first camera</value>
   </data>
+  <data name="FirstSpaceIntro" xml:space="preserve">
+    <value>How much space may the recordings take on the server? You can change it later in Settings.</value>
+  </data>
+  <data name="FirstSpaceSave" xml:space="preserve">
+    <value>Save and continue</value>
+  </data>
+  <data name="FirstSpaceSkip" xml:space="preserve">
+    <value>Skip (keeps 2 GB)</value>
+  </data>
+  <data name="FirstSpaceTitle" xml:space="preserve">
+    <value>Your first camera is ready</value>
+  </data>
   <data name="HubConnected" xml:space="preserve">
     <value>Connected</value>
   </data>

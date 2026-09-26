@@ -488,6 +488,65 @@ void main() {
       expect(api.cameraCalls, loadsBefore + 1);
     });
 
+    testWidgets('firstCamera_asksForTheSpaceAndSavesIt', (tester) async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      api
+        ..quotaResult = ApiSuccess(
+          const RecordingQuota(
+            megabytes: 2048,
+            usedBytes: 0,
+            freeBytes: 10 * 1024 * 1024 * 1024,
+          ),
+        )
+        ..tokenResults.add(ApiSuccess(token('recam://pair?r=camera')))
+        ..tokenUsedResults.add(ApiSuccess(true));
+      await openApp(tester);
+      await tester.tap(find.byTooltip('Add camera'));
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      final asked = find.text('Your first camera is ready').evaluate().length;
+
+      // act
+      await tester.tap(find.text('Save and continue'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(asked, 1);
+      expect(api.quotaChanges, [2048]);
+      expect(find.text('Your first camera is ready'), findsNothing);
+    });
+
+    testWidgets('secondCamera_doesNotAskForTheSpace', (tester) async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      const porch = CameraInfo(
+        id: 'cam',
+        name: 'Porch',
+        online: true,
+        publishing: false,
+      );
+      api
+        ..cameraResults.addAll([
+          ApiSuccess(const [porch]),
+          ApiSuccess(const [porch]),
+        ])
+        ..tokenResults.add(ApiSuccess(token('recam://pair?r=camera')))
+        ..tokenUsedResults.add(ApiSuccess(true));
+      await openApp(tester);
+      await tester.tap(find.byTooltip('Add camera'));
+      await tester.pumpAndSettle();
+
+      // act
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(find.byType(AddDeviceScreen), findsNothing);
+      expect(find.text('Your first camera is ready'), findsNothing);
+    });
+
     testWidgets('menuAddMonitor_opensTheMonitorQr', (tester) async {
       // arrange
       await store.write(PairingSlot.viewer, pairedSession());

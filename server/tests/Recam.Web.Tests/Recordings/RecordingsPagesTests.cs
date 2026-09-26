@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Recam.Web.Api;
 using Recam.Web.Brighten;
@@ -163,5 +164,24 @@ public sealed class RecordingsPagesTests : BunitContext
         Assert.Equal($"cameras/{_camera.Id}/recordings", link.GetAttribute("href"));
         Assert.Equal("Porta", page.Find(".choices .name").TextContent);
         Assert.Equal("Gravando", page.Find(".choices .badge").TextContent);
+    }
+
+    [Fact(DisplayName = "After the first camera, the space page starts at 2 GB and saving opens its live video")]
+    public void FirstSpace_Save_OpensLiveView()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var page = Render<FirstSpacePage>(parameters => parameters.Add(first => first.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Equal("Espaço para gravações: 2,0 GB", page.Find("label").TextContent));
+
+        // act
+        page.Find("#space").Input("4096");
+        page.Find("button.save").Click();
+
+        // assert
+        var navigation = Services.GetRequiredService<NavigationManager>();
+        page.WaitForAssertion(() => Assert.EndsWith($"/cameras/{_camera.Id}", navigation.Uri, StringComparison.Ordinal));
+        Assert.Equal(4096, _api.Quota.QuotaMb);
+        Assert.Equal($"cameras/{_camera.Id}", page.Find("a.skip").GetAttribute("href"));
     }
 }

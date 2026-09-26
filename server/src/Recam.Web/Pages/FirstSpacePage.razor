@@ -1,0 +1,46 @@
+@page "/first-space/{CameraId:guid}"
+@implements IDisposable
+@inject IStringLocalizer<Strings> L
+@inject QuotaController Quota
+@inject NavigationManager Navigation
+
+<PageTitle>@L["RecordingsSpaceOpen"]</PageTitle>
+
+<section class="card">
+    <h1>@L["FirstSpaceTitle"]</h1>
+    <p>@L["FirstSpaceIntro"]</p>
+    <SpaceEditor Quota="Quota" />
+    <div class="actions">
+        <button class="save" @onclick="SaveAsync" disabled="@(Quota.State != QuotaState.Ready || Quota.Saving)">@L["FirstSpaceSave"]</button>
+        <a class="skip" href="cameras/@CameraId">@L["FirstSpaceSkip"]</a>
+    </div>
+    @if (Quota.Saved == false)
+    {
+        <p class="error" role="alert">@L["RecordingsSaveFailed"]</p>
+    }
+</section>
+
+@code {
+    /// <summary>The first camera; its live video opens after this page.</summary>
+    [Parameter]
+    public Guid CameraId { get; set; }
+
+    protected override Task OnInitializedAsync()
+    {
+        Quota.Changed += OnChanged;
+        return Quota.LoadAsync();
+    }
+
+    public void Dispose() => Quota.Changed -= OnChanged;
+
+    private async Task SaveAsync()
+    {
+        await Quota.SaveAsync();
+        if (Quota.Saved == true)
+        {
+            Navigation.NavigateTo($"cameras/{CameraId}");
+        }
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+}

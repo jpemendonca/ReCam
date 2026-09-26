@@ -1,9 +1,7 @@
 @page "/settings"
-@using System.Globalization
 @implements IDisposable
 @inject IStringLocalizer<Strings> L
 @inject QuotaController Quota
-@inject CameraListController Cameras
 
 <PageTitle>@L["SettingsTitle"]</PageTitle>
 
@@ -13,35 +11,18 @@
 
 <section class="card">
     <h2>@L["RecordingsSpaceOpen"]</h2>
-    <p class="scope">@L["SettingsSpaceScope"]</p>
-    @switch (Quota.State)
+    <SpaceEditor Quota="Quota" />
+    @if (Quota.State == QuotaState.Ready)
     {
-        case QuotaState.Loading:
-            <div class="loading" aria-hidden="true"></div>
-            break;
-
-        case QuotaState.Failed:
-            <p class="error" role="alert">@L["RecordingsLoadFailed"]</p>
-            <button @onclick="Quota.LoadAsync">@L["OfflineRetry"]</button>
-            break;
-
-        default:
-            <p class="note">@L["RecordingsInUse", Gigabytes(Quota.Quota!.UsedBytes / 1024.0 / 1024.0), Gigabytes(Quota.Quota.QuotaMb)]</p>
-            <label for="space">@L["RecordingsSpace", Gigabytes(Quota.SelectedMegabytes)]</label>
-            <input id="space" type="range" min="@QuotaController.MinimumMegabytes" max="@Quota.MaxMegabytes" step="100"
-                   value="@Quota.SelectedMegabytes" @oninput="OnInput" />
-            <p class="hours">@HoursText()</p>
-            <p class="note">@L["RecordingsHowItWorks"]</p>
-            <button @onclick="Quota.SaveAsync" disabled="@Quota.Saving">@L["RecordingsSave"]</button>
-            @if (Quota.Saved == true)
-            {
-                <p class="ok" role="status">@L["RecordingsSaved"]</p>
-            }
-            else if (Quota.Saved == false)
-            {
-                <p class="error" role="alert">@L["RecordingsSaveFailed"]</p>
-            }
-            break;
+        <button @onclick="Quota.SaveAsync" disabled="@Quota.Saving">@L["RecordingsSave"]</button>
+        @if (Quota.Saved == true)
+        {
+            <p class="ok" role="status">@L["RecordingsSaved"]</p>
+        }
+        else if (Quota.Saved == false)
+        {
+            <p class="error" role="alert">@L["RecordingsSaveFailed"]</p>
+        }
     }
 </section>
 
@@ -49,38 +30,10 @@
     protected override Task OnInitializedAsync()
     {
         Quota.Changed += OnChanged;
-        Cameras.Changed += OnChanged;
         return Quota.LoadAsync();
     }
 
-    public void Dispose()
-    {
-        Quota.Changed -= OnChanged;
-        Cameras.Changed -= OnChanged;
-    }
-
-    // The space is shared, so the hours that fit shrink with every camera that records.
-    private string HoursText()
-    {
-        var recording = Cameras.Cameras.Count(camera => camera.Recording);
-        var hours = QuotaController.HoursFor(Quota.SelectedMegabytes, recording).ToString("0.#", CultureInfo.CurrentCulture);
-        return recording switch
-        {
-            0 => L["RecordingsHours", hours],
-            1 => L["RecordingsHoursOneCamera", hours],
-            _ => L["RecordingsHoursCameras", hours, recording],
-        };
-    }
-
-    private static string Gigabytes(double megabytes) => (megabytes / 1024).ToString("0.0", CultureInfo.CurrentCulture);
-
-    private void OnInput(ChangeEventArgs change)
-    {
-        if (int.TryParse(change.Value?.ToString(), CultureInfo.InvariantCulture, out var megabytes))
-        {
-            Quota.Select(megabytes);
-        }
-    }
+    public void Dispose() => Quota.Changed -= OnChanged;
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
 }

@@ -250,5 +250,9 @@
         "type": "String"
       }
     }
-  }
+  },
+  "firstSpaceTitle": "Your first camera is ready",
+  "firstSpaceIntro": "How much space may the recordings take on the server? You can change it later in Settings.",
+  "firstSpaceSave": "Save and continue",
+  "firstSpaceSkip": "Skip (keeps 2 GB)"
 }

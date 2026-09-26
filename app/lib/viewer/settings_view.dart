@@ -15,6 +15,7 @@ class SettingsView extends StatefulWidget {
     required this.api,
     required this.session,
     required this.recordingCameras,
+    this.onDone,
     super.key,
   });
 
@@ -23,6 +24,10 @@ class SettingsView extends StatefulWidget {
 
   /// How many cameras record now; the hours that fit are shared among them.
   final int recordingCameras;
+
+  /// Set right after the first camera pairs: the view asks for the space once, and runs this
+  /// when the person saves or skips.
+  final VoidCallback? onDone;
 
   @override
   State<SettingsView> createState() => _SettingsViewState();
@@ -50,6 +55,11 @@ class _SettingsViewState extends State<SettingsView> {
     final messenger = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
     final saved = await _controller.save();
+    final onDone = widget.onDone;
+    if (saved && onDone != null) {
+      onDone();
+      return;
+    }
     messenger.showSnackBar(
       SnackBar(
         content: Text(saved ? l10n.recordingsSaved : l10n.recordingsSaveFailed),
@@ -97,6 +107,10 @@ class _SettingsViewState extends State<SettingsView> {
               l10n.recordingsSpaceTitle,
               style: Theme.of(context).textTheme.titleLarge,
             ),
+            if (widget.onDone != null) ...[
+              const SizedBox(height: 8),
+              Text(l10n.firstSpaceIntro),
+            ],
             const SizedBox(height: 8),
             Text(l10n.settingsSpaceScope),
             const SizedBox(height: 16),
@@ -126,13 +140,21 @@ class _SettingsViewState extends State<SettingsView> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 24),
-            FilledButton(
-              onPressed:
-                  _controller.saving || selectedMegabytes == quota.megabytes
-                  ? null
-                  : _save,
-              child: Text(l10n.recordingsSave),
-            ),
+            if (widget.onDone case final onDone?) ...[
+              FilledButton(
+                onPressed: _controller.saving ? null : _save,
+                child: Text(l10n.firstSpaceSave),
+              ),
+              const SizedBox(height: 8),
+              TextButton(onPressed: onDone, child: Text(l10n.firstSpaceSkip)),
+            ] else
+              FilledButton(
+                onPressed:
+                    _controller.saving || selectedMegabytes == quota.megabytes
+                    ? null
+                    : _save,
+                child: Text(l10n.recordingsSave),
+              ),
           ],
         ),
       },

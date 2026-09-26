@@ -1,0 +1,24 @@
+label {
+  display: block;
+  font-weight: 600;
+  margin-top: 16px;
+}
+
+input[type="range"] {
+  width: 100%;
+  margin: 12px 0;
+  accent-color: var(--accent);
+}
+
+.scope {
+  line-height: 1.5;
+}
+
+.note {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.error {
+  color: var(--danger);
+}

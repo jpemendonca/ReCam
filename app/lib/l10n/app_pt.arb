@@ -146,5 +146,9 @@
   "settingsSpaceScope": "Este é o total de todas as câmeras juntas. As gravações ficam no servidor, não nos celulares.",
   "recordingsChooseCamera": "Escolha uma câmera para ver as gravações dela.",
   "recordingsNoCameras": "Nenhuma câmera ainda. Adicione uma na aba Câmeras.",
-  "recordingsHoursCameras": "{count, plural, =1{Com 1 câmera gravando, cabem cerca de {hours} horas.} other{Com {count} câmeras gravando, cabem cerca de {hours} horas.}}"
+  "recordingsHoursCameras": "{count, plural, =1{Com 1 câmera gravando, cabem cerca de {hours} horas.} other{Com {count} câmeras gravando, cabem cerca de {hours} horas.}}",
+  "firstSpaceTitle": "Sua primeira câmera está pronta",
+  "firstSpaceIntro": "Quanto espaço as gravações podem usar no servidor? Dá para mudar depois em Configurações.",
+  "firstSpaceSave": "Salvar e continuar",
+  "firstSpaceSkip": "Pular (fica em 2 GB)"
 }

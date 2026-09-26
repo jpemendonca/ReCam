@@ -94,8 +94,11 @@ class _CameraListViewState extends State<CameraListView> {
   );
 
   // The new camera shows up at once: the QR screen closes when it pairs, and the list reloads.
+  // After the first camera, the person chooses the recording space.
   Future<void> _addCamera() async {
-    final paired = await Navigator.of(context).push<bool>(
+    final navigator = Navigator.of(context);
+    final first = _controller.cameraCount == 0;
+    final paired = await navigator.push<bool>(
       MaterialPageRoute(
         builder: (_) => AddDeviceScreen(
           api: widget.api,
@@ -104,7 +107,24 @@ class _CameraListViewState extends State<CameraListView> {
         ),
       ),
     );
-    if (paired == true) await _controller.refresh();
+    if (paired != true) return;
+    await _controller.refresh();
+    if (!first || !mounted) return;
+    await navigator.push<void>(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: Text(AppLocalizations.of(context).firstSpaceTitle),
+          ),
+          body: SettingsView(
+            api: widget.api,
+            session: widget.session,
+            recordingCameras: _controller.recordingCameras,
+            onDone: () => Navigator.of(context).pop(),
+          ),
+        ),
+      ),
+    );
   }
 
   @override

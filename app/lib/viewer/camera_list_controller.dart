@@ -104,6 +104,12 @@ class CameraListController extends ChangeNotifier {
     _ => null,
   };
 
+  /// How many cameras the list has; zero until it loads.
+  int get cameraCount => switch (_state) {
+    CameraListLoaded(:final cameras) => cameras.length,
+    _ => 0,
+  };
+
   /// How many cameras have "Record always" on; they share the recording space.
   int get recordingCameras => switch (_state) {
     CameraListLoaded(:final cameras) =>

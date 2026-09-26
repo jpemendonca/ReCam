@@ -45,8 +45,8 @@ public sealed class AddDevicePanelTests : BunitContext
         Assert.Equal(_api.Tokens.Single().Token.QrUri, page.Find("code.uri").TextContent);
     }
 
-    [Fact(DisplayName = "When the first camera pairs, its live video opens by itself")]
-    public async Task Home_FirstCameraPairs_OpensLiveView()
+    [Fact(DisplayName = "When the first camera pairs, the page asks for the recording space before its live video")]
+    public async Task Home_FirstCameraPairs_AsksForSpace()
     {
         // arrange
         var page = Render<Home>();
@@ -59,7 +59,7 @@ public sealed class AddDevicePanelTests : BunitContext
         // assert
         var camera = Assert.Single(_api.Cameras);
         var navigation = Services.GetRequiredService<NavigationManager>();
-        page.WaitForAssertion(() => Assert.EndsWith($"/cameras/{camera.Id}", navigation.Uri, StringComparison.Ordinal));
+        page.WaitForAssertion(() => Assert.EndsWith($"/first-space/{camera.Id}", navigation.Uri, StringComparison.Ordinal));
     }
 
     [Fact(DisplayName = "Adding another camera goes back to the list, where it shows up")]
