@@ -53,5 +53,17 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<IReadOnlyList<CameraInfo>?> GetCamerasAsync(CancellationToken cancellationToken)
+    {
+        using var response = await http.GetAsync(new Uri("api/cameras", UriKind.Relative), cancellationToken);
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            return null;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<List<CameraInfo>>(Json, cancellationToken) ?? [];
+    }
+
     private sealed record FirstOpenStatus(bool Open);
 }

@@ -1202,7 +1202,7 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
   > verde (210 testes no servidor e no web, 223 no app). O app ainda fala do QR do servidor na
   > aba Monitor; muda no 6.8.
 
-- [ ] **6.3 Câmeras e vídeo ao vivo no navegador**
+- [x] **6.3 Câmeras e vídeo ao vivo no navegador**
   - Origem: caminho principal, passos 4 e 5.
   - Escopo: lista de câmeras (online, transmitindo ou parada, bateria, temperatura, gravando) ao
     vivo pelo hub, com o cliente SignalR para .NET no navegador (dependência nova pedida por este
@@ -1212,6 +1212,25 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
   - Aceite: testes dos controllers (lista reage ao hub, abrir e fechar o vídeo abre e fecha o lease,
     lanterna com e sem vídeo), bUnit das telas e teste de integração do hub e do `POST /whep` com o
     cookie.
+  > Validação (2026-09-26): código escrito e percorrido no navegador do PC com vídeo de verdade, sem
+  > celular. `Recam.Web`: `IDeviceHub`/`SignalRDeviceHub` (cliente SignalR .NET no navegador, cookie
+  > do navegador, `X-Recam-Web` nos pedidos HTTP, reconexão sem fim com 1, 2, 4, 8, 16 e 30 s),
+  > `CameraListController` (lista pela API, atualizada pelo hub, recarregada a cada reconexão, igual
+  > ao app), `LiveController` (lease pelo hub, até 20 tentativas de WHEP enquanto a câmera abre,
+  > reconecta sozinho quando o vídeo cai, lanterna pelo que a câmera informa) e o módulo próprio
+  > `wwwroot/js/whep.js` (só recepção, oferta com todos os candidatos, `DELETE` da sessão ao sair).
+  > Telas: lista com estado, bateria, temperatura, selo "Gravando" e a chave **Gravar sempre** (ou
+  > o aviso de sem H.264), status do hub e **Sair**; página `/cameras/{id}` com o vídeo, **Ligar
+  > lanterna**/**Desligar lanterna** e **Gravar sempre**. O servidor já aceitava o cookie no hub e no
+  > WHEP; ganhou os testes: hub com cookie e cabeçalho, sem cabeçalho recusa, e WHEP com cookie
+  > chega ao MediaMTX sem o cookie e sem o `X-Recam-Web`. Observado: MediaMTX 1.21.1 real, um
+  > Chromium como câmera falsa publicando VP8 por WHIP com a credencial de câmera (o Chromium daqui
+  > não tem H.264) e outro Chromium como Monitor web: a lista mostrou "Conectado" e a câmera; a
+  > página da câmera tocou o vídeo (480x270, tempo avançando) pelo proxy; voltar para a lista fechou
+  > a sessão no MediaMTX. A lanterna e a lista mudando ao vivo foram cobertas por testes (a câmera
+  > falsa não entra no hub). Uma câmera recém-pareada só aparece quando ela conecta ou a lista
+  > recarrega, como no app; o 6.4 recarrega ao fechar o QR. Gate verde (232 testes no servidor e no
+  > web, 223 no app).
 
 - [ ] **6.4 Adicionar câmera no navegador e primeiro uso guiado**
   - Origem: caminho principal, passos 2 e 3.

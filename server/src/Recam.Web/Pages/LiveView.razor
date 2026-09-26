@@ -1,0 +1,96 @@
+@page "/cameras/{CameraId:guid}"
+@implements IAsyncDisposable
+@inject IStringLocalizer<Strings> L
+@inject CameraListController Cameras
+@inject LiveController Live
+@inject NavigationManager Navigation
+
+<PageTitle>@(camera?.Name ?? L["AppTitle"])</PageTitle>
+
+<div class="bar">
+    <a href="">← @L["LiveBack"]</a>
+    <h1>@camera?.Name</h1>
+</div>
+
+@if (Cameras.State == CameraListState.Loaded && camera is null)
+{
+    <p class="note">@L["LiveNotFound"]</p>
+}
+
+<div class="stage">
+    <video @ref="video" autoplay playsinline muted></video>
+    @if (Live.State == LiveState.Connecting)
+    {
+        <p class="overlay">@L["LiveConnecting"]</p>
+    }
+    else if (Live.State == LiveState.Failed)
+    {
+        <div class="overlay">
+            <p>@L["LiveFailed"]</p>
+            <button @onclick="Live.RetryAsync">@L["LiveRetry"]</button>
+        </div>
+    }
+</div>
+
+<div class="controls">
+    <button @onclick="ToggleTorchAsync" disabled="@(Live.State != LiveState.Playing)">
+        @(Live.TorchOn ? L["TorchTurnOff"] : L["TorchTurnOn"])
+    </button>
+    @if (camera is not null)
+    {
+        <RecordingToggle Camera="camera" />
+    }
+</div>
+@if (torchFailed)
+{
+    <p class="error" role="alert">@L["TorchFailed"]</p>
+}
+
+@code {
+    [Parameter]
+    public Guid CameraId { get; set; }
+
+    private ElementReference video;
+    private CameraInfo? camera;
+    private bool torchFailed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Cameras.Changed += OnChanged;
+        Live.Changed += OnChanged;
+        await Cameras.StartAsync(CancellationToken.None);
+        Refresh();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Live.OpenAsync(CameraId, video);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Cameras.Changed -= OnChanged;
+        Live.Changed -= OnChanged;
+        await Live.DisposeAsync();
+    }
+
+    private async Task ToggleTorchAsync() => torchFailed = !await Live.SetTorchAsync(!Live.TorchOn);
+
+    private void OnChanged() => InvokeAsync(() =>
+    {
+        Refresh();
+        StateHasChanged();
+    });
+
+    private void Refresh()
+    {
+        camera = Cameras.Camera(CameraId);
+        if (Cameras.State == CameraListState.SignedOut)
+        {
+            Navigation.NavigateTo("");
+        }
+    }
+}

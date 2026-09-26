@@ -14,6 +14,7 @@ public sealed class FakeMediaMtx : IDisposable
 
     private readonly HttpListener _listener = new();
     private readonly ConcurrentQueue<string> _requests = new();
+    private readonly ConcurrentDictionary<string, bool> _headerNames = new(StringComparer.OrdinalIgnoreCase);
     private readonly Task _loop;
 
     public FakeMediaMtx()
@@ -28,6 +29,9 @@ public sealed class FakeMediaMtx : IDisposable
 
     /// <summary>"METHOD /path" of every request received.</summary>
     public IReadOnlyCollection<string> Requests => _requests;
+
+    /// <summary>Every request header name that reached MediaMTX, in any request.</summary>
+    public IReadOnlyCollection<string> HeaderNames => _headerNames.Keys.ToList();
 
     public void Dispose()
     {
@@ -59,6 +63,11 @@ public sealed class FakeMediaMtx : IDisposable
             catch (ObjectDisposedException)
             {
                 return;
+            }
+
+            foreach (var name in context.Request.Headers.AllKeys.OfType<string>())
+            {
+                _headerNames[name] = true;
             }
 
             var path = context.Request.Url!.AbsolutePath;

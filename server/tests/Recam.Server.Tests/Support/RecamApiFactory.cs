@@ -83,6 +83,19 @@ public sealed partial class RecamApiFactory : WebApplicationFactory<Program>
             .Where(match => match.Success)
             .Select(match => match.Groups[1].Value);
 
+    /// <summary>
+    /// Makes a browser the first Monitor with the code from the log and returns its cookie, as
+    /// "recam_device=...". The server must have no Monitor yet.
+    /// </summary>
+    public async Task<string> OpenBrowserMonitorAsync()
+    {
+        using var client = CreateBrowserClient();
+        using var response = await client.PostAsJsonAsync(
+            new Uri("/api/web/first-open", UriKind.Relative), new { code = await FirstOpenCodeAsync(), remember = false }, ApiJson.Options);
+        response.EnsureSuccessStatusCode();
+        return response.Headers.GetValues("Set-Cookie").Single().Split(';')[0];
+    }
+
     /// <summary>A client for the browser Monitor: HTTPS, no cookie jar, so tests see every cookie.</summary>
     public HttpClient CreateBrowserClient() =>
         CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost"), HandleCookies = false });

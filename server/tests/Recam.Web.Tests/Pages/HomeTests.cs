@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Recam.Web.Api;
+using Recam.Web.Cameras;
 using Recam.Web.Pages;
+using Recam.Web.Realtime;
 using Recam.Web.Start;
 using Recam.Web.Tests.Support;
 
@@ -15,6 +17,8 @@ public sealed class HomeTests : BunitContext
         Services.AddLocalization();
         Services.AddSingleton<IRecamApi>(_api);
         Services.AddTransient<StartController>();
+        Services.AddSingleton<IDeviceHub>(new FakeDeviceHub());
+        Services.AddSingleton<CameraListController>();
     }
 
     [Theory(DisplayName = "Without a Monitor, the start page asks for the first-time code, in the browser's language")]
@@ -34,7 +38,7 @@ public sealed class HomeTests : BunitContext
         Assert.True(page.Find("label.check input").HasAttribute("checked"));
     }
 
-    [Fact(DisplayName = "Typing the right code shows that this browser is the Monitor")]
+    [Fact(DisplayName = "Typing the right code opens the cameras, with Sign out")]
     public void Submit_RightCode_ShowsMonitor()
     {
         // arrange
@@ -46,8 +50,8 @@ public sealed class HomeTests : BunitContext
         page.Find("form").Submit();
 
         // assert
-        page.WaitForAssertion(() => Assert.Equal("Este navegador é o Monitor", page.Find("h1").TextContent));
-        Assert.Contains("Navegador · Chrome no Windows", page.Find("p").TextContent, StringComparison.Ordinal);
+        page.WaitForAssertion(() => Assert.Equal("Câmeras", page.Find("h1").TextContent));
+        Assert.Equal("Sair", page.Find(".head button").TextContent);
     }
 
     [Fact(DisplayName = "A wrong code shows the reason under the field")]

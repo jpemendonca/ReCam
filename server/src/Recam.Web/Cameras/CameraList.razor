@@ -1,0 +1,103 @@
+@implements IDisposable
+@inject IStringLocalizer<Strings> L
+@inject CameraListController Cameras
+
+<div class="head">
+    <h1>@L["CamerasTitle"]</h1>
+    <span class="hub @(Cameras.Connected ? "on" : "off")">
+        @(Cameras.Connected ? L["HubConnected"] : L["HubReconnecting"])
+    </span>
+    <span class="spacer"></span>
+    @HeaderActions
+</div>
+
+@switch (Cameras.State)
+{
+    case CameraListState.Loading:
+        <div class="loading" aria-hidden="true"></div>
+        break;
+
+    case CameraListState.Failed:
+        <p class="note">@L["CamerasFailed"]</p>
+        <button @onclick="RetryAsync">@L["OfflineRetry"]</button>
+        break;
+
+    case CameraListState.Loaded when Cameras.Cameras.Count == 0:
+        <p class="note">@L["CamerasEmpty"]</p>
+        @Empty
+        break;
+
+    case CameraListState.Loaded:
+        <ul class="cameras">
+            @foreach (var camera in Cameras.Cameras)
+            {
+                <li class="camera @(camera.Online ? string.Empty : "offline")">
+                    <a class="open" href="cameras/@camera.Id">
+                        <span class="dot @(camera.Online ? camera.Publishing ? "live" : "on" : "off")"></span>
+                        <span class="name">@camera.Name</span>
+                        @if (camera.Recording)
+                        {
+                            <span class="badge">@L["CameraRecording"]</span>
+                        }
+                    </a>
+                    <p class="status">@Status(camera)</p>
+                    <RecordingToggle Camera="camera" />
+                </li>
+            }
+        </ul>
+        break;
+}
+
+@code {
+    /// <summary>Buttons at the right of the title, such as Sign out.</summary>
+    [Parameter]
+    public RenderFragment? HeaderActions { get; set; }
+
+    /// <summary>What to offer when there is no camera yet.</summary>
+    [Parameter]
+    public RenderFragment? Empty { get; set; }
+
+    [Parameter]
+    public EventCallback SignedOut { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Cameras.Changed += OnChanged;
+        await Cameras.StartAsync(CancellationToken.None);
+        await ReportSignedOutAsync();
+    }
+
+    public void Dispose() => Cameras.Changed -= OnChanged;
+
+    private async Task RetryAsync() => await Cameras.RetryAsync(CancellationToken.None);
+
+    private void OnChanged() => InvokeAsync(async () =>
+    {
+        StateHasChanged();
+        await ReportSignedOutAsync();
+    });
+
+    private Task ReportSignedOutAsync() =>
+        Cameras.State == CameraListState.SignedOut ? SignedOut.InvokeAsync() : Task.CompletedTask;
+
+    private string Status(CameraInfo camera)
+    {
+        if (!camera.Online)
+        {
+            return L["CameraOffline"];
+        }
+
+        var parts = new List<string> { $"{L["CameraOnline"]} · {(camera.Publishing ? L["CameraStreaming"] : L["CameraIdle"])}" };
+        if (camera.BatteryLevel is { } battery)
+        {
+            parts.Add(camera.IsCharging == true ? $"{L["CameraBattery", battery]} ({L["CameraCharging"]})" : L["CameraBattery", battery]);
+        }
+
+        if (camera.TemperatureC is { } temperature)
+        {
+            parts.Add(L["CameraTemperature", Math.Round(temperature)]);
+        }
+
+        return string.Join(" · ", parts);
+    }
+}

@@ -1,0 +1,33 @@
+@inject IStringLocalizer<Strings> L
+@inject CameraListController Cameras
+
+@if (Camera.CanRecord)
+{
+    <label class="toggle" @onclick:stopPropagation="true">
+        <input type="checkbox" checked="@Camera.Recording" disabled="@busy" @onchange="ToggleAsync" />
+        <span>@L["RecordAlways"]</span>
+    </label>
+}
+else
+{
+    <span class="muted">@L["RecordingNeedsH264"]</span>
+}
+@if (failed)
+{
+    <span class="error" role="alert">@L["RecordingFailed"]</span>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public CameraInfo Camera { get; set; } = default!;
+
+    private bool busy;
+    private bool failed;
+
+    private async Task ToggleAsync(ChangeEventArgs change)
+    {
+        busy = true;
+        failed = !await Cameras.SetRecordingAsync(Camera.Id, change.Value is true);
+        busy = false;
+    }
+}

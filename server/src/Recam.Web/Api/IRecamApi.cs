@@ -12,4 +12,7 @@ public interface IRecamApi
     Task<FirstOpenOutcome> FirstOpenAsync(string code, bool remember, CancellationToken cancellationToken);
 
     Task SignOutAsync(CancellationToken cancellationToken);
+
+    /// <summary>The server's cameras, or null when this browser is no longer a Monitor.</summary>
+    Task<IReadOnlyList<CameraInfo>?> GetCamerasAsync(CancellationToken cancellationToken);
 }

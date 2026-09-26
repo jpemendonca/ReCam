@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Recam.Web;
 using Recam.Web.Api;
+using Recam.Web.Cameras;
+using Recam.Web.Live;
+using Recam.Web.Realtime;
 using Recam.Web.Start;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
@@ -18,6 +21,10 @@ builder.Services.AddScoped(_ =>
     return http;
 });
 builder.Services.AddScoped<IRecamApi, HttpRecamApi>();
+builder.Services.AddScoped<IDeviceHub, SignalRDeviceHub>();
+builder.Services.AddTransient<ILiveVideo, JsLiveVideo>();
 builder.Services.AddTransient<StartController>();
+builder.Services.AddScoped<CameraListController>();
+builder.Services.AddTransient<LiveController>();
 
 await builder.Build().RunAsync();

@@ -16,6 +16,8 @@ public sealed class FakeRecamApi : IRecamApi
 
     public List<bool> RememberSent { get; } = [];
 
+    public List<CameraInfo> Cameras { get; } = [];
+
     public Task<MeInfo?> GetMeAsync(CancellationToken cancellationToken)
     {
         ThrowIfOffline();
@@ -51,6 +53,12 @@ public sealed class FakeRecamApi : IRecamApi
         ThrowIfOffline();
         Me = null;
         return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<CameraInfo>?> GetCamerasAsync(CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        return Task.FromResult<IReadOnlyList<CameraInfo>?>(Me is null ? null : [.. Cameras]);
     }
 
     private void ThrowIfOffline()

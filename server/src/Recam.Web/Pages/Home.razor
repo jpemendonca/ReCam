@@ -40,11 +40,11 @@
         break;
 
     case StartState.Monitor:
-        <section class="card">
-            <h1>@L["MonitorTitle"]</h1>
-            <p>@L["MonitorText", Start.Me?.Name ?? string.Empty]</p>
-            <button class="secondary" @onclick="SignOutAsync" disabled="@Start.Busy">@L["SignOut"]</button>
-        </section>
+        <CameraList SignedOut="LoadAsync">
+            <HeaderActions>
+                <button class="secondary" @onclick="SignOutAsync" disabled="@Start.Busy">@L["SignOut"]</button>
+            </HeaderActions>
+        </CameraList>
         break;
 
     case StartState.Offline:
