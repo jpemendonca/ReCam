@@ -1303,7 +1303,7 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
   > fase. Testes: bUnit dos aparelhos (marca deste navegador, remover confirmado e cancelado), do
   > Adicionar Monitor e da barra do topo. Gate verde (259 testes no servidor e no web, 223 no app).
 
-- [ ] **6.7 Conectar navegador pelo celular**
+- [x] **6.7 Conectar navegador pelo celular**
   - Origem: ADR 0038 (segundo navegador, cookie apagado).
   - Escopo: servidor com a entidade `BrowserLink` e as rotas `POST /api/browser-links`,
     `/approve` e `/claim` (`SPECS.md` 3 e 5.5): o QR leva o segredo de aprovação, o navegador guarda
@@ -1312,6 +1312,26 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
     espera. App: item **Conectar navegador** no menu do Monitor, que lê o QR e aprova.
   - Aceite: testes do domínio e de integração (aprovar só Monitor, resgate só com o segredo certo,
     expirado, usado duas vezes), teste do controller no app e bUnit da espera.
+  > Validação (2026-09-26): código escrito; servidor e navegador percorridos no PC, a parte do app
+  > só em testes (sem celular). Servidor: entidade `BrowserLink` (dois segredos: o de aprovação vai
+  > no QR, o de resgate fica no navegador; 10 minutos; aprovar só por Monitor ativo; resgate uma
+  > vez, que cria um `Viewer` com o nome do navegador), migração `BrowserLinks`, rotas
+  > `POST /api/browser-links` (com o mesmo limite por IP do código), `/approve` e `/claim` (que grava o
+  > cookie). Link desconhecido, vencido, usado ou com segredo errado responde 404 igual. QR
+  > `recam://connect-browser?v=1&l=<id>&s=<segredo>` (`SPECS.md` 5.2). Navegador: `ConnectController`
+  > e o painel no lugar de "já tem um Monitor", com o QR, a contagem, "Lembrar neste computador" e
+  > a espera de 2 em 2 s; quando o celular aprova, o navegador vira Monitor sem recarregar. App:
+  > `BrowserLinkCode` (parse), `approveBrowserLink` na API, `ConnectBrowserController`, a tela
+  > `ConnectBrowserScreen` (instruções, **Ler QR code**, mensagens de pronto, QR errado, vencido e sem
+  > conexão) e o item **Conectar navegador** no menu do Monitor, textos nos ARB. Junto: o layout do
+  > navegador passou a abrir o hub assim que ele é Monitor, em qualquer página (antes só a lista
+  > abria, e o navegador aparecia offline em Aparelhos depois de recarregar ali). Observado no
+  > Chromium: o primeiro navegador virou Monitor e pareou um "celular" Monitor pela API; um segundo
+  > navegador mostrou "Este servidor já tem um Monitor" com o QR; o QR foi lido da captura de tela
+  > com o OpenCV, como uma câmera leria; o "celular" aprovou com a credencial dele (204) e o segundo
+  > navegador virou Monitor sozinho, com cookie persistente, e apareceu em Aparelhos. Testes: domínio
+  > e rotas do link no servidor, controller e página no navegador, parse, controller e tela no app.
+  > Gate verde (273 testes no servidor e no web, 230 no app).
 
 - [ ] **6.8 App abre em "Ler QR code"**
   - Origem: ADR 0040.

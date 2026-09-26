@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Recam.Web.Api;
+using Recam.Web.Cameras;
 using Recam.Web.Layout;
+using Recam.Web.Realtime;
 using Recam.Web.Start;
 using Recam.Web.Tests.Support;
 
@@ -9,12 +11,15 @@ namespace Recam.Web.Tests.Layout;
 public sealed class MainLayoutTests : BunitContext
 {
     private readonly FakeRecamApi _api = new();
+    private readonly FakeDeviceHub _hub = new();
 
     public MainLayoutTests()
     {
         Services.AddLocalization();
         Services.AddSingleton<IRecamApi>(_api);
         Services.AddSingleton<StartController>();
+        Services.AddSingleton<IDeviceHub>(_hub);
+        Services.AddSingleton<CameraListController>();
     }
 
     [Fact(DisplayName = "A Monitor sees the navigation and Sign out in the top bar")]
@@ -30,6 +35,7 @@ public sealed class MainLayoutTests : BunitContext
         // assert
         layout.WaitForAssertion(() => Assert.Equal(["Câmeras", "Gravações", "Aparelhos"], layout.FindAll("nav a").Select(link => link.TextContent)));
         Assert.Equal("Sair", layout.Find("nav button").TextContent);
+        Assert.True(_hub.Connected);
     }
 
     [Fact(DisplayName = "Before the code, the top bar has only the name")]
@@ -41,6 +47,7 @@ public sealed class MainLayoutTests : BunitContext
         // assert
         layout.WaitForAssertion(() => Assert.Equal(StartState.NeedsCode, Services.GetRequiredService<StartController>().State));
         Assert.Empty(layout.FindAll("nav"));
+        Assert.False(_hub.Connected);
     }
 
     [Fact(DisplayName = "Sign out revokes this browser and starts the app over")]

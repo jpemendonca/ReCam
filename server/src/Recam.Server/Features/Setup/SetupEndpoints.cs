@@ -17,7 +17,7 @@ namespace Recam.Server.Features.Setup;
 /// </summary>
 public static class SetupEndpoints
 {
-    private const string RateLimitPolicy = "first-open";
+    public const string RateLimitPolicy = "first-open";
 
     public static IServiceCollection AddSetup(this IServiceCollection services)
     {
@@ -36,6 +36,7 @@ public static class SetupEndpoints
         endpoints.MapGet("/api/web/first-open", GetStatusAsync);
         endpoints.MapPost("/api/web/first-open", OpenAsync).RequireRateLimiting(RateLimitPolicy);
         endpoints.MapPost("/api/web/sign-out", SignOutAsync).RequireAuthorization();
+        endpoints.MapBrowserLinkEndpoints();
         return endpoints;
     }
 

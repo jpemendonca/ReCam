@@ -338,6 +338,16 @@ recam://pair?v=1&t=<token>&r=<role>&f=<fingerprint>&u=<url>&u=<url>
 - `u`: URL base do servidor, percent-encoded. Uma ou mais, em ordem de preferência. O app tenta
   cada uma e fica com a primeira que responder `GET /health`.
 
+QR de "Conectar navegador" (fase 6), mostrado por um navegador que ainda não é Monitor e lido pelo
+menu **Conectar navegador** de um celular Monitor:
+
+```
+recam://connect-browser?v=1&l=<id do link, 32 hexadecimais>&s=<segredo de aprovação>
+```
+
+Não leva endereço nem fingerprint: o celular que lê já está pareado com o servidor. O segredo de
+resgate, que busca a credencial, nunca sai do navegador (seção 3, `BrowserLink`).
+
 O app rejeita o QR se `v` for diferente de `1`, se faltar `t`, se não houver `u` válida ou se
 `f` estiver presente sem ter 64 caracteres hexadecimais. O parse devolve todos os erros de uma
 vez.

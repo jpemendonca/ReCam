@@ -15,6 +15,7 @@ import 'l10n/generated/app_localizations.dart';
 import 'core/pairing/device_role.dart';
 import 'pairing_router.dart';
 import 'viewer/add_device_screen.dart';
+import 'viewer/connect_browser_screen.dart';
 import 'viewer/devices_screen.dart';
 import 'viewer/recordings_screen.dart';
 import 'viewer/camera_list_controller.dart';
@@ -140,6 +141,16 @@ class _HomeShellState extends State<HomeShell> {
     ),
   );
 
+  void _connectBrowser(ViewerPaired paired) => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) => ConnectBrowserScreen(
+        api: widget.api,
+        session: paired.session,
+        readCode: widget.readCode,
+      ),
+    ),
+  );
+
   Future<void> _confirmReset() async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
@@ -199,6 +210,9 @@ class _HomeShellState extends State<HomeShell> {
                 (_MenuAction.addMonitor, final ViewerPaired paired) =>
                   _addMonitor(paired),
                 (_MenuAction.addMonitor, _) => null,
+                (_MenuAction.connectBrowser, final ViewerPaired paired) =>
+                  _connectBrowser(paired),
+                (_MenuAction.connectBrowser, _) => null,
                 (_MenuAction.recordings, final ViewerPaired paired) =>
                   _openRecordings(paired),
                 (_MenuAction.recordings, _) => null,
@@ -220,6 +234,10 @@ class _HomeShellState extends State<HomeShell> {
                   PopupMenuItem(
                     value: _MenuAction.addMonitor,
                     child: Text(l10n.addMonitorButton),
+                  ),
+                  PopupMenuItem(
+                    value: _MenuAction.connectBrowser,
+                    child: Text(l10n.connectBrowserButton),
                   ),
                 ],
                 PopupMenuItem(
@@ -293,4 +311,4 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
-enum _MenuAction { recordings, devices, addMonitor, reset }
+enum _MenuAction { recordings, devices, addMonitor, connectBrowser, reset }

@@ -34,6 +34,12 @@ public sealed class FakeRecamApi : IRecamApi
 
     public List<Guid> Removed { get; } = [];
 
+    /// <summary>"Connect browser" links created, with whether a Monitor phone approved them.</summary>
+    public List<(BrowserLinkInfo Link, bool Approved)> Links { get; } = [];
+
+    /// <summary>A Monitor phone reads the last link's QR and approves it.</summary>
+    public void ApproveLastLink() => Links[^1] = Links[^1] with { Approved = true };
+
     public QuotaInfo Quota { get; set; } = new(2048, 300L * 1024 * 1024, 10L * 1024 * 1024 * 1024);
 
     /// <summary>A phone scans the last QR; a camera also shows up in the list.</summary>
@@ -82,6 +88,34 @@ public sealed class FakeRecamApi : IRecamApi
         ThrowIfOffline();
         Me = null;
         return Task.CompletedTask;
+    }
+
+    public Task<BrowserLinkInfo> CreateBrowserLinkAsync(CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        var link = new BrowserLinkInfo(Guid.NewGuid(), $"recam://connect-browser?v=1&l=link{Links.Count + 1}&s=secret", $"claim{Links.Count + 1}", TokenValidFor);
+        Links.Add((link, false));
+        return Task.FromResult(link);
+    }
+
+    public Task<ClaimOutcome> ClaimBrowserLinkAsync(BrowserLinkInfo link, bool remember, CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        var entry = Links.SingleOrDefault(candidate => candidate.Link.Id == link.Id);
+        if (entry.Link is null)
+        {
+            return Task.FromResult(ClaimOutcome.Gone);
+        }
+
+        if (!entry.Approved)
+        {
+            return Task.FromResult(ClaimOutcome.Waiting);
+        }
+
+        OtherMonitor = true;
+        RememberSent.Add(remember);
+        Me = new MeInfo(Guid.NewGuid(), "Navegador · Firefox no Linux", "viewer");
+        return Task.FromResult(ClaimOutcome.Claimed);
     }
 
     public Task<PairingTokenInfo> CreatePairingTokenAsync(DeviceKind kind, CancellationToken cancellationToken)

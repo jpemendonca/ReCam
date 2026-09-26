@@ -111,5 +111,13 @@
   "removeDeviceTitle": "Remover {name}?",
   "removeDeviceMessage": "Ele sai do servidor na hora. Para usar de novo, pareie outra vez com um QR code novo.",
   "removeDeviceConfirm": "Remover",
-  "removeDeviceFailed": "Não deu para remover o aparelho. Confira a conexão com o servidor."
+  "removeDeviceFailed": "Não deu para remover o aparelho. Confira a conexão com o servidor.",
+  "connectBrowserButton": "Conectar navegador",
+  "connectBrowserTitle": "Conectar navegador",
+  "connectBrowserInstructions": "No computador, abra o endereço do servidor no navegador. Ele mostra um QR code. Toque em Ler QR code e aponte para a tela.",
+  "connectBrowserScan": "Ler QR code",
+  "connectBrowserDone": "Navegador conectado. Ele já mostra as câmeras.",
+  "connectBrowserWrongCode": "Este QR code não é de Conectar navegador.",
+  "connectBrowserExpired": "Este QR code expirou ou já foi usado. Recarregue a página no navegador.",
+  "connectBrowserFailed": "Não deu para conectar o navegador. Confira a conexão com o servidor."
 }

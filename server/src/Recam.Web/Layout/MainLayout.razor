@@ -2,6 +2,7 @@
 @implements IDisposable
 @inject IStringLocalizer<Strings> L
 @inject StartController Start
+@inject CameraListController Cameras
 @inject NavigationManager Navigation
 
 <header class="bar">
@@ -21,10 +22,11 @@
 </main>
 
 @code {
-    protected override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
         Start.Changed += OnChanged;
-        return Start.EnsureLoadedAsync(CancellationToken.None);
+        await Start.EnsureLoadedAsync(CancellationToken.None);
+        await ConnectIfMonitorAsync();
     }
 
     public void Dispose() => Start.Changed -= OnChanged;
@@ -36,5 +38,14 @@
         Navigation.NavigateTo("", forceLoad: true);
     }
 
-    private void OnChanged() => InvokeAsync(StateHasChanged);
+    // A Monitor keeps its hub connection on every page, so it shows as online and live updates
+    // arrive wherever the person is.
+    private Task ConnectIfMonitorAsync() =>
+        Start.State == StartState.Monitor ? Cameras.StartAsync(CancellationToken.None) : Task.CompletedTask;
+
+    private void OnChanged() => InvokeAsync(async () =>
+    {
+        StateHasChanged();
+        await ConnectIfMonitorAsync();
+    });
 }

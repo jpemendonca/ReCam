@@ -219,6 +219,40 @@ class HttpApiClient implements ApiClient {
   }
 
   @override
+  Future<ApiFailureKind?> approveBrowserLink(
+    Uri baseUrl,
+    String credential,
+    String linkId,
+    String secret,
+  ) async {
+    final http.Response response;
+    try {
+      response = await _client
+          .post(
+            baseUrl.resolve('/api/browser-links/$linkId/approve'),
+            headers: {
+              HttpHeaders.authorizationHeader: 'Bearer $credential',
+              HttpHeaders.contentTypeHeader: 'application/json',
+            },
+            body: jsonEncode({'secret': secret}),
+          )
+          .timeout(timeout);
+    } on IOException {
+      return ApiFailureKind.unreachable;
+    } on http.ClientException {
+      return ApiFailureKind.unreachable;
+    } on TimeoutException {
+      return ApiFailureKind.unreachable;
+    }
+    return switch (response.statusCode) {
+      HttpStatus.noContent => null,
+      HttpStatus.unauthorized => ApiFailureKind.unauthorized,
+      HttpStatus.notFound || HttpStatus.forbidden => ApiFailureKind.rejected,
+      _ => ApiFailureKind.unexpected,
+    };
+  }
+
+  @override
   Future<ApiFailureKind?> removeDevice(
     Uri baseUrl,
     String credential,

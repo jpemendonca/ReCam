@@ -10,6 +10,8 @@ public sealed class RecamDbContext(DbContextOptions<RecamDbContext> options) : D
 
     public DbSet<PairingToken> PairingTokens => Set<PairingToken>();
 
+    public DbSet<BrowserLink> BrowserLinks => Set<BrowserLink>();
+
     public DbSet<RecordingQuota> RecordingQuotas => Set<RecordingQuota>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
@@ -36,6 +38,16 @@ public sealed class RecamDbContext(DbContextOptions<RecamDbContext> options) : D
 
             // Two requests racing with the same token: only the first save wins, the other fails.
             token.Property(t => t.UsedAt).IsConcurrencyToken();
+        });
+
+        modelBuilder.Entity<BrowserLink>(link =>
+        {
+            link.HasKey(l => l.Id);
+            link.Property(l => l.ClaimHash).HasMaxLength(32);
+            link.Property(l => l.ApprovalHash).HasMaxLength(32);
+
+            // A claim racing another claim of the same link: only the first save wins.
+            link.Property(l => l.DeviceId).IsConcurrencyToken();
         });
 
         modelBuilder.Entity<RecordingQuota>(quota =>

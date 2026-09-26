@@ -13,6 +13,11 @@ public interface IRecamApi
 
     Task SignOutAsync(CancellationToken cancellationToken);
 
+    /// <summary>Starts "Connect browser": a QR code for a Monitor phone to approve.</summary>
+    Task<BrowserLinkInfo> CreateBrowserLinkAsync(CancellationToken cancellationToken);
+
+    Task<ClaimOutcome> ClaimBrowserLinkAsync(BrowserLinkInfo link, bool remember, CancellationToken cancellationToken);
+
     Task<PairingTokenInfo> CreatePairingTokenAsync(DeviceKind kind, CancellationToken cancellationToken);
 
     /// <summary>Whether a phone already paired with the QR this browser created.</summary>

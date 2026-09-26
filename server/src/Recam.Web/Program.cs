@@ -27,6 +27,7 @@ builder.Services.AddScoped<IRecamApi, HttpRecamApi>();
 builder.Services.AddScoped<IDeviceHub, SignalRDeviceHub>();
 builder.Services.AddTransient<ILiveVideo, JsLiveVideo>();
 builder.Services.AddScoped<StartController>();
+builder.Services.AddTransient<ConnectController>();
 builder.Services.AddScoped<CameraListController>();
 builder.Services.AddTransient<LiveController>();
 builder.Services.AddTransient<AddDeviceController>();

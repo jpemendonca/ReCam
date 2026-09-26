@@ -61,6 +61,15 @@ abstract interface class ApiClient {
     DateTime utcDay,
   );
 
+  /// Lets a browser in as a Monitor ("Connect browser"). Returns null when the server
+  /// approved; [ApiFailureKind.rejected] when the code expired, was used or is wrong.
+  Future<ApiFailureKind?> approveBrowserLink(
+    Uri baseUrl,
+    String credential,
+    String linkId,
+    String secret,
+  );
+
   /// Returns null when the server accepted the new quota.
   Future<ApiFailureKind?> setRecordingQuota(
     Uri baseUrl,

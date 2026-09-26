@@ -120,6 +120,9 @@
   <data name="CodeWrong" xml:space="preserve">
     <value>Código errado. Confira no log do servidor; depois de cinco erros ele mostra um código novo.</value>
   </data>
+  <data name="ConnectWaiting" xml:space="preserve">
+    <value>Esperando o celular…</value>
+  </data>
   <data name="DevicesCameras" xml:space="preserve">
     <value>Câmeras</value>
   </data>
@@ -238,7 +241,7 @@
     <value>Remover {0}?</value>
   </data>
   <data name="ServerTakenText" xml:space="preserve">
-    <value>Para assistir neste navegador, abra o ReCam num celular Monitor e escolha Conectar navegador.</value>
+    <value>Para assistir neste navegador, abra o ReCam num celular Monitor, toque em ⋮ &gt; Conectar navegador e leia este QR code.</value>
   </data>
   <data name="ServerTakenTitle" xml:space="preserve">
     <value>Este servidor já tem um Monitor</value>

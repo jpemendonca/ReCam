@@ -127,6 +127,20 @@ class FakeApiClient implements ApiClient {
     return removeFailure;
   }
 
+  final List<({String linkId, String secret})> approvedLinks = [];
+  ApiFailureKind? approveLinkFailure;
+
+  @override
+  Future<ApiFailureKind?> approveBrowserLink(
+    Uri baseUrl,
+    String credential,
+    String linkId,
+    String secret,
+  ) async {
+    approvedLinks.add((linkId: linkId, secret: secret));
+    return approveLinkFailure;
+  }
+
   List<DateTime> recordingDaysResult = [];
   final Map<DateTime, List<RecordingPieceInfo>> recordingsByDay = {};
   final List<DateTime> recordingDayCalls = [];

@@ -81,7 +81,12 @@ public sealed class Device
     /// The browser that typed the first-time code becomes the owner. The rules that allow it
     /// live in <see cref="FirstOpenCode"/>.
     /// </summary>
-    internal static PairedDevice CreateFirstMonitor(string name, DateTimeOffset now)
+    internal static PairedDevice CreateFirstMonitor(string name, DateTimeOffset now) => CreateBrowser(name, DeviceRole.Owner, now);
+
+    /// <summary>A browser a Monitor phone approved becomes a viewer (<see cref="BrowserLink"/>).</summary>
+    internal static PairedDevice CreateLinkedBrowser(string name, DateTimeOffset now) => CreateBrowser(name, DeviceRole.Viewer, now);
+
+    private static PairedDevice CreateBrowser(string name, DeviceRole role, DateTimeOffset now)
     {
         if (DeviceName.Validate(name).Count > 0)
         {
@@ -93,7 +98,7 @@ public sealed class Device
         {
             Id = Guid.CreateVersion7(now),
             Name = name.Trim(),
-            Role = DeviceRole.Owner,
+            Role = role,
             CredentialHash = SecretToken.Hash(secret),
             CreatedAt = now,
         };

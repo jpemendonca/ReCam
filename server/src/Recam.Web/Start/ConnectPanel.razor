@@ -1,0 +1,75 @@
+@implements IAsyncDisposable
+@inject IStringLocalizer<Strings> L
+@inject ConnectController Connect
+
+<div class="connect">
+    @if (Connect.Failed)
+    {
+        <p class="error" role="alert">@L["AddFailed"]</p>
+        <button @onclick="Connect.StartAsync">@L["OfflineRetry"]</button>
+    }
+    else if (Connect.QrSvg is null)
+    {
+        <div class="loading" aria-hidden="true"></div>
+    }
+    else
+    {
+        <div class="qr" aria-label="@L["AddQrLabel"]">@((MarkupString)Connect.QrSvg)</div>
+        <p class="expires">@L["ConnectWaiting"] @L["AddExpiresIn", Connect.Remaining.ToString(@"m\:ss", System.Globalization.CultureInfo.InvariantCulture)]</p>
+        <label class="check">
+            <input type="checkbox" @bind="Connect.Remember" />
+            @L["CodeRemember"]
+        </label>
+    }
+</div>
+
+@code {
+    private static readonly TimeSpan Second = TimeSpan.FromSeconds(1);
+
+    [Parameter]
+    public EventCallback Connected { get; set; }
+
+    private PeriodicTimer? timer;
+    private bool reported;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Connect.Changed += OnChanged;
+        await Connect.StartAsync();
+        _ = RunAsync();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Connect.Changed -= OnChanged;
+        timer?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+
+    private async Task RunAsync()
+    {
+        timer = new PeriodicTimer(Second);
+        var ticks = 0;
+        while (await timer.WaitForNextTickAsync())
+        {
+            await InvokeAsync(async () =>
+            {
+                await Connect.Tick(Second);
+                if (++ticks % 2 == 0)
+                {
+                    await Connect.CheckAsync();
+                }
+            });
+        }
+    }
+
+    private void OnChanged() => InvokeAsync(async () =>
+    {
+        StateHasChanged();
+        if (Connect.Connected && !reported)
+        {
+            reported = true;
+            await Connected.InvokeAsync();
+        }
+    });
+}

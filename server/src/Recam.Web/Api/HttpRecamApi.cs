@@ -66,6 +66,28 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
         return await response.Content.ReadFromJsonAsync<List<CameraInfo>>(Json, cancellationToken) ?? [];
     }
 
+    public async Task<BrowserLinkInfo> CreateBrowserLinkAsync(CancellationToken cancellationToken)
+    {
+        using var response = await http.PostAsync(new Uri("api/browser-links", UriKind.Relative), null, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var link = await response.Content.ReadFromJsonAsync<CreatedLink>(Json, cancellationToken)
+            ?? throw new HttpRequestException("The server answered an empty link.");
+        return new BrowserLinkInfo(link.Id, link.QrUri, link.Claim, ValidFor(link.ExpiresAt, response));
+    }
+
+    public async Task<ClaimOutcome> ClaimBrowserLinkAsync(BrowserLinkInfo link, bool remember, CancellationToken cancellationToken)
+    {
+        using var response = await http.PostAsJsonAsync(
+            new Uri($"api/browser-links/{link.Id}/claim", UriKind.Relative), new { claim = link.Claim, remember }, Json, cancellationToken);
+        return response.StatusCode switch
+        {
+            HttpStatusCode.NoContent => ClaimOutcome.Claimed,
+            HttpStatusCode.Conflict => ClaimOutcome.Waiting,
+            HttpStatusCode.NotFound => ClaimOutcome.Gone,
+            _ => throw new HttpRequestException($"Unexpected answer {(int)response.StatusCode} to the browser link.", null, response.StatusCode),
+        };
+    }
+
     public async Task<PairingTokenInfo> CreatePairingTokenAsync(DeviceKind kind, CancellationToken cancellationToken)
     {
         var role = kind == DeviceKind.Camera ? "camera" : "viewer";
@@ -74,12 +96,7 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
         var token = await response.Content.ReadFromJsonAsync<CreatedToken>(Json, cancellationToken)
             ?? throw new HttpRequestException("The server answered an empty pairing token.");
 
-        // Measured against the server's clock, which may differ from this computer's. The Date
-        // header has whole seconds, so one second comes off to never promise more than there is.
-        var validFor = response.Headers.Date is { } serverNow
-            ? token.ExpiresAt - serverNow - TimeSpan.FromSeconds(1)
-            : token.ExpiresAt - DateTimeOffset.UtcNow;
-        return new PairingTokenInfo(token.Id, token.QrUri, validFor);
+        return new PairingTokenInfo(token.Id, token.QrUri, ValidFor(token.ExpiresAt, response));
     }
 
     public async Task<bool> IsPairingTokenUsedAsync(Guid tokenId, CancellationToken cancellationToken)
@@ -126,7 +143,16 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
         return true;
     }
 
+    // Measured against the server's clock, which may differ from this computer's. The Date header
+    // has whole seconds, so one second comes off to never promise more than there is.
+    private static TimeSpan ValidFor(DateTimeOffset expiresAt, HttpResponseMessage response) =>
+        response.Headers.Date is { } serverNow
+            ? expiresAt - serverNow - TimeSpan.FromSeconds(1)
+            : expiresAt - DateTimeOffset.UtcNow;
+
     private sealed record FirstOpenStatus(bool Open);
+
+    private sealed record CreatedLink(Guid Id, string QrUri, string Claim, DateTimeOffset ExpiresAt);
 
     private sealed record CreatedToken(Guid Id, string QrUri, DateTimeOffset ExpiresAt);
 

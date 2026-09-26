@@ -120,6 +120,9 @@
   <data name="CodeWrong" xml:space="preserve">
     <value>Wrong code. Check it in the server log; after five wrong tries the server prints a new one.</value>
   </data>
+  <data name="ConnectWaiting" xml:space="preserve">
+    <value>Waiting for the phone…</value>
+  </data>
   <data name="DevicesCameras" xml:space="preserve">
     <value>Cameras</value>
   </data>
@@ -238,7 +241,7 @@
     <value>Remove {0}?</value>
   </data>
   <data name="ServerTakenText" xml:space="preserve">
-    <value>To watch in this browser, open ReCam on a Monitor phone and choose Connect browser.</value>
+    <value>To watch in this browser, open ReCam on a Monitor phone, tap ⋮ &gt; Connect browser and scan this QR code.</value>
   </data>
   <data name="ServerTakenTitle" xml:space="preserve">
     <value>This server already has a Monitor</value>

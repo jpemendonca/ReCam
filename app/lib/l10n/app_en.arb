@@ -198,5 +198,13 @@
   },
   "removeDeviceMessage": "It leaves the server at once. To use it again, pair it again with a new QR code.",
   "removeDeviceConfirm": "Remove",
-  "removeDeviceFailed": "Could not remove the device. Check the connection to the server."
+  "removeDeviceFailed": "Could not remove the device. Check the connection to the server.",
+  "connectBrowserButton": "Connect browser",
+  "connectBrowserTitle": "Connect browser",
+  "connectBrowserInstructions": "On the computer, open the server address in the browser. It shows a QR code. Tap Scan QR code and point at the screen.",
+  "connectBrowserScan": "Scan QR code",
+  "connectBrowserDone": "Browser connected. It already shows the cameras.",
+  "connectBrowserWrongCode": "This is not a Connect browser QR code.",
+  "connectBrowserExpired": "This QR code expired or was already used. Reload the page in the browser.",
+  "connectBrowserFailed": "Could not connect the browser. Check the connection to the server."
 }

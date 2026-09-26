@@ -21,6 +21,7 @@ public sealed class HomeTests : BunitContext
         Services.AddSingleton<IDeviceHub>(new FakeDeviceHub());
         Services.AddSingleton<CameraListController>();
         Services.AddTransient<AddDeviceController>();
+        Services.AddSingleton<ConnectController>();
     }
 
     [Theory(DisplayName = "Without a Monitor, the start page asks for the first-time code, in the browser's language")]
@@ -84,5 +85,24 @@ public sealed class HomeTests : BunitContext
         // assert
         Assert.Equal("This server already has a Monitor", page.Find("h1").TextContent);
         Assert.Contains("Connect browser", page.Find("p").TextContent, StringComparison.Ordinal);
+    }
+
+    [Fact(DisplayName = "When a Monitor phone approves the QR, this browser becomes a Monitor")]
+    public async Task Connect_Approved_ShowsCameras()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        _api.OtherMonitor = true;
+        var page = Render<Home>();
+        page.WaitForAssertion(() => Assert.NotNull(page.Find(".qr svg")));
+        page.Find(".connect input[type=checkbox]").Change(false);
+        _api.ApproveLastLink();
+
+        // act
+        await page.InvokeAsync(Services.GetRequiredService<ConnectController>().CheckAsync);
+
+        // assert
+        page.WaitForAssertion(() => Assert.Equal("Câmeras", page.Find("h1").TextContent));
+        Assert.Equal([false], _api.RememberSent);
     }
 }
