@@ -130,6 +130,7 @@ class CameraListController extends ChangeNotifier {
     hub: hub,
     viewer: _viewerFactory(cameraId),
     cameraId: cameraId,
+    torchOn: camera(cameraId)?.torchOn ?? false,
   );
 
   Future<void> stop() async {

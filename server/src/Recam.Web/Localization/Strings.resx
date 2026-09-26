@@ -99,6 +99,9 @@
   <data name="CameraTemperature" xml:space="preserve">
     <value>{0} °C</value>
   </data>
+  <data name="CameraTorchOn" xml:space="preserve">
+    <value>Flashlight on</value>
+  </data>
   <data name="CamerasEmpty" xml:space="preserve">
     <value>No cameras yet.</value>
   </data>

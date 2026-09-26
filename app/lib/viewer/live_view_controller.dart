@@ -25,6 +25,7 @@ class LiveViewController extends ChangeNotifier {
     Delay? delay,
     this.maxAttempts = 20,
     this.retryInterval = const Duration(seconds: 1),
+    this._torchOn = false,
   }) : _delay = delay ?? Future<void>.delayed;
 
   final HubSession _hub;
@@ -35,7 +36,9 @@ class LiveViewController extends ChangeNotifier {
   final Duration retryInterval;
 
   LiveViewState _state = LiveConnecting();
-  bool _torchOn = false;
+
+  /// Starts as the server last heard it, then follows what the camera reports.
+  bool _torchOn;
   bool _closed = false;
   int _generation = 0;
 

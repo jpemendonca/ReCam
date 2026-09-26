@@ -186,6 +186,27 @@ void main() {
       // assert
       expect(controller.camera('a')?.recording, isTrue);
     });
+
+    test('onStatusChanged_withTorchOn_opensLiveWithTheTorchOn', () async {
+      // arrange
+      api.cameraResults.addAll([
+        ApiSuccess([_camera('a', 'Kitchen')]),
+        ApiSuccess([_camera('a', 'Kitchen')]),
+      ]);
+      await controller.start();
+      await settle();
+
+      // act
+      hubClient.receive('CameraStatusChanged', [
+        {..._statusJson('a', 'Kitchen'), 'torchOn': true},
+      ]);
+      final live = controller.openLive('a');
+
+      // assert
+      expect(controller.camera('a')?.torchOn, isTrue);
+      expect(live.torchOn, isTrue);
+      live.dispose();
+    });
   });
 
   group('CameraListController removal', () {

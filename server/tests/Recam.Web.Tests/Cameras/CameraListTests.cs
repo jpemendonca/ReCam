@@ -138,4 +138,22 @@ public sealed class CameraListTests : BunitContext
         list.WaitForAssertion(() => Assert.Contains($"UnwatchCamera {camera.Id}", _hub.Calls));
         Assert.Equal("Ver imagem", list.Find("button.preview-toggle").TextContent.Trim());
     }
+
+    [Fact(DisplayName = "A card shows the flashlight while it is on, and follows the camera's reports")]
+    public void Render_TorchOn_ShowsIconUntilOff()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var camera = Support.Cameras.Make("Porta", publishing: true, torchOn: true);
+        _api.Cameras.Add(camera);
+        var list = Render<CameraList>();
+        var shown = list.Find(".torch").GetAttribute("title");
+
+        // act
+        _hub.SendTorch(camera.Id, false);
+
+        // assert
+        Assert.Equal("Lanterna ligada", shown);
+        list.WaitForAssertion(() => Assert.Empty(list.FindAll(".torch")));
+    }
 }

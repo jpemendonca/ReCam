@@ -39,6 +39,10 @@
                         <span class="dot @(camera.Publishing ? "live" : "off")"
                               title="@(camera.Publishing ? L["CameraStreaming"] : L["CameraNoPicture"])"></span>
                         <span class="name">@camera.Name</span>
+                        @if (camera.TorchOn)
+                        {
+                            <span class="torch" title="@L["CameraTorchOn"]" aria-label="@L["CameraTorchOn"]">🔦</span>
+                        }
                         @if (camera.Recording)
                         {
                             <span class="badge" title="@L["CameraRecording"]"><span class="rec" aria-hidden="true"></span>@L["CameraRecording"]</span>

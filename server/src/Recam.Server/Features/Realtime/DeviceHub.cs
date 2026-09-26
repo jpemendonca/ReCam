@@ -202,8 +202,15 @@ public sealed partial class DeviceHub(
     [Authorize(Policy = AuthExtensions.CameraOnly)]
     public async Task<HubResult> ReportTorch(bool torchOn)
     {
-        presence.RecordTorchChange(Context.User!.GetDeviceId(), timeProvider.GetUtcNow());
-        await Clients.Group(ViewersGroup).TorchChanged(Context.User!.GetDeviceId(), torchOn);
+        var cameraId = Context.User!.GetDeviceId();
+        presence.RecordTorchChange(cameraId, timeProvider.GetUtcNow());
+        presence.SetTorch(cameraId, torchOn);
+        await Clients.Group(ViewersGroup).TorchChanged(cameraId, torchOn);
+
+        // Camera lists show the torch too, and a live view opens with it.
+        await using var database = await databaseFactory.CreateDbContextAsync(Context.ConnectionAborted);
+        var camera = await database.Devices.SingleAsync(device => device.Id == cameraId, Context.ConnectionAborted);
+        await NotifyViewersAsync(camera);
         return HubResult.Success;
     }
 
@@ -223,7 +230,8 @@ public sealed partial class DeviceHub(
     }
 
     private Task NotifyViewersAsync(Device camera) =>
-        Clients.Group(ViewersGroup).CameraStatusChanged(camera.ToCameraStatus(presence.IsOnline(camera.Id), presence.IsPublishing(camera.Id)));
+        Clients.Group(ViewersGroup).CameraStatusChanged(
+            camera.ToCameraStatus(presence.IsOnline(camera.Id), presence.IsPublishing(camera.Id), presence.IsTorchOn(camera.Id)));
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Device {DeviceId} ({Role}) connected on {ConnectionId}")]
     private static partial void LogConnected(ILogger logger, Guid deviceId, string? role, string connectionId);

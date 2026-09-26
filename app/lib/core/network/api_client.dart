@@ -251,6 +251,7 @@ class CameraInfo {
     this.temperatureC,
     this.recording = false,
     this.canRecord = true,
+    this.torchOn = false,
   });
 
   final String id;
@@ -267,6 +268,9 @@ class CameraInfo {
   /// False for a camera that sends VP8, which the server cannot record.
   final bool canRecord;
 
+  /// The torch as the camera last reported it; off while it sends no video.
+  final bool torchOn;
+
   /// Returns null for data that does not describe a camera.
   static CameraInfo? tryParse(Object? json) {
     if (json is! Map<String, Object?>) return null;
@@ -279,6 +283,7 @@ class CameraInfo {
     final temperatureC = json['temperatureC'];
     final recording = json['recording'];
     final canRecord = json['canRecord'];
+    final torchOn = json['torchOn'];
     if (id is! String || name is! String || online is! bool) return null;
     return CameraInfo(
       id: id,
@@ -290,6 +295,7 @@ class CameraInfo {
       temperatureC: temperatureC is num ? temperatureC.toDouble() : null,
       recording: recording == true,
       canRecord: canRecord != false,
+      torchOn: torchOn == true,
     );
   }
 }

@@ -1677,13 +1677,24 @@ app e no navegador quando o bullet não disser outra coisa.
   > código do log (que sai emoldurado), e depois de um navegador virar Monitor o arquivo some e o
   > comando diz que já há Monitor.
 
-- [ ] **8.10 Correção: estado da lanterna**
+- [x] **8.10 Correção: estado da lanterna**
   - Origem: teste do autor em 2026-09-26: com a lanterna já acesa, o navegador mostrava "Ligar
     lanterna", e o primeiro clique não fazia nada.
   - Escopo: o servidor guarda em memória o estado que a câmera informa (`ReportTorch`) e o manda
     no status da câmera (`torchOn`); zera quando a câmera para de transmitir ou cai. O botão do ao
     vivo abre no estado certo, no app e no navegador, e o card mostra o ícone (8.8).
   - Aceite: testes do hub (estado guardado, enviado, zerado) e dos controllers.
+  > Validação (2026-09-26): só código escrito. Não percorrido no aparelho nem no navegador. O
+  > servidor passou a lembrar a lanterna que a câmera informa (`DevicePresence.SetTorch`, em
+  > memória), apagando quando a câmera para de transmitir (a lanterna é da trilha de vídeo e desliga
+  > junto) ou cai. O estado vai no status da câmera (`torchOn` em `GET /api/cameras` e em
+  > `CameraStatusChanged`), e o `ReportTorch` agora manda também o status, para as listas ficarem
+  > certas sem recarregar. Navegador: o ao vivo abre com o botão no estado certo ("Desligar
+  > lanterna" se já estiver acesa), e o card mostra 🔦 enquanto está acesa (seguindo o
+  > `TorchChanged`). App: o ao vivo abre com o estado da lista, e a linha da câmera mostra o ícone
+  > de lanterna. Tabela do SPECS 5.5 e 5.6 atualizadas. Testes: servidor guarda e esquece ao parar
+  > de transmitir e ao cair; navegador abre o ao vivo com "Desligar lanterna" e o card mostra e tira
+  > o ícone; app abre o ao vivo com a lanterna acesa a partir do status.
 
 ## Fase 9: áudio
 

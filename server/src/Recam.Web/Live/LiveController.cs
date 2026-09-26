@@ -27,9 +27,11 @@ public sealed class LiveController(IDeviceHub hub, ILiveVideo video) : IAsyncDis
 
     public event Action? Changed;
 
-    public async Task OpenAsync(Guid cameraId, ElementReference element)
+    /// <summary>Opens the live video; <paramref name="torchOn"/> is the torch as the server last heard it.</summary>
+    public async Task OpenAsync(Guid cameraId, ElementReference element, bool torchOn = false)
     {
         _cameraId = cameraId;
+        TorchOn = torchOn;
         _element = element;
         _open = true;
         hub.TorchChanged += OnTorchChanged;

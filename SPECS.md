@@ -413,7 +413,7 @@ Estado em 2026-09-26 (conferido no bullet 6.9). As revisões do log 12 contam co
 | `GET /api/pairing-tokens/{id}` | o Monitor que criou o token | — | `{ used }`; `404` para qualquer outro |
 | `GET /api/me` | qualquer aparelho | — | `{ deviceId, name, role }` |
 | `DELETE /api/me` | qualquer aparelho | — | `204`, o aparelho se revoga |
-| `GET /api/cameras` | Monitores | — | `[{ id, name, online, publishing, batteryLevel, isCharging, temperatureC, telemetryAt, recording, canRecord }]` |
+| `GET /api/cameras` | Monitores | — | `[{ id, name, online, publishing, batteryLevel, isCharging, temperatureC, telemetryAt, recording, canRecord, torchOn }]` |
 | `GET /api/devices` | Monitores | — | `[{ id, name, role, online }]`, câmeras primeiro |
 | `DELETE /api/devices/{id}` | Monitores | — | `204`; `409` para si mesmo, `404` já removido |
 | `GET /api/cameras/{id}/recording-days` | Monitores | — | `["AAAA-MM-DD"]`, dias UTC, do mais novo ao mais antigo |
@@ -450,7 +450,7 @@ Cliente → servidor. Todos devolvem `HubResult { ok, code, message }`.
 | `Heartbeat()` | qualquer aparelho | prova que a conexão funciona de ponta a ponta |
 | `ReportTelemetry({ batteryLevel, isCharging, temperatureC, supportsH264 })` | Camera | grava no `Device` e avisa os Monitores |
 | `ReportPublishing(bool publishing)` | Camera | atualiza o estado e avisa os Monitores |
-| `ReportTorch(bool on)` | Camera | avisa os Monitores |
+| `ReportTorch(bool on)` | Camera | guarda o estado em memória (apagado quando a câmera para de transmitir ou cai) e avisa os Monitores com `TorchChanged` e `CameraStatusChanged` |
 | `WatchCamera(Guid cameraId)` | Monitores | abre um lease. Se for o primeiro, manda `StartPublishing` à câmera |
 | `UnwatchCamera(Guid cameraId)` | Monitores | fecha o lease. Se não sobrar nenhum e a câmera não gravar, manda `StopPublishing` depois de 30 s de carência |
 | `SetTorch(Guid cameraId, bool on)` | Monitores | repassa à câmera. Erro `media.camera_not_publishing` se ela não estiver transmitindo |

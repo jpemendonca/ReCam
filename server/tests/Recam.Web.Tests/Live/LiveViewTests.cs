@@ -80,4 +80,20 @@ public sealed class LiveViewTests : BunitContext
         // assert
         page.WaitForAssertion(() => Assert.Equal("Não deu para mudar a lanterna. Espere o vídeo começar.", page.Find(".error").TextContent));
     }
+
+    [Fact(DisplayName = "With the torch already on, the live view opens offering to turn it off")]
+    public void Open_TorchAlreadyOn_ButtonTurnsOff()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var camera = Support.Cameras.Make("Porta", publishing: true, torchOn: true);
+        _api.Cameras.Add(camera);
+
+        // act
+        var page = Render<LiveView>(parameters => parameters.Add(view => view.CameraId, camera.Id));
+
+        // assert
+        page.WaitForAssertion(() => Assert.Empty(page.FindAll(".overlay")));
+        Assert.Equal("Desligar lanterna", page.Find(".controls button").TextContent.Trim());
+    }
 }

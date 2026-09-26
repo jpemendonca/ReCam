@@ -14,6 +14,7 @@ public sealed class DevicePresence
     private readonly ConcurrentDictionary<Guid, bool> _publishing = new();
     private readonly ConcurrentDictionary<Guid, int> _watchers = new();
     private readonly ConcurrentDictionary<Guid, List<DateTimeOffset>> _torchChanges = new();
+    private readonly ConcurrentDictionary<Guid, bool> _torchOn = new();
 
     /// <summary>How long torch changes are remembered, for motion detection to ignore them.</summary>
     public static readonly TimeSpan TorchMemory = TimeSpan.FromDays(3);
@@ -41,6 +42,7 @@ public sealed class DevicePresence
                 {
                     _publishing.TryRemove(deviceId, out _);
                     _onlineCameras.TryRemove(deviceId, out _);
+                    _torchOn.TryRemove(deviceId, out _);
                     return true;
                 }
             }
@@ -65,8 +67,26 @@ public sealed class DevicePresence
         else
         {
             _publishing.TryRemove(cameraId, out _);
+
+            // The torch belongs to the video track, so it goes off with it.
+            _torchOn.TryRemove(cameraId, out _);
         }
     }
+
+    /// <summary>What the camera last said its torch did; off when it stops publishing or goes offline.</summary>
+    public void SetTorch(Guid cameraId, bool torchOn)
+    {
+        if (torchOn)
+        {
+            _torchOn[cameraId] = true;
+        }
+        else
+        {
+            _torchOn.TryRemove(cameraId, out _);
+        }
+    }
+
+    public bool IsTorchOn(Guid cameraId) => _torchOn.ContainsKey(cameraId);
 
     public bool IsPublishing(Guid cameraId) => _publishing.ContainsKey(cameraId);
 

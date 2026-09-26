@@ -406,11 +406,19 @@ class _CameraTile extends StatelessWidget {
           ),
         ],
       ),
-      trailing: battery == null && temperature == null
+      trailing: battery == null && temperature == null && !camera.torchOn
           ? null
           : Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (camera.torchOn) ...[
+                  Icon(
+                    Icons.flashlight_on,
+                    size: 20,
+                    semanticLabel: l10n.cameraModeTorchOn,
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 if (temperature != null) ...[
                   const Icon(Icons.thermostat, size: 20),
                   Text(l10n.temperatureC(temperature.round())),

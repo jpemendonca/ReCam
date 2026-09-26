@@ -72,7 +72,7 @@
         await Brighten.ApplyAsync(video);
         if (firstRender)
         {
-            await Live.OpenAsync(CameraId, video);
+            await Live.OpenAsync(CameraId, video, camera?.TorchOn ?? false);
         }
     }
 

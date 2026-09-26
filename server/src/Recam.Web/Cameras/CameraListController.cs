@@ -36,6 +36,7 @@ public sealed class CameraListController(IRecamApi api, IDeviceHub hub) : IDispo
             _started = true;
             hub.CameraStatusChanged += OnStatusChanged;
             hub.CameraRemoved += OnCameraRemoved;
+            hub.TorchChanged += OnTorchChanged;
             hub.ConnectedChanged += OnConnectedChanged;
             await ConnectAsync(cancellationToken);
             await RefreshAsync(cancellationToken);
@@ -112,6 +113,18 @@ public sealed class CameraListController(IRecamApi api, IDeviceHub hub) : IDispo
         Changed?.Invoke();
     }
 
+    // The torch changes without a status message; the cards show it too.
+    private void OnTorchChanged(Guid cameraId, bool torchOn)
+    {
+        if (Camera(cameraId) is not { } camera || camera.TorchOn == torchOn)
+        {
+            return;
+        }
+
+        _cameras = Sorted([.. _cameras.Where(existing => existing.Id != cameraId), camera with { TorchOn = torchOn }]);
+        Changed?.Invoke();
+    }
+
     private void OnCameraRemoved(Guid cameraId)
     {
         _cameras = [.. _cameras.Where(camera => camera.Id != cameraId)];
@@ -131,6 +144,7 @@ public sealed class CameraListController(IRecamApi api, IDeviceHub hub) : IDispo
     {
         hub.CameraStatusChanged -= OnStatusChanged;
         hub.CameraRemoved -= OnCameraRemoved;
+        hub.TorchChanged -= OnTorchChanged;
         hub.ConnectedChanged -= OnConnectedChanged;
         _startLock.Dispose();
     }

@@ -29,6 +29,23 @@ void main() {
   ];
 
   group('LiveViewController torch', () {
+    test('withTorchAlreadyOn_startsShowingItOn', () async {
+      // arrange
+      final lit = LiveViewController(
+        hub: HubSession(client: FakeHubClient(), delay: (_) async {}),
+        viewer: FakeViewer(),
+        cameraId: 'cam-1',
+        torchOn: true,
+      );
+
+      // act
+      final on = lit.torchOn;
+
+      // assert
+      expect(on, isTrue);
+      lit.dispose();
+    });
+
     test('setTorch_sendsCommandForThisCamera', () async {
       // arrange
       hubClient.invokeResult = <String, Object?>{'ok': true};

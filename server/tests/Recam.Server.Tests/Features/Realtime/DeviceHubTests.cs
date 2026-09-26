@@ -235,6 +235,49 @@ public sealed class DeviceHubTests
         Assert.Equal((camera.DeviceId, true), Assert.Single(changes));
     }
 
+    [Fact(DisplayName = "The server remembers the torch the camera reported, and forgets it when the camera stops sending video")]
+    public async Task ReportTorch_ThenStopPublishing_ListShowsTorchUntilThen()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        await using var cameraConnection = await factory.ConnectAsync(camera.Credential);
+        await cameraConnection.InvokeAsync<HubResult>("ReportPublishing", true, TestContext.Current.CancellationToken);
+        using var client = factory.CreateDeviceClient(owner.Credential);
+
+        // act
+        await cameraConnection.InvokeAsync<HubResult>("ReportTorch", true, TestContext.Current.CancellationToken);
+        var lit = await client.GetFromJsonAsync<List<CameraStatus>>(CamerasUri, ApiJson.Options, TestContext.Current.CancellationToken);
+        await cameraConnection.InvokeAsync<HubResult>("ReportPublishing", false, TestContext.Current.CancellationToken);
+        var stopped = await client.GetFromJsonAsync<List<CameraStatus>>(CamerasUri, ApiJson.Options, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.True(Assert.Single(lit!).TorchOn);
+        Assert.False(Assert.Single(stopped!).TorchOn);
+    }
+
+    [Fact(DisplayName = "A camera that goes offline has its torch off")]
+    public async Task ReportTorch_ThenDisconnect_TorchOff()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        var cameraConnection = await factory.ConnectAsync(camera.Credential);
+        await cameraConnection.InvokeAsync<HubResult>("ReportPublishing", true, TestContext.Current.CancellationToken);
+        await cameraConnection.InvokeAsync<HubResult>("ReportTorch", true, TestContext.Current.CancellationToken);
+        await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
+        using var updates = new StatusInbox(viewerConnection);
+
+        // act
+        await cameraConnection.DisposeAsync();
+
+        // assert
+        var status = await updates.WaitForAsync(status => !status.Online);
+        Assert.False(status.TorchOn);
+    }
+
     [Fact(DisplayName = "A camera cannot list cameras")]
     public async Task Cameras_AsCamera_Returns403()
     {
