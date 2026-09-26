@@ -44,6 +44,9 @@ void main() {
     test('load_turnsServerDaysIntoThePhoneCalendar', () async {
       // arrange
       api.recordingDaysResult = [DateTime.utc(2026, 9, 25)];
+      api.recordingsByDay[DateTime.utc(2026, 9, 25)] = [
+        _piece([DateTime.utc(2026, 9, 25, 14)]),
+      ];
 
       // act
       await controller.load();
@@ -54,6 +57,37 @@ void main() {
         DateTime.utc(2026, 9, 24),
       ]);
       expect(controller.selectedDay, DateTime.utc(2026, 9, 25));
+    });
+
+    test('load_recordedLateAtNight_opensThatDayWithoutAnEmptyToday', () async {
+      // arrange
+      api.recordingDaysResult = [DateTime.utc(2026, 9, 26)];
+      api.recordingsByDay[DateTime.utc(2026, 9, 26)] = [
+        _piece([DateTime.utc(2026, 9, 26, 0, 30)]),
+      ];
+
+      // act
+      await controller.load();
+
+      // assert
+      expect(controller.days, [DateTime.utc(2026, 9, 25)]);
+      expect(controller.selectedDay, DateTime.utc(2026, 9, 25));
+      expect(
+        controller.timeline.single.start,
+        DateTime.utc(2026, 9, 25, 21, 30),
+      );
+    });
+
+    test('load_nothingRecorded_hasNoDays', () async {
+      // arrange
+      api.recordingDaysResult = [DateTime.utc(2026, 9, 25)];
+
+      // act
+      await controller.load();
+
+      // assert
+      expect(controller.days, isEmpty);
+      expect(controller.selectedDay, isNull);
     });
 
     test('selectDay_fetchesBothUtcDaysAndKeepsOnlyThisLocalDay', () async {

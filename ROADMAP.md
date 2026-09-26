@@ -1356,13 +1356,19 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
   > pareia direto, código errado, nome vazio) e o app inteiro no primeiro uso. Gate verde (273 testes
   > no servidor e no web, 232 no app).
 
-- [ ] **6.8.1 App: linha do tempo abre num dia com gravação**
+- [x] **6.8.1 App: linha do tempo abre num dia com gravação**
   - Origem: achado no 6.5 (2026-09-26).
   - Escopo: um dia UTC cobre partes de dois dias locais. Quando tudo foi gravado de noite (no fuso
     de São Paulo, depois das 21h), a lista de dias do app mostra também "hoje", vazio, e abre nele.
     Ao abrir, pular os dias vazios e tirá-los da lista, como o navegador faz.
   - Aceite: teste do controller com gravação às 00:30 UTC e fuso -3: abre no dia anterior e a lista
     não tem o dia vazio.
+  > Validação (2026-09-26): só código escrito. Não percorrido no aparelho. Ao carregar, o
+  > `RecordingTimelineController` abre o dia local mais novo que tem gravação e tira da lista os dias
+  > vazios que vêm antes dele, como o navegador faz desde o 6.5; sem nenhuma gravação, a lista fica
+  > vazia e a tela mostra "Nenhuma gravação ainda". Testes: gravação às 00:30 UTC com fuso -3 abre
+  > o dia 25 às 21:30 sem o dia 26 vazio; sem gravação, nenhum dia. Gate verde (273 no servidor e
+  > no web, 234 no app).
 
 - [ ] **6.9 README e mensagens do servidor**
   - Origem: caminho principal novo.

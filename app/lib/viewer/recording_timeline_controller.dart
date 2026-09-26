@@ -84,12 +84,25 @@ class RecordingTimelineController extends ChangeNotifier {
         _days = _localDays(value);
         _loading = false;
         notifyListeners();
-        if (_days.isNotEmpty) await selectDay(_days.first);
+        await _openNewestRecordedDay();
       case ApiFailure():
         _loading = false;
         _failed = true;
         notifyListeners();
     }
+  }
+
+  // A UTC day may reach a local day only by its edge, with nothing recorded in it (in São Paulo,
+  // everything recorded after 21:00 also creates an empty "today"). Opens the newest day that has
+  // something, and drops the empty ones from the list.
+  Future<void> _openNewestRecordedDay() async {
+    while (_days.isNotEmpty) {
+      await selectDay(_days.first);
+      if (_failed || _timeline.isNotEmpty) return;
+      _days = _days.sublist(1);
+    }
+    _selectedDay = null;
+    notifyListeners();
   }
 
   /// Loads one day on the phone's calendar, which may span two UTC days on the server.
