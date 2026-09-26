@@ -1,0 +1,98 @@
+@implements IAsyncDisposable
+@inject IStringLocalizer<Strings> L
+@inject AddDeviceController Add
+
+<div class="panel">
+    <ol class="steps">
+        <li>@L["AddCameraStep1"]</li>
+        <li>@L["AddCameraStep2"]</li>
+        <li>@L["AddCameraStep3"]</li>
+        @if (Guided)
+        {
+            <li>@L["AddCameraStep4"]</li>
+        }
+    </ol>
+
+    <div class="qr-side">
+        @switch (Add.State)
+        {
+            case AddDeviceState.Loading:
+                <div class="loading" aria-hidden="true"></div>
+                break;
+
+            case AddDeviceState.Failed:
+                <p class="error" role="alert">@L["AddFailed"]</p>
+                <button @onclick="() => Add.StartAsync(Kind)">@L["OfflineRetry"]</button>
+                break;
+
+            default:
+                <div class="qr" aria-label="@L["AddQrLabel"]">@((MarkupString)(Add.QrSvg ?? string.Empty))</div>
+                <p class="expires">@L["AddExpiresIn", Add.Remaining.ToString(@"m\:ss", System.Globalization.CultureInfo.InvariantCulture)]</p>
+                <details>
+                    <summary>@L["AddShowText"]</summary>
+                    <p class="hint">@L["AddTextHint"]</p>
+                    <code class="uri">@Add.QrUri</code>
+                </details>
+                break;
+        }
+    </div>
+</div>
+
+@code {
+    private static readonly TimeSpan Second = TimeSpan.FromSeconds(1);
+
+    [Parameter]
+    public DeviceKind Kind { get; set; } = DeviceKind.Camera;
+
+    /// <summary>First use: one more step says the video opens by itself.</summary>
+    [Parameter]
+    public bool Guided { get; set; }
+
+    [Parameter]
+    public EventCallback Paired { get; set; }
+
+    private PeriodicTimer? timer;
+    private bool reported;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Add.Changed += OnChanged;
+        await Add.StartAsync(Kind);
+        _ = RunAsync();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Add.Changed -= OnChanged;
+        timer?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+
+    // One tick a second for the countdown; every other tick also asks whether the QR was used.
+    private async Task RunAsync()
+    {
+        timer = new PeriodicTimer(Second);
+        var ticks = 0;
+        while (await timer.WaitForNextTickAsync())
+        {
+            await InvokeAsync(async () =>
+            {
+                await Add.Tick(Second);
+                if (++ticks % 2 == 0)
+                {
+                    await Add.CheckPairedAsync();
+                }
+            });
+        }
+    }
+
+    private void OnChanged() => InvokeAsync(async () =>
+    {
+        StateHasChanged();
+        if (Add.State == AddDeviceState.Paired && !reported)
+        {
+            reported = true;
+            await Paired.InvokeAsync();
+        }
+    });
+}

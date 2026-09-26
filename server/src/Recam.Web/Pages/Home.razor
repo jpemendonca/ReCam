@@ -2,6 +2,8 @@
 @implements IDisposable
 @inject IStringLocalizer<Strings> L
 @inject StartController Start
+@inject CameraListController Cameras
+@inject NavigationManager Navigation
 
 <PageTitle>@L["AppTitle"]</PageTitle>
 
@@ -42,8 +44,15 @@
     case StartState.Monitor:
         <CameraList SignedOut="LoadAsync">
             <HeaderActions>
+                <a class="button" href="add-camera">@L["AddCameraButton"]</a>
                 <button class="secondary" @onclick="SignOutAsync" disabled="@Start.Busy">@L["SignOut"]</button>
             </HeaderActions>
+            <Empty>
+                <section class="card wide">
+                    <h2>@L["FirstCameraTitle"]</h2>
+                    <AddDevicePanel Kind="DeviceKind.Camera" Guided="true" Paired="FirstCameraPairedAsync" />
+                </section>
+            </Empty>
         </CameraList>
         break;
 
@@ -74,6 +83,16 @@
     private Task SignOutAsync() => Start.SignOutAsync(CancellationToken.None);
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    // The first camera's live video opens by itself: the moment the person sees it works.
+    private async Task FirstCameraPairedAsync()
+    {
+        await Cameras.RefreshAsync(CancellationToken.None);
+        if (Cameras.Cameras is [var first])
+        {
+            Navigation.NavigateTo($"cameras/{first.Id}");
+        }
+    }
 
     private string ErrorText(FirstOpenOutcome error) => error switch
     {

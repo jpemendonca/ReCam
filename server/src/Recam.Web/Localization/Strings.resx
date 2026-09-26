@@ -12,6 +12,39 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AddCameraButton" xml:space="preserve">
+    <value>Add camera</value>
+  </data>
+  <data name="AddCameraStep1" xml:space="preserve">
+    <value>On the phone that will film, install the ReCam app.</value>
+  </data>
+  <data name="AddCameraStep2" xml:space="preserve">
+    <value>Open the app and tap Scan QR code.</value>
+  </data>
+  <data name="AddCameraStep3" xml:space="preserve">
+    <value>Scan this QR code and give the camera a name.</value>
+  </data>
+  <data name="AddCameraStep4" xml:space="preserve">
+    <value>Done: its live video opens here.</value>
+  </data>
+  <data name="AddCameraTitle" xml:space="preserve">
+    <value>Add camera</value>
+  </data>
+  <data name="AddExpiresIn" xml:space="preserve">
+    <value>Expires in {0}</value>
+  </data>
+  <data name="AddFailed" xml:space="preserve">
+    <value>Could not create the QR code. Check the connection with the server.</value>
+  </data>
+  <data name="AddQrLabel" xml:space="preserve">
+    <value>Pairing QR code</value>
+  </data>
+  <data name="AddShowText" xml:space="preserve">
+    <value>Show the code as text</value>
+  </data>
+  <data name="AddTextHint" xml:space="preserve">
+    <value>No camera to scan with? In the app, tap Paste code and paste this:</value>
+  </data>
   <data name="AppTitle" xml:space="preserve">
     <value>ReCam</value>
   </data>
@@ -71,6 +104,9 @@
   </data>
   <data name="CodeWrong" xml:space="preserve">
     <value>Wrong code. Check it in the server log; after five wrong tries the server prints a new one.</value>
+  </data>
+  <data name="FirstCameraTitle" xml:space="preserve">
+    <value>Add your first camera</value>
   </data>
   <data name="HubConnected" xml:space="preserve">
     <value>Connected</value>

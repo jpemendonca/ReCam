@@ -12,6 +12,39 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="AddCameraButton" xml:space="preserve">
+    <value>Adicionar câmera</value>
+  </data>
+  <data name="AddCameraStep1" xml:space="preserve">
+    <value>No celular que vai filmar, instale o app ReCam.</value>
+  </data>
+  <data name="AddCameraStep2" xml:space="preserve">
+    <value>Abra o app e toque em Ler QR code.</value>
+  </data>
+  <data name="AddCameraStep3" xml:space="preserve">
+    <value>Leia este QR code e dê um nome à câmera.</value>
+  </data>
+  <data name="AddCameraStep4" xml:space="preserve">
+    <value>Pronto: o vídeo dela abre aqui.</value>
+  </data>
+  <data name="AddCameraTitle" xml:space="preserve">
+    <value>Adicionar câmera</value>
+  </data>
+  <data name="AddExpiresIn" xml:space="preserve">
+    <value>Expira em {0}</value>
+  </data>
+  <data name="AddFailed" xml:space="preserve">
+    <value>Não deu para criar o QR code. Confira a conexão com o servidor.</value>
+  </data>
+  <data name="AddQrLabel" xml:space="preserve">
+    <value>QR code de pareamento</value>
+  </data>
+  <data name="AddShowText" xml:space="preserve">
+    <value>Mostrar o código em texto</value>
+  </data>
+  <data name="AddTextHint" xml:space="preserve">
+    <value>Sem câmera para ler? No app, toque em Colar código e cole isto:</value>
+  </data>
   <data name="AppTitle" xml:space="preserve">
     <value>ReCam</value>
   </data>
@@ -71,6 +104,9 @@
   </data>
   <data name="CodeWrong" xml:space="preserve">
     <value>Código errado. Confira no log do servidor; depois de cinco erros ele mostra um código novo.</value>
+  </data>
+  <data name="FirstCameraTitle" xml:space="preserve">
+    <value>Adicione sua primeira câmera</value>
   </data>
   <data name="HubConnected" xml:space="preserve">
     <value>Conectado</value>

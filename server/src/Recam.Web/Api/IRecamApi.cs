@@ -13,6 +13,11 @@ public interface IRecamApi
 
     Task SignOutAsync(CancellationToken cancellationToken);
 
+    Task<PairingTokenInfo> CreatePairingTokenAsync(DeviceKind kind, CancellationToken cancellationToken);
+
+    /// <summary>Whether a phone already paired with the QR this browser created.</summary>
+    Task<bool> IsPairingTokenUsedAsync(Guid tokenId, CancellationToken cancellationToken);
+
     /// <summary>The server's cameras, or null when this browser is no longer a Monitor.</summary>
     Task<IReadOnlyList<CameraInfo>?> GetCamerasAsync(CancellationToken cancellationToken);
 }

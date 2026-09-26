@@ -1232,7 +1232,7 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
   > recarrega, como no app; o 6.4 recarrega ao fechar o QR. Gate verde (232 testes no servidor e no
   > web, 223 no app).
 
-- [ ] **6.4 Adicionar câmera no navegador e primeiro uso guiado**
+- [x] **6.4 Adicionar câmera no navegador e primeiro uso guiado**
   - Origem: caminho principal, passos 2 e 3.
   - Escopo: **Adicionar câmera** no navegador, com o QR em SVG pelo QRCoder (a mesma dependência
     do servidor, agora também no `Recam.Web`), o tempo que falta e a espera pelo uso do token
@@ -1241,6 +1241,21 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
     pareia, o vídeo ao vivo dela abre sozinho. O QR sai com `r=camera`.
   - Aceite: testes do controller (espera, expiração, abrir o vídeo da primeira câmera) e bUnit do
     passo a passo em `en` e `pt`.
+  > Validação (2026-09-26): código escrito e percorrido no navegador do PC, sem celular (a leitura do
+  > QR pelo app fica para o 6.10). `AddDeviceController` (mesmo comportamento do app: cria o token,
+  > conta o tempo, troca o QR quando expira, pergunta a cada 2 s se foi usado) e o componente
+  > `AddDevicePanel`, usado na página `/add-camera` (botão **Adicionar câmera** na lista) e, sem
+  > nenhuma câmera, como primeiro uso guiado na página inicial ("Adicione sua primeira câmera", quatro
+  > passos, QR, "Expira em", código em texto para o **Colar código**). O QR é desenhado em SVG a
+  > partir da matriz do QRCoder, só com atributos, porque a CSP bloqueia `style` inline; o tempo que
+  > falta é medido pelo relógio do servidor (cabeçalho `Date`, menos 1 s). Quando a primeira câmera
+  > pareia, a lista recarrega e o vídeo dela abre sozinho; nas seguintes, volta para a lista.
+  > Observado no Chromium: passo a passo em pt, "Expira em 9:59", QR com `r=camera`; um "celular"
+  > pareou pela API com o token do QR e a página foi sozinha para `/cameras/{id}`; pelo **Adicionar
+  > câmera**, a segunda câmera pareou e a lista mostrou as duas. O QR da captura de tela foi lido com
+  > o OpenCV e deu o `recam://pair` certo. Testes: controller (QR, contagem, troca ao expirar,
+  > pareado, sem servidor), SVG sem `style` e bUnit do primeiro uso (abre o vídeo sozinho) e da
+  > página de adicionar. Gate verde (240 testes no servidor e no web, 223 no app).
 
 - [ ] **6.5 Gravações no navegador**
   - Origem: Monitor completo (ADR 0038).

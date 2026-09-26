@@ -38,7 +38,10 @@ a {
   color: var(--accent);
 }
 
-button {
+button,
+a.button {
+  display: inline-block;
+  text-decoration: none;
   font: inherit;
   font-weight: 600;
   padding: 10px 20px;
@@ -48,6 +51,10 @@ button {
   color: #fff;
   cursor: pointer;
   align-self: flex-start;
+}
+
+a.button:hover {
+  filter: brightness(1.08);
 }
 
 button.secondary {

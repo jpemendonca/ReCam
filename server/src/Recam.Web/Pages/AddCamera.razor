@@ -1,0 +1,24 @@
+@page "/add-camera"
+@inject IStringLocalizer<Strings> L
+@inject CameraListController Cameras
+@inject NavigationManager Navigation
+
+<PageTitle>@L["AddCameraTitle"]</PageTitle>
+
+<div class="bar">
+    <a href="">← @L["LiveBack"]</a>
+    <h1>@L["AddCameraTitle"]</h1>
+</div>
+
+<section class="card">
+    <AddDevicePanel Kind="DeviceKind.Camera" Paired="PairedAsync" />
+</section>
+
+@code {
+    // The new camera shows up at once: the list reloads, and the page goes back to it.
+    private async Task PairedAsync()
+    {
+        await Cameras.RefreshAsync(CancellationToken.None);
+        Navigation.NavigateTo("");
+    }
+}

@@ -4,6 +4,7 @@ using Recam.Web;
 using Recam.Web.Api;
 using Recam.Web.Cameras;
 using Recam.Web.Live;
+using Recam.Web.Pairing;
 using Recam.Web.Realtime;
 using Recam.Web.Start;
 
@@ -26,5 +27,6 @@ builder.Services.AddTransient<ILiveVideo, JsLiveVideo>();
 builder.Services.AddTransient<StartController>();
 builder.Services.AddScoped<CameraListController>();
 builder.Services.AddTransient<LiveController>();
+builder.Services.AddTransient<AddDeviceController>();
 
 await builder.Build().RunAsync();

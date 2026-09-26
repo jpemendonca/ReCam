@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Recam.Web.Api;
 using Recam.Web.Cameras;
 using Recam.Web.Pages;
+using Recam.Web.Pairing;
 using Recam.Web.Realtime;
 using Recam.Web.Start;
 using Recam.Web.Tests.Support;
@@ -19,6 +20,7 @@ public sealed class HomeTests : BunitContext
         Services.AddTransient<StartController>();
         Services.AddSingleton<IDeviceHub>(new FakeDeviceHub());
         Services.AddSingleton<CameraListController>();
+        Services.AddTransient<AddDeviceController>();
     }
 
     [Theory(DisplayName = "Without a Monitor, the start page asks for the first-time code, in the browser's language")]

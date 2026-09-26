@@ -65,5 +65,31 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
         return await response.Content.ReadFromJsonAsync<List<CameraInfo>>(Json, cancellationToken) ?? [];
     }
 
+    public async Task<PairingTokenInfo> CreatePairingTokenAsync(DeviceKind kind, CancellationToken cancellationToken)
+    {
+        var role = kind == DeviceKind.Camera ? "camera" : "viewer";
+        using var response = await http.PostAsJsonAsync(new Uri("api/pairing-tokens", UriKind.Relative), new { role }, Json, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var token = await response.Content.ReadFromJsonAsync<CreatedToken>(Json, cancellationToken)
+            ?? throw new HttpRequestException("The server answered an empty pairing token.");
+
+        // Measured against the server's clock, which may differ from this computer's. The Date
+        // header has whole seconds, so one second comes off to never promise more than there is.
+        var validFor = response.Headers.Date is { } serverNow
+            ? token.ExpiresAt - serverNow - TimeSpan.FromSeconds(1)
+            : token.ExpiresAt - DateTimeOffset.UtcNow;
+        return new PairingTokenInfo(token.Id, token.QrUri, validFor);
+    }
+
+    public async Task<bool> IsPairingTokenUsedAsync(Guid tokenId, CancellationToken cancellationToken)
+    {
+        var status = await http.GetFromJsonAsync<TokenStatus>(new Uri($"api/pairing-tokens/{tokenId}", UriKind.Relative), Json, cancellationToken);
+        return status?.Used == true;
+    }
+
     private sealed record FirstOpenStatus(bool Open);
+
+    private sealed record CreatedToken(Guid Id, string QrUri, DateTimeOffset ExpiresAt);
+
+    private sealed record TokenStatus(bool Used);
 }

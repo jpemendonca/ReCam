@@ -18,6 +18,22 @@ public sealed class FakeRecamApi : IRecamApi
 
     public List<CameraInfo> Cameras { get; } = [];
 
+    /// <summary>Every pairing QR created, in order, with whether a phone used it.</summary>
+    public List<(PairingTokenInfo Token, DeviceKind Kind, bool Used)> Tokens { get; } = [];
+
+    public TimeSpan TokenValidFor { get; set; } = TimeSpan.FromMinutes(10);
+
+    /// <summary>A phone scans the last QR; a camera also shows up in the list.</summary>
+    public void UseLastToken(string cameraName = "Porta")
+    {
+        var last = Tokens[^1];
+        Tokens[^1] = last with { Used = true };
+        if (last.Kind == DeviceKind.Camera)
+        {
+            Cameras.Add(Support.Cameras.Make(cameraName));
+        }
+    }
+
     public Task<MeInfo?> GetMeAsync(CancellationToken cancellationToken)
     {
         ThrowIfOffline();
@@ -53,6 +69,20 @@ public sealed class FakeRecamApi : IRecamApi
         ThrowIfOffline();
         Me = null;
         return Task.CompletedTask;
+    }
+
+    public Task<PairingTokenInfo> CreatePairingTokenAsync(DeviceKind kind, CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        var token = new PairingTokenInfo(Guid.NewGuid(), $"recam://pair?v=1&t=token{Tokens.Count + 1}&r={kind}", TokenValidFor);
+        Tokens.Add((token, kind, false));
+        return Task.FromResult(token);
+    }
+
+    public Task<bool> IsPairingTokenUsedAsync(Guid tokenId, CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        return Task.FromResult(Tokens.Any(entry => entry.Token.Id == tokenId && entry.Used));
     }
 
     public Task<IReadOnlyList<CameraInfo>?> GetCamerasAsync(CancellationToken cancellationToken)
