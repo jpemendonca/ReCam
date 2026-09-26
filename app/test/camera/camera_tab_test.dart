@@ -50,7 +50,6 @@ void main() {
         home: Scaffold(
           body: CameraTab(
             pairing: pairing,
-            onScan: (_) async {},
             batteryGuide: BatteryGuideController(optimization: optimization),
             cameraMode: (_) => CameraModeController(
               hub: HubSession(client: FakeHubClient(), delay: (_) async {}),
@@ -84,7 +83,7 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('afterFailedPairing_staysOnPairingScreen', (tester) async {
+    testWidgets('afterFailedPairing_doesNotOpenCameraMode', (tester) async {
       // arrange
       api
         ..healthyHosts = {'192.168.0.10'}
@@ -97,7 +96,7 @@ void main() {
 
       // assert
       expect(find.byType(CameraModeScreen), findsNothing);
-      expect(find.text('Scan QR code'), findsOneWidget);
+      expect(pairing.state, isA<CameraNotPaired>());
     });
 
     testWidgets('withSavedPairing_waitsForStartCameraMode', (tester) async {

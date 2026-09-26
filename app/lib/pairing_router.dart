@@ -15,6 +15,16 @@ class PairingRouter {
   PairingLinkTarget? targetOf(String code, {PairingLinkTarget? from}) =>
       pairingLinkTarget(code) ?? from;
 
+  /// The role this phone already has when [target] is the other one. A phone is a camera or a
+  /// Monitor, never both, so pairing [target] first means leaving that role.
+  PairingLinkTarget? conflictWith(PairingLinkTarget target) => switch (target) {
+    PairingLinkTarget.camera when _viewer.state is ViewerPaired =>
+      PairingLinkTarget.viewer,
+    PairingLinkTarget.viewer when _camera.state is CameraPaired =>
+      PairingLinkTarget.camera,
+    _ => null,
+  };
+
   /// Pairs [target] with the code, unless that tab is already paired.
   Future<void> pair(
     PairingLinkTarget target,

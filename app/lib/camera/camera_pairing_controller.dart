@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 
-import '../core/pairing/device_name_validator.dart';
 import '../core/pairing/device_role.dart';
 import '../core/pairing/pairing_service.dart';
 import '../core/storage/credential_store.dart';
@@ -10,10 +9,9 @@ sealed class CameraPairingState {}
 final class CameraPairingLoading extends CameraPairingState {}
 
 final class CameraNotPaired extends CameraPairingState {
-  CameraNotPaired({this.lastFailure, this.nameErrors = const []});
+  CameraNotPaired({this.lastFailure});
 
   final PairingFailure? lastFailure;
-  final List<DeviceNameError> nameErrors;
 }
 
 final class CameraPairing extends CameraPairingState {}
@@ -59,14 +57,6 @@ class CameraPairingController extends ChangeNotifier {
   Future<void> forget() async {
     await _pairing.forget(_slot);
     _setState(CameraNotPaired(lastFailure: PairingFailure.pairingLost));
-  }
-
-  /// Checks the camera name before the QR scan starts. Returns false and shows the
-  /// problems when the name cannot be used.
-  bool checkName(String name) {
-    final errors = DeviceNameValidator.validate(name);
-    if (errors.isNotEmpty) _setState(CameraNotPaired(nameErrors: errors));
-    return errors.isEmpty;
   }
 
   Future<void> submitQr(String rawQr, {required String name}) async {

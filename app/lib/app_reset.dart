@@ -23,6 +23,16 @@ class AppReset {
     await _viewer.reset();
   }
 
+  /// A phone paired in both roles, from before one role per phone, keeps the Monitor: the
+  /// camera leaves the server and is forgotten here.
+  Future<void> keepOneRole() async {
+    if (_viewer.state is! ViewerPaired) return;
+    if (_camera.state case CameraPaired(:final session)) {
+      await _leave(session);
+      await _camera.reset();
+    }
+  }
+
   Future<void> _leave(PairedSession session) =>
       _api.leave(session.serverUrl, session.credential);
 }

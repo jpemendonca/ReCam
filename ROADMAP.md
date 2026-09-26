@@ -1497,7 +1497,7 @@ Decidido com o autor em 2026-09-25, logo depois da Fase 6. Vale no app e no nave
 Pedidos do autor depois de testar as fases 3, 6 e 7 no PC, no Samsung A10 e no Redmi 6A. Valem no
 app e no navegador quando o bullet não disser outra coisa.
 
-- [ ] **8.1 Um papel por celular**
+- [x] **8.1 Um papel por celular**
   - Origem: teste do autor em 2026-09-26: o Redmi 6A, pareado como câmera e depois como Monitor,
     aparecia na própria lista como câmera offline, e abrir essa câmera ficava carregando.
   - Escopo: o celular é Câmera ou Monitor, nunca os dois. A barra de abas some; o app mostra só a
@@ -1507,6 +1507,20 @@ app e no navegador quando o bullet não disser outra coisa.
     tela inicial zerada. Revisão no `SPECS.md` 12 (a decisão "um app com duas abas" muda).
   - Aceite: widget tests do app pareado como Câmera e como Monitor sem barra de abas, da troca de
     papel confirmada (sai do servidor e pareia) e cancelada (nada muda).
+  > Validação (2026-09-26): só código escrito. Não percorrido no aparelho. O `HomeShell` não tem
+  > mais barra de abas: mostra a tela da Câmera, a do Monitor ou a primeira abertura, e o título diz
+  > o papel ("ReCam · Câmera" / "ReCam · Monitor"). As duas telas continuam montadas por baixo (fora
+  > do palco), para a Câmera ver o pareamento terminar e abrir o modo câmera. Trocar de papel: o
+  > menu ⋮ dos dois papéis ganhou "Ler QR code"; um QR do outro papel (lido ali ou aberto como link)
+  > pergunta "Este celular é uma câmera. Virar Monitor?" (ou o contrário). Confirmando, o app sai do
+  > servidor (`DELETE /api/me`, o mesmo do "Reiniciar o app") e abre a primeira abertura já com o
+  > código lido: QR de câmera pede o nome, QR de Monitor pareia direto. `PairingRouter.conflictWith`
+  > decide se há troca. Celular que já estava pareado nos dois papéis (antes deste bullet, como o
+  > Redmi 6A no teste) fica como Monitor ao abrir o app: a câmera sai do servidor e é esquecida
+  > (`AppReset.keepOneRole`). Saíram as telas "não pareado" das duas abas, `checkName` e as chaves
+  > `cameraNotPaired`/`watchNotPaired`, que ficaram sem chamador. Testes: Monitor e Câmera sem barra
+  > de abas, pareado nos dois papéis fica Monitor, troca confirmada nos dois sentidos, troca
+  > cancelada, e `conflictWith`.
 
 - [ ] **8.2 Abas do Monitor: Câmeras, Gravações, Aparelhos e Configurações**
   - Origem: teste do autor em 2026-09-26.

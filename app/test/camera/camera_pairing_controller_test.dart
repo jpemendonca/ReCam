@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/camera/camera_pairing_controller.dart';
 import 'package:recam/core/network/api_client.dart';
 import 'package:recam/core/network/pinned_http_overrides.dart';
-import 'package:recam/core/pairing/device_name_validator.dart';
 import 'package:recam/core/pairing/device_role.dart';
 import 'package:recam/core/pairing/pairing_service.dart';
 import 'package:recam/core/storage/credential_store.dart';
@@ -60,32 +59,6 @@ void main() {
       final state = controller.state as CameraNotPaired;
       expect(state.lastFailure, PairingFailure.wrongRole);
       expect(store.sessions, isEmpty);
-    });
-  });
-
-  group('CameraPairingController.checkName', () {
-    test('withValidName_returnsTrue', () {
-      // arrange
-      const name = 'Garage';
-
-      // act
-      final valid = controller.checkName(name);
-
-      // assert
-      expect(valid, isTrue);
-    });
-
-    test('withBlankName_reportsEmptyError', () {
-      // arrange
-      const name = '   ';
-
-      // act
-      final valid = controller.checkName(name);
-
-      // assert
-      expect(valid, isFalse);
-      final state = controller.state as CameraNotPaired;
-      expect(state.nameErrors, [DeviceNameError.empty]);
     });
   });
 

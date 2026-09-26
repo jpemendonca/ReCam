@@ -10,7 +10,8 @@ ReCam reaproveita celulares Android parados como câmeras de monitoramento. Trê
 - **Monitor** (quem assiste): lista as câmeras, assiste ao vivo, manda comandos e administra. O
   primeiro Monitor é sempre o navegador do computador; celulares podem virar Monitor depois.
 
-Um único app Flutter faz os dois papéis de celular, em duas abas: **Câmera** e **Monitor**. O
+Um único app Flutter faz os dois papéis de celular, mas cada celular tem um papel só: **Câmera** ou
+**Monitor** (revisado em 2026-09-26, bullet 8.1). O
 servidor serve o Monitor no navegador (seção 2.5), com as mesmas funções do Monitor no app.
 
 Primeiro uso (revisado em 2026-09-25, seção 12): o navegador vira o primeiro Monitor com o código
@@ -147,7 +148,7 @@ Padrões do servidor:
 ```
 app/lib/
   main.dart               bootstrap: HttpOverrides, localização, runApp
-  app.dart                MaterialApp com NavigationBar de duas abas
+  app.dart                MaterialApp; o HomeShell mostra a tela do papel do celular
   core/
     network/              PinnedHttpOverrides, ApiClient, HubConnectionFactory
     pairing/              QrPayload (parse), PairingService

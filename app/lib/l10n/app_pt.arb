@@ -3,14 +3,12 @@
   "appTitle": "ReCam",
   "cameraTab": "Câmera",
   "watchTab": "Monitor",
-  "cameraNotPaired": "Leia o QR code do Adicionar câmera, no navegador do computador ou num Monitor, para usar este celular como câmera.",
   "cameraNameLabel": "Nome da câmera",
   "defaultCameraName": "Câmera",
   "startCameraMode": "Iniciar modo câmera",
   "deviceNameEmpty": "Digite um nome.",
   "deviceNameTooLong": "Use no máximo {max} caracteres.",
   "deviceNameInvalidCharacters": "O nome tem caracteres que não são permitidos.",
-  "watchNotPaired": "Leia o QR code do Adicionar Monitor, no navegador do computador ou em outro Monitor.",
   "scanQrButton": "Ler QR code",
   "scanQrTitle": "Ler QR code",
   "scannerUnavailable": "Não deu para abrir a câmera. Permita o acesso à câmera e tente de novo.",
@@ -133,5 +131,11 @@
   "motionHigh": "Alta",
   "motionNone": "Sem movimento neste dia.",
   "motionSummary": "Movimentos neste dia: {count}",
-  "motionSensitivityFailed": "Não deu para mudar a sensibilidade. Confira a conexão com o servidor."
+  "motionSensitivityFailed": "Não deu para mudar a sensibilidade. Confira a conexão com o servidor.",
+  "appTitleCamera": "ReCam · Câmera",
+  "appTitleMonitor": "ReCam · Monitor",
+  "switchToMonitorTitle": "Este celular é uma câmera. Virar Monitor?",
+  "switchToCameraTitle": "Este celular é um Monitor. Virar câmera?",
+  "switchRoleMessage": "Ele sai do servidor no papel de agora e é pareado de novo com este QR code.",
+  "switchRoleConfirm": "Trocar"
 }

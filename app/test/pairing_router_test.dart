@@ -151,6 +151,35 @@ void main() {
       expect(api.pairCalls, isEmpty);
     });
 
+    test('conflictWith_monitorCodeOnCamera_namesTheCameraRole', () async {
+      // arrange
+      await store.write(
+        PairingSlot.camera,
+        pairedSession(role: DeviceRole.camera),
+      );
+      await camera.load();
+      await viewer.load();
+
+      // act
+      final conflict = router.conflictWith(PairingLinkTarget.viewer);
+
+      // assert
+      expect(conflict, PairingLinkTarget.camera);
+    });
+
+    test('conflictWith_codeForTheSameRole_isNull', () async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      await camera.load();
+      await viewer.load();
+
+      // act
+      final conflict = router.conflictWith(PairingLinkTarget.viewer);
+
+      // assert
+      expect(conflict, isNull);
+    });
+
     test('notAReCamLink_isIgnored', () async {
       // arrange
       // (a link, not read by any tab)

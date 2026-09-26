@@ -14,6 +14,7 @@ class FirstRunScreen extends StatefulWidget {
     required this.readCode,
     required this.onPair,
     this.failure,
+    this.initialCode,
     super.key,
   });
 
@@ -25,6 +26,10 @@ class FirstRunScreen extends StatefulWidget {
 
   /// Why the last pairing attempt failed, if it did.
   final PairingFailure? failure;
+
+  /// A code read before the screen opened, as when the phone switches roles: it is handled as
+  /// if it had just been scanned.
+  final String? initialCode;
 
   @override
   State<FirstRunScreen> createState() => _FirstRunScreenState();
@@ -48,6 +53,15 @@ class _FirstRunScreenState extends State<FirstRunScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    final code = widget.initialCode;
+    if (code != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _handle(code));
+    }
+  }
+
+  @override
   void dispose() {
     _name.dispose();
     super.dispose();
@@ -55,7 +69,12 @@ class _FirstRunScreenState extends State<FirstRunScreen> {
 
   Future<void> _scan() async {
     final code = await widget.readCode();
-    if (code == null || !mounted) return;
+    if (code == null) return;
+    await _handle(code);
+  }
+
+  Future<void> _handle(String code) async {
+    if (!mounted) return;
     switch (pairingLinkTarget(code)) {
       case null:
         setState(() => _wrongCode = true);

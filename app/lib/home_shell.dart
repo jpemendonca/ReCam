@@ -22,6 +22,8 @@ import 'viewer/camera_list_controller.dart';
 import 'viewer/viewer_pairing_controller.dart';
 import 'viewer/watch_tab.dart';
 
+/// The app's only screen host. A phone is a camera or a Monitor, never both, so it shows the
+/// screen of its role, or the first-run screen while it has none.
 class HomeShell extends StatefulWidget {
   const HomeShell({
     required this.cameraPairing,
@@ -45,19 +47,21 @@ class HomeShell extends StatefulWidget {
   final LinkSource links;
   final PairingCodeReader readCode;
 
-  /// Completes when both tabs have loaded their saved pairing.
+  /// Completes when both roles have loaded their saved pairing.
   final Future<void> ready;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
-  static const _cameraTab = 0;
-  static const _watchTab = 1;
+enum _Role { loading, none, camera, monitor }
 
-  int _selectedIndex = _cameraTab;
+class _HomeShellState extends State<HomeShell> {
   StreamSubscription<Uri>? _links;
+
+  /// A code for the other role, read before this phone left its role; the first-run screen
+  /// picks it up.
+  String? _pendingCode;
   late final _reset = AppReset(
     camera: widget.cameraPairing,
     viewer: widget.viewerPairing,
@@ -72,6 +76,7 @@ class _HomeShellState extends State<HomeShell> {
   void initState() {
     super.initState();
     _links = widget.links.links.listen(_onLink);
+    unawaited(widget.ready.then((_) => _reset.keepOneRole()));
   }
 
   @override
@@ -85,37 +90,57 @@ class _HomeShellState extends State<HomeShell> {
     await _route(uri.toString());
   }
 
-  /// The one QR reader of the app. The code decides which tab pairs, not the tab that asked.
-  Future<void> _scan({
-    required PairingLinkTarget from,
-    String? cameraName,
-  }) async {
+  /// Reads a code while this phone already has a role, to switch it.
+  Future<void> _scan() async {
     final code = await widget.readCode(context);
     if (code == null) return;
-    await _route(code, from: from, cameraName: cameraName);
+    await _route(code);
   }
 
-  /// Opens the tab the code is for and pairs it, unless that tab is already paired.
-  Future<void> _route(
-    String code, {
-    PairingLinkTarget? from,
-    String? cameraName,
-  }) async {
-    final target = _router.targetOf(code, from: from);
+  /// Pairs the role the code is for. A code for the other role first asks to leave the current
+  /// one; a code for the role this phone already has changes nothing.
+  Future<void> _route(String code, {String? cameraName}) async {
+    final target = _router.targetOf(code);
     if (target == null || !mounted) return;
+    if (_router.conflictWith(target) != null) {
+      if (!await _confirmSwitch(target) || !mounted) return;
+      await _resetWithProgress();
+      if (mounted) setState(() => _pendingCode = code);
+      return;
+    }
     final l10n = AppLocalizations.of(context);
-    setState(
-      () => _selectedIndex = switch (target) {
-        PairingLinkTarget.camera => _cameraTab,
-        PairingLinkTarget.viewer => _watchTab,
-      },
-    );
+    setState(() => _pendingCode = null);
     await _router.pair(
       target,
       code,
       cameraName: cameraName ?? l10n.defaultCameraName,
       viewerName: l10n.viewerDeviceName,
     );
+  }
+
+  Future<bool> _confirmSwitch(PairingLinkTarget target) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(switch (target) {
+          PairingLinkTarget.viewer => l10n.switchToMonitorTitle,
+          PairingLinkTarget.camera => l10n.switchToCameraTitle,
+        }),
+        content: Text(l10n.switchRoleMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancelButton),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.switchRoleConfirm),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
   }
 
   void _openDevices(ViewerPaired paired) => Navigator.of(context).push<void>(
@@ -171,6 +196,10 @@ class _HomeShellState extends State<HomeShell> {
       ),
     );
     if (confirmed != true || !mounted) return;
+    await _resetWithProgress();
+  }
+
+  Future<void> _resetWithProgress() async {
     final navigator = Navigator.of(context);
     // Telling the server can take a few seconds when it does not answer.
     unawaited(
@@ -182,12 +211,18 @@ class _HomeShellState extends State<HomeShell> {
     );
     await _reset.reset();
     navigator.pop();
-    if (mounted) setState(() => _selectedIndex = _cameraTab);
   }
 
-  bool get _nothingPaired =>
-      widget.cameraPairing.state is CameraNotPaired &&
-      widget.viewerPairing.state is ViewerNotPaired;
+  _Role get _role {
+    final camera = widget.cameraPairing.state;
+    final viewer = widget.viewerPairing.state;
+    if (camera is CameraPairingLoading || viewer is ViewerPairingLoading) {
+      return _Role.loading;
+    }
+    if (camera is! CameraNotPaired) return _Role.camera;
+    if (viewer is! ViewerNotPaired) return _Role.monitor;
+    return _Role.none;
+  }
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -197,29 +232,31 @@ class _HomeShellState extends State<HomeShell> {
 
   Widget _buildShell(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final firstRun = _nothingPaired;
+    final role = _role;
     final cameraState = widget.cameraPairing.state;
     final viewerState = widget.viewerPairing.state;
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.appTitle),
+        title: Text(switch (role) {
+          _Role.camera => l10n.appTitleCamera,
+          _Role.monitor => l10n.appTitleMonitor,
+          _Role.loading || _Role.none => l10n.appTitle,
+        }),
         actions: [
-          if (!firstRun)
+          if (role == _Role.camera || role == _Role.monitor)
             PopupMenuButton<_MenuAction>(
               onSelected: (action) => switch ((action, viewerState)) {
                 (_MenuAction.addMonitor, final ViewerPaired paired) =>
                   _addMonitor(paired),
-                (_MenuAction.addMonitor, _) => null,
                 (_MenuAction.connectBrowser, final ViewerPaired paired) =>
                   _connectBrowser(paired),
-                (_MenuAction.connectBrowser, _) => null,
                 (_MenuAction.recordings, final ViewerPaired paired) =>
                   _openRecordings(paired),
-                (_MenuAction.recordings, _) => null,
                 (_MenuAction.devices, final ViewerPaired paired) =>
                   _openDevices(paired),
-                (_MenuAction.devices, _) => null,
+                (_MenuAction.scan, _) => unawaited(_scan()),
                 (_MenuAction.reset, _) => unawaited(_confirmReset()),
+                _ => null,
               },
               itemBuilder: (context) => [
                 if (viewerState is ViewerPaired) ...[
@@ -241,6 +278,10 @@ class _HomeShellState extends State<HomeShell> {
                   ),
                 ],
                 PopupMenuItem(
+                  value: _MenuAction.scan,
+                  child: Text(l10n.scanQrButton),
+                ),
+                PopupMenuItem(
                   value: _MenuAction.reset,
                   child: Text(l10n.resetAppButton),
                 ),
@@ -248,34 +289,33 @@ class _HomeShellState extends State<HomeShell> {
             ),
         ],
       ),
-      // The tabs stay built under the first-run screen, so the Camera tab sees its pairing
-      // finish and opens camera mode.
+      // Both role screens stay built under the first-run screen, so the camera screen sees
+      // its pairing finish and opens camera mode.
       body: SafeArea(
         child: Stack(
           children: [
             Offstage(
-              offstage: firstRun,
+              offstage: role == _Role.none,
               child: IndexedStack(
-                index: _selectedIndex,
+                index: role == _Role.monitor ? 1 : 0,
                 children: [
                   CameraTab(
                     pairing: widget.cameraPairing,
                     cameraMode: widget.cameraMode,
                     batteryGuide: widget.batteryGuide,
-                    onScan: (name) =>
-                        _scan(from: PairingLinkTarget.camera, cameraName: name),
                   ),
                   WatchTab(
                     pairing: widget.viewerPairing,
                     api: widget.api,
                     cameraList: widget.cameraList,
-                    onScan: () => _scan(from: PairingLinkTarget.viewer),
                   ),
                 ],
               ),
             ),
-            if (firstRun)
+            if (role == _Role.none)
               FirstRunScreen(
+                key: ValueKey(_pendingCode),
+                initialCode: _pendingCode,
                 readCode: () => widget.readCode(context),
                 onPair: (code, cameraName) =>
                     _route(code, cameraName: cameraName),
@@ -288,27 +328,15 @@ class _HomeShellState extends State<HomeShell> {
           ],
         ),
       ),
-      bottomNavigationBar: firstRun
-          ? null
-          : NavigationBar(
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: (index) =>
-                  setState(() => _selectedIndex = index),
-              destinations: [
-                NavigationDestination(
-                  icon: const Icon(Icons.videocam_outlined),
-                  selectedIcon: const Icon(Icons.videocam),
-                  label: l10n.cameraTab,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.live_tv_outlined),
-                  selectedIcon: const Icon(Icons.live_tv),
-                  label: l10n.watchTab,
-                ),
-              ],
-            ),
     );
   }
 }
 
-enum _MenuAction { recordings, devices, addMonitor, connectBrowser, reset }
+enum _MenuAction {
+  recordings,
+  devices,
+  addMonitor,
+  connectBrowser,
+  scan,
+  reset,
+}
