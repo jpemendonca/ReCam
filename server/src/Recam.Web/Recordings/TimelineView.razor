@@ -10,7 +10,8 @@
     <p class="error" role="alert">@L["TimelineLoadFailed"]</p>
     <button @onclick="() => Timeline.LoadAsync(CameraId)">@L["OfflineRetry"]</button>
 }
-else if (Timeline.Loading && Timeline.Days.Count == 0)
+@* The days arrive before one is chosen; the bar needs the chosen day. *@
+else if ((Timeline.Loading && Timeline.Days.Count == 0) || (Timeline.Days.Count > 0 && Timeline.SelectedDay is null))
 {
     <div class="loading" aria-hidden="true"></div>
 }

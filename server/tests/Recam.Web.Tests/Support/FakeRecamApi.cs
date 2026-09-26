@@ -143,18 +143,34 @@ public sealed class FakeRecamApi : IRecamApi
         return Task.FromResult(Tokens.Any(entry => entry.Token.Id == tokenId && entry.Used));
     }
 
-    public Task<IReadOnlyList<DateOnly>> GetRecordingDaysAsync(Guid cameraId, CancellationToken cancellationToken)
+    /// <summary>When set, the list of days waits for it, like a slow server.</summary>
+    public TaskCompletionSource? DaysHeld { get; set; }
+
+    public async Task<IReadOnlyList<DateOnly>> GetRecordingDaysAsync(Guid cameraId, CancellationToken cancellationToken)
     {
         ThrowIfOffline();
         RecordingCamerasAsked.Add(cameraId);
-        return Task.FromResult<IReadOnlyList<DateOnly>>([.. Recordings.Keys.OrderDescending()]);
+        if (DaysHeld is { } held)
+        {
+            await held.Task;
+        }
+
+        return [.. Recordings.Keys.OrderDescending()];
     }
 
-    public Task<IReadOnlyList<RecordingPieceInfo>> GetRecordingsAsync(Guid cameraId, DateOnly utcDay, CancellationToken cancellationToken)
+    /// <summary>When set, a day's recordings wait for it, like a slow server.</summary>
+    public TaskCompletionSource? RecordingsHeld { get; set; }
+
+    public async Task<IReadOnlyList<RecordingPieceInfo>> GetRecordingsAsync(Guid cameraId, DateOnly utcDay, CancellationToken cancellationToken)
     {
         ThrowIfOffline();
         RecordingDaysAsked.Add(utcDay);
-        return Task.FromResult<IReadOnlyList<RecordingPieceInfo>>(Recordings.GetValueOrDefault(utcDay) ?? []);
+        if (RecordingsHeld is { } held)
+        {
+            await held.Task;
+        }
+
+        return Recordings.GetValueOrDefault(utcDay) ?? [];
     }
 
     public Task<MotionInfo> GetMotionAsync(Guid cameraId, DateOnly utcDay, CancellationToken cancellationToken)

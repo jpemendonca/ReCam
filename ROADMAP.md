@@ -1747,6 +1747,27 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > Redmi 6A. Nada das fases 8 e 9 foi percorrido no aparelho; o que dá para rodar sem celular
   > está nos testes e no gate.
 
+- [x] **9.4 A aba Gravações do navegador quebra ao abrir**
+  - Origem: teste do autor em 2026-09-26 (9.3): a barra vermelha de erro do Blazor aparece ao
+    abrir Gravações.
+  - Causa: a lista de dias chega antes de o dia ser escolhido, e a linha do tempo lê o dia
+    escolhido ainda vazio.
+  - Aceite: enquanto o dia não foi escolhido, a página mostra o carregando; teste bUnit com a API
+    respondendo devagar.
+  > Validação (2026-09-26): o console mostrou `InvalidOperationException` em
+  > `TimelineView.Window`, lendo o dia escolhido ainda vazio. A linha do tempo mostra o carregando
+  > até o dia ser escolhido. O teste bUnit novo segura a lista de dias e os trechos, falha sem a
+  > correção e passa com ela. Só código e teste; falta o autor conferir no navegador.
+
+- [ ] **9.5 O botão de som do ao vivo lembra a escolha**
+  - Origem: teste do autor em 2026-09-26 (9.3): no navegador, ativar o som, sair e voltar para a
+    câmera mostra "Ativar som" de novo. É o mesmo problema que a lanterna tinha antes da 8.10.
+  - Escopo: o ao vivo abre com o som no estado que a pessoa deixou, e o botão mostra a ação
+    certa. Conferir o app também.
+  - Cuidado: o navegador só toca som depois de um clique na página. Se ele bloquear, o ao vivo
+    fica sem som e o botão mostra "Ativar som", sem mentir.
+  - Aceite: testes bUnit e de widget de sair e voltar com o som ligado.
+
 ## Fase 5: distribuição
 
 - [x] **5.1 Modo atrás de proxy reverso**

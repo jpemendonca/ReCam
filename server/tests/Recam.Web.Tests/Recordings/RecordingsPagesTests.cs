@@ -51,6 +51,29 @@ public sealed class RecordingsPagesTests : BunitContext
         Assert.Equal("Gravações · Porta", page.Find("h1").TextContent);
     }
 
+    [Fact(DisplayName = "While the days and the chosen day load slowly, the timeline waits instead of breaking")]
+    public async Task Timeline_SlowDay_ShowsLoadingThenBar()
+    {
+        // arrange
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 5)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(1),
+            [new RecordingSegmentInfo(start, start.AddMinutes(1), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        _api.DaysHeld = new TaskCompletionSource();
+        _api.RecordingsHeld = new TaskCompletionSource();
+        await Services.GetRequiredService<CameraListController>().StartAsync(Xunit.TestContext.Current.CancellationToken);
+        var page = Render<RecordingsPage>();
+        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll(".loading")));
+
+        // act
+        _api.DaysHeld.SetResult();
+        page.WaitForAssertion(() => Assert.Single(_api.RecordingDaysAsked));
+        _api.RecordingsHeld.SetResult();
+
+        // assert
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.recorded")));
+    }
+
     [Fact(DisplayName = "Motion shows on the bar; Next motion plays it and Motion only hides the rest")]
     public void Timeline_Motion_MarkedAndPlayed()
     {
