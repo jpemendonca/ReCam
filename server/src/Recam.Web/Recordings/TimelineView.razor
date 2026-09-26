@@ -107,7 +107,9 @@ else
     @if (Timeline.Source is { } source)
     {
         <p class="playing-from">@L["TimelinePlaying", Timeline.PlayingFrom!.Value.ToString("t", CultureInfo.CurrentCulture)]</p>
-        <video @key="source" @ref="video" src="@source" controls autoplay playsinline muted @onended="Timeline.PlayNext"></video>
+        @* One <video> for every file: replacing it, or letting it shrink while the next file loads,
+           made the page jump to the top on "Next motion". *@
+        <video @ref="video" src="@source" controls autoplay playsinline muted @onended="Timeline.PlayNext"></video>
         <div class="brighten-row">
             <BrightenControls Controller="Brighten" />
         </div>
@@ -186,7 +188,7 @@ else
         Cameras.Changed -= OnChanged;
     }
 
-    // The <video> is new for each file, so the filter goes on again after every render.
+    // The filter goes on again after every render: the file, and the <video>, may have changed.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (Timeline.Source is not null)

@@ -1620,12 +1620,20 @@ app e no navegador quando o bullet não disser outra coisa.
   > duração e se toca), `pause`, `resume` e `seekTo`, implementados sobre o `VideoPlayerController`.
   > Teste: pausar troca o ícone e avançar pede +10 s ao player.
 
-- [ ] **8.7 Correção: a tela pula para o topo no "Próximo movimento" do navegador**
+- [x] **8.7 Correção: a tela pula para o topo no "Próximo movimento" do navegador**
   - Origem: teste do autor em 2026-09-26.
   - Escopo: no navegador, "Movimento anterior" e "Próximo movimento" trocam o vídeo sem redesenhar a
     página inteira e sem mudar a rolagem.
   - Aceite: teste que confirma que só o player e a posição mudam (sem navegação), e conferência no
     Chromium.
+  > Validação (2026-09-26): só código escrito. Não conferido no Chromium: falta uma câmera gravando
+  > para ter o que tocar. Causa provável, pelo código: cada arquivo novo trocava o `<video>` inteiro
+  > (`@key` pelo endereço), e o vídeo novo nascia com altura zero até carregar; a página encolhia e
+  > o navegador voltava para cima. Agora o mesmo `<video>` recebe o arquivo novo (sem `@key`) e tem
+  > caixa fixa (`aspect-ratio: 16 / 9`, `object-fit: contain`), então a altura não muda enquanto
+  > carrega. O bUnit remonta o HTML a cada renderização e não consegue provar que o elemento é o
+  > mesmo; o teste confere o que dá para ver: dois "Próximo movimento" seguidos trocam o arquivo de
+  > um só vídeo, sem navegar.
 
 - [ ] **8.8 Cards de câmera no navegador**
   - Origem: teste do autor em 2026-09-26.

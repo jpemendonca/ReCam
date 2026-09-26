@@ -218,4 +218,33 @@ public sealed class RecordingsPagesTests : BunitContext
         Assert.Equal("14:02", page.Find(".hover-time").TextContent);
         Assert.Equal("Em uso: 0,3 de 2 GB · cabem cerca de 6,8 h", page.Find(".space").TextContent);
     }
+
+    [Fact(DisplayName = "Next motion changes the video's file without navigating")]
+    public void Timeline_NextMotionTwice_KeepsTheSameVideo()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20),
+            [new RecordingSegmentInfo(start, start.AddMinutes(20), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        _api.Motion[day] =
+        [
+            new MotionEventInfo(start.AddMinutes(5), start.AddMinutes(6), 0.04),
+            new MotionEventInfo(start.AddMinutes(15), start.AddMinutes(16), 0.04),
+        ];
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Equal(2, page.FindAll("rect.motion").Count));
+        var navigation = Services.GetRequiredService<NavigationManager>();
+        var address = navigation.Uri;
+        page.Find("button.next-motion").Click();
+
+        // act
+        page.Find("button.next-motion").Click();
+
+        // assert
+        var video = Assert.Single(page.FindAll("video"));
+        Assert.Equal($"api/recordings/{_camera.Id}/a.mp4#t=895", video.GetAttribute("src"));
+        Assert.Equal(address, navigation.Uri);
+    }
 }
