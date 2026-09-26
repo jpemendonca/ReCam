@@ -13,18 +13,30 @@ You need one phone and one computer to start:
 - **The ReCam app**, on the phone that will film. Later you can add more phones, as cameras or as
   Monitors that watch.
 
-> Status: pre-alpha. Nothing works yet. Follow progress in [ROADMAP.md](ROADMAP.md).
+> Status: pre-alpha. The main path is written and tested, but not yet validated on real phones.
+> There is no published image or APK yet: build from source. Follow progress in
+> [ROADMAP.md](ROADMAP.md).
 
-## How it will work
+## How it works
 
-1. Run the server with `docker compose up -d`.
-2. On your computer, open `https://<server-ip>:8443` and type the first-time code from
-   `docker compose logs`. Your browser becomes the Monitor and shows an **Add camera** QR code.
-   The certificate is self-signed, so the browser asks you to accept it once.
-3. On the phone that will film, open ReCam, tap **Scan QR code**, scan it and name the camera.
-4. The live video opens in the browser. Toggle the phone's flashlight from there.
-5. Liked it? Add more phones from the browser: **Add camera** for another camera, **Add Monitor**
-   to watch from your main phone.
+1. **Start the server.** In the `deploy/` folder: on Linux, `docker compose up -d`; on Windows or
+   macOS with Docker Desktop, copy `.env.example` to `.env`, set `RECAM_HOST` to the computer's
+   network address and run `docker compose -f compose.bridge.yaml up -d`. Allow ports 8443/tcp and
+   8189/udp in the firewall.
+2. **Read the first-time code.** Run `docker compose logs server`. Until there is a Monitor, the
+   server prints a line like `type the first-time code ABCD-EFGH`.
+3. **Open the browser on the computer** at `https://<server-ip>:8443`. The certificate is
+   self-signed, so the browser warns once: choose to proceed (in Chrome, **Advanced** and then
+   **Proceed**). Type the code. This browser is now the Monitor and shows an **Add camera** QR
+   code.
+4. **On the phone that will film**, open ReCam, tap **Scan QR code**, scan it and name the
+   camera. The phone switches to camera mode, and its live video opens in the browser by itself.
+   Toggle the phone's flashlight from there.
+5. **Liked it?** From the browser, **Add camera** adds another camera and **Add Monitor** lets your
+   main phone watch too. Another browser can join with **Connect browser** on a Monitor phone.
+
+Lost every Monitor? `docker compose exec server ./Recam.Server reset-owner` removes them, and the
+server prints a new first-time code.
 
 Requirements: Android 9 or newer. Reference devices: Samsung Galaxy A10 and Xiaomi Redmi 6A.
 

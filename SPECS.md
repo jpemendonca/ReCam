@@ -378,25 +378,37 @@ vez.
 
 ### 5.5 REST
 
+Estado em 2026-09-26 (conferido no bullet 6.9). As revisões do log 12 contam como cada rota chegou.
+"Monitores" quer dizer `Owner` e `Viewer`; o navegador se autentica pelo cookie (seção 5.4).
+
 | Método e rota | Quem pode | Entrada | Saída |
 |---|---|---|---|
 | `GET /health` | qualquer um | — | `200 "ok"` |
-| `GET /setup` | só IP privado, sem header `X-Forwarded-For`, só enquanto não há dono | — | HTML com o QR em SVG e o texto em inglês e português. Com dono já pareado: página "already configured". Revisado (fase 6): redireciona para `/` |
-| `GET /` e arquivos do `Recam.Web` | qualquer um | — | o Monitor no navegador (fase 6) |
-| `GET /api/web/first-open` | qualquer um | — | `{ open }`: `true` enquanto não há Monitor ativo (fase 6) |
-| `POST /api/web/first-open` | só da rede local (mesma regra do `/setup`), só sem Monitor ativo, limite de 5 por minuto por IP | `{ code, remember }` | `204` e o cookie; o navegador vira `Owner` (fase 6) |
-| `POST /api/web/sign-out` | o próprio navegador | — | `204`, revoga o aparelho e apaga o cookie (fase 6) |
-| `POST /api/browser-links` | qualquer um, com limite por IP | — | `201 { id, qrUri, claim, expiresAt }`; o `claim` fica só no navegador (fase 6) |
-| `POST /api/browser-links/{id}/approve` | Owner, Viewer (celular) | `{ secret }` do QR | `204` (fase 6) |
-| `POST /api/browser-links/{id}/claim` | quem tem o `claim` | `{ claim, remember }` | `204` e o cookie depois de aprovado; `409` enquanto não (fase 6) |
-| `POST /api/pair` | qualquer um, com limite de 5 por minuto por IP | `{ token, name, expectedRoles }` | `201 { deviceId, credential, role, serverName }` |
-| `POST /api/pairing-tokens` | Owner, Viewer | `{ role: "camera" \| "viewer" }` | `201 { qrUri, expiresAt }` |
-| `GET /api/me` | qualquer dispositivo | — | `{ deviceId, name, role }` |
-| `GET /api/cameras` | Owner, Viewer | — | `[{ id, name, online, publishing, batteryLevel, isCharging, telemetryAt }]` |
-| `POST /whip/{cameraId}` | Camera, só com `cameraId` igual ao próprio id | SDP offer | proxy para `/cam-{cameraId}/whip` no MediaMTX |
-| `PATCH`, `DELETE /whip/{cameraId}/{session}` | a mesma câmera | trickle ICE / encerrar | proxy |
-| `POST /whep/{cameraId}` | Owner, Viewer | SDP offer | proxy para `/cam-{cameraId}/whep` |
-| `PATCH`, `DELETE /whep/{cameraId}/{session}` | Owner, Viewer | trickle ICE / encerrar | proxy |
+| `GET /` e arquivos do `Recam.Web` | qualquer um | — | o Monitor no navegador |
+| `GET /setup` | qualquer um | — | redireciona para `/` |
+| `GET /api/web/first-open` | qualquer um | — | `{ open }`: `true` enquanto não há Monitor ativo |
+| `POST /api/web/first-open` | só da rede local, só sem Monitor ativo, limite de 5 por minuto por IP | `{ code, remember }` | `204` e o cookie; o navegador vira `Owner` |
+| `POST /api/web/sign-out` | o próprio aparelho | — | `204`, revoga o aparelho e apaga o cookie |
+| `POST /api/browser-links` | qualquer um, limite de 5 por minuto por IP | — | `201 { id, qrUri, claim, expiresAt }`; o `claim` fica só no navegador |
+| `POST /api/browser-links/{id}/approve` | Monitores | `{ secret }` do QR | `204` |
+| `POST /api/browser-links/{id}/claim` | quem tem o `claim` | `{ claim, remember }` | `204` e o cookie depois de aprovado; `409` antes |
+| `POST /api/pair` | qualquer um, limite de 5 por minuto por IP | `{ token, name, expectedRoles }` | `201 { deviceId, credential, role, serverName }` |
+| `POST /api/pairing-tokens` | Monitores | `{ role: "camera" \| "viewer" }` | `201 { id, qrUri, expiresAt }` |
+| `GET /api/pairing-tokens/{id}` | o Monitor que criou o token | — | `{ used }`; `404` para qualquer outro |
+| `GET /api/me` | qualquer aparelho | — | `{ deviceId, name, role }` |
+| `DELETE /api/me` | qualquer aparelho | — | `204`, o aparelho se revoga |
+| `GET /api/cameras` | Monitores | — | `[{ id, name, online, publishing, batteryLevel, isCharging, temperatureC, telemetryAt, recording, canRecord }]` |
+| `GET /api/devices` | Monitores | — | `[{ id, name, role, online }]`, câmeras primeiro |
+| `DELETE /api/devices/{id}` | Monitores | — | `204`; `409` para si mesmo, `404` já removido |
+| `GET /api/cameras/{id}/recording-days` | Monitores | — | `["AAAA-MM-DD"]`, dias UTC, do mais novo ao mais antigo |
+| `GET /api/cameras/{id}/recordings?day=AAAA-MM-DD` | Monitores | — | `[{ start, end, segments: [{ start, end, url }] }]` |
+| `GET /api/recordings/{cameraId}/{segmento}` | Monitores | `Range` | o arquivo `video/mp4` |
+| `GET /api/recordings/quota` | Monitores | — | `{ quotaMb, usedBytes, freeBytes }` |
+| `PUT /api/recordings/quota` | Monitores | `{ quotaMb }` | `204` |
+| `POST /whip/{cameraId}` | Camera, só com `cameraId` igual ao próprio id | SDP offer | proxy para `cam-` ou `rec-{cameraId}` no MediaMTX |
+| `PATCH`, `DELETE /whip/{cameraId}/{sessão}` | a mesma câmera | trickle ICE / encerrar | proxy |
+| `POST /whep/{cameraId}` | Monitores | SDP offer | proxy para `cam-` ou `rec-{cameraId}` |
+| `PATCH`, `DELETE /whep/{cameraId}/{sessão}` | Monitores | trickle ICE / encerrar | proxy |
 
 - `POST /api/pair`: `serverName` é a constante `"ReCam"` por enquanto. Quem decide o papel é o `GrantsRole` do token. `expectedRoles` (obrigatório) diz que papéis a aba
   aceita; se o token for de outro papel, a resposta é 409 `pairing.wrong_role` e o token continua
@@ -411,16 +423,20 @@ vez.
 
 ### 5.6 SignalR: `/hubs/devices`
 
-Cliente → servidor:
+Estado em 2026-09-26 (conferido no bullet 6.9).
+
+Cliente → servidor. Todos devolvem `HubResult { ok, code, message }`.
 
 | Método | Quem chama | Efeito |
 |---|---|---|
-| `ReportTelemetry(int batteryLevel, bool isCharging)` | Camera | grava no `Device` e avisa os visualizadores. Devolve `HubResult { ok, code, message }` |
-| `ReportPublishing(bool publishing)` | Camera | atualiza o estado e avisa os visualizadores |
-| `ReportTorch(bool on)` | Camera | avisa os visualizadores |
-| `WatchCamera(Guid cameraId)` | Owner, Viewer | abre um lease. Se for o primeiro, manda `StartPublishing` à câmera |
-| `UnwatchCamera(Guid cameraId)` | Owner, Viewer | fecha o lease. Se não sobrar nenhum, manda `StopPublishing` depois de 30 s de carência |
-| `SetTorch(Guid cameraId, bool on)` | Owner, Viewer | repassa à câmera. Erro `camera-not-publishing` se ela não estiver transmitindo |
+| `Heartbeat()` | qualquer aparelho | prova que a conexão funciona de ponta a ponta |
+| `ReportTelemetry({ batteryLevel, isCharging, temperatureC, supportsH264 })` | Camera | grava no `Device` e avisa os Monitores |
+| `ReportPublishing(bool publishing)` | Camera | atualiza o estado e avisa os Monitores |
+| `ReportTorch(bool on)` | Camera | avisa os Monitores |
+| `WatchCamera(Guid cameraId)` | Monitores | abre um lease. Se for o primeiro, manda `StartPublishing` à câmera |
+| `UnwatchCamera(Guid cameraId)` | Monitores | fecha o lease. Se não sobrar nenhum e a câmera não gravar, manda `StopPublishing` depois de 30 s de carência |
+| `SetTorch(Guid cameraId, bool on)` | Monitores | repassa à câmera. Erro `media.camera_not_publishing` se ela não estiver transmitindo |
+| `SetRecording(Guid cameraId, bool enabled)` | Monitores | liga ou desliga "Gravar sempre" (`Device.SetRecording`) |
 
 Servidor → cliente:
 
@@ -429,8 +445,11 @@ Servidor → cliente:
 | `StartPublishing()` | Camera |
 | `StopPublishing()` | Camera |
 | `SetTorch(bool on)` | Camera |
-| `CameraStatusChanged(CameraStatusDto)` | Owner, Viewer |
-| `TorchChanged(Guid cameraId, bool on)` | Owner, Viewer |
+| `WatchersChanged(int count)` | Camera |
+| `RecordingChanged(bool recording)` | Camera |
+| `CameraStatusChanged(CameraStatusDto)` | Monitores |
+| `TorchChanged(Guid cameraId, bool on)` | Monitores |
+| `CameraRemoved(Guid cameraId)` | Monitores |
 
 - Desconexão de um visualizador fecha os leases dele.
 - Quando a câmera reconecta e existe lease aberto, o servidor manda `StartPublishing` de novo.

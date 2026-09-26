@@ -1370,12 +1370,21 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
   > o dia 25 às 21:30 sem o dia 26 vazio; sem gravação, nenhum dia. Gate verde (273 no servidor e
   > no web, 234 no app).
 
-- [ ] **6.9 README e mensagens do servidor**
+- [x] **6.9 README e mensagens do servidor**
   - Origem: caminho principal novo.
   - Escopo: README com a instalação do novo jeito (aceitar o certificado uma vez, o código do
     log), mensagem do log e do `reset-owner` revisadas, e o `SPECS.md` 5.5 e 5.6 conferidos com o
     que ficou.
   - Aceite: o passo a passo do README bate com o caminho principal do `AGENTS.md`.
+  > Validação (2026-09-26): só documentação, conferida contra o código. O README deixou de dizer que
+  > nada funciona e ensina o caminho novo: subir o compose (Linux ou Docker Desktop com
+  > `RECAM_HOST`), ler o código em `docker compose logs server`, abrir `https://<ip>:8443`, aceitar o
+  > aviso do certificado uma vez, digitar o código, ler o QR com o app, e depois **Adicionar
+  > câmera**, **Adicionar Monitor**, **Conectar navegador** e o `reset-owner`; bate com os passos do
+  > caminho principal do `AGENTS.md`. As mensagens do servidor já tinham sido revistas no 6.2 (a
+  > linha do código no log e a saída do `reset-owner`); nenhuma outra fala de `/setup` ou do QR do
+  > dono. `SPECS.md` 5.5 e 5.6 foram reescritos com as rotas e os métodos do hub que existem hoje
+  > (conferidos com os `Map*` do servidor e o `IDeviceClient`), no lugar das tabelas da fase 1.
 
 - [ ] **6.10 [aparelho] Validar o novo caminho principal**
   - Origem: substitui o 1.14.
