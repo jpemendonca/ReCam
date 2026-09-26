@@ -1635,7 +1635,7 @@ app e no navegador quando o bullet não disser outra coisa.
   > mesmo; o teste confere o que dá para ver: dois "Próximo movimento" seguidos trocam o arquivo de
   > um só vídeo, sem navegar.
 
-- [ ] **8.8 Cards de câmera no navegador**
+- [x] **8.8 Cards de câmera no navegador**
   - Origem: teste do autor em 2026-09-26.
   - Escopo: cards maiores, o card inteiro clicável para abrir o ao vivo, com efeito ao passar o
     mouse (leve elevação e cursor de clique). Bolinha verde quando a câmera transmite imagem,
@@ -1644,6 +1644,18 @@ app e no navegador quando o bullet não disser outra coisa.
     desligada por padrão, que fecha sozinha ao sair da tela ou depois de 2 minutos.
   - Aceite: testes do card (cores, símbolos, miniatura abrindo e fechando no tempo) e conferência
     no Chromium.
+  > Validação (2026-09-26): só código escrito. Não conferido no Chromium: o navegador de teste daqui
+  > não vira Monitor sem o autor aprovar pelo celular ("Conectar navegador"). Cards maiores (mínimo
+  > de 320 px por coluna, mais espaço interno) e clicáveis inteiros: clicar em qualquer parte abre o
+  > ao vivo, com o card subindo um pouco, borda na cor de destaque e sombra ao passar o mouse; os
+  > botões e links dentro dele continuam fazendo só o que fazem. A bolinha ficou verde quando a
+  > câmera manda imagem e vermelha quando não manda (parada ou offline), com a dica "Sem imagem
+  > agora"; o selo "Gravando" ganhou um ponto vermelho. "Ver imagem" abre embaixo uma miniatura ao
+  > vivo (componente `CameraPreview`, com o mesmo `LiveController` do ao vivo, então a câmera começa
+  > a mandar vídeo e o lease é devolvido ao fechar); ela fecha ao clicar em "Esconder imagem", ao
+  > sair da página e sozinha depois de 2 minutos. O ícone de lanterna acesa no card fica para o
+  > 8.10, que é quem passa a guardar esse estado. Testes: cores da bolinha, clique no card abrindo o
+  > ao vivo, miniatura que abre, assiste e fecha sozinha devolvendo o lease.
 
 - [ ] **8.9 Código de primeira abertura fácil de achar**
   - Origem: teste do autor em 2026-09-26: o código só aparecia no log.

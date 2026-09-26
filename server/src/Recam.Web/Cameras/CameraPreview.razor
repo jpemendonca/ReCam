@@ -1,0 +1,63 @@
+@implements IAsyncDisposable
+@inject IStringLocalizer<Strings> L
+@inject LiveController Live
+
+@* A small live picture inside a camera card. Watching makes the camera send video, which warms
+   the phone, so it closes by itself after a while and whenever the card leaves the page. *@
+<div class="preview">
+    <video @ref="video" autoplay playsinline muted></video>
+    @if (Live.State != LiveState.Playing)
+    {
+        <p class="state">@(Live.State == LiveState.Failed ? L["PreviewFailed"] : L["LiveConnecting"])</p>
+    }
+</div>
+
+@code {
+    public static readonly TimeSpan DefaultCloseAfter = TimeSpan.FromMinutes(2);
+
+    private readonly CancellationTokenSource closing = new();
+    private ElementReference video;
+
+    [Parameter, EditorRequired]
+    public Guid CameraId { get; set; }
+
+    /// <summary>How long the preview stays open. Shorter in tests.</summary>
+    [Parameter]
+    public TimeSpan CloseAfter { get; set; } = DefaultCloseAfter;
+
+    /// <summary>Asks the card to close the preview when its time is up.</summary>
+    [Parameter]
+    public EventCallback TimedOut { get; set; }
+
+    protected override void OnInitialized() => Live.Changed += OnChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _ = CloseLaterAsync();
+        await Live.OpenAsync(CameraId, video);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Live.Changed -= OnChanged;
+        await closing.CancelAsync();
+        closing.Dispose();
+        await Live.DisposeAsync();
+    }
+
+    private async Task CloseLaterAsync()
+    {
+        await Task.Delay(CloseAfter, closing.Token).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+        if (!closing.IsCancellationRequested)
+        {
+            await InvokeAsync(TimedOut.InvokeAsync);
+        }
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+}

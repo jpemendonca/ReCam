@@ -1,6 +1,7 @@
 @implements IDisposable
 @inject IStringLocalizer<Strings> L
 @inject CameraListController Cameras
+@inject NavigationManager Navigation
 
 <div class="head">
     <h1>@L["CamerasTitle"]</h1>
@@ -31,20 +32,32 @@
         <ul class="cameras">
             @foreach (var camera in Cameras.Cameras)
             {
-                <li class="camera @(camera.Online ? string.Empty : "offline")">
-                    <a class="open" href="cameras/@camera.Id">
-                        <span class="dot @(camera.Online ? camera.Publishing ? "live" : "on" : "off")"></span>
+                var shown = camera;
+                @* The whole card opens the live video; its buttons and links do their own thing. *@
+                <li class="camera @(camera.Online ? string.Empty : "offline")" @onclick="() => Open(shown)">
+                    <a class="open" href="cameras/@camera.Id" @onclick:stopPropagation="true">
+                        <span class="dot @(camera.Publishing ? "live" : "off")"
+                              title="@(camera.Publishing ? L["CameraStreaming"] : L["CameraNoPicture"])"></span>
                         <span class="name">@camera.Name</span>
                         @if (camera.Recording)
                         {
-                            <span class="badge">@L["CameraRecording"]</span>
+                            <span class="badge" title="@L["CameraRecording"]"><span class="rec" aria-hidden="true"></span>@L["CameraRecording"]</span>
                         }
                     </a>
                     <p class="status">@Status(camera)</p>
-                    <div class="actions">
+                    <div class="actions" @onclick:stopPropagation="true">
                         <RecordingToggle Camera="camera" />
                         <a class="link" href="cameras/@camera.Id/recordings">@L["RecordingsOpen"]</a>
+                        <button class="secondary preview-toggle" @onclick="() => TogglePreview(shown.Id)">
+                            @(previews.Contains(camera.Id) ? L["PreviewHide"] : L["PreviewShow"])
+                        </button>
                     </div>
+                    @if (previews.Contains(camera.Id))
+                    {
+                        <div @onclick:stopPropagation="true">
+                            <CameraPreview CameraId="camera.Id" CloseAfter="PreviewCloseAfter" TimedOut="() => ClosePreview(shown.Id)" />
+                        </div>
+                    }
                 </li>
             }
         </ul>
@@ -63,6 +76,13 @@
     [Parameter]
     public EventCallback SignedOut { get; set; }
 
+    /// <summary>How long a card's live picture stays open. Shorter in tests.</summary>
+    [Parameter]
+    public TimeSpan PreviewCloseAfter { get; set; } = CameraPreview.DefaultCloseAfter;
+
+    // Closed by default; leaving the page disposes the previews, which stop watching.
+    private readonly HashSet<Guid> previews = [];
+
     protected override async Task OnInitializedAsync()
     {
         Cameras.Changed += OnChanged;
@@ -73,6 +93,18 @@
     public void Dispose() => Cameras.Changed -= OnChanged;
 
     private async Task RetryAsync() => await Cameras.RetryAsync(CancellationToken.None);
+
+    private void Open(CameraInfo camera) => Navigation.NavigateTo($"cameras/{camera.Id}");
+
+    private void TogglePreview(Guid cameraId)
+    {
+        if (!previews.Remove(cameraId))
+        {
+            previews.Add(cameraId);
+        }
+    }
+
+    private void ClosePreview(Guid cameraId) => previews.Remove(cameraId);
 
     private void OnChanged() => InvokeAsync(async () =>
     {

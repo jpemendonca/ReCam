@@ -81,6 +81,9 @@
   <data name="CameraIdle" xml:space="preserve">
     <value>idle</value>
   </data>
+  <data name="CameraNoPicture" xml:space="preserve">
+    <value>Not sending a picture now</value>
+  </data>
   <data name="CameraOffline" xml:space="preserve">
     <value>Offline</value>
   </data>
@@ -242,6 +245,15 @@
   </data>
   <data name="OfflineTitle" xml:space="preserve">
     <value>No connection to the server</value>
+  </data>
+  <data name="PreviewFailed" xml:space="preserve">
+    <value>Could not show the picture.</value>
+  </data>
+  <data name="PreviewHide" xml:space="preserve">
+    <value>Hide picture</value>
+  </data>
+  <data name="PreviewShow" xml:space="preserve">
+    <value>Show picture</value>
   </data>
   <data name="RecordAlways" xml:space="preserve">
     <value>Record always</value>
