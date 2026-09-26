@@ -14,6 +14,7 @@ import 'package:recam/core/network/hub_session.dart';
 import 'package:recam/viewer/add_device_screen.dart';
 import 'package:recam/viewer/camera_list_controller.dart';
 import 'package:recam/viewer/recording_timeline_controller.dart';
+import 'package:recam/viewer/recordings_timeline_screen.dart';
 import 'package:recam/viewer/viewer_pairing_controller.dart';
 
 import 'support/fakes.dart';
@@ -142,7 +143,7 @@ void main() {
   });
 
   group('RecamApp', () {
-    testWidgets('onStart_asMonitor_showsTheCameraListWithoutTabs', (
+    testWidgets('onStart_asMonitor_showsTheCameraListAndTheMonitorTabs', (
       tester,
     ) async {
       // arrange
@@ -155,7 +156,44 @@ void main() {
       expect(find.text('ReCam · Monitor'), findsOneWidget);
       expect(find.text('Paired with ReCam'), findsOneWidget);
       expect(find.text('Add camera'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(
+        tester
+            .widgetList<NavigationDestination>(
+              find.byType(NavigationDestination),
+            )
+            .map((destination) => destination.label),
+        ['Cameras', 'Recordings', 'Devices', 'Settings'],
+      );
+    });
+
+    testWidgets('recordingsTab_listsTheCamerasAndOpensTheTimeline', (
+      tester,
+    ) async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      const porch = CameraInfo(
+        id: 'cam',
+        name: 'Porch',
+        online: true,
+        publishing: false,
+        recording: true,
+      );
+      // The list loads on start and again when the hub connects.
+      api.cameraResults.addAll([
+        ApiSuccess(const [porch]),
+        ApiSuccess(const [porch]),
+      ]);
+      await openApp(tester);
+      await tester.tap(find.text('Recordings'));
+      await tester.pumpAndSettle();
+
+      // act
+      await tester.tap(find.text('Porch'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(find.byType(RecordingsTimelineScreen), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
     });
 
     testWidgets('onStart_asCamera_showsStartCameraModeWithoutTabs', (
@@ -351,7 +389,7 @@ void main() {
       expect(api.pairCalls.single.name, 'Monitor');
       expect(find.text('Welcome to ReCam'), findsNothing);
       expect(find.text('Paired with ReCam'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsNothing);
+      expect(find.byType(NavigationBar), findsOneWidget);
     });
 
     testWidgets('cameraCode_asksNameAndOpensCameraMode', (tester) async {
@@ -471,7 +509,7 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
 
-    testWidgets('menuRecordings_opensTheSpaceSlider', (tester) async {
+    testWidgets('settingsTab_showsTheSharedSpaceSlider', (tester) async {
       // arrange
       await store.write(PairingSlot.viewer, pairedSession());
       api.quotaResult = ApiSuccess(
@@ -482,20 +520,25 @@ void main() {
         ),
       );
       await openApp(tester);
-      await tester.tap(find.byTooltip('Show menu'));
-      await tester.pumpAndSettle();
 
       // act
-      await tester.tap(find.text('Recordings'));
+      await tester.tap(find.text('Settings'));
       await tester.pumpAndSettle();
 
       // assert
+      expect(
+        find.text(
+          'This is the total for all cameras together. The recordings stay '
+          'on the server, not on the phones.',
+        ),
+        findsOneWidget,
+      );
       expect(find.byType(Slider), findsOneWidget);
       expect(find.text('Space for recordings: 2 GB'), findsOneWidget);
-      expect(find.text('About 7 hours of one camera fit.'), findsOneWidget);
+      expect(find.text('About 6.8 hours of one camera fit.'), findsOneWidget);
     });
 
-    testWidgets('menuDevices_removesACameraAfterConfirming', (tester) async {
+    testWidgets('devicesTab_removesACameraAfterConfirming', (tester) async {
       // arrange
       await store.write(PairingSlot.viewer, pairedSession());
       const camera = DeviceInfo(
@@ -509,8 +552,6 @@ void main() {
         ApiSuccess(const <DeviceInfo>[]),
       ]);
       await openApp(tester);
-      await tester.tap(find.byTooltip('Show menu'));
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Devices'));
       await tester.pumpAndSettle();
 

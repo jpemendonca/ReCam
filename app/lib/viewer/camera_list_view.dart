@@ -8,11 +8,14 @@ import '../core/storage/credential_store.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'add_device_screen.dart';
 import 'camera_list_controller.dart';
+import 'devices_view.dart';
 import 'live_view_screen.dart';
 import 'recording_switch.dart';
 import 'recordings_timeline_screen.dart';
+import 'settings_view.dart';
 
-/// The Watch tab once paired: the cameras, live, and "Add camera" for the owner.
+/// A paired Monitor: four tabs, Cameras (live and "Add camera"), Recordings, Devices and
+/// Settings. It holds the one hub connection all of them use.
 class CameraListView extends StatefulWidget {
   const CameraListView({
     required this.api,
@@ -36,6 +39,7 @@ class CameraListView extends StatefulWidget {
 class _CameraListViewState extends State<CameraListView> {
   late final CameraListController _controller;
   bool _pairingLostReported = false;
+  int _tab = 0;
 
   @override
   void initState() {
@@ -106,6 +110,54 @@ class _CameraListViewState extends State<CameraListView> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    return Scaffold(
+      body: switch (_tab) {
+        1 => ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) =>
+              _RecordingsTab(state: _controller.state, onOpen: _openRecordings),
+        ),
+        2 => DevicesView(api: widget.api, session: widget.session),
+        3 => ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) => SettingsView(
+            api: widget.api,
+            session: widget.session,
+            recordingCameras: _controller.recordingCameras,
+          ),
+        ),
+        _ => _cameras(l10n),
+      },
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _tab,
+        onDestinationSelected: (index) => setState(() => _tab = index),
+        destinations: [
+          NavigationDestination(
+            icon: const Icon(Icons.videocam_outlined),
+            selectedIcon: const Icon(Icons.videocam),
+            label: l10n.navCameras,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.video_library_outlined),
+            selectedIcon: const Icon(Icons.video_library),
+            label: l10n.navRecordings,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.devices_other_outlined),
+            selectedIcon: const Icon(Icons.devices_other),
+            label: l10n.navDevices,
+          ),
+          NavigationDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: l10n.navSettings,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cameras(AppLocalizations l10n) {
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, _) => Column(
@@ -187,6 +239,52 @@ class _CameraListViewState extends State<CameraListView> {
         ],
       ),
     );
+  }
+}
+
+/// The Recordings tab: pick a camera to open its timeline.
+class _RecordingsTab extends StatelessWidget {
+  const _RecordingsTab({required this.state, required this.onOpen});
+
+  final CameraListState state;
+  final void Function(CameraInfo camera) onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return switch (state) {
+      CameraListLoading() => const Center(child: CircularProgressIndicator()),
+      CameraListFailed() => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(l10n.cameraListError, textAlign: TextAlign.center),
+        ),
+      ),
+      CameraListLoaded(:final cameras) when cameras.isEmpty => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(l10n.recordingsNoCameras, textAlign: TextAlign.center),
+        ),
+      ),
+      CameraListLoaded(:final cameras) => ListView(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(l10n.recordingsChooseCamera),
+          ),
+          for (final camera in cameras)
+            ListTile(
+              leading: const Icon(Icons.video_library_outlined),
+              title: Text(camera.name),
+              subtitle: camera.recording
+                  ? Text(l10n.cameraModeRecording)
+                  : null,
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => onOpen(camera),
+            ),
+        ],
+      ),
+    };
   }
 }
 

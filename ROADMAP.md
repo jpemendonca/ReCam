@@ -1522,7 +1522,7 @@ app e no navegador quando o bullet não disser outra coisa.
   > de abas, pareado nos dois papéis fica Monitor, troca confirmada nos dois sentidos, troca
   > cancelada, e `conflictWith`.
 
-- [ ] **8.2 Abas do Monitor: Câmeras, Gravações, Aparelhos e Configurações**
+- [x] **8.2 Abas do Monitor: Câmeras, Gravações, Aparelhos e Configurações**
   - Origem: teste do autor em 2026-09-26.
   - Escopo: no app (Monitor) e no navegador, quatro abas. Câmeras fica como está. Aparelhos fica
     como está. Configurações, por enquanto, só com o espaço de gravação (a tela que hoje se chama
@@ -1532,6 +1532,21 @@ app e no navegador quando o bullet não disser outra coisa.
     app" ficam no menu ⋮ do app.
   - Aceite: widget tests das abas no app e testes bUnit (ou o que o `Recam.Web.Tests` já usa) das
     abas no navegador; teste do texto de horas com 1 e com 3 câmeras gravando.
+  > Validação (2026-09-26): só código escrito. Não percorrido no aparelho nem aberto no navegador.
+  > App: o Monitor ganhou barra embaixo com Câmeras, Gravações, Aparelhos e Configurações, e a tela
+  > de câmeras segura a única conexão com o hub para as quatro abas. Gravações lista as câmeras (com
+  > "Gravando" em quem grava) e abre a linha do tempo de cada uma; o 8.4 põe a linha do tempo dentro
+  > da própria aba. Aparelhos é a antiga tela do menu, agora sem barra própria (`DevicesView`).
+  > Configurações é a antiga tela "Gravações" do menu (`SettingsView`), com o título "Espaço para
+  > gravações", a frase "Este é o total de todas as câmeras juntas. As gravações ficam no servidor,
+  > não nos celulares." e as horas divididas pelas câmeras que gravam ("Com 2 câmeras gravando,
+  > cabem cerca de 3,4 horas"; sem nenhuma gravando, o texto de uma câmera). O menu ⋮ ficou com
+  > Adicionar Monitor, Conectar navegador, Ler QR code e Reiniciar o app. Navegador: a página do
+  > espaço virou `/settings` ("Configurações", mesma frase e as mesmas horas), e `/recordings` virou
+  > a aba Gravações, com um cartão por câmera que abre a linha do tempo. `HoursFor` (app e
+  > navegador) recebe o número de câmeras gravando. Testes: abas do Monitor no app, aba Gravações
+  > abrindo a linha do tempo, Configurações com a frase do servidor, Aparelhos removendo; no
+  > navegador, a barra com Configurações, as horas com 2 câmeras e a lista da aba Gravações.
 
 - [ ] **8.3 Espaço de gravação pedido depois da primeira câmera**
   - Origem: teste do autor em 2026-09-26.

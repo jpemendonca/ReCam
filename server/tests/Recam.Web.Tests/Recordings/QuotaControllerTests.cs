@@ -64,6 +64,10 @@ public sealed class QuotaControllerTests
         Assert.Equal(1000, controller.SelectedMegabytes);
     }
 
-    [Fact(DisplayName = "About 300 MB fit one hour of one camera")]
-    public void HoursFor_600Megabytes_TwoHours() => Assert.Equal(2, QuotaController.HoursFor(600));
+    [Theory(DisplayName = "About 300 MB fit one hour of one camera, and the hours split among the cameras that record")]
+    [InlineData(0, 2)]
+    [InlineData(1, 2)]
+    [InlineData(2, 1)]
+    public void HoursFor_600Megabytes_SplitsAmongCameras(int cameras, double hours) =>
+        Assert.Equal(hours, QuotaController.HoursFor(600, cameras));
 }

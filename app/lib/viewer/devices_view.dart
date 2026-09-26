@@ -7,18 +7,18 @@ import '../core/storage/credential_store.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'devices_controller.dart';
 
-/// "Devices": the cameras and Monitors on the server, and removing one.
-class DevicesScreen extends StatefulWidget {
-  const DevicesScreen({required this.api, required this.session, super.key});
+/// The Monitor's Devices tab: the cameras and Monitors on the server, and removing one.
+class DevicesView extends StatefulWidget {
+  const DevicesView({required this.api, required this.session, super.key});
 
   final ApiClient api;
   final PairedSession session;
 
   @override
-  State<DevicesScreen> createState() => _DevicesScreenState();
+  State<DevicesView> createState() => _DevicesViewState();
 }
 
-class _DevicesScreenState extends State<DevicesScreen> {
+class _DevicesViewState extends State<DevicesView> {
   late final _controller = DevicesController(
     api: widget.api,
     session: widget.session,
@@ -65,37 +65,34 @@ class _DevicesScreenState extends State<DevicesScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.devicesTitle)),
-      body: ListenableBuilder(
-        listenable: _controller,
-        builder: (context, _) => switch (_controller.state) {
-          DevicesLoading() => const Center(child: CircularProgressIndicator()),
-          DevicesFailed() => Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(l10n.devicesLoadFailed, textAlign: TextAlign.center),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: _controller.load,
-                  child: Text(l10n.retryButton),
-                ),
-              ],
-            ),
-          ),
-          final DevicesLoaded loaded => ListView(
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, _) => switch (_controller.state) {
+        DevicesLoading() => const Center(child: CircularProgressIndicator()),
+        DevicesFailed() => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _Header(text: l10n.devicesCameras),
-              if (loaded.cameras.isEmpty)
-                ListTile(title: Text(l10n.cameraListEmpty)),
-              for (final device in loaded.cameras) _tile(device, l10n),
-              _Header(text: l10n.devicesMonitors),
-              for (final device in loaded.monitors) _tile(device, l10n),
+              Text(l10n.devicesLoadFailed, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _controller.load,
+                child: Text(l10n.retryButton),
+              ),
             ],
           ),
-        },
-      ),
+        ),
+        final DevicesLoaded loaded => ListView(
+          children: [
+            _Header(text: l10n.devicesCameras),
+            if (loaded.cameras.isEmpty)
+              ListTile(title: Text(l10n.cameraListEmpty)),
+            for (final device in loaded.cameras) _tile(device, l10n),
+            _Header(text: l10n.devicesMonitors),
+            for (final device in loaded.monitors) _tile(device, l10n),
+          ],
+        ),
+      },
     );
   }
 

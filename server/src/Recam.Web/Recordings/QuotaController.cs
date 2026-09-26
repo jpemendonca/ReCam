@@ -33,7 +33,9 @@ public sealed class QuotaController(IRecamApi api)
 
     public event Action? Changed;
 
-    public static double HoursFor(int megabytes) => (double)megabytes / MegabytesPerCameraHour;
+    /// <summary>Hours the space holds while <paramref name="cameras"/> record at once (at least one).</summary>
+    public static double HoursFor(int megabytes, int cameras) =>
+        (double)megabytes / MegabytesPerCameraHour / Math.Max(cameras, 1);
 
     public async Task LoadAsync()
     {

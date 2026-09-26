@@ -16,8 +16,6 @@ import 'core/pairing/device_role.dart';
 import 'pairing_router.dart';
 import 'viewer/add_device_screen.dart';
 import 'viewer/connect_browser_screen.dart';
-import 'viewer/devices_screen.dart';
-import 'viewer/recordings_screen.dart';
 import 'viewer/camera_list_controller.dart';
 import 'viewer/viewer_pairing_controller.dart';
 import 'viewer/watch_tab.dart';
@@ -143,19 +141,6 @@ class _HomeShellState extends State<HomeShell> {
     return confirmed == true;
   }
 
-  void _openDevices(ViewerPaired paired) => Navigator.of(context).push<void>(
-    MaterialPageRoute(
-      builder: (_) => DevicesScreen(api: widget.api, session: paired.session),
-    ),
-  );
-
-  void _openRecordings(ViewerPaired paired) => Navigator.of(context).push<void>(
-    MaterialPageRoute(
-      builder: (_) =>
-          RecordingsScreen(api: widget.api, session: paired.session),
-    ),
-  );
-
   void _addMonitor(ViewerPaired paired) => Navigator.of(context).push<void>(
     MaterialPageRoute(
       builder: (_) => AddDeviceScreen(
@@ -250,24 +235,12 @@ class _HomeShellState extends State<HomeShell> {
                   _addMonitor(paired),
                 (_MenuAction.connectBrowser, final ViewerPaired paired) =>
                   _connectBrowser(paired),
-                (_MenuAction.recordings, final ViewerPaired paired) =>
-                  _openRecordings(paired),
-                (_MenuAction.devices, final ViewerPaired paired) =>
-                  _openDevices(paired),
                 (_MenuAction.scan, _) => unawaited(_scan()),
                 (_MenuAction.reset, _) => unawaited(_confirmReset()),
                 _ => null,
               },
               itemBuilder: (context) => [
                 if (viewerState is ViewerPaired) ...[
-                  PopupMenuItem(
-                    value: _MenuAction.recordings,
-                    child: Text(l10n.recordingsTitle),
-                  ),
-                  PopupMenuItem(
-                    value: _MenuAction.devices,
-                    child: Text(l10n.devicesTitle),
-                  ),
                   PopupMenuItem(
                     value: _MenuAction.addMonitor,
                     child: Text(l10n.addMonitorButton),
@@ -332,11 +305,4 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
-enum _MenuAction {
-  recordings,
-  devices,
-  addMonitor,
-  connectBrowser,
-  scan,
-  reset,
-}
+enum _MenuAction { addMonitor, connectBrowser, scan, reset }

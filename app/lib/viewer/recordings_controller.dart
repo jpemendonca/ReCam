@@ -36,8 +36,10 @@ class RecordingsController extends ChangeNotifier {
 
   bool get saving => _saving;
 
-  /// How many hours of one camera fit in [megabytes].
-  static double hoursFor(int megabytes) => megabytes / megabytesPerCameraHour;
+  /// How many hours fit in [megabytes] while [cameras] record at once (at least one): the
+  /// space is shared by every camera.
+  static double hoursFor(int megabytes, int cameras) =>
+      megabytes / megabytesPerCameraHour / (cameras < 1 ? 1 : cameras);
 
   Future<void> load() async {
     _setState(RecordingsLoading());

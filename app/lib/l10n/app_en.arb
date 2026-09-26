@@ -231,5 +231,24 @@
   "switchToMonitorTitle": "This phone is a camera. Make it a Monitor?",
   "switchToCameraTitle": "This phone is a Monitor. Make it a camera?",
   "switchRoleMessage": "It leaves the server in its current role and pairs again with this QR code.",
-  "switchRoleConfirm": "Switch"
+  "switchRoleConfirm": "Switch",
+  "navCameras": "Cameras",
+  "navRecordings": "Recordings",
+  "navDevices": "Devices",
+  "navSettings": "Settings",
+  "recordingsSpaceTitle": "Space for recordings",
+  "settingsSpaceScope": "This is the total for all cameras together. The recordings stay on the server, not on the phones.",
+  "recordingsChooseCamera": "Choose a camera to see its recordings.",
+  "recordingsNoCameras": "No cameras yet. Add one on the Cameras tab.",
+  "recordingsHoursCameras": "{count, plural, =1{With 1 camera recording, about {hours} hours fit.} other{With {count} cameras recording, about {hours} hours fit.}}",
+  "@recordingsHoursCameras": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "hours": {
+        "type": "String"
+      }
+    }
+  }
 }

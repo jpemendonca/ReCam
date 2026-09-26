@@ -137,5 +137,14 @@
   "switchToMonitorTitle": "Este celular é uma câmera. Virar Monitor?",
   "switchToCameraTitle": "Este celular é um Monitor. Virar câmera?",
   "switchRoleMessage": "Ele sai do servidor no papel de agora e é pareado de novo com este QR code.",
-  "switchRoleConfirm": "Trocar"
+  "switchRoleConfirm": "Trocar",
+  "navCameras": "Câmeras",
+  "navRecordings": "Gravações",
+  "navDevices": "Aparelhos",
+  "navSettings": "Configurações",
+  "recordingsSpaceTitle": "Espaço para gravações",
+  "settingsSpaceScope": "Este é o total de todas as câmeras juntas. As gravações ficam no servidor, não nos celulares.",
+  "recordingsChooseCamera": "Escolha uma câmera para ver as gravações dela.",
+  "recordingsNoCameras": "Nenhuma câmera ainda. Adicione uma na aba Câmeras.",
+  "recordingsHoursCameras": "{count, plural, =1{Com 1 câmera gravando, cabem cerca de {hours} horas.} other{Com {count} câmeras gravando, cabem cerca de {hours} horas.}}"
 }

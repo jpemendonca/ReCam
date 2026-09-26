@@ -216,6 +216,9 @@
   <data name="NavRecordings" xml:space="preserve">
     <value>Gravações</value>
   </data>
+  <data name="NavSettings" xml:space="preserve">
+    <value>Configurações</value>
+  </data>
   <data name="NotFoundBack" xml:space="preserve">
     <value>Voltar ao início</value>
   </data>
@@ -237,8 +240,17 @@
   <data name="RecordingNeedsH264" xml:space="preserve">
     <value>Não grava: este celular não tem H.264</value>
   </data>
+  <data name="RecordingsChooseCamera" xml:space="preserve">
+    <value>Escolha uma câmera para ver as gravações dela.</value>
+  </data>
   <data name="RecordingsHours" xml:space="preserve">
     <value>Cabem cerca de {0} horas de uma câmera.</value>
+  </data>
+  <data name="RecordingsHoursCameras" xml:space="preserve">
+    <value>Com {1} câmeras gravando, cabem cerca de {0} horas.</value>
+  </data>
+  <data name="RecordingsHoursOneCamera" xml:space="preserve">
+    <value>Com 1 câmera gravando, cabem cerca de {0} horas.</value>
   </data>
   <data name="RecordingsHowItWorks" xml:space="preserve">
     <value>Uma câmera grava cerca de 300 MB por hora. Quando o espaço enche, as gravações mais antigas são apagadas, de qualquer câmera.</value>
@@ -248,6 +260,9 @@
   </data>
   <data name="RecordingsLoadFailed" xml:space="preserve">
     <value>Não deu para carregar o espaço das gravações. Confira a conexão com o servidor.</value>
+  </data>
+  <data name="RecordingsNoCameras" xml:space="preserve">
+    <value>Nenhuma câmera ainda. Adicione uma na aba Câmeras.</value>
   </data>
   <data name="RecordingsOpen" xml:space="preserve">
     <value>Gravações</value>
@@ -287,6 +302,12 @@
   </data>
   <data name="ServerTakenTitle" xml:space="preserve">
     <value>Este servidor já tem um Monitor</value>
+  </data>
+  <data name="SettingsSpaceScope" xml:space="preserve">
+    <value>Este é o total de todas as câmeras juntas. As gravações ficam no servidor, não nos celulares.</value>
+  </data>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>Configurações</value>
   </data>
   <data name="SignOut" xml:space="preserve">
     <value>Sair</value>

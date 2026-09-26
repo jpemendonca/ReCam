@@ -33,7 +33,7 @@ public sealed class MainLayoutTests : BunitContext
         var layout = Render<MainLayout>();
 
         // assert
-        layout.WaitForAssertion(() => Assert.Equal(["Câmeras", "Gravações", "Aparelhos"], layout.FindAll("nav a").Select(link => link.TextContent)));
+        layout.WaitForAssertion(() => Assert.Equal(["Câmeras", "Gravações", "Aparelhos", "Configurações"], layout.FindAll("nav a").Select(link => link.TextContent)));
         Assert.Equal("Sair", layout.Find("nav button").TextContent);
         Assert.True(_hub.Connected);
     }

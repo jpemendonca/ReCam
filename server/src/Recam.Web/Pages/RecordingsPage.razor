@@ -1,0 +1,45 @@
+@page "/recordings"
+@implements IDisposable
+@inject IStringLocalizer<Strings> L
+@inject CameraListController Cameras
+
+<PageTitle>@L["RecordingsTitle"]</PageTitle>
+
+<div class="bar">
+    <h1>@L["RecordingsTitle"]</h1>
+</div>
+
+@if (Cameras.State == CameraListState.Loading)
+{
+    <div class="loading" aria-hidden="true"></div>
+}
+else if (Cameras.Cameras.Count == 0)
+{
+    <p class="note">@L["RecordingsNoCameras"]</p>
+}
+else
+{
+    <p class="note">@L["RecordingsChooseCamera"]</p>
+    <ul class="choices">
+        @foreach (var camera in Cameras.Cameras)
+        {
+            <li>
+                <a href="cameras/@camera.Id/recordings">
+                    <span class="name">@camera.Name</span>
+                    @if (camera.Recording)
+                    {
+                        <span class="badge">@L["CameraRecording"]</span>
+                    }
+                </a>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    protected override void OnInitialized() => Cameras.Changed += OnChanged;
+
+    public void Dispose() => Cameras.Changed -= OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+}

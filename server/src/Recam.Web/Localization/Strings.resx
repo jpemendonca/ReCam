@@ -216,6 +216,9 @@
   <data name="NavRecordings" xml:space="preserve">
     <value>Recordings</value>
   </data>
+  <data name="NavSettings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
   <data name="NotFoundBack" xml:space="preserve">
     <value>Back to the start</value>
   </data>
@@ -237,8 +240,17 @@
   <data name="RecordingNeedsH264" xml:space="preserve">
     <value>Can't record: this phone has no H.264</value>
   </data>
+  <data name="RecordingsChooseCamera" xml:space="preserve">
+    <value>Choose a camera to see its recordings.</value>
+  </data>
   <data name="RecordingsHours" xml:space="preserve">
     <value>About {0} hours of one camera fit.</value>
+  </data>
+  <data name="RecordingsHoursCameras" xml:space="preserve">
+    <value>With {1} cameras recording, about {0} hours fit.</value>
+  </data>
+  <data name="RecordingsHoursOneCamera" xml:space="preserve">
+    <value>With 1 camera recording, about {0} hours fit.</value>
   </data>
   <data name="RecordingsHowItWorks" xml:space="preserve">
     <value>A camera records about 300 MB per hour. When the space is full, the oldest recordings are deleted, from any camera.</value>
@@ -248,6 +260,9 @@
   </data>
   <data name="RecordingsLoadFailed" xml:space="preserve">
     <value>Could not load the recordings space. Check the connection to the server.</value>
+  </data>
+  <data name="RecordingsNoCameras" xml:space="preserve">
+    <value>No cameras yet. Add one on the Cameras tab.</value>
   </data>
   <data name="RecordingsOpen" xml:space="preserve">
     <value>Recordings</value>
@@ -287,6 +302,12 @@
   </data>
   <data name="ServerTakenTitle" xml:space="preserve">
     <value>This server already has a Monitor</value>
+  </data>
+  <data name="SettingsSpaceScope" xml:space="preserve">
+    <value>This is the total for all cameras together. The recordings stay on the server, not on the phones.</value>
+  </data>
+  <data name="SettingsTitle" xml:space="preserve">
+    <value>Settings</value>
   </data>
   <data name="SignOut" xml:space="preserve">
     <value>Sign out</value>

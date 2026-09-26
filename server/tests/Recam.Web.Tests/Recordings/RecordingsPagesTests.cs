@@ -117,7 +117,7 @@ public sealed class RecordingsPagesTests : BunitContext
     {
         // arrange
         using var _ = Culture.Use("pt-BR");
-        var page = Render<RecordingsSpace>();
+        var page = Render<SettingsPage>();
         page.WaitForAssertion(() => Assert.Equal("Em uso: 0,3 de 2,0 GB.", page.Find(".note").TextContent));
 
         // act
@@ -128,5 +128,40 @@ public sealed class RecordingsPagesTests : BunitContext
         page.WaitForAssertion(() => Assert.Equal("Espaço para gravações salvo.", page.Find(".ok").TextContent));
         Assert.Equal("Espaço para gravações: 1,0 GB", page.Find("label").TextContent);
         Assert.Equal(1024, _api.Quota.QuotaMb);
+    }
+
+    [Fact(DisplayName = "Settings says the space is shared on the server and splits the hours among recording cameras")]
+    public async Task Settings_TwoRecordingCameras_SplitsHours()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        _api.Cameras.Add(Support.Cameras.Make("Garagem", recording: true));
+        await Services.GetRequiredService<CameraListController>().StartAsync(Xunit.TestContext.Current.CancellationToken);
+
+        // act
+        var page = Render<SettingsPage>();
+
+        // assert
+        page.WaitForAssertion(() => Assert.Equal("Com 2 câmeras gravando, cabem cerca de 3,4 horas.", page.Find(".hours").TextContent));
+        Assert.Equal(
+            "Este é o total de todas as câmeras juntas. As gravações ficam no servidor, não nos celulares.",
+            page.Find(".scope").TextContent);
+    }
+
+    [Fact(DisplayName = "The Recordings tab lists the cameras, each opening its timeline")]
+    public async Task Recordings_ListsCameras_LinkToTimeline()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        await Services.GetRequiredService<CameraListController>().StartAsync(Xunit.TestContext.Current.CancellationToken);
+
+        // act
+        var page = Render<RecordingsPage>();
+
+        // assert
+        var link = page.Find(".choices a");
+        Assert.Equal($"cameras/{_camera.Id}/recordings", link.GetAttribute("href"));
+        Assert.Equal("Porta", page.Find(".choices .name").TextContent);
+        Assert.Equal("Gravando", page.Find(".choices .badge").TextContent);
     }
 }

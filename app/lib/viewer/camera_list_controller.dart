@@ -104,6 +104,13 @@ class CameraListController extends ChangeNotifier {
     _ => null,
   };
 
+  /// How many cameras have "Record always" on; they share the recording space.
+  int get recordingCameras => switch (_state) {
+    CameraListLoaded(:final cameras) =>
+      cameras.where((camera) => camera.recording).length,
+    _ => 0,
+  };
+
   /// The recordings of one camera.
   RecordingTimelineController openRecordings(String cameraId) =>
       _timelineFactory(cameraId);

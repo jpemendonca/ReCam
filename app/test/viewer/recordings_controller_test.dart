@@ -58,10 +58,23 @@ void main() {
       const megabytes = 3000;
 
       // act
-      final hours = RecordingsController.hoursFor(megabytes);
+      final hours = RecordingsController.hoursFor(megabytes, 1);
 
       // assert
       expect(hours, 10);
+    });
+
+    test('hoursFor_splitsTheSpaceAmongRecordingCameras', () {
+      // arrange
+      const megabytes = 3000;
+
+      // act
+      final none = RecordingsController.hoursFor(megabytes, 0);
+      final two = RecordingsController.hoursFor(megabytes, 2);
+
+      // assert
+      expect(none, 10);
+      expect(two, 5);
     });
 
     test('save_sendsTheSelectedQuota', () async {

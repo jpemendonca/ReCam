@@ -1,0 +1,53 @@
+.bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.bar h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.note {
+  color: var(--muted);
+}
+
+.choices {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+}
+
+.choices a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: inherit;
+  text-decoration: none;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.choices a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 12%);
+}
+
+.name {
+  font-weight: 600;
+}
+
+.badge {
+  font-size: 0.8rem;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+}
