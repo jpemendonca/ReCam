@@ -3,7 +3,7 @@ namespace Recam.Server.Features.Setup;
 /// <summary>
 /// The current first-time code, kept in the data folder so <c>./Recam.Server code</c>, which runs
 /// as another process, can show it. It exists only while the server has no Monitor. Like the log
-/// line, it is not a credential: the code only works from the local network.
+/// line, it is not a credential: the code only makes the first Monitor.
 /// </summary>
 public static class FirstOpenCodeFile
 {

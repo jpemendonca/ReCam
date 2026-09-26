@@ -42,7 +42,6 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
             HttpStatusCode.NoContent => FirstOpenOutcome.Opened,
             HttpStatusCode.Unauthorized => FirstOpenOutcome.WrongCode,
             HttpStatusCode.Conflict => FirstOpenOutcome.AlreadyHasMonitor,
-            HttpStatusCode.Forbidden => FirstOpenOutcome.NotLocal,
             HttpStatusCode.TooManyRequests => FirstOpenOutcome.TooManyAttempts,
             _ => throw new HttpRequestException($"Unexpected answer {(int)response.StatusCode} to the first-time code.", null, response.StatusCode),
         };

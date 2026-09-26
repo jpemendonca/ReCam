@@ -95,7 +95,6 @@
 
     private string ErrorText(FirstOpenOutcome error) => error switch
     {
-        FirstOpenOutcome.NotLocal => L["CodeNotLocal"],
         FirstOpenOutcome.TooManyAttempts => L["CodeTooMany"],
         _ => L["CodeWrong"],
     };

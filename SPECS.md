@@ -404,7 +404,7 @@ Estado em 2026-09-26 (conferido no bullet 6.9). As revisões do log 12 contam co
 | `GET /` e arquivos do `Recam.Web` | qualquer um | — | o Monitor no navegador |
 | `GET /setup` | qualquer um | — | redireciona para `/` |
 | `GET /api/web/first-open` | qualquer um | — | `{ open }`: `true` enquanto não há Monitor ativo |
-| `POST /api/web/first-open` | só da rede local, só sem Monitor ativo, limite de 5 por minuto por IP | `{ code, remember }` | `204` e o cookie; o navegador vira `Owner` |
+| `POST /api/web/first-open` | qualquer rede, só sem Monitor ativo, limite de 5 por minuto por IP | `{ code, remember }` | `204` e o cookie; o navegador vira `Owner` |
 | `POST /api/web/sign-out` | o próprio aparelho | — | `204`, revoga o aparelho e apaga o cookie |
 | `POST /api/browser-links` | qualquer um, limite de 5 por minuto por IP | — | `201 { id, qrUri, claim, expiresAt }`; o `claim` fica só no navegador |
 | `POST /api/browser-links/{id}/approve` | Monitores | `{ secret }` do QR | `204` |
@@ -493,9 +493,10 @@ Servidor → cliente:
 - **Código de primeira abertura (fase 6).** Enquanto não há Monitor ativo, o servidor mantém em
   memória um código curto (8 caracteres de um alfabeto sem letras parecidas, mostrado como
   `XXXX-XXXX`) e o imprime no log com o endereço. É a única exceção à regra de não logar segredo.
-  Ele não é credencial: só serve para `POST /api/web/first-open`, só da rede local, e só enquanto
-  não há Monitor. Um código novo sai a cada start e depois de 5 tentativas erradas. Quem abrir
-  primeiro na rede local com o código vira o dono; o `reset-owner` desfaz.
+  Ele não é credencial: só serve para `POST /api/web/first-open`, e só enquanto não há Monitor.
+  Vale de qualquer rede, para funcionar numa VPS (revisão de 2026-09-26, bullet 10.1). Um código
+  novo sai a cada start e depois de 5 tentativas erradas, e cada IP tem 5 tentativas por minuto.
+  Quem abrir primeiro com o código vira o dono; o `reset-owner` desfaz.
 - O primeiro pareamento cria o `Owner`. Só existe um dono. O app não mostra esse conceito; ele
   existe para a segurança (revogar aparelhos fica na fase 4).
 - Dono e visualizadores geram tokens de câmera e de visualizador. Ninguém gera token de dono.
@@ -848,3 +849,9 @@ seguinte em `docs/adr/`:
 > `docker compose exec server ./Recam.Server code` lê esse arquivo e mostra o bloco de novo, ou diz
 > que o servidor já tem Monitor (bullet 8.9). O código continua não sendo credencial e só vale na
 > rede local.
+
+> Revisão (2026-09-26): o código de primeira abertura passa a valer de qualquer rede (bullet 10.1),
+> para o servidor funcionar numa VPS. O código sozinho basta: 8 caracteres entre 31 (cerca de 850
+> bilhões de combinações), troca depois de 5 erros, 5 tentativas por minuto por IP e só existe até
+> o primeiro Monitor. A exigência de rede local, e a recusa de `X-Forwarded-For` de proxy não
+> confiável que vinha com ela, saem.

@@ -1796,7 +1796,7 @@ Decidido com o autor em 2026-09-26: rodar o servidor numa VPS, com as câmeras e
 assiste em qualquer lugar. Certificado, tráfego e limite da VPS são responsabilidade de quem roda o
 servidor; o projeto só precisa funcionar nesse cenário e explicar como montar.
 
-- [ ] **10.1 Código de primeira abertura aceito de qualquer rede**
+- [x] **10.1 Código de primeira abertura aceito de qualquer rede**
   - Origem: decisão do autor em 2026-09-26. O código já basta: 8 caracteres entre 31, morre após
     5 erros e só existe até o primeiro Monitor. A regra "só da rede local" impede usar numa VPS.
   - Escopo: `POST /api/web/first-open` deixa de exigir IP da rede local. Mantém o limite de 5 por
@@ -1804,6 +1804,12 @@ servidor; o projeto só precisa funcionar nesse cenário e explicar como montar.
     regra de token no `AGENTS.md`.
   - Aceite: teste de integração com IP público virando Monitor com o código certo, e o limite de
     tentativas continuando a valer.
+  > Validação (2026-09-26): saiu a checagem de rede local, o erro `setup.not_local` e o texto
+  > "CodeNotLocal" do navegador. O log agora diz só "On a computer". Testes novos: IP público vira
+  > Monitor com o código; o sexto erro no minuto recebe 429; atrás de proxy confiável cada IP real
+  > tem o próprio limite, e de proxy desconhecido todos dividem um. Só código e teste. Achado para
+  > a 10.2: o suporte a proxy já existe em boa parte (`RECAM_TRUSTED_PROXIES`, TLS desligável e QR
+  > sem fingerprint); falta conferir o app e escrever o guia.
 
 - [ ] **10.2 Servidor atrás de um proxy com certificado de verdade**
   - Origem: VPS do autor, em 2026-09-26. Quem expõe na internet coloca um proxy (Caddy, Nginx
@@ -1813,14 +1819,16 @@ servidor; o projeto só precisa funcionar nesse cenário e explicar como montar.
     (`RECAM_PUBLIC_URLS`). O app pareia com um servidor de certificado válido, sem depender do
     fingerprint. O SignalR e o WHIP/WHEP passam pelo proxy. O vídeo continua direto na
     `8189/udp`, fora do proxy.
-  - Fora do escopo: pôr o Caddy no compose. O exemplo de configuração fica no README.
+  - Fora do escopo: pôr o Caddy no compose. O exemplo de configuração fica num guia à parte,
+    em `docs/`, que o README só cita.
   - Aceite: teste do IP real atrás do proxy; teste do app aceitando certificado válido sem `f`.
 
 - [ ] **10.3 Guia de instalação numa VPS**
-  - Escopo: seção no README (inglês): portas a abrir (`443/tcp` no proxy, `8189/udp` no servidor),
-    `RECAM_HOST` com o IP público (que também vai para o `webrtcAdditionalHosts` do MediaMTX),
-    `RECAM_PUBLIC_URLS` com o domínio, exemplo de Caddyfile, e onde ver o código de primeira
-    abertura (`./Recam.Server code`).
+  - Escopo: no quick start do README (inglês), começar rápido e com poucos comandos, em casa ou
+    numa VPS. Sem proxy: portas `8443/tcp` e `8189/udp` abertas, `RECAM_HOST` com o IP público
+    (que também vai para o `webrtcAdditionalHosts` do MediaMTX), e o código de primeira abertura
+    (`./Recam.Server code`). O navegador mostra o aviso de certificado, e o guia diz que é
+    esperado. Tirar o aviso com um proxy fica no guia da 10.2, que o README só cita.
   - Aceite: o autor segue o guia do zero na VPS dele sem precisar de outra ajuda.
 
 - [ ] **10.4 [aparelho] Validar na VPS**

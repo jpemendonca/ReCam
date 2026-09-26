@@ -110,7 +110,7 @@ Regras do domínio:
   áudio no MVP. Revisado em 2026-09-26: a Fase 9 do ROADMAP traz o áudio (gravar e ouvir ao vivo).
 - Token e credencial nunca aparecem em log, nem truncados. No banco, só o hash. Única exceção:
   o código de primeira abertura, que o servidor imprime no log e guarda em `/data/first-open-code`
-  (para o comando `./Recam.Server code`) enquanto não existe Monitor ativo (`Features/Setup/`). Ele só serve para o primeiro navegador virar Monitor, e só na rede local.
+  (para o comando `./Recam.Server code`) enquanto não existe Monitor ativo (`Features/Setup/`). Ele só serve para o primeiro navegador virar Monitor, de qualquer rede (revisado em 2026-09-26, bullet 10.1).
   Até a fase 6 terminar, a exceção era o QR do token do dono, no mesmo lugar.
 - Todo texto que o usuário vê no app vem dos arquivos ARB, em `en` e `pt`. Nunca string literal
   em widget.

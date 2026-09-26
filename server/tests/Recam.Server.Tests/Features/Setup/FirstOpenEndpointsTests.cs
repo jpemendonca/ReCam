@@ -139,8 +139,8 @@ public sealed class FirstOpenEndpointsTests
         Assert.Contains("setup.already_has_monitor", await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken), StringComparison.Ordinal);
     }
 
-    [Fact(DisplayName = "The code does not work from outside the local network")]
-    public async Task Open_FromPublicAddress_ReturnsForbidden()
+    [Fact(DisplayName = "From outside the local network, as on a VPS, the right code also makes the browser the owner")]
+    public async Task Open_FromPublicAddress_MakesOwner()
     {
         // arrange
         using var factory = new RecamApiFactory { RemoteIpAddress = IPAddress.Parse("203.0.113.7") };
@@ -151,24 +151,26 @@ public sealed class FirstOpenEndpointsTests
         using var response = await OpenAsync(client, code, remember: false);
 
         // assert
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
 
-    [Fact(DisplayName = "Forwarded headers that no trusted proxy consumed are refused")]
-    public async Task Open_WithForwardedHeader_ReturnsForbidden()
+    [Fact(DisplayName = "From outside, guessing is still held back: five tries a minute per address")]
+    public async Task Open_FromPublicAddress_KeepsRateLimit()
     {
         // arrange
-        using var factory = new RecamApiFactory();
-        var code = await factory.FirstOpenCodeAsync();
+        using var factory = new RecamApiFactory { RemoteIpAddress = IPAddress.Parse("203.0.113.7") };
+        await factory.FirstOpenCodeAsync();
         using var client = factory.CreateBrowserClient();
-        using var request = OpenRequest(code, remember: false);
-        request.Headers.Add("X-Forwarded-For", "192.168.0.20");
+        for (var attempt = 0; attempt < FirstOpenCode.MaxAttempts; attempt++)
+        {
+            using var wrong = await OpenAsync(client, "AAAA-AAAA", remember: false);
+        }
 
         // act
-        using var response = await client.SendAsync(request, TestContext.Current.CancellationToken);
+        using var response = await OpenAsync(client, "AAAA-AAAA", remember: false);
 
         // assert
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.TooManyRequests, response.StatusCode);
     }
 
     [Fact(DisplayName = "A cookie request that changes something needs the X-Recam-Web header")]

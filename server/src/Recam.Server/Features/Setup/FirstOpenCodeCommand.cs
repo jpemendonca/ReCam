@@ -50,7 +50,7 @@ public static class FirstOpenCodeCommand
     /// <summary>The same steps the server prints in its log.</summary>
     public static string Banner(string serverUrls, string code) => $"""
         ==================== ReCam ====================
-        No Monitor yet. On a computer in this network:
+        No Monitor yet. On a computer:
           1. Open {serverUrls} in the browser and accept the certificate warning.
           2. Type the first-time code {code}
         To see this again: docker compose exec server ./Recam.Server code

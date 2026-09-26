@@ -14,7 +14,6 @@ namespace Recam.Server.Tests.Infrastructure.Http;
 public sealed class ReverseProxyTests
 {
     private static readonly Uri FirstOpenUri = new("/api/web/first-open", UriKind.Relative);
-    private static readonly IPAddress Proxy = IPAddress.Parse("10.0.0.5");
 
     [Fact(DisplayName = "With TLS off, camera QR codes carry no fingerprint either")]
     public async Task CreatePairingToken_WithTlsOff_HasNoFingerprint()
@@ -51,48 +50,31 @@ public sealed class ReverseProxyTests
         Assert.Equal(64, query["f"]?.Length);
     }
 
-    [Theory(DisplayName = "Behind a trusted proxy, the first-time code sees the real client address")]
-    [InlineData("192.168.0.20", HttpStatusCode.NoContent)]
-    [InlineData("203.0.113.7", HttpStatusCode.Forbidden)]
-    public async Task FirstOpen_ThroughTrustedProxy_UsesForwardedClient(string client, HttpStatusCode expected)
+    [Theory(DisplayName = "Behind a trusted proxy, the limit on first-time code tries counts each real client apart")]
+    [InlineData("10.0.0.0/24", "10.0.0.5", HttpStatusCode.Unauthorized)]
+    [InlineData("10.0.0.5", "10.0.0.9", HttpStatusCode.TooManyRequests)]
+    public async Task FirstOpen_BehindProxy_LimitsTheRealClient(string trusted, string proxy, HttpStatusCode otherClient)
     {
         // arrange
         using var factory = new RecamApiFactory
         {
-            RemoteIpAddress = Proxy,
-            Settings = new Dictionary<string, string> { [ServerSettings.TrustedProxiesKey] = "10.0.0.0/24" },
+            RemoteIpAddress = IPAddress.Parse(proxy),
+            Settings = new Dictionary<string, string> { [ServerSettings.TrustedProxiesKey] = trusted },
         };
-        var code = await factory.FirstOpenCodeAsync();
+        await factory.FirstOpenCodeAsync();
         using var http = factory.CreateBrowserClient();
-        using var request = FirstOpenRequest(code);
-        request.Headers.Add("X-Forwarded-For", client);
-
-        // act
-        using var response = await http.SendAsync(request, TestContext.Current.CancellationToken);
-
-        // assert
-        Assert.Equal(expected, response.StatusCode);
-    }
-
-    [Fact(DisplayName = "Forwarded headers from a proxy nobody named are not believed")]
-    public async Task FirstOpen_ThroughUntrustedProxy_IsRefused()
-    {
-        // arrange
-        using var factory = new RecamApiFactory
+        for (var attempt = 0; attempt < FirstOpenCode.MaxAttempts; attempt++)
         {
-            RemoteIpAddress = IPAddress.Parse("10.0.0.9"),
-            Settings = new Dictionary<string, string> { [ServerSettings.TrustedProxiesKey] = "10.0.0.5" },
-        };
-        var code = await factory.FirstOpenCodeAsync();
-        using var http = factory.CreateBrowserClient();
-        using var request = FirstOpenRequest(code);
-        request.Headers.Add("X-Forwarded-For", "192.168.0.20");
+            using var guess = await WrongCodeFromAsync(http, "203.0.113.7");
+        }
 
         // act
-        using var response = await http.SendAsync(request, TestContext.Current.CancellationToken);
+        using var response = await WrongCodeFromAsync(http, "198.51.100.4");
 
         // assert
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        // A trusted proxy's header is believed, so the other client still has its tries; from a
+        // proxy nobody named, everyone looks like the proxy and shares one limit.
+        Assert.Equal(otherClient, response.StatusCode);
     }
 
     [Theory(DisplayName = "A value that is not an address or network stops the server at startup")]
@@ -110,6 +92,13 @@ public sealed class ReverseProxyTests
 
         // assert
         Assert.IsType<InvalidOperationException>(exception);
+    }
+
+    private static async Task<HttpResponseMessage> WrongCodeFromAsync(HttpClient http, string client)
+    {
+        using var request = FirstOpenRequest("AAAA-AAAA");
+        request.Headers.Add("X-Forwarded-For", client);
+        return await http.SendAsync(request, TestContext.Current.CancellationToken);
     }
 
     private static HttpRequestMessage FirstOpenRequest(string code) => new(HttpMethod.Post, FirstOpenUri)

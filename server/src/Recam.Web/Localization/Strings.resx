@@ -120,9 +120,6 @@
   <data name="CodeLabel" xml:space="preserve">
     <value>First-time code</value>
   </data>
-  <data name="CodeNotLocal" xml:space="preserve">
-    <value>The code only works from the server's local network.</value>
-  </data>
   <data name="CodeRemember" xml:space="preserve">
     <value>Remember on this computer</value>
   </data>

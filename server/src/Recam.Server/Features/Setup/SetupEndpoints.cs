@@ -50,11 +50,6 @@ public static class SetupEndpoints
         TimeProvider timeProvider,
         CancellationToken cancellationToken)
     {
-        if (!IsDirectLocalRequest(context))
-        {
-            return SetupErrors.NotLocal.ToHttpResult();
-        }
-
         var headers = context.Request.GetTypedHeaders();
         var name = BrowserDeviceName.From(context.Request.Headers.UserAgent, headers.AcceptLanguage);
         var opened = await firstOpen.OpenAsync(request.Code, name, cancellationToken);
@@ -85,11 +80,4 @@ public static class SetupEndpoints
         DeviceCookie.Delete(context.Response);
         return TypedResults.NoContent();
     }
-
-    // The code only works from the local network. Behind a trusted proxy the forwarded client
-    // address is already in place; forwarded headers from anyone else are refused.
-    private static bool IsDirectLocalRequest(HttpContext context) =>
-        !context.Request.Headers.ContainsKey("X-Forwarded-For")
-        && context.Connection.RemoteIpAddress is { } remote
-        && remote.IsPrivateOrLoopback();
 }

@@ -5,6 +5,5 @@ public enum FirstOpenOutcome
     Opened,
     WrongCode,
     AlreadyHasMonitor,
-    NotLocal,
     TooManyAttempts,
 }

@@ -109,8 +109,9 @@ public sealed partial class FirstOpen(
     }
 
     // The only log line allowed to carry a secret (AGENTS.md): the operator reads it to claim the
-    // server. It is not a credential and only works from the local network. A framed block, so it
-    // stands out among the other lines of docker compose up.
+    // server. It is not a credential: it only makes the first Monitor, dies after five wrong tries
+    // and is gone once a Monitor exists. A framed block, so it stands out among the other lines of
+    // docker compose up.
     [LoggerMessage(Level = LogLevel.Warning, Message = "{Banner}")]
     private static partial void LogCode(ILogger logger, string banner);
 
