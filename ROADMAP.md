@@ -1837,6 +1837,12 @@ servidor; o projeto só precisa funcionar nesse cenário e explicar como montar.
     (`./Recam.Server code`). O navegador mostra o aviso de certificado, e o guia diz que é
     esperado. Tirar o aviso com um proxy fica no guia da 10.2, que o README só cita.
   - Aceite: o autor segue o guia do zero na VPS dele sem precisar de outra ajuda.
+  > Em andamento (2026-09-26): o README ganhou o caminho da VPS no passo 1 (`git clone`, `.env` com
+  > `RECAM_HOST` = IP público, `docker compose up -d`, portas também no painel do provedor) e diz
+  > que o aviso do certificado é esperado, apontando o guia de proxy. O `compose.yaml` agora
+  > manda o `RECAM_HOST` para o `webrtcAdditionalHosts` do MediaMTX (conferido com
+  > `docker compose config`; vazio, o MediaMTX sobe normal). `.env.example` e `SPECS.md` 5.1
+  > revisados. Falta o aceite: o autor seguir o guia do zero na VPS, junto com a 10.4.
 
 - [ ] **10.4 [aparelho] Validar na VPS**
   - Escopo: servidor na VPS do autor. Samsung A10 em casa, no Wi-Fi, como câmera. Redmi 6A no

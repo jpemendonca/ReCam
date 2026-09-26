@@ -333,6 +333,9 @@ Nada depende de internet. Todo o caminho principal funciona numa rede local sem 
   no modo host (Linux).
 - No `compose.bridge.yaml`, `RECAM_HOST` é obrigatória. Ela vai para o servidor e para o
   `webrtcAdditionalHosts` do MediaMTX.
+- No `compose.yaml`, `RECAM_HOST` é opcional em casa e necessária numa VPS, com o IP público. Ela
+  também vai para o `webrtcAdditionalHosts`, porque em algumas VPS o IP público não está numa
+  interface de rede (revisão de 2026-09-26, bullet 10.3).
 
 ### 5.2 QR de pareamento
 

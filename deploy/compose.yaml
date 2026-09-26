@@ -27,6 +27,8 @@ services:
     network_mode: host
     environment:
       MTX_WEBRTCADDRESS: 127.0.0.1:8889
+      # On a VPS whose public IP is not on a network interface, video needs it announced.
+      MTX_WEBRTCADDITIONALHOSTS: ${RECAM_HOST:-}
     volumes:
       - ./mediamtx.yml:/mediamtx.yml:ro
       - recam-recordings:/recordings

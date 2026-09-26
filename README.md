@@ -19,16 +19,21 @@ You need one phone and one computer to start:
 
 ## How it works
 
-1. **Start the server.** In the `deploy/` folder: on Linux, `docker compose up -d`; on Windows or
-   macOS with Docker Desktop, copy `.env.example` to `.env`, set `RECAM_HOST` to the computer's
-   network address and run `docker compose -f compose.bridge.yaml up -d`. Allow ports 8443/tcp and
-   8189/udp in the firewall.
+1. **Start the server.** Get the code with `git clone https://github.com/jpemendonca/ReCam.git`
+   and go to `ReCam/deploy`. Then:
+   - **Linux at home:** `docker compose up -d`.
+   - **VPS:** `cp .env.example .env`, set `RECAM_HOST` to the VPS public IP in `.env`, and run
+     `docker compose up -d`. Cameras and Monitors then reach it from anywhere.
+   - **Windows or macOS (Docker Desktop):** `cp .env.example .env`, set `RECAM_HOST` to the
+     computer's network address, and run `docker compose -f compose.bridge.yaml up -d`.
+
+   Allow ports 8443/tcp and 8189/udp in the firewall (on a VPS, also in the provider's panel).
 2. **Read the first-time code.** Run `docker compose exec server ./Recam.Server code` (with Docker
    Desktop, `docker compose -f compose.bridge.yaml exec server ./Recam.Server code`). It shows the
    address to open and a code like `ABCD-EFGH`. The same framed block is at the top of
    `docker compose logs server`, and in the output of `docker compose up` without `-d`.
-3. **Open the browser on the computer** at `https://<server-ip>:8443`. The certificate is
-   self-signed, so the browser warns once: choose to proceed (in Chrome, **Advanced** and then
+3. **Open the browser** at `https://<server-ip>:8443`. The certificate is self-signed, so the
+   browser warns once. This is expected: choose to proceed (in Chrome, **Advanced** and then
    **Proceed**). Type the code. This browser is now the Monitor and shows an **Add camera** QR
    code.
 4. **On the phone that will film**, open ReCam, tap **Scan QR code**, scan it and name the
