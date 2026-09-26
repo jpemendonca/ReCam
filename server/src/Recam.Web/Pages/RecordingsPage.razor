@@ -7,39 +7,50 @@
 
 <div class="bar">
     <h1>@L["RecordingsTitle"]</h1>
+    @if (Selected is { } shown)
+    {
+        <select class="camera-picker" aria-label="@L["RecordingsChooseCamera"]" value="@shown.Id" @onchange="Choose">
+            @foreach (var camera in Cameras.Cameras)
+            {
+                <option value="@camera.Id">@(camera.Recording ? $"{camera.Name} · {L["CameraRecording"]}" : camera.Name)</option>
+            }
+        </select>
+    }
 </div>
 
 @if (Cameras.State == CameraListState.Loading)
 {
     <div class="loading" aria-hidden="true"></div>
 }
-else if (Cameras.Cameras.Count == 0)
+else if (Selected is { } camera)
 {
-    <p class="note">@L["RecordingsNoCameras"]</p>
+    <TimelineView @key="camera.Id" CameraId="camera.Id" />
 }
 else
 {
-    <p class="note">@L["RecordingsChooseCamera"]</p>
-    <ul class="choices">
-        @foreach (var camera in Cameras.Cameras)
-        {
-            <li>
-                <a href="cameras/@camera.Id/recordings">
-                    <span class="name">@camera.Name</span>
-                    @if (camera.Recording)
-                    {
-                        <span class="badge">@L["CameraRecording"]</span>
-                    }
-                </a>
-            </li>
-        }
-    </ul>
+    <p class="note">@L["RecordingsNoCameras"]</p>
 }
 
 @code {
+    private Guid? chosen;
+
+    // A recording camera first: it is the one with something to see.
+    private CameraInfo? Selected =>
+        Cameras.Cameras.FirstOrDefault(camera => camera.Id == chosen)
+        ?? Cameras.Cameras.FirstOrDefault(camera => camera.Recording)
+        ?? Cameras.Cameras.FirstOrDefault();
+
     protected override void OnInitialized() => Cameras.Changed += OnChanged;
 
     public void Dispose() => Cameras.Changed -= OnChanged;
+
+    private void Choose(ChangeEventArgs change)
+    {
+        if (Guid.TryParse(change.Value?.ToString(), out var id))
+        {
+            chosen = id;
+        }
+    }
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
 }

@@ -29,6 +29,9 @@ public sealed class FakeRecamApi : IRecamApi
     /// <summary>The UTC days asked for, in order.</summary>
     public List<DateOnly> RecordingDaysAsked { get; } = [];
 
+    /// <summary>The cameras whose recording days were asked for, in order.</summary>
+    public List<Guid> RecordingCamerasAsked { get; } = [];
+
     /// <summary>Motion events by UTC day, found with <see cref="MotionSensitivity"/>.</summary>
     public Dictionary<DateOnly, List<MotionEventInfo>> Motion { get; } = [];
 
@@ -143,6 +146,7 @@ public sealed class FakeRecamApi : IRecamApi
     public Task<IReadOnlyList<DateOnly>> GetRecordingDaysAsync(Guid cameraId, CancellationToken cancellationToken)
     {
         ThrowIfOffline();
+        RecordingCamerasAsked.Add(cameraId);
         return Task.FromResult<IReadOnlyList<DateOnly>>([.. Recordings.Keys.OrderDescending()]);
     }
 

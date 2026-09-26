@@ -1,10 +1,7 @@
 @page "/cameras/{CameraId:guid}/recordings"
-@using System.Globalization
 @implements IDisposable
 @inject IStringLocalizer<Strings> L
 @inject CameraListController Cameras
-@inject TimelineController Timeline
-@inject BrightenController Brighten
 
 <PageTitle>@Title</PageTitle>
 
@@ -13,139 +10,21 @@
     <h1>@Title</h1>
 </div>
 
-@if (Timeline.Failed)
-{
-    <p class="error" role="alert">@L["TimelineLoadFailed"]</p>
-    <button @onclick="() => Timeline.LoadAsync(CameraId)">@L["OfflineRetry"]</button>
-}
-else if (Timeline.Loading && Timeline.Days.Count == 0)
-{
-    <div class="loading" aria-hidden="true"></div>
-}
-else if (Timeline.Days.Count == 0)
-{
-    <p class="note">@L["TimelineEmpty"]</p>
-}
-else
-{
-    <div class="days">
-        @foreach (var day in Timeline.Days)
-        {
-            <button class="@(day == Timeline.SelectedDay ? "day selected" : "day")" @onclick="() => Timeline.SelectDayAsync(day)">
-                @day.ToString("M", CultureInfo.CurrentCulture)
-            </button>
-        }
-    </div>
-
-    <p class="note">@L["TimelineTapToPlay"]</p>
-
-    <svg class="hours" viewBox="0 0 1440 36" preserveAspectRatio="none" role="img" aria-label="@L["TimelineBarLabel"]">
-        <rect class="track" x="0" y="0" width="1440" height="36" rx="6" />
-        @if (!Timeline.OnlyMotion)
-        {
-            @foreach (var segment in Timeline.Timeline)
-            {
-                <rect class="@(segment == Timeline.Playing ? "recorded playing" : "recorded")"
-                      x="@Minutes(segment.Start)" y="0" width="@Width(segment.Start, segment.End)" height="36" />
-            }
-        }
-        @foreach (var mark in Timeline.Motion)
-        {
-            <rect class="motion" x="@Minutes(mark.Start)" y="@(Timeline.OnlyMotion ? 0 : 24)" width="@Width(mark.Start, mark.End)" height="@(Timeline.OnlyMotion ? 36 : 12)" />
-        }
-        @for (var slot = 0; slot < 1440; slot += SlotMinutes)
-        {
-            var start = slot;
-            <rect class="slot" x="@start" y="0" width="@SlotMinutes" height="36" @onclick="() => PlayAtMinute(start)" />
-        }
-    </svg>
-    <div class="ticks" aria-hidden="true">
-        @for (var hour = 0; hour <= 24; hour += 3)
-        {
-            <span>@hour</span>
-        }
-    </div>
-
-    <div class="motion-row">
-        <button class="secondary previous-motion" @onclick="Timeline.PlayPreviousMotion" disabled="@(Timeline.Motion.Count == 0)">@L["MotionPrevious"]</button>
-        <button class="secondary next-motion" @onclick="Timeline.PlayNextMotion" disabled="@(Timeline.Motion.Count == 0)">@L["MotionNext"]</button>
-        <label>
-            <input class="only-motion" type="checkbox" @bind="Timeline.OnlyMotion" />
-            @L["MotionOnly"]
-        </label>
-        <label>
-            @L["MotionSensitivity"]
-            <select class="sensitivity" value="@Timeline.Sensitivity" @onchange="e => Timeline.SetSensitivityAsync(e.Value?.ToString() ?? string.Empty)">
-                <option value="low">@L["MotionLow"]</option>
-                <option value="medium">@L["MotionMedium"]</option>
-                <option value="high">@L["MotionHigh"]</option>
-            </select>
-        </label>
-    </div>
-    <p class="motion-summary">@(Timeline.Motion.Count == 0 ? L["MotionNone"] : L["MotionSummary", Timeline.Motion.Count])</p>
-    @if (Timeline.SensitivityFailed)
-    {
-        <p class="error" role="alert">@L["MotionSensitivityFailed"]</p>
-    }
-
-    @if (Timeline.Source is { } source)
-    {
-        <p class="playing-from">@L["TimelinePlaying", Timeline.PlayingFrom!.Value.ToString("t", CultureInfo.CurrentCulture)]</p>
-        <video @key="source" @ref="video" src="@source" controls autoplay playsinline muted @onended="Timeline.PlayNext"></video>
-        <div class="brighten-row">
-            <BrightenControls Controller="Brighten" />
-        </div>
-    }
-}
+<TimelineView CameraId="CameraId" />
 
 @code {
-    private const int SlotMinutes = 10;
-
     [Parameter]
     public Guid CameraId { get; set; }
 
-    private ElementReference video;
-
     private string Title => L["TimelineTitle", Cameras.Camera(CameraId)?.Name ?? string.Empty];
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        Timeline.Changed += OnChanged;
         Cameras.Changed += OnChanged;
-        Brighten.Changed += OnChanged;
         _ = Cameras.StartAsync(CancellationToken.None);
-        await Brighten.LoadAsync(CameraId);
-        await Timeline.LoadAsync(CameraId);
     }
 
-    public void Dispose()
-    {
-        Timeline.Changed -= OnChanged;
-        Cameras.Changed -= OnChanged;
-        Brighten.Changed -= OnChanged;
-    }
-
-    // The <video> is new for each file, so the filter goes on again after every render.
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (Timeline.Source is not null)
-        {
-            await Brighten.ApplyAsync(video);
-        }
-    }
-
-    private static int Minutes(DateTime wall) => (int)wall.TimeOfDay.TotalMinutes;
-
-    // A day's last stretch may end on the next midnight; short ones still show.
-    private static int Width(DateTime start, DateTime end) => Math.Max((int)(end - start).TotalMinutes, 2);
-
-    private void PlayAtMinute(int minute)
-    {
-        if (Timeline.SelectedDay is { } day)
-        {
-            Timeline.PlayAt(day.ToDateTime(TimeOnly.MinValue).AddMinutes(minute));
-        }
-    }
+    public void Dispose() => Cameras.Changed -= OnChanged;
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
 }

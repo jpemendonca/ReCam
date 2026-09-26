@@ -149,21 +149,23 @@ public sealed class RecordingsPagesTests : BunitContext
             page.Find(".scope").TextContent);
     }
 
-    [Fact(DisplayName = "The Recordings tab lists the cameras, each opening its timeline")]
-    public async Task Recordings_ListsCameras_LinkToTimeline()
+    [Fact(DisplayName = "The Recordings tab shows the recording camera's timeline and switches camera")]
+    public async Task Recordings_PickCamera_ShowsItsTimeline()
     {
         // arrange
         using var _ = Culture.Use("pt-BR");
+        var garage = Support.Cameras.Make("Garagem");
+        _api.Cameras.Insert(0, garage);
         await Services.GetRequiredService<CameraListController>().StartAsync(Xunit.TestContext.Current.CancellationToken);
+        var page = Render<RecordingsPage>();
+        page.WaitForAssertion(() => Assert.Equal([_camera.Id], _api.RecordingCamerasAsked));
 
         // act
-        var page = Render<RecordingsPage>();
+        page.Find("select.camera-picker").Change(garage.Id.ToString());
 
         // assert
-        var link = page.Find(".choices a");
-        Assert.Equal($"cameras/{_camera.Id}/recordings", link.GetAttribute("href"));
-        Assert.Equal("Porta", page.Find(".choices .name").TextContent);
-        Assert.Equal("Gravando", page.Find(".choices .badge").TextContent);
+        page.WaitForAssertion(() => Assert.Equal([_camera.Id, garage.Id], _api.RecordingCamerasAsked));
+        Assert.Contains("Porta · Gravando", page.FindAll("select.camera-picker option").Select(option => option.TextContent));
     }
 
     [Fact(DisplayName = "After the first camera, the space page starts at 2 GB and saving opens its live video")]

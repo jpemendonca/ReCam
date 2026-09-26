@@ -9,9 +9,8 @@ import 'brighten_controller.dart';
 import 'brighten_panel.dart';
 import 'recording_timeline_controller.dart';
 
-/// One camera's recordings: the days, the 24 hours of the chosen day with the recorded stretches
-/// and the motion marked, and the player. Tapping the hours plays from that moment.
-class RecordingsTimelineScreen extends StatefulWidget {
+/// One camera's recordings on a screen of their own, opened from the camera.
+class RecordingsTimelineScreen extends StatelessWidget {
   const RecordingsTimelineScreen({
     required this.cameraName,
     required this.create,
@@ -28,11 +27,43 @@ class RecordingsTimelineScreen extends StatefulWidget {
   final BrightenController Function() brighten;
 
   @override
-  State<RecordingsTimelineScreen> createState() =>
-      _RecordingsTimelineScreenState();
+  Widget build(BuildContext context) => RecordingsTimelinePane(
+    create: create,
+    brighten: brighten,
+    title: AppLocalizations.of(context).timelineTitle(cameraName),
+  );
 }
 
-class _RecordingsTimelineScreenState extends State<RecordingsTimelineScreen> {
+/// One camera's recordings: the days, the 24 hours of the chosen day with the recorded stretches
+/// and the motion marked, and the player. Tapping the hours plays from that moment. With a
+/// [title] it is a screen of its own; the Recordings tab shows it under its camera picker
+/// ([header]) instead.
+class RecordingsTimelinePane extends StatefulWidget {
+  const RecordingsTimelinePane({
+    required this.create,
+    required this.brighten,
+    this.title,
+    this.header,
+    super.key,
+  });
+
+  /// Builds the controller once, in initState.
+  final RecordingTimelineController Function() create;
+
+  /// This camera's "Brighten" setting on this phone.
+  final BrightenController Function() brighten;
+
+  /// The screen's title; with it, "Brighten" sits in the app bar.
+  final String? title;
+
+  /// Without a [title], shown on the left of the "Brighten" button, above the video.
+  final Widget? header;
+
+  @override
+  State<RecordingsTimelinePane> createState() => _RecordingsTimelinePaneState();
+}
+
+class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
   late final RecordingTimelineController _controller = widget.create();
   late final BrightenController _brighten = widget.brighten();
 
@@ -54,94 +85,110 @@ class _RecordingsTimelineScreenState extends State<RecordingsTimelineScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
+    final title = widget.title;
+    final list = _list(context, l10n, locale);
+    if (title == null) return list;
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.timelineTitle(widget.cameraName)),
+        title: Text(title),
         actions: [BrightenButton(controller: _brighten)],
       ),
-      body: ListenableBuilder(
-        listenable: _controller,
-        builder: (context, _) {
-          final day = _controller.selectedDay;
-          final playing = _controller.playing;
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: ColoredBox(
-                  color: Colors.black,
-                  child: playing == null
-                      ? Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Text(
-                              l10n.timelineTapToPlay,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.white70),
-                            ),
-                          ),
-                        )
-                      : Center(
-                          child: BrightenedVideo(
-                            controller: _brighten,
-                            child: _controller.player.buildVideo(),
-                          ),
-                        ),
-                ),
-              ),
-              ListenableBuilder(
-                listenable: _brighten,
-                builder: (context, _) => _brighten.open
-                    ? BrightenPanel(controller: _brighten)
-                    : const SizedBox.shrink(),
-              ),
-              if (playing != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  l10n.timelinePlaying(
-                    DateFormat.Hm(locale).format(playing.start),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              const SizedBox(height: 16),
-              if (_controller.failed)
-                Text(l10n.timelineLoadFailed, textAlign: TextAlign.center)
-              else if (!_controller.loading && _controller.days.isEmpty)
-                Text(l10n.timelineEmpty, textAlign: TextAlign.center)
-              else ...[
-                SizedBox(
-                  height: 48,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      for (final option in _controller.days)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(DateFormat.MMMd(locale).format(option)),
-                            selected: option == day,
-                            onSelected: (_) =>
-                                unawaited(_controller.selectDay(option)),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (_controller.loading)
-                  const Center(child: CircularProgressIndicator())
-                else if (day != null) ...[
-                  _HourBar(controller: _controller, day: day),
-                  const SizedBox(height: 16),
-                  _MotionControls(controller: _controller),
+      body: list,
+    );
+  }
+
+  Widget _list(BuildContext context, AppLocalizations l10n, String locale) {
+    return ListenableBuilder(
+      listenable: _controller,
+      builder: (context, _) {
+        final day = _controller.selectedDay;
+        final playing = _controller.playing;
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (widget.title == null) ...[
+              Row(
+                children: [
+                  Expanded(child: widget.header ?? const SizedBox.shrink()),
+                  BrightenButton(controller: _brighten),
                 ],
+              ),
+              const SizedBox(height: 8),
+            ],
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: ColoredBox(
+                color: Colors.black,
+                child: playing == null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                            l10n.timelineTapToPlay,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ),
+                      )
+                    : Center(
+                        child: BrightenedVideo(
+                          controller: _brighten,
+                          child: _controller.player.buildVideo(),
+                        ),
+                      ),
+              ),
+            ),
+            ListenableBuilder(
+              listenable: _brighten,
+              builder: (context, _) => _brighten.open
+                  ? BrightenPanel(controller: _brighten)
+                  : const SizedBox.shrink(),
+            ),
+            if (playing != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                l10n.timelinePlaying(
+                  DateFormat.Hm(locale).format(playing.start),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            const SizedBox(height: 16),
+            if (_controller.failed)
+              Text(l10n.timelineLoadFailed, textAlign: TextAlign.center)
+            else if (!_controller.loading && _controller.days.isEmpty)
+              Text(l10n.timelineEmpty, textAlign: TextAlign.center)
+            else ...[
+              SizedBox(
+                height: 48,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    for (final option in _controller.days)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(DateFormat.MMMd(locale).format(option)),
+                          selected: option == day,
+                          onSelected: (_) =>
+                              unawaited(_controller.selectDay(option)),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (_controller.loading)
+                const Center(child: CircularProgressIndicator())
+              else if (day != null) ...[
+                _HourBar(controller: _controller, day: day),
+                const SizedBox(height: 16),
+                _MotionControls(controller: _controller),
               ],
             ],
-          );
-        },
-      ),
+          ],
+        );
+      },
     );
   }
 }

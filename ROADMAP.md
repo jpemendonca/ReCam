@@ -1566,11 +1566,21 @@ app e no navegador quando o bullet não disser outra coisa.
   > perguntam. Testes: no navegador, a primeira câmera leva ao `/first-space` e salvar abre o ao
   > vivo com a cota salva; no app, a primeira câmera pergunta e salva 2048, a segunda não pergunta.
 
-- [ ] **8.4 Aba Gravações**
+- [x] **8.4 Aba Gravações**
   - Origem: teste do autor em 2026-09-26: "quero de fato poder ver minhas gravações".
   - Escopo: a aba lista as câmeras com gravação e, ao escolher uma, mostra a linha do tempo dela
     (a mesma do 8.5). O acesso de hoje, pela câmera, continua.
   - Aceite: testes da aba no app e no navegador escolhendo uma câmera e abrindo a linha do tempo.
+  > Validação (2026-09-26): só código escrito. Não percorrido no aparelho nem aberto no navegador. A
+  > aba Gravações mostra no topo a escolha da câmera e, embaixo, a linha do tempo dela, a mesma de
+  > quando se toca na câmera. Abre na primeira câmera que grava (é a que tem o que ver); na lista,
+  > quem grava aparece com "· Gravando". App: o corpo da tela da linha do tempo virou
+  > `RecordingsTimelinePane`, usado pela tela própria (com título e "Clarear" na barra) e pela aba
+  > (com a escolha da câmera ao lado do "Clarear"). Navegador: o corpo da página virou o componente
+  > `TimelineView`, usado pela página `/cameras/{id}/recordings` e pela aba `/recordings`, que troca
+  > de câmera por um `select`. Testes: no app, a aba abre na câmera que grava e troca para outra; no
+  > navegador, a aba carrega a câmera que grava e depois a escolhida; os testes antigos da linha do
+  > tempo seguem valendo.
 
 - [ ] **8.5 Linha do tempo com zoom**
   - Origem: teste do autor em 2026-09-26: difícil tocar no momento certo e ver onde teve movimento.

@@ -166,13 +166,19 @@ void main() {
       );
     });
 
-    testWidgets('recordingsTab_listsTheCamerasAndOpensTheTimeline', (
+    testWidgets('recordingsTab_showsTheRecordingCameraAndSwitchesCamera', (
       tester,
     ) async {
       // arrange
       await store.write(PairingSlot.viewer, pairedSession());
+      const garage = CameraInfo(
+        id: 'garage',
+        name: 'Garage',
+        online: true,
+        publishing: false,
+      );
       const porch = CameraInfo(
-        id: 'cam',
+        id: 'porch',
         name: 'Porch',
         online: true,
         publishing: false,
@@ -180,19 +186,30 @@ void main() {
       );
       // The list loads on start and again when the hub connects.
       api.cameraResults.addAll([
-        ApiSuccess(const [porch]),
-        ApiSuccess(const [porch]),
+        ApiSuccess(const [garage, porch]),
+        ApiSuccess(const [garage, porch]),
       ]);
       await openApp(tester);
       await tester.tap(find.text('Recordings'));
       await tester.pumpAndSettle();
+      final first = tester
+          .widget<RecordingsTimelinePane>(find.byType(RecordingsTimelinePane))
+          .key;
 
       // act
-      await tester.tap(find.text('Porch'));
+      await tester.tap(find.text('Porch · Recording'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Garage').last);
       await tester.pumpAndSettle();
 
       // assert
-      expect(find.byType(RecordingsTimelineScreen), findsOneWidget);
+      expect(first, const ValueKey('porch'));
+      expect(
+        tester
+            .widget<RecordingsTimelinePane>(find.byType(RecordingsTimelinePane))
+            .key,
+        const ValueKey('garage'),
+      );
       await tester.pumpWidget(const SizedBox());
     });
 

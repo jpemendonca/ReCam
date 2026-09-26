@@ -134,8 +134,7 @@ class _CameraListViewState extends State<CameraListView> {
       body: switch (_tab) {
         1 => ListenableBuilder(
           listenable: _controller,
-          builder: (context, _) =>
-              _RecordingsTab(state: _controller.state, onOpen: _openRecordings),
+          builder: (context, _) => _RecordingsTab(list: _controller),
         ),
         2 => DevicesView(api: widget.api, session: widget.session),
         3 => ListenableBuilder(
@@ -262,17 +261,23 @@ class _CameraListViewState extends State<CameraListView> {
   }
 }
 
-/// The Recordings tab: pick a camera to open its timeline.
-class _RecordingsTab extends StatelessWidget {
-  const _RecordingsTab({required this.state, required this.onOpen});
+/// The Recordings tab: a camera picker above that camera's timeline.
+class _RecordingsTab extends StatefulWidget {
+  const _RecordingsTab({required this.list});
 
-  final CameraListState state;
-  final void Function(CameraInfo camera) onOpen;
+  final CameraListController list;
+
+  @override
+  State<_RecordingsTab> createState() => _RecordingsTabState();
+}
+
+class _RecordingsTabState extends State<_RecordingsTab> {
+  String? _cameraId;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return switch (state) {
+    return switch (widget.list.state) {
       CameraListLoading() => const Center(child: CircularProgressIndicator()),
       CameraListFailed() => Center(
         child: Padding(
@@ -286,26 +291,47 @@ class _RecordingsTab extends StatelessWidget {
           child: Text(l10n.recordingsNoCameras, textAlign: TextAlign.center),
         ),
       ),
-      CameraListLoaded(:final cameras) => ListView(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(l10n.recordingsChooseCamera),
+      CameraListLoaded(:final cameras) => _timeline(
+        l10n,
+        cameras,
+        cameras.firstWhere(
+          (camera) => camera.id == _cameraId,
+          // A recording camera first: it is the one with something to see.
+          orElse: () => cameras.firstWhere(
+            (camera) => camera.recording,
+            orElse: () => cameras.first,
           ),
-          for (final camera in cameras)
-            ListTile(
-              leading: const Icon(Icons.video_library_outlined),
-              title: Text(camera.name),
-              subtitle: camera.recording
-                  ? Text(l10n.cameraModeRecording)
-                  : null,
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => onOpen(camera),
-            ),
-        ],
+        ),
       ),
     };
   }
+
+  Widget _timeline(
+    AppLocalizations l10n,
+    List<CameraInfo> cameras,
+    CameraInfo selected,
+  ) => RecordingsTimelinePane(
+    key: ValueKey(selected.id),
+    create: () => widget.list.openRecordings(selected.id),
+    brighten: () => widget.list.openBrighten(selected.id),
+    header: DropdownButton<String>(
+      value: selected.id,
+      isExpanded: true,
+      hint: Text(l10n.recordingsChooseCamera),
+      items: [
+        for (final camera in cameras)
+          DropdownMenuItem(
+            value: camera.id,
+            child: Text(
+              camera.recording
+                  ? '${camera.name} · ${l10n.cameraModeRecording}'
+                  : camera.name,
+            ),
+          ),
+      ],
+      onChanged: (id) => setState(() => _cameraId = id),
+    ),
+  );
 }
 
 /// Centers its child and still lets the user pull to refresh.
