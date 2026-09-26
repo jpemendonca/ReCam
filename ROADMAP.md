@@ -1720,11 +1720,24 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > pedem o microfone e a câmera traseira. O publisher em si fala com o plugin nativo e não tem
   > teste.
 
-- [ ] **9.2 Ouvir ao vivo e nas gravações**
+- [x] **9.2 Ouvir ao vivo e nas gravações**
   - Origem: pedido do autor em 2026-09-26.
   - Escopo: no ao vivo e no player de gravação, no app e no navegador, o som toca, com um botão
     para tirar o som. O navegador começa sem som até o primeiro clique (regra dos navegadores).
   - Aceite: testes dos controllers e dos widgets do botão de som.
+  > Validação (2026-09-26): só código escrito. Não percorrido no aparelho nem no navegador. Ao vivo:
+  > o app e o navegador passam a pedir áudio ao MediaMTX (linha de áudio só de recebimento na oferta
+  > WHEP; câmera sem microfone recusa a linha e o vídeo segue sozinho). No app o som toca direto, e
+  > um botão de alto-falante na barra do ao vivo tira e devolve o som (desliga a trilha de áudio
+  > recebida). No navegador o ao vivo começa sem som, porque o navegador só toca sozinho vídeo mudo;
+  > o botão "Ativar som" / "Tirar som" muda a propriedade `muted` do `<video>` por JavaScript
+  > (`whep.js`). Gravações: no app, o player ganhou o botão de som, que vale também para os arquivos
+  > seguintes (`setVolume`); no navegador, o `<video>` da gravação perdeu o `muted`: ela começa num
+  > clique, então o navegador deixa tocar com som, e o controle nativo do player tira o som. A
+  > miniatura dos cards continua muda. O botão da lanterna do ao vivo no navegador ganhou a classe
+  > `torch` para não ser confundido com o de som nos testes. Testes: controller do ao vivo no app
+  > silencia e devolve o som, botão de som do player de gravação, e no navegador o ao vivo começa
+  > com "Ativar som" e o botão desliga o mudo.
 
 - [ ] **9.3 [aparelho] Validar as fases 8 e 9**
   - Origem: pedidos do autor em 2026-09-26.

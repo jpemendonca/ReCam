@@ -43,6 +43,11 @@ abstract interface class RecordingPlayer {
   /// Moves within the current segment.
   Future<void> seekTo(Duration position);
 
+  /// Whether the recording's sound is off; kept for the next files.
+  bool get muted;
+
+  Future<void> setMuted(bool muted);
+
   /// Called once when the current segment reaches its end.
   set onFinished(void Function() callback);
 
@@ -59,6 +64,16 @@ class VideoPlayerRecordingPlayer implements RecordingPlayer {
   ValueListenable<PlaybackPosition> get position => _position;
   void Function()? _onFinished;
   bool _finishReported = false;
+  bool _muted = false;
+
+  @override
+  bool get muted => _muted;
+
+  @override
+  Future<void> setMuted(bool muted) async {
+    _muted = muted;
+    await _current.value?.setVolume(muted ? 0 : 1);
+  }
 
   @override
   set onFinished(void Function() callback) => _onFinished = callback;
@@ -70,6 +85,7 @@ class VideoPlayerRecordingPlayer implements RecordingPlayer {
     _finishReported = false;
     controller.addListener(() => _watchEnd(controller));
     await controller.initialize();
+    await controller.setVolume(_muted ? 0 : 1);
     if (from > Duration.zero) await controller.seekTo(from);
     _current.value = controller;
     await previous?.dispose();

@@ -291,6 +291,17 @@ class _PlayerControlsState extends State<_PlayerControls> {
               icon: Icon(now.playing ? Icons.pause : Icons.play_arrow),
             ),
             IconButton(
+              key: const Key('player-sound'),
+              tooltip: widget.player.muted ? l10n.soundOn : l10n.soundOff,
+              onPressed: () async {
+                await widget.player.setMuted(!widget.player.muted);
+                setState(() {});
+              },
+              icon: Icon(
+                widget.player.muted ? Icons.volume_off : Icons.volume_up,
+              ),
+            ),
+            IconButton(
               key: const Key('player-forward'),
               tooltip: l10n.playerForward,
               onPressed: () => unawaited(_jumpBy(now, _jump)),

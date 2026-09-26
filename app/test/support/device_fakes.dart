@@ -140,6 +140,12 @@ class FakeRecordingPlayer implements RecordingPlayer {
   bool disposed = false;
 
   @override
+  bool muted = false;
+
+  @override
+  Future<void> setMuted(bool value) async => muted = value;
+
+  @override
   final ValueNotifier<PlaybackPosition> position = ValueNotifier(
     const PlaybackPosition(),
   );
@@ -249,6 +255,11 @@ class FakeViewer implements WebRtcViewer {
 
   @override
   Future<void> stop() async => stops++;
+
+  bool muted = false;
+
+  @override
+  Future<void> setMuted(bool value) async => muted = value;
 
   @override
   Widget buildVideo() => const SizedBox.shrink();

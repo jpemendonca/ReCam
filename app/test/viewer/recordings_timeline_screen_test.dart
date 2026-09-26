@@ -310,11 +310,15 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('player-forward')));
       await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('player-sound')));
+      await tester.pumpAndSettle();
 
       // assert
       expect(player.position.value.playing, isFalse);
       expect(player.seeks.single, start + const Duration(seconds: 10));
       expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+      expect(player.muted, isTrue);
+      expect(find.byIcon(Icons.volume_off), findsOneWidget);
     });
 
     testWidgets('withoutRecordings_saysHowToStart', (tester) async {

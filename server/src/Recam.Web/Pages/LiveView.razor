@@ -34,7 +34,8 @@
 </div>
 
 <div class="controls">
-    <button @onclick="ToggleTorchAsync" disabled="@(Live.State != LiveState.Playing)">
+    <button class="sound" @onclick="Live.ToggleMutedAsync">@(Live.Muted ? L["SoundOn"] : L["SoundOff"])</button>
+    <button class="torch" @onclick="ToggleTorchAsync" disabled="@(Live.State != LiveState.Playing)">
         @(Live.TorchOn ? L["TorchTurnOff"] : L["TorchTurnOn"])
     </button>
     @if (camera is not null)

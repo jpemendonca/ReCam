@@ -289,5 +289,7 @@
   "playerPause": "Pause",
   "playerResume": "Play",
   "playerBack": "Back 10 seconds",
-  "playerForward": "Ahead 10 seconds"
+  "playerForward": "Ahead 10 seconds",
+  "soundOn": "Turn sound on",
+  "soundOff": "Turn sound off"
 }

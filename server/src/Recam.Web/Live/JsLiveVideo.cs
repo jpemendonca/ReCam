@@ -30,6 +30,12 @@ public sealed class JsLiveVideo(IJSRuntime js) : ILiveVideo
         _session = 0;
     }
 
+    public async Task SetMutedAsync(ElementReference video, bool muted)
+    {
+        _module ??= await js.InvokeAsync<IJSObjectReference>("import", "./js/whep.js");
+        await _module.InvokeVoidAsync("setMuted", video, muted);
+    }
+
     [JSInvokable]
     public void OnEnded() => Ended?.Invoke();
 

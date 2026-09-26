@@ -162,5 +162,7 @@
   "playerPause": "Pausar",
   "playerResume": "Continuar",
   "playerBack": "Voltar 10 segundos",
-  "playerForward": "Avançar 10 segundos"
+  "playerForward": "Avançar 10 segundos",
+  "soundOn": "Ativar som",
+  "soundOff": "Tirar som"
 }

@@ -16,6 +16,14 @@ public sealed class FakeLiveVideo : ILiveVideo
 
     public event Action? Ended;
 
+    public bool? Muted { get; private set; }
+
+    public Task SetMutedAsync(ElementReference video, bool muted)
+    {
+        Muted = muted;
+        return Task.CompletedTask;
+    }
+
     public Task<bool> StartAsync(ElementReference video, Guid cameraId)
     {
         Starts++;

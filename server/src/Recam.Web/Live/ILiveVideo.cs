@@ -12,4 +12,7 @@ public interface ILiveVideo : IAsyncDisposable
     Task<bool> StartAsync(ElementReference video, Guid cameraId);
 
     Task StopAsync();
+
+    /// <summary>Turns the camera's sound on or off in the &lt;video&gt;.</summary>
+    Task SetMutedAsync(ElementReference video, bool muted);
 }

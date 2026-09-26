@@ -28,6 +28,24 @@ void main() {
       '${call.method}(${call.args.join(',')})',
   ];
 
+  group('LiveViewController sound', () {
+    test('toggleMuted_silencesThenPlaysTheSoundAgain', () async {
+      // arrange
+      final before = controller.muted;
+
+      // act
+      await controller.toggleMuted();
+      final silenced = viewer.muted;
+      await controller.toggleMuted();
+
+      // assert
+      expect(before, isFalse);
+      expect(silenced, isTrue);
+      expect(viewer.muted, isFalse);
+      expect(controller.muted, isFalse);
+    });
+  });
+
   group('LiveViewController torch', () {
     test('withTorchAlreadyOn_startsShowingItOn', () async {
       // arrange

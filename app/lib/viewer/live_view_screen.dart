@@ -70,6 +70,17 @@ class _LiveViewScreenState extends State<LiveViewScreen> {
       appBar: AppBar(
         title: Text(widget.cameraName),
         actions: [
+          ListenableBuilder(
+            listenable: _controller,
+            builder: (context, _) => IconButton(
+              key: const Key('live-sound'),
+              tooltip: _controller.muted ? l10n.soundOn : l10n.soundOff,
+              onPressed: () => unawaited(_controller.toggleMuted()),
+              icon: Icon(
+                _controller.muted ? Icons.volume_off : Icons.volume_up,
+              ),
+            ),
+          ),
           ?widget.recordingSwitch,
           ?widget.recordingsButton,
           BrightenButton(controller: _brighten),

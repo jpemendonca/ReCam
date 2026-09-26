@@ -38,12 +38,12 @@ public sealed class LiveViewTests : BunitContext
         page.WaitForAssertion(() => Assert.Empty(page.FindAll(".overlay")));
 
         // act
-        page.Find(".controls button").Click();
+        page.Find(".controls button.torch").Click();
 
         // assert
         Assert.Equal("Porta", page.Find("h1").TextContent);
         Assert.Contains($"SetTorch {camera.Id} True", _hub.Calls);
-        Assert.Equal("Ligar lanterna", page.Find(".controls button").TextContent.Trim());
+        Assert.Equal("Ligar lanterna", page.Find(".controls button.torch").TextContent.Trim());
     }
 
     [Fact(DisplayName = "When the camera reports the torch on, the button offers to turn it off")]
@@ -60,7 +60,7 @@ public sealed class LiveViewTests : BunitContext
         _hub.SendTorch(camera.Id, true);
 
         // assert
-        page.WaitForAssertion(() => Assert.Equal("Turn flashlight off", page.Find(".controls button").TextContent.Trim()));
+        page.WaitForAssertion(() => Assert.Equal("Turn flashlight off", page.Find(".controls button.torch").TextContent.Trim()));
     }
 
     [Fact(DisplayName = "A refused torch shows why")]
@@ -75,7 +75,7 @@ public sealed class LiveViewTests : BunitContext
         page.WaitForAssertion(() => Assert.Empty(page.FindAll(".overlay")));
 
         // act
-        page.Find(".controls button").Click();
+        page.Find(".controls button.torch").Click();
 
         // assert
         page.WaitForAssertion(() => Assert.Equal("Não deu para mudar a lanterna. Espere o vídeo começar.", page.Find(".error").TextContent));
@@ -94,6 +94,26 @@ public sealed class LiveViewTests : BunitContext
 
         // assert
         page.WaitForAssertion(() => Assert.Empty(page.FindAll(".overlay")));
-        Assert.Equal("Desligar lanterna", page.Find(".controls button").TextContent.Trim());
+        Assert.Equal("Desligar lanterna", page.Find(".controls button.torch").TextContent.Trim());
+    }
+
+    [Fact(DisplayName = "The live view starts silent, as browsers require, and a button turns the sound on and off")]
+    public void Sound_Button_TogglesMuted()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var camera = Support.Cameras.Make("Porta", publishing: true);
+        _api.Cameras.Add(camera);
+        var page = Render<LiveView>(parameters => parameters.Add(view => view.CameraId, camera.Id));
+        page.WaitForAssertion(() => Assert.Empty(page.FindAll(".overlay")));
+        var before = page.Find("button.sound").TextContent;
+
+        // act
+        page.Find("button.sound").Click();
+
+        // assert
+        Assert.Equal("Ativar som", before);
+        Assert.False(_video.Muted);
+        Assert.Equal("Tirar som", page.Find("button.sound").TextContent);
     }
 }

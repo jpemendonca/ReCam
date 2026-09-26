@@ -22,6 +22,9 @@ public sealed class LiveController(IDeviceHub hub, ILiveVideo video) : IAsyncDis
 
     public bool TorchOn { get; private set; }
 
+    /// <summary>Starts true: browsers only autoplay silent video.</summary>
+    public bool Muted { get; private set; } = true;
+
     /// <summary>Wait between WHEP attempts while the camera opens.</summary>
     public TimeSpan RetryInterval { get; set; } = TimeSpan.FromSeconds(1);
 
@@ -52,6 +55,14 @@ public sealed class LiveController(IDeviceHub hub, ILiveVideo video) : IAsyncDis
     /// sending video). The new state arrives later, as the camera reports it.
     /// </summary>
     public async Task<bool> SetTorchAsync(bool on) => (await hub.SetTorchAsync(_cameraId, on)).Ok;
+
+    /// <summary>Turns the camera's sound on or off.</summary>
+    public async Task ToggleMutedAsync()
+    {
+        Muted = !Muted;
+        await video.SetMutedAsync(_element, Muted);
+        Changed?.Invoke();
+    }
 
     public async ValueTask DisposeAsync()
     {

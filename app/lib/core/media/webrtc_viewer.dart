@@ -15,6 +15,9 @@ abstract interface class WebRtcViewer {
 
   Future<void> stop();
 
+  /// Plays the camera's sound or keeps it silent; kept for streams started later.
+  Future<void> setMuted(bool muted);
+
   /// Called when a playing stream drops (camera went away, network lost).
   set onEnded(void Function() callback);
 
@@ -33,10 +36,10 @@ class WhepViewer implements WebRtcViewer {
     required this._signaling,
   });
 
-  // Video must stay true: false would turn the receive-only video line into a rejected one
-  // (port 0), and MediaMTX would have nothing to send. Audio false keeps an audio line out.
+  // Both must stay true: false would turn a receive-only line into a rejected one (port 0), and
+  // MediaMTX would have nothing to send on it. A camera without a microphone rejects the audio.
   static const _receiveOnlyOffer = <String, Object>{
-    'mandatory': {'OfferToReceiveAudio': false, 'OfferToReceiveVideo': true},
+    'mandatory': {'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true},
     'optional': <Object>[],
   };
 
@@ -48,6 +51,7 @@ class WhepViewer implements WebRtcViewer {
   RTCPeerConnection? _connection;
   Uri? _resource;
   bool _rendererReady = false;
+  bool _muted = false;
   void Function()? _onEnded;
 
   @override
@@ -88,6 +92,10 @@ class WhepViewer implements WebRtcViewer {
       kind: RTCRtpMediaType.RTCRtpMediaTypeVideo,
       init: RTCRtpTransceiverInit(direction: TransceiverDirection.RecvOnly),
     );
+    await connection.addTransceiver(
+      kind: RTCRtpMediaType.RTCRtpMediaTypeAudio,
+      init: RTCRtpTransceiverInit(direction: TransceiverDirection.RecvOnly),
+    );
 
     await connection.setLocalDescription(
       await connection.createOffer(_receiveOnlyOffer),
@@ -110,6 +118,11 @@ class WhepViewer implements WebRtcViewer {
   }
 
   Future<void> _show(RTCTrackEvent event) async {
+    // Android plays remote audio by itself; muting is turning the track off.
+    if (event.track.kind == 'audio') {
+      event.track.enabled = !_muted;
+      return;
+    }
     if (event.track.kind != 'video') return;
     if (event.streams.isNotEmpty) {
       _renderer.srcObject = event.streams.first;
@@ -132,6 +145,16 @@ class WhepViewer implements WebRtcViewer {
     connection?.onConnectionState = null;
     await connection?.close();
     if (_rendererReady) _renderer.srcObject = null;
+  }
+
+  @override
+  Future<void> setMuted(bool muted) async {
+    _muted = muted;
+    final receivers = await _connection?.getReceivers() ?? const [];
+    for (final receiver in receivers) {
+      final track = receiver.track;
+      if (track != null && track.kind == 'audio') track.enabled = !muted;
+    }
   }
 
   @override

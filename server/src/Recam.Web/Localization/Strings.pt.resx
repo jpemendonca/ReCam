@@ -339,6 +339,12 @@
   <data name="SignOut" xml:space="preserve">
     <value>Sair</value>
   </data>
+  <data name="SoundOff" xml:space="preserve">
+    <value>Tirar som</value>
+  </data>
+  <data name="SoundOn" xml:space="preserve">
+    <value>Ativar som</value>
+  </data>
   <data name="TimelineBarLabel" xml:space="preserve">
     <value>Horas gravadas do dia</value>
   </data>

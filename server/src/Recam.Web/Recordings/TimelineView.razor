@@ -109,7 +109,7 @@ else
         <p class="playing-from">@L["TimelinePlaying", Timeline.PlayingFrom!.Value.ToString("t", CultureInfo.CurrentCulture)]</p>
         @* One <video> for every file: replacing it, or letting it shrink while the next file loads,
            made the page jump to the top on "Next motion". *@
-        <video @ref="video" src="@source" controls autoplay playsinline muted @onended="Timeline.PlayNext"></video>
+        <video @ref="video" src="@source" controls autoplay playsinline @onended="Timeline.PlayNext"></video>
         <div class="brighten-row">
             <BrightenControls Controller="Brighten" />
         </div>

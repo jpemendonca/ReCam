@@ -23,8 +23,12 @@ function waitForIceGathering(connection, timeoutMs) {
 export async function start(video, cameraId, listener) {
   const connection = new RTCPeerConnection({ iceServers: [] });
   connection.addTransceiver('video', { direction: 'recvonly' });
+  // A camera without a microphone rejects this line, and the video plays alone.
+  connection.addTransceiver('audio', { direction: 'recvonly' });
+  const stream = new MediaStream();
   connection.ontrack = (event) => {
-    video.srcObject = event.streams[0] ?? new MediaStream([event.track]);
+    stream.addTrack(event.track);
+    video.srcObject = stream;
   };
 
   try {
@@ -73,4 +77,10 @@ export async function stop(id) {
       // The session times out on MediaMTX by itself.
     }
   }
+}
+
+// Browsers only autoplay silent video, so the live view starts muted and a button turns the
+// sound on. The muted property, not the attribute, is what the element obeys after loading.
+export function setMuted(video, muted) {
+  video.muted = muted;
 }

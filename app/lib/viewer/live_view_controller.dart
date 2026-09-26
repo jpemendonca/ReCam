@@ -48,6 +48,17 @@ class LiveViewController extends ChangeNotifier {
 
   bool get torchOn => _torchOn;
 
+  bool _muted = false;
+
+  /// The camera's sound plays unless the person turns it off.
+  bool get muted => _muted;
+
+  Future<void> toggleMuted() async {
+    _muted = !_muted;
+    notifyListeners();
+    await _viewer.setMuted(_muted);
+  }
+
   Future<void> start() async {
     _viewer.onEnded = () => unawaited(_retryAfterDrop());
     _hub.client.on('TorchChanged', _onTorchChanged);
