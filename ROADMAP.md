@@ -2149,6 +2149,13 @@ o que continua por conta de quem roda o servidor.
   - Aceite: o iPhone vira Monitor; ao vivo (com o botão de som), lanterna, gravações, linha do
     tempo e movimento funcionam; fechar e abrir o Safari dias depois continua logado. Anotar o
     aviso de certificado, o atraso e qualquer falha como bullet novo.
+  > Bloqueado (2026-09-27): aguardando validação no aparelho. O 11.1 e o 11.2 estão prontos e
+  > percorridos no Chromium com tela de iPhone; falta o Safari e a rede móvel. Roteiro: atualizar o
+  > servidor na VPS; no PC, Aparelhos › Adicionar Monitor › "Num navegador"; ler o QR com a câmera
+  > do iPhone; "Assistir neste navegador" com "Lembrar neste aparelho"; conferir lista, ao vivo com
+  > "Ativar som", lanterna, gravações, linha do tempo, movimento e Clarear, sem rolagem lateral;
+  > repetir no 4G; fechar o Safari e abrir de novo dias depois. Se o ao vivo ficar preto só no 4G,
+  > anotar o resultado do teste do roteador do Android e do IPv6 da VPS (conversa de 2026-09-27).
 
 ## Fase 5: distribuição
 
