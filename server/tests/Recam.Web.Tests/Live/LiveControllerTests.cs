@@ -29,6 +29,21 @@ public sealed class LiveControllerTests : IAsyncDisposable
         Assert.Equal($"WatchCamera {_cameraId}", Assert.Single(_hub.Calls));
     }
 
+    [Fact(DisplayName = "When the server answers but media never arrives, the view fails at once instead of looking like it plays")]
+    public async Task Open_MediaNeverArrives_FailsWithoutRetrying()
+    {
+        // arrange
+        _video.MediaFails = true;
+        await using var controller = new LiveController(_hub, _video, _sound) { RetryInterval = TimeSpan.Zero };
+
+        // act
+        await controller.OpenAsync(_cameraId, default(ElementReference));
+
+        // assert
+        Assert.Equal(LiveState.Failed, controller.State);
+        Assert.Equal(1, _video.Starts);
+    }
+
     [Fact(DisplayName = "After too many refusals the view fails, and retrying plays")]
     public async Task Open_NeverPublishes_FailsThenRetryPlays()
     {

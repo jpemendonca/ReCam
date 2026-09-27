@@ -61,6 +61,9 @@ public sealed class LiveController(IDeviceHub hub, ILiveVideo video, SoundChoice
     /// </summary>
     public async Task<bool> SetTorchAsync(bool on) => (await hub.SetTorchAsync(_cameraId, on)).Ok;
 
+    /// <summary>The live connection as the browser sees it, for the diagnostics panel.</summary>
+    public Task<LiveDiagnostics?> DiagnosticsAsync() => video.DiagnosticsAsync();
+
     /// <summary>Turns the camera's sound on or off, and remembers it for the next live views.</summary>
     public async Task ToggleMutedAsync()
     {
@@ -100,7 +103,20 @@ public sealed class LiveController(IDeviceHub hub, ILiveVideo video, SoundChoice
                 return;
             }
 
-            if (await video.StartAsync(_element, _cameraId))
+            var started = await video.StartAsync(_element, _cameraId);
+            if (started == LiveStart.MediaFailed)
+            {
+                // The server answered but media never arrived: trying again the same way will not
+                // help, so the person sees the failure (and the diagnostics).
+                if (!_closed && generation == _generation)
+                {
+                    SetState(LiveState.Failed);
+                }
+
+                return;
+            }
+
+            if (started == LiveStart.Playing)
             {
                 if (!_closed && generation == _generation)
                 {

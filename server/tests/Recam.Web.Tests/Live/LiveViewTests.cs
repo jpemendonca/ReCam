@@ -166,4 +166,30 @@ public sealed class LiveViewTests : BunitContext
         // assert
         Assert.Equal("21:05:09", clock.Find(".video-clock").TextContent);
     }
+
+    [Fact(DisplayName = "The Diagnostics button under the video shows what the browser sees of the connection")]
+    public void Diagnostics_Open_ShowsTheConnection()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var camera = Support.Cameras.Make("Porta", publishing: true);
+        _api.Cameras.Add(camera);
+        _video.Diagnostics = new LiveDiagnostics(
+            "connected", "connected", "host udp -> host udp", 123456, 90, 0,
+            "video/H264 profile-level-id=42e01f", 1280, 720, "paused, readyState 0, 0x0", "NotAllowedError: play() was refused");
+        var page = Render<LiveView>(parameters => parameters.Add(view => view.CameraId, camera.Id));
+        page.WaitForAssertion(() => Assert.Empty(page.FindAll(".overlay")));
+
+        // act
+        page.Find("button.diagnostics-toggle").Click();
+
+        // assert
+        var text = page.Find(".diagnostics dl").TextContent;
+        Assert.Contains("video/H264 profile-level-id=42e01f", text, StringComparison.Ordinal);
+        Assert.Contains("90 / 0", text, StringComparison.Ordinal);
+        Assert.Contains("NotAllowedError", text, StringComparison.Ordinal);
+        Assert.Equal("Esconder diagnóstico", page.Find("button.diagnostics-toggle").TextContent.Trim());
+        page.Find("button.diagnostics-toggle").Click();
+        Assert.Empty(page.FindAll(".diagnostics dl"));
+    }
 }

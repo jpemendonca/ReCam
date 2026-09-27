@@ -168,6 +168,39 @@
   <data name="DevicesTitle" xml:space="preserve">
     <value>Devices</value>
   </data>
+  <data name="DiagnosticsBytes" xml:space="preserve">
+    <value>Video bytes received</value>
+  </data>
+  <data name="DiagnosticsCodec" xml:space="preserve">
+    <value>Codec</value>
+  </data>
+  <data name="DiagnosticsConnection" xml:space="preserve">
+    <value>Connection</value>
+  </data>
+  <data name="DiagnosticsFrames" xml:space="preserve">
+    <value>Frames received / decoded</value>
+  </data>
+  <data name="DiagnosticsHide" xml:space="preserve">
+    <value>Hide diagnostics</value>
+  </data>
+  <data name="DiagnosticsNothing" xml:space="preserve">
+    <value>No live connection yet.</value>
+  </data>
+  <data name="DiagnosticsPath" xml:space="preserve">
+    <value>Path</value>
+  </data>
+  <data name="DiagnosticsPlayError" xml:space="preserve">
+    <value>Play error</value>
+  </data>
+  <data name="DiagnosticsPlayer" xml:space="preserve">
+    <value>Video on the page</value>
+  </data>
+  <data name="DiagnosticsShow" xml:space="preserve">
+    <value>Diagnostics</value>
+  </data>
+  <data name="DiagnosticsSize" xml:space="preserve">
+    <value>Picture received</value>
+  </data>
   <data name="FirstCameraTitle" xml:space="preserve">
     <value>Add your first camera</value>
   </data>

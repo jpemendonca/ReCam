@@ -1,0 +1,90 @@
+@using System.Globalization
+@implements IDisposable
+@inject IStringLocalizer<Strings> L
+
+@* For a person whose live video stays black: what the browser sees, to screenshot and send. *@
+<div class="diagnostics">
+    <button class="secondary diagnostics-toggle" @onclick="ToggleAsync">
+        @(open ? L["DiagnosticsHide"] : L["DiagnosticsShow"])
+    </button>
+    @if (open)
+    {
+        @if (current is { } shown)
+        {
+            <dl>
+                <dt>@L["DiagnosticsConnection"]</dt><dd>@shown.Connection · ICE @shown.Ice</dd>
+                <dt>@L["DiagnosticsPath"]</dt><dd>@(shown.Path ?? "—")</dd>
+                <dt>@L["DiagnosticsBytes"]</dt><dd>@(shown.BytesReceived?.ToString(CultureInfo.CurrentCulture) ?? "—")</dd>
+                <dt>@L["DiagnosticsFrames"]</dt><dd>@Number(shown.FramesReceived) / @Number(shown.FramesDecoded)</dd>
+                <dt>@L["DiagnosticsCodec"]</dt><dd>@(shown.Codec ?? "—")</dd>
+                <dt>@L["DiagnosticsSize"]</dt><dd>@(shown.Width is { } width ? $"{width}x{shown.Height}" : "—")</dd>
+                <dt>@L["DiagnosticsPlayer"]</dt><dd>@(shown.Player ?? "—")</dd>
+                <dt>@L["DiagnosticsPlayError"]</dt><dd>@(shown.PlayError ?? "—")</dd>
+            </dl>
+        }
+        else
+        {
+            <p class="note">@L["DiagnosticsNothing"]</p>
+        }
+    }
+</div>
+
+@code {
+    private CancellationTokenSource? refreshing;
+    private LiveDiagnostics? current;
+    private bool open;
+
+    [Parameter, EditorRequired]
+    public LiveController Live { get; set; } = default!;
+
+    /// <summary>How often the panel reads the connection again. Shorter in tests.</summary>
+    [Parameter]
+    public TimeSpan Every { get; set; } = TimeSpan.FromSeconds(1);
+
+    public void Dispose() => Stop();
+
+    private static string Number(long? value) => value?.ToString(CultureInfo.CurrentCulture) ?? "—";
+
+    private async Task ToggleAsync()
+    {
+        open = !open;
+        if (!open)
+        {
+            Stop();
+            return;
+        }
+
+        refreshing = new CancellationTokenSource();
+        await ReadAsync();
+        _ = KeepReadingAsync(refreshing.Token);
+    }
+
+    private async Task KeepReadingAsync(CancellationToken stop)
+    {
+        using var timer = new PeriodicTimer(Every);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(stop))
+            {
+                await InvokeAsync(ReadAsync);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The panel closed.
+        }
+    }
+
+    private async Task ReadAsync()
+    {
+        current = await Live.DiagnosticsAsync();
+        StateHasChanged();
+    }
+
+    private void Stop()
+    {
+        refreshing?.Cancel();
+        refreshing?.Dispose();
+        refreshing = null;
+    }
+}

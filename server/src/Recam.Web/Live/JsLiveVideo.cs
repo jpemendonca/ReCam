@@ -12,13 +12,23 @@ public sealed class JsLiveVideo(IJSRuntime js) : ILiveVideo
 
     public event Action? Ended;
 
-    public async Task<bool> StartAsync(ElementReference video, Guid cameraId)
+    public async Task<LiveStart> StartAsync(ElementReference video, Guid cameraId)
     {
         _module ??= await js.InvokeAsync<IJSObjectReference>("import", "./js/whep.js");
         _listener ??= DotNetObjectReference.Create(this);
-        _session = await _module.InvokeAsync<int>("start", video, cameraId, _listener);
-        return _session != 0;
+        var session = await _module.InvokeAsync<int>("start", video, cameraId, _listener);
+        _session = Math.Max(session, 0);
+        return session switch
+        {
+            > 0 => LiveStart.Playing,
+            0 => LiveStart.NotYet,
+            _ => LiveStart.MediaFailed,
+        };
     }
+
+    // With no session, the script answers with the last connection that never got media.
+    public async Task<LiveDiagnostics?> DiagnosticsAsync() =>
+        _module is null ? null : await _module.InvokeAsync<LiveDiagnostics?>("diagnostics", _session);
 
     public async Task StopAsync()
     {

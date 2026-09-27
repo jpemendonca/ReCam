@@ -168,6 +168,39 @@
   <data name="DevicesTitle" xml:space="preserve">
     <value>Aparelhos</value>
   </data>
+  <data name="DiagnosticsBytes" xml:space="preserve">
+    <value>Bytes de vídeo recebidos</value>
+  </data>
+  <data name="DiagnosticsCodec" xml:space="preserve">
+    <value>Codec</value>
+  </data>
+  <data name="DiagnosticsConnection" xml:space="preserve">
+    <value>Conexão</value>
+  </data>
+  <data name="DiagnosticsFrames" xml:space="preserve">
+    <value>Quadros recebidos / decodificados</value>
+  </data>
+  <data name="DiagnosticsHide" xml:space="preserve">
+    <value>Esconder diagnóstico</value>
+  </data>
+  <data name="DiagnosticsNothing" xml:space="preserve">
+    <value>Nenhuma conexão ao vivo ainda.</value>
+  </data>
+  <data name="DiagnosticsPath" xml:space="preserve">
+    <value>Caminho</value>
+  </data>
+  <data name="DiagnosticsPlayError" xml:space="preserve">
+    <value>Erro ao tocar</value>
+  </data>
+  <data name="DiagnosticsPlayer" xml:space="preserve">
+    <value>Vídeo na página</value>
+  </data>
+  <data name="DiagnosticsShow" xml:space="preserve">
+    <value>Diagnóstico</value>
+  </data>
+  <data name="DiagnosticsSize" xml:space="preserve">
+    <value>Imagem recebida</value>
+  </data>
   <data name="FirstCameraTitle" xml:space="preserve">
     <value>Adicione sua primeira câmera</value>
   </data>

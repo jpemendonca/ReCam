@@ -27,11 +27,22 @@ public sealed class FakeLiveVideo : ILiveVideo
         return Task.FromResult(Muted.Value);
     }
 
-    public Task<bool> StartAsync(ElementReference video, Guid cameraId)
+    /// <summary>Like a network where the server answers but media never arrives.</summary>
+    public bool MediaFails { get; set; }
+
+    /// <summary>What the browser would report about the connection.</summary>
+    public LiveDiagnostics? Diagnostics { get; set; }
+
+    public Task<LiveStart> StartAsync(ElementReference video, Guid cameraId)
     {
         Starts++;
-        return Task.FromResult(Starts > RefusalsBeforePlaying);
+        return Task.FromResult(
+            Starts <= RefusalsBeforePlaying ? LiveStart.NotYet
+            : MediaFails ? LiveStart.MediaFailed
+            : LiveStart.Playing);
     }
+
+    public Task<LiveDiagnostics?> DiagnosticsAsync() => Task.FromResult(Diagnostics);
 
     public Task StopAsync()
     {

@@ -2205,6 +2205,16 @@ o que continua por conta de quem roda o servidor.
   - Aceite: bUnit do botão abrindo e fechando o painel e mostrando os campos que o script
     devolve; conferido no Chromium; o autor manda o print do painel no iPhone. Se o `play()`
     resolver, anotar; se não, a causa vira bullet novo a partir do print.
+  > Em andamento (2026-09-27): feito o código. `whep.js` chama `video.play()` a cada trilha
+  > recebida e guarda a recusa; o `start` espera a conexão de mídia abrir (até 10 s) e devolve -1
+  > se não abrir, e o ao vivo mostra a falha na hora em vez de ficar preto "tocando" (`LiveStart`:
+  > `Playing`, `NotYet`, `MediaFailed`). O botão "Diagnóstico" embaixo do vídeo lê o `getStats()` a
+  > cada segundo: conexão e ICE, caminho (tipo e protocolo dos candidatos), bytes, quadros
+  > recebidos e decodificados, codec com o perfil, tamanho da imagem, estado do `<video>` e o erro
+  > do `play()`. Se a mídia nunca abriu, mostra a última leitura dessa tentativa. Testes: bUnit do
+  > painel e controller falhando sem repetir; sintaxe do `whep.js` conferida no Node. Não foi
+  > visto num navegador de verdade (precisa de câmera transmitindo e login). Falta: o autor
+  > abrir no iPhone e mandar o print do painel.
 
 ## Fase 5: distribuição
 
