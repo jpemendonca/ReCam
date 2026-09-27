@@ -403,7 +403,7 @@ Estado em 2026-09-26 (conferido no bullet 6.9). As revisões do log 12 contam co
 
 | Método e rota | Quem pode | Entrada | Saída |
 |---|---|---|---|
-| `GET /health` | qualquer um | — | `200 "ok"` |
+| `GET /health` | qualquer um | — | `200 { status: "ok", version }` |
 | `GET /` e arquivos do `Recam.Web` | qualquer um | — | o Monitor no navegador |
 | `GET /setup` | qualquer um | — | redireciona para `/` |
 | `GET /api/web/first-open` | qualquer um | — | `{ open }`: `true` enquanto não há Monitor ativo |
