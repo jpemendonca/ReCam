@@ -16,6 +16,7 @@ import 'l10n/generated/app_localizations.dart';
 import 'core/pairing/device_role.dart';
 import 'pairing_router.dart';
 import 'viewer/add_device_screen.dart';
+import 'viewer/add_monitor_sheet.dart';
 import 'viewer/connect_browser_screen.dart';
 import 'viewer/camera_list_controller.dart';
 import 'viewer/viewer_pairing_controller.dart';
@@ -142,25 +143,29 @@ class _HomeShellState extends State<HomeShell> {
     return confirmed == true;
   }
 
-  void _addMonitor(ViewerPaired paired) => Navigator.of(context).push<void>(
-    MaterialPageRoute(
-      builder: (_) => AddDeviceScreen(
-        api: widget.api,
-        session: paired.session,
-        role: DeviceRole.viewer,
+  Future<void> _addMonitor(ViewerPaired paired) async {
+    final target = await showModalBottomSheet<AddMonitorTarget>(
+      context: context,
+      builder: (_) => const AddMonitorSheet(),
+    );
+    if (!mounted || target == null) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => switch (target) {
+          AddMonitorTarget.phone => AddDeviceScreen(
+            api: widget.api,
+            session: paired.session,
+            role: DeviceRole.viewer,
+          ),
+          AddMonitorTarget.browser => ConnectBrowserScreen(
+            api: widget.api,
+            session: paired.session,
+            readCode: widget.readCode,
+          ),
+        },
       ),
-    ),
-  );
-
-  void _connectBrowser(ViewerPaired paired) => Navigator.of(context).push<void>(
-    MaterialPageRoute(
-      builder: (_) => ConnectBrowserScreen(
-        api: widget.api,
-        session: paired.session,
-        readCode: widget.readCode,
-      ),
-    ),
-  );
+    );
+  }
 
   Future<void> _confirmReset() async {
     final l10n = AppLocalizations.of(context);
@@ -242,25 +247,18 @@ class _HomeShellState extends State<HomeShell> {
             PopupMenuButton<_MenuAction>(
               onSelected: (action) => switch ((action, viewerState)) {
                 (_MenuAction.addMonitor, final ViewerPaired paired) =>
-                  _addMonitor(paired),
-                (_MenuAction.connectBrowser, final ViewerPaired paired) =>
-                  _connectBrowser(paired),
+                  unawaited(_addMonitor(paired)),
                 (_MenuAction.scan, _) => unawaited(_scan()),
                 (_MenuAction.reset, _) => unawaited(_confirmReset()),
                 (_MenuAction.battery, _) => unawaited(_openBatteryGuide()),
                 _ => null,
               },
               itemBuilder: (context) => [
-                if (viewerState is ViewerPaired) ...[
+                if (viewerState is ViewerPaired)
                   PopupMenuItem(
                     value: _MenuAction.addMonitor,
                     child: Text(l10n.addMonitorButton),
                   ),
-                  PopupMenuItem(
-                    value: _MenuAction.connectBrowser,
-                    child: Text(l10n.connectBrowserButton),
-                  ),
-                ],
                 if (role == _Role.camera)
                   PopupMenuItem(
                     value: _MenuAction.battery,
@@ -321,4 +319,4 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
-enum _MenuAction { addMonitor, connectBrowser, scan, reset, battery }
+enum _MenuAction { addMonitor, scan, reset, battery }

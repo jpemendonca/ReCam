@@ -265,7 +265,8 @@ Desenho combinado com o autor em 2026-09-25 (Fase 6 do ROADMAP):
   `Owner` e vai direto para "Adicionar câmera", com o passo a passo (baixar o app, abrir, tocar em
   Ler QR code, ler o QR). Quando a primeira câmera pareia, o vídeo ao vivo dela abre sozinho.
 - **Navegador que não é Monitor, com Monitor já existente.** A raiz mostra um QR de "Conectar
-  navegador". Um celular Monitor lê pelo menu **Conectar navegador** e aprova; o navegador vira
+  navegador". Um celular Monitor lê pelo menu **Adicionar Monitor › Num navegador** e aprova
+  (desde o 11.1, "Adicionar Monitor" pergunta "Onde vai assistir?"); o navegador vira
   um `Viewer` (seção 5.4). É o caminho para um segundo navegador e para quem limpou os cookies.
 - **Sair.** O botão **Sair** revoga o aparelho no servidor, não só apaga o cookie.
 - **Painel antigo.** O painel só leitura do `/setup` (bullets 1.12.11 e 1.12.16) sai: o Monitor
@@ -359,7 +360,7 @@ recam://pair?v=1&t=<token>&r=<role>&f=<fingerprint>&u=<url>&u=<url>
   cada uma e fica com a primeira que responder `GET /health`.
 
 QR de "Conectar navegador" (fase 6), mostrado por um navegador que ainda não é Monitor e lido pelo
-menu **Conectar navegador** de um celular Monitor:
+menu **Adicionar Monitor › Num navegador** de um celular Monitor:
 
 ```
 recam://connect-browser?v=1&l=<id do link, 32 hexadecimais>&s=<segredo de aprovação>

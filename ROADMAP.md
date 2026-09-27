@@ -2075,7 +2075,7 @@ criar o convite, então nada disso funciona antes da configuração inicial no P
 de casa depende de o servidor ser alcançável de fora (VPS da Fase 10, porta aberta ou Tailscale),
 o que continua por conta de quem roda o servidor.
 
-- [ ] **11.1 App: "Adicionar Monitor" numa opção só**
+- [x] **11.1 App: "Adicionar Monitor" numa opção só**
   - Origem: o autor achou confuso ter "Adicionar Monitor" e "Conectar navegador" lado a lado no
     app (2026-09-27). Os nomes não dizem que um mostra QR e o outro lê.
   - Escopo: sai o item "Conectar navegador" do menu. "Adicionar Monitor" pergunta "Onde vai
@@ -2085,6 +2085,16 @@ o que continua por conta de quem roda o servidor.
     › Num navegador". Textos nos ARB (en e pt) e nos `.resx`. O protocolo não muda.
   - Aceite: widget tests das duas escolhas levando à tela certa, e do menu sem "Conectar
     navegador".
+  > Validação (2026-09-27): só código escrito e testes; não percorrido no celular. O menu do
+  > Monitor tem só "Adicionar Monitor", que abre a folha `AddMonitorSheet` ("Onde vai assistir?"):
+  > "Em outro celular" abre a tela do QR de pareamento como antes, e "Num navegador" abre a leitura
+  > do QR do navegador (a tela do antigo "Conectar navegador", agora "Monitor num navegador"). A
+  > chave `connectBrowserButton` saiu dos ARB; entraram `addMonitorWhere`, `addMonitorOnPhone`,
+  > `addMonitorInBrowser` e as dicas, em en e pt. O texto do navegador que pede aprovação agora diz
+  > "⋮ > Adicionar Monitor > Num navegador" (resx en e pt). `SPECS.md` 2.5 e 5.2 e o README citam o
+  > caminho novo. Testes: widget tests das duas escolhas (outro celular pede token de Monitor;
+  > navegador abre `ConnectBrowserScreen` sem pedir token) e do menu sem "Connect browser"; bUnit da
+  > página inicial com o texto novo.
 
 - [ ] **11.2 Link de Monitor para navegador, e o Monitor web no celular**
   - Origem: continuação do 11.1. No iPhone não há app para ler o QR de "Conectar navegador", e o

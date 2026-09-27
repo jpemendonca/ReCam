@@ -72,7 +72,7 @@ public sealed class HomeTests : BunitContext
         page.WaitForAssertion(() => Assert.StartsWith("Código errado.", page.Find(".error").TextContent, StringComparison.Ordinal));
     }
 
-    [Fact(DisplayName = "When another device is the Monitor, the page points to Connect browser")]
+    [Fact(DisplayName = "When another device is the Monitor, the page points to Add Monitor, In a browser")]
     public void Render_OtherMonitor_ShowsServerTaken()
     {
         // arrange
@@ -84,7 +84,7 @@ public sealed class HomeTests : BunitContext
 
         // assert
         Assert.Equal("This server already has a Monitor", page.Find("h1").TextContent);
-        Assert.Contains("Connect browser", page.Find("p").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Add Monitor > In a browser", page.Find("p").TextContent, StringComparison.Ordinal);
     }
 
     [Fact(DisplayName = "When a Monitor phone approves the QR, this browser becomes a Monitor")]

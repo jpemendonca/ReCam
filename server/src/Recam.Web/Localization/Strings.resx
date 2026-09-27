@@ -349,7 +349,7 @@
     <value>Remove {0}?</value>
   </data>
   <data name="ServerTakenText" xml:space="preserve">
-    <value>To watch in this browser, open ReCam on a Monitor phone, tap ⋮ &gt; Connect browser and scan this QR code.</value>
+    <value>To watch in this browser, open ReCam on a Monitor phone, tap ⋮ &gt; Add Monitor &gt; In a browser and scan this QR code.</value>
   </data>
   <data name="ServerTakenTitle" xml:space="preserve">
     <value>This server already has a Monitor</value>

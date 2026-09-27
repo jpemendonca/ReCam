@@ -13,6 +13,7 @@ import 'package:recam/core/pairing/pairing_service.dart';
 import 'package:recam/core/storage/credential_store.dart';
 import 'package:recam/core/network/hub_session.dart';
 import 'package:recam/viewer/add_device_screen.dart';
+import 'package:recam/viewer/connect_browser_screen.dart';
 import 'package:recam/viewer/camera_list_controller.dart';
 import 'package:recam/viewer/recording_timeline_controller.dart';
 import 'package:recam/viewer/recordings_timeline_screen.dart';
@@ -606,16 +607,20 @@ void main() {
       expect(find.text('Your first camera is ready'), findsNothing);
     });
 
-    testWidgets('menuAddMonitor_opensTheMonitorQr', (tester) async {
+    testWidgets('menuAddMonitor_onAnotherPhone_opensTheMonitorQr', (
+      tester,
+    ) async {
       // arrange
       await store.write(PairingSlot.viewer, pairedSession());
       api.tokenResults.add(ApiSuccess(token('recam://pair?r=viewer')));
       await openApp(tester);
       await tester.tap(find.byTooltip('Show menu'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Monitor'));
+      await tester.pumpAndSettle();
 
       // act
-      await tester.tap(find.text('Add Monitor'));
+      await tester.tap(find.text('On another phone'));
       await tester.pumpAndSettle();
 
       // assert
@@ -625,6 +630,43 @@ void main() {
         findsOneWidget,
       );
       await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('menuAddMonitor_inABrowser_opensTheBrowserQrReader', (
+      tester,
+    ) async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      await openApp(tester);
+      await tester.tap(find.byTooltip('Show menu'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Add Monitor'));
+      await tester.pumpAndSettle();
+      final question = find.text('Where will it watch?').evaluate().length;
+
+      // act
+      await tester.tap(find.text('In a browser'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(question, 1);
+      expect(find.byType(ConnectBrowserScreen), findsOneWidget);
+      expect(find.text('Monitor in a browser'), findsOneWidget);
+      expect(api.tokenRoles, isEmpty);
+    });
+
+    testWidgets('monitorMenu_hasNoSeparateConnectBrowser', (tester) async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      await openApp(tester);
+
+      // act
+      await tester.tap(find.byTooltip('Show menu'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(find.text('Add Monitor'), findsOneWidget);
+      expect(find.text('Connect browser'), findsNothing);
     });
 
     testWidgets('settingsTab_showsTheSharedSpaceSlider', (tester) async {
