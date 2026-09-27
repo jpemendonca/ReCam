@@ -40,7 +40,7 @@
     <value>Add Monitor</value>
   </data>
   <data name="AddMonitorInBrowser" xml:space="preserve">
-    <value>In a browser (iPhone, another computer)</value>
+    <value>In a browser</value>
   </data>
   <data name="AddMonitorOnPhone" xml:space="preserve">
     <value>On another phone with the app</value>
@@ -211,7 +211,7 @@
     <value>Invitation QR code</value>
   </data>
   <data name="InviteStep1" xml:space="preserve">
-    <value>On the iPhone or the other computer, point the camera at this QR code, or open the link below.</value>
+    <value>In the browser, point your phone's camera at this QR code, or open the link below if you are not on a phone.</value>
   </data>
   <data name="InviteStep2" xml:space="preserve">
     <value>Tap Watch in this browser. It becomes a Monitor of these cameras.</value>

@@ -40,7 +40,7 @@
     <value>Adicionar Monitor</value>
   </data>
   <data name="AddMonitorInBrowser" xml:space="preserve">
-    <value>Num navegador (iPhone, outro computador)</value>
+    <value>Em um navegador</value>
   </data>
   <data name="AddMonitorOnPhone" xml:space="preserve">
     <value>Em outro celular com o app</value>
@@ -211,7 +211,7 @@
     <value>QR code do convite</value>
   </data>
   <data name="InviteStep1" xml:space="preserve">
-    <value>No iPhone ou no outro computador, aponte a câmera para este QR code, ou abra o link abaixo.</value>
+    <value>No navegador, aponte a câmera do seu celular para este QR code, ou abra o link abaixo caso não esteja em um celular.</value>
   </data>
   <data name="InviteStep2" xml:space="preserve">
     <value>Toque em Assistir neste navegador. Ele vira um Monitor destas câmeras.</value>
@@ -223,7 +223,7 @@
     <value>Não deu para falar com o servidor. Confira a conexão e tente de novo.</value>
   </data>
   <data name="JoinGone" xml:space="preserve">
-    <value>Este convite venceu ou já foi usado. No Monitor, abra Adicionar Monitor › Num navegador de novo.</value>
+    <value>Este convite venceu ou já foi usado. No Monitor, abra Adicionar Monitor › Em um navegador de novo.</value>
   </data>
   <data name="JoinInvalid" xml:space="preserve">
     <value>Este link de convite está incompleto. Abra de novo pelo QR code ou peça outro.</value>
@@ -412,10 +412,10 @@
     <value>Remover {0}?</value>
   </data>
   <data name="ServerTakenInvite" xml:space="preserve">
-    <value>Ou, num navegador que já é Monitor, abra Adicionar Monitor › Num navegador e abra aqui o link que ele mostra.</value>
+    <value>Ou, num navegador que já é Monitor, abra Adicionar Monitor › Em um navegador e abra aqui o link que ele mostra.</value>
   </data>
   <data name="ServerTakenText" xml:space="preserve">
-    <value>Para assistir neste navegador, abra o ReCam num celular Monitor, toque em ⋮ &gt; Adicionar Monitor &gt; Num navegador e leia este QR code.</value>
+    <value>Para assistir neste navegador, abra o ReCam num celular Monitor, toque em ⋮ &gt; Adicionar Monitor &gt; Em um navegador e leia este QR code.</value>
   </data>
   <data name="ServerTakenTitle" xml:space="preserve">
     <value>Este servidor já tem um Monitor</value>

@@ -31,7 +31,7 @@ public sealed class AddMonitorTests : BunitContext
 
         // assert
         Assert.Equal("Onde vai assistir?", page.Find("h2").TextContent);
-        Assert.Equal(["Em outro celular com o app", "Num navegador (iPhone, outro computador)"], page.FindAll("button.option").Select(option => option.TextContent));
+        Assert.Equal(["Em outro celular com o app", "Em um navegador"], page.FindAll("button.option").Select(option => option.TextContent));
         Assert.Empty(page.FindAll(".qr"));
         Assert.Empty(_api.Tokens);
         Assert.Empty(_api.Invites);
