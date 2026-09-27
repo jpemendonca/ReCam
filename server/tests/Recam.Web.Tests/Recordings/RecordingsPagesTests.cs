@@ -265,6 +265,7 @@ public sealed class RecordingsPagesTests : BunitContext
         page.WaitForAssertion(() => Assert.EndsWith($"/cameras/{_camera.Id}", navigation.Uri, StringComparison.Ordinal));
         Assert.Equal(4096, _api.Quota.QuotaMb);
         Assert.Equal($"cameras/{_camera.Id}", page.Find("a.skip").GetAttribute("href"));
+        Assert.StartsWith("A câmera já está gravando.", page.Find("section > p").TextContent, StringComparison.Ordinal);
     }
 
     [Fact(DisplayName = "Zoom, the arrows and dragging move the window; the space in use shows on top")]

@@ -116,6 +116,25 @@ public sealed class DeviceEndpointsTests
         Assert.Empty(cameras!);
     }
 
+    [Fact(DisplayName = "A camera paired through the API is already recording in the Monitor's list")]
+    public async Task Cameras_NewCamera_IsRecording()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        using var ownerClient = factory.CreateDeviceClient(owner.Credential);
+
+        // act
+        await factory.PairDeviceAsync(DeviceRole.Camera, "Porch");
+
+        // assert
+        var cameras = await ownerClient.GetFromJsonAsync<List<CameraStatus>>(
+            new Uri("/api/cameras", UriKind.Relative), ApiJson.Options, TestContext.Current.CancellationToken);
+        var porch = Assert.Single(cameras!);
+        Assert.True(porch.Recording);
+        Assert.True(porch.CanRecord);
+    }
+
     [Fact(DisplayName = "Leaving the server requires a credential")]
     public async Task DeleteMe_WithoutCredential_Returns401()
     {

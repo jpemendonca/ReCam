@@ -76,6 +76,9 @@ public sealed class Device
             Role = token.GrantsRole,
             CredentialHash = SecretToken.Hash(secret),
             CreatedAt = now,
+            // A new camera records from the start (bullet 9.9); one without H.264 turns it off
+            // when it reports its encoder.
+            RecordingEnabled = token.GrantsRole == DeviceRole.Camera,
         };
         return new PairedDevice(device, DeviceCredential.Format(device.Id, secret));
     }

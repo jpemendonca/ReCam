@@ -38,11 +38,24 @@ public sealed class DeviceRecordingTests
         var camera = Paired(DeviceRole.Camera);
 
         // act
-        var result = camera.SetRecording(camera, enabled: true);
+        var result = camera.SetRecording(camera, enabled: false);
 
         // assert
         Assert.Equal(DeviceErrors.NotAMonitor, result.Error);
-        Assert.False(camera.RecordingEnabled);
+        Assert.True(camera.RecordingEnabled);
+    }
+
+    [Theory(DisplayName = "A new camera records from the start; Monitors have nothing to record")]
+    [InlineData(DeviceRole.Camera, true)]
+    [InlineData(DeviceRole.Viewer, false)]
+    [InlineData(DeviceRole.Owner, false)]
+    public void Pair_NewDevice_RecordsWhenCamera(DeviceRole role, bool recording)
+    {
+        // act
+        var device = Paired(role);
+
+        // assert
+        Assert.Equal(recording, device.RecordingEnabled);
     }
 
     [Fact(DisplayName = "Only cameras record")]

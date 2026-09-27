@@ -14,6 +14,7 @@ public sealed class MediaPathTests
         using var mediaMtx = new FakeMediaMtx();
         using var factory = new RecamApiFactory { MediaMtxUrl = mediaMtx.Url };
         var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        await factory.SetRecordingAsync(camera.DeviceId, recording: false);
         using var client = factory.CreateDeviceClient(camera.Credential);
 
         // act
@@ -33,7 +34,7 @@ public sealed class MediaPathTests
         using var factory = new RecamApiFactory { MediaMtxUrl = mediaMtx.Url };
         var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
         var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
-        await SetRecordingAsync(factory, camera.DeviceId, recording: true);
+        await factory.SetRecordingAsync(camera.DeviceId, recording: true);
         using var cameraClient = factory.CreateDeviceClient(camera.Credential);
         using var viewerClient = factory.CreateDeviceClient(owner.Credential);
 
@@ -55,10 +56,10 @@ public sealed class MediaPathTests
         using var mediaMtx = new FakeMediaMtx();
         using var factory = new RecamApiFactory { MediaMtxUrl = mediaMtx.Url };
         var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
-        await SetRecordingAsync(factory, camera.DeviceId, recording: true);
+        await factory.SetRecordingAsync(camera.DeviceId, recording: true);
         using var client = factory.CreateDeviceClient(camera.Credential);
         using var published = await client.PostAsync(WhipUri(camera.DeviceId), Sdp(), TestContext.Current.CancellationToken);
-        await SetRecordingAsync(factory, camera.DeviceId, recording: false);
+        await factory.SetRecordingAsync(camera.DeviceId, recording: false);
 
         // act
         using var ended = await client.DeleteAsync(published.Headers.Location, TestContext.Current.CancellationToken);
@@ -91,12 +92,4 @@ public sealed class MediaPathTests
     private static Uri WhipUri(Guid cameraId) => new($"/whip/{cameraId}", UriKind.Relative);
 
     private static StringContent Sdp() => new("v=0\r\n", System.Text.Encoding.UTF8, "application/sdp");
-
-    private static async Task SetRecordingAsync(RecamApiFactory factory, Guid cameraId, bool recording)
-    {
-        await using var database = await factory.CreateDatabaseAsync();
-        await database.Devices
-            .Where(device => device.Id == cameraId)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(device => device.RecordingEnabled, recording), TestContext.Current.CancellationToken);
-    }
 }

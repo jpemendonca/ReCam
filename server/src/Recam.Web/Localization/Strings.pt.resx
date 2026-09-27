@@ -160,7 +160,7 @@
     <value>Adicione sua primeira câmera</value>
   </data>
   <data name="FirstSpaceIntro" xml:space="preserve">
-    <value>Quanto espaço as gravações podem usar no servidor? Dá para mudar depois em Configurações.</value>
+    <value>A câmera já está gravando. Escolha quanto espaço as gravações podem ocupar no servidor; quando encher, as mais antigas são apagadas. Dá para mudar depois em Configurações.</value>
   </data>
   <data name="FirstSpaceSave" xml:space="preserve">
     <value>Salvar e continuar</value>

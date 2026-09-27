@@ -1824,6 +1824,50 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > inglês, português e sem escolha mostram a página certa. Testes de widget, de app e bUnit.
   > Falta conferir no Redmi 6A.
 
+- [x] **9.9 Câmera nova já grava**
+  - Origem: pedido do autor em 2026-09-26. Hoje a câmera pareada só transmite ao vivo, e a tela do
+    espaço (8.3) pergunta o espaço de uma gravação que ainda não existe.
+  - Escopo: o servidor cria toda câmera nova com a gravação ligada. Câmeras já pareadas ficam como
+    estão. A tela do espaço, no app e no navegador, passa a avisar que a câmera já está gravando
+    e que, quando o espaço enche, as gravações mais antigas são apagadas; "Pular" continua usando
+    o espaço padrão. Revisar o `SPECS.md` (2.4).
+  - Aceite: teste de integração pareando uma câmera e vendo a gravação ligada; testes de widget e
+    bUnit do novo texto da tela do espaço.
+  > Validação (2026-09-26): `Device.Pair` cria câmera com `RecordingEnabled` ligado; o
+  > `ReportVideoCodecs` sem H.264 continua desligando. Testes antigos que falavam de câmera só ao
+  > vivo (caminho `cam-`, lease que para a câmera, WHEP com cookie) passaram a desligar a gravação
+  > no arrange, com o helper `RecamApiFactory.SetRecordingAsync`. Novos: domínio (câmera grava,
+  > Monitor não), integração (câmera pareada pela API aparece gravando na lista), bUnit e widget do
+  > texto novo da tela do espaço (no app a tela não tinha teste; ganhou, junto com o seletor de
+  > idioma só na aba). `SPECS.md` revisado. Só código e teste.
+
+- [ ] **9.10 Chave de gravação visível, com o estado real**
+  - Origem: teste do autor em 2026-09-26: a opção de gravar fica escondida dentro da câmera, numa
+    caixa que não diz se a gravação começou.
+  - Escopo: uma chave "Gravar" à vista no card da câmera (navegador) e na linha da câmera (app),
+    e também na barra do ao vivo nos dois. Ao lado, o estado que o servidor confirma, não o que
+    foi pedido: "Gravando" (ponto vermelho, arquivos chegando), "Começando…" (ligada, primeiro
+    arquivo ainda não chegou) ou "Não está gravando", com o motivo (câmera offline, sem espaço,
+    aparelho sem H.264). Se ligar e não começar em cerca de 30 s, um aviso diz por quê. Se o
+    servidor ainda não souber distinguir esses estados, este bullet inclui essa parte.
+  - Aceite: testes de widget e bUnit de cada estado e da troca de "Começando…" para "Gravando";
+    teste de integração do estado vindo do servidor.
+
+- [ ] **9.11 Ajustes de bateria conferidos sozinhos**
+  - Origem: teste do autor em 2026-09-26: no Samsung A10 a tela de bateria sumiu depois dos
+    ajustes, mas no Redmi 6A aparece toda vez sem dizer o que falta. Os ajustes são
+    recomendações, não obrigação, e a pessoa não marca nada.
+  - Escopo: a tela lista cada ajuste. Os que o app consegue ler (otimização de bateria, uso em
+    segundo plano restrito a partir do Android 9, permissão de notificação a partir do Android 13)
+    aparecem com um check automático ou com um botão "Ajustar", que abre a tela certa do
+    Android, e o check atualiza ao voltar para o app. Os que nenhum app consegue ler (início
+    automático da MIUI, apps em suspensão da Samsung, travar nos recentes) aparecem só como dica
+    em texto, separados pelo fabricante como hoje. A tela nunca bloqueia: sempre tem
+    "Continuar". Aparece sozinha só quando um ajuste que o app lê está faltando, e também pelo
+    menu ⋮ da câmera.
+  - Aceite: testes de widget com cada ajuste certo e faltando, e do check mudando ao voltar para o
+    app; testes do controller decidindo quando a tela aparece sozinha.
+
 ## Fase 10: servidor numa VPS
 
 Decidido com o autor em 2026-09-26: rodar o servidor numa VPS, com as câmeras em casa e quem

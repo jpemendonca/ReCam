@@ -50,6 +50,7 @@ public sealed class BrowserMonitorTests
         using var factory = new RecamApiFactory { MediaMtxUrl = mediaMtx.Url };
         var cookie = await factory.OpenBrowserMonitorAsync();
         var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        await factory.SetRecordingAsync(camera.DeviceId, recording: false);
         using var client = factory.CreateBrowserClient();
         using var request = new HttpRequestMessage(HttpMethod.Post, new Uri($"/whep/{camera.DeviceId}", UriKind.Relative))
         {

@@ -860,3 +860,7 @@ seguinte em `docs/adr/`:
 > bilhões de combinações), troca depois de 5 erros, 5 tentativas por minuto por IP e só existe até
 > o primeiro Monitor. A exigência de rede local, e a recusa de `X-Forwarded-For` de proxy não
 > confiável que vinha com ela, saem.
+
+> Revisão (2026-09-26): toda câmera nova é criada com "Gravar sempre" ligado (bullet 9.9). Uma
+> câmera sem H.264 desliga sozinha ao informar o encoder, como antes. Câmeras já pareadas não
+> mudam. A tela do espaço depois da primeira câmera passa a dizer que ela já está gravando.

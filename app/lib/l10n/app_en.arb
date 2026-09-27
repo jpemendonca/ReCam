@@ -252,7 +252,7 @@
     }
   },
   "firstSpaceTitle": "Your first camera is ready",
-  "firstSpaceIntro": "How much space may the recordings take on the server? You can change it later in Settings.",
+  "firstSpaceIntro": "The camera is already recording. Choose how much space the recordings may take on the server; when it fills up, the oldest are deleted. You can change it later in Settings.",
   "firstSpaceSave": "Save and continue",
   "firstSpaceSkip": "Skip (keeps 2 GB)",
   "timelineZoomMinute": "1 min",

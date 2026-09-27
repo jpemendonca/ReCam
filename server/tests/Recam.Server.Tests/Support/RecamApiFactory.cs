@@ -70,6 +70,15 @@ public sealed partial class RecamApiFactory : WebApplicationFactory<Program>
         return (await response.Content.ReadFromJsonAsync<PairResponse>(ApiJson.Options))!;
     }
 
+    /// <summary>Sets "record always" straight in the database; new cameras start with it on.</summary>
+    public async Task SetRecordingAsync(Guid cameraId, bool recording)
+    {
+        await using var database = await CreateDatabaseAsync();
+        await database.Devices
+            .Where(device => device.Id == cameraId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(device => device.RecordingEnabled, recording), TestContext.Current.CancellationToken);
+    }
+
     /// <summary>The first-time code the server printed last, as the operator reads it in the log.</summary>
     public async Task<string> FirstOpenCodeAsync()
     {

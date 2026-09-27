@@ -15,6 +15,8 @@ public sealed class WatchLeasesTests
         var factory = new RecamApiFactory();
         var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
         var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        // Leases are about a camera that only streams while watched.
+        await factory.SetRecordingAsync(camera.DeviceId, recording: false);
         var viewerConnection = await factory.ConnectAsync(owner.Credential);
         var cameraConnection = await factory.ConnectAsync(camera.Credential);
 
