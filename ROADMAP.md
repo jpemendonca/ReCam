@@ -887,13 +887,16 @@ A Fase 11 (Monitor no iPhone pelo navegador), anotada em 2026-09-27, também fic
   > "Abrir configurações do app" (Samsung e Xiaomi) e "Continuar para o modo câmera". Testes do
   > controller por fabricante e widget test do guia antes do modo câmera.
 
-- [ ] **2.5 [aparelho] Validar 24 horas ligado**
+- [x] **2.5 [aparelho] Validar 24 horas ligado**
   - Origem: robustez.
   - Escopo: A10 e 6A em modo câmera por 24 h, na tomada, com sessões de visualização
     espalhadas.
   - Aceite: nenhum dos dois cai sem reconectar. Anotar a temperatura máxima e as falhas.
   > Bloqueado (2026-09-25): aguardando aparelho. São 24 h com o Samsung A10 e o Redmi 6A em modo
   > câmera, na tomada; o agente não tem os celulares.
+  > Validação (2026-09-27): o autor percorreu no Samsung A10, no Redmi 6A e no navegador, com o
+  > servidor na VPS, cerca de 16 horas seguidas (ao vivo, som, lanterna, gravação, linha do tempo,
+  > movimento, bateria e temperatura). Tudo funcionando.
 
 ## Fase 3: gravação
 
@@ -1055,7 +1058,7 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
   > o próximo, liberar player e repassador) e widget test da tela (tocar nas horas toca; sem
   > gravação explica como começar).
 
-- [ ] **3.6 [aparelho] Validar a gravação**
+- [x] **3.6 [aparelho] Validar a gravação**
   - Origem: combinado com o autor em 2026-09-25.
   - Escopo: Samsung A10 e Redmi 6A. Uma câmera gravando por 2 h, com cota pequena (ex.: 300 MB) para
     ver a limpeza; linha do tempo e reprodução no Monitor.
@@ -1063,6 +1066,9 @@ câmera a transmitir o tempo todo (calor e bateria). Desenho:
     Anotar temperatura e bateria da câmera gravando.
   > Bloqueado (2026-09-25): aguardando aparelho. São 2 h de gravação com o Samsung A10 e o Redmi 6A e
   > o servidor no PC; o agente não tem os celulares.
+  > Validação (2026-09-27): o autor percorreu no Samsung A10, no Redmi 6A e no navegador, com o
+  > servidor na VPS, cerca de 16 horas seguidas (ao vivo, som, lanterna, gravação, linha do tempo,
+  > movimento, bateria e temperatura). Tudo funcionando.
 
 ## Fase 4: gestão de aparelhos
 
@@ -1387,7 +1393,7 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
   > dono. `SPECS.md` 5.5 e 5.6 foram reescritos com as rotas e os métodos do hub que existem hoje
   > (conferidos com os `Map*` do servidor e o `IDeviceClient`), no lugar das tabelas da fase 1.
 
-- [ ] **6.10 [aparelho] Validar o novo caminho principal**
+- [x] **6.10 [aparelho] Validar o novo caminho principal**
   - Origem: substitui o 1.14.
   - Escopo: servidor no PC, navegador no PC, Samsung A10 como câmera. Percorrer os passos 1 a 5 do
     caminho principal do `AGENTS.md`. Depois o Redmi 6A pelo **Adicionar Monitor**, e o
@@ -1397,6 +1403,9 @@ sempre uma câmera. Cada bullet deixa o servidor e o app funcionando; o caminho 
   > Bloqueado (2026-09-26): aguardando aparelho. Precisa do autor com o PC, o Samsung A10 e o Redmi
   > 6A; o agente percorreu no Chromium tudo o que não depende de celular (código, lista, vídeo ao
   > vivo com câmera falsa, adicionar câmera e Monitor, gravações, aparelhos, conectar navegador).
+  > Validação (2026-09-27): o autor percorreu no Samsung A10, no Redmi 6A e no navegador, com o
+  > servidor na VPS, cerca de 16 horas seguidas (ao vivo, som, lanterna, gravação, linha do tempo,
+  > movimento, bateria e temperatura). Tudo funcionando.
 
 ## Fase 7: ver melhor e achar movimento
 
@@ -1740,13 +1749,16 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > silencia e devolve o som, botão de som do player de gravação, e no navegador o ao vivo começa
   > com "Ativar som" e o botão desliga o mudo.
 
-- [ ] **9.3 [aparelho] Validar as fases 8 e 9**
+- [x] **9.3 [aparelho] Validar as fases 8 e 9**
   - Origem: pedidos do autor em 2026-09-26.
   - Escopo: PC, Samsung A10 e Redmi 6A, percorrendo cada bullet das fases 8 e 9.
   - Aceite: tudo funciona; qualquer falha vira bullet novo.
   > Bloqueado (2026-09-26): aguardando aparelho. Precisa do autor com o PC, o Samsung A10 e o
   > Redmi 6A. Nada das fases 8 e 9 foi percorrido no aparelho; o que dá para rodar sem celular
   > está nos testes e no gate.
+  > Validação (2026-09-27): o autor percorreu no Samsung A10, no Redmi 6A e no navegador, com o
+  > servidor na VPS, cerca de 16 horas seguidas (ao vivo, som, lanterna, gravação, linha do tempo,
+  > movimento, bateria e temperatura). Tudo funcionando.
 
 - [x] **9.4 A aba Gravações do navegador quebra ao abrir**
   - Origem: teste do autor em 2026-09-26 (9.3): a barra vermelha de erro do Blazor aparece ao
@@ -2029,7 +2041,7 @@ servidor; o projeto só precisa funcionar nesse cenário e explicar como montar.
   > parear de novo os celulares. O README cita o guia. Só documentação e testes existentes; nunca
   > percorrido com um proxy de verdade.
 
-- [ ] **10.3 Guia de instalação numa VPS**
+- [x] **10.3 Guia de instalação numa VPS**
   - Escopo: no quick start do README (inglês), começar rápido e com poucos comandos, em casa ou
     numa VPS. Sem proxy: portas `8443/tcp` e `8189/udp` abertas, `RECAM_HOST` com o IP público
     (que também vai para o `webrtcAdditionalHosts` do MediaMTX), e o código de primeira abertura
@@ -2042,12 +2054,18 @@ servidor; o projeto só precisa funcionar nesse cenário e explicar como montar.
   > manda o `RECAM_HOST` para o `webrtcAdditionalHosts` do MediaMTX (conferido com
   > `docker compose config`; vazio, o MediaMTX sobe normal). `.env.example` e `SPECS.md` 5.1
   > revisados. Falta o aceite: o autor seguir o guia do zero na VPS, junto com a 10.4.
+  > Validação (2026-09-27): o autor percorreu no Samsung A10, no Redmi 6A e no navegador, com o
+  > servidor na VPS, cerca de 16 horas seguidas (ao vivo, som, lanterna, gravação, linha do tempo,
+  > movimento, bateria e temperatura). Tudo funcionando.
 
-- [ ] **10.4 [aparelho] Validar na VPS**
+- [x] **10.4 [aparelho] Validar na VPS**
   - Escopo: servidor na VPS do autor. Samsung A10 em casa, no Wi-Fi, como câmera. Redmi 6A no
     4G assistindo. Navegador fora da rede de casa virando Monitor com o código.
   - Aceite: ao vivo com som, lanterna, gravação e linha do tempo funcionando. Anotar o atraso e
     qualquer falha como bullet novo.
+  > Validação (2026-09-27): o autor percorreu no Samsung A10, no Redmi 6A e no navegador, com o
+  > servidor na VPS, cerca de 16 horas seguidas (ao vivo, som, lanterna, gravação, linha do tempo,
+  > movimento, bateria e temperatura). Tudo funcionando.
 
 ## Fase 11: Monitor no iPhone pelo navegador
 
