@@ -270,6 +270,27 @@ void main() {
       expect(find.text('ReCam · Monitor'), findsOneWidget);
     });
 
+    testWidgets('cameraMenu_opensTheBatterySettingsAnytime', (tester) async {
+      // arrange
+      await store.write(
+        PairingSlot.camera,
+        pairedSession(role: DeviceRole.camera),
+      );
+      await openApp(tester);
+      await tester.tap(find.byTooltip('Show menu'));
+      await tester.pumpAndSettle();
+
+      // act
+      await tester.tap(find.text('Battery settings'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(find.text('Keep the camera running'), findsOneWidget);
+      await tester.tap(find.text('Done'));
+      await tester.pumpAndSettle();
+      expect(find.text('Keep the camera running'), findsNothing);
+    });
+
     testWidgets('scanMonitorCodeOnCamera_afterConfirming_becomesMonitor', (
       tester,
     ) async {

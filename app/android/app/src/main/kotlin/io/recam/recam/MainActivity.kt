@@ -1,5 +1,7 @@
 package io.recam.recam
 
+import android.app.ActivityManager
+import android.app.NotificationManager
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
@@ -16,6 +18,14 @@ class MainActivity : FlutterActivity() {
                 when (call.method) {
                     "batteryTemperature" -> result.success(batteryTemperature())
                     "manufacturer" -> result.success(Build.MANUFACTURER)
+                    // Android 9+: the person restricted the app's background use in its settings.
+                    "isBackgroundRestricted" -> result.success(
+                        getSystemService(ActivityManager::class.java).isBackgroundRestricted
+                    )
+                    // The camera's ongoing notification is what keeps it alive in the background.
+                    "areNotificationsEnabled" -> result.success(
+                        getSystemService(NotificationManager::class.java).areNotificationsEnabled()
+                    )
                     else -> result.notImplemented()
                 }
             }

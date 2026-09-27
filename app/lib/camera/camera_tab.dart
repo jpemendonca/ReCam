@@ -44,15 +44,15 @@ class _CameraTabState extends State<CameraTab> {
     if (justPaired && mounted) unawaited(_openCameraMode(state.session));
   }
 
-  // A phone that Android may put to sleep gets the battery guide before camera mode.
+  // A phone with a battery setting still holding the camera back sees the guide first; one
+  // with everything in place goes straight to camera mode.
   Future<void> _openCameraMode(PairedSession session) async {
     final navigator = Navigator.of(context);
-    final guide = await widget.batteryGuide.check();
-    if (guide != null) {
+    final status = await widget.batteryGuide.status();
+    if (!status.allGood) {
       await navigator.push<void>(
         MaterialPageRoute(
-          builder: (_) =>
-              BatteryGuideScreen(guide: guide, controller: widget.batteryGuide),
+          builder: (_) => BatteryGuideScreen(controller: widget.batteryGuide),
         ),
       );
     }

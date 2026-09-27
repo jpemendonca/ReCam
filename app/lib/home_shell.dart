@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'app_reset.dart';
 import 'camera/battery_guide.dart';
+import 'camera/battery_guide_screen.dart';
 import 'camera/camera_mode_controller.dart';
 import 'camera/camera_pairing_controller.dart';
 import 'camera/camera_tab.dart';
@@ -184,6 +185,15 @@ class _HomeShellState extends State<HomeShell> {
     await _resetWithProgress();
   }
 
+  Future<void> _openBatteryGuide() => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) => BatteryGuideScreen(
+        controller: widget.batteryGuide,
+        beforeCameraMode: false,
+      ),
+    ),
+  );
+
   Future<void> _resetWithProgress() async {
     final navigator = Navigator.of(context);
     // Telling the server can take a few seconds when it does not answer.
@@ -237,6 +247,7 @@ class _HomeShellState extends State<HomeShell> {
                   _connectBrowser(paired),
                 (_MenuAction.scan, _) => unawaited(_scan()),
                 (_MenuAction.reset, _) => unawaited(_confirmReset()),
+                (_MenuAction.battery, _) => unawaited(_openBatteryGuide()),
                 _ => null,
               },
               itemBuilder: (context) => [
@@ -250,6 +261,11 @@ class _HomeShellState extends State<HomeShell> {
                     child: Text(l10n.connectBrowserButton),
                   ),
                 ],
+                if (role == _Role.camera)
+                  PopupMenuItem(
+                    value: _MenuAction.battery,
+                    child: Text(l10n.batteryGuideMenu),
+                  ),
                 PopupMenuItem(
                   value: _MenuAction.scan,
                   child: Text(l10n.scanQrButton),
@@ -305,4 +321,4 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
-enum _MenuAction { addMonitor, connectBrowser, scan, reset }
+enum _MenuAction { addMonitor, connectBrowser, scan, reset, battery }

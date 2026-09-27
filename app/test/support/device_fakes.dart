@@ -72,6 +72,19 @@ class FakeBatteryOptimization implements BatteryOptimization {
 
   @override
   Future<void> openAppSettings() async => settingsOpened++;
+
+  bool backgroundRestricted = false;
+  bool notifications = true;
+  int notificationRequests = 0;
+
+  @override
+  Future<bool> isBackgroundRestricted() async => backgroundRestricted;
+
+  @override
+  Future<bool> areNotificationsEnabled() async => notifications;
+
+  @override
+  Future<void> requestNotifications() async => notificationRequests++;
 }
 
 class FakeScreenController implements ScreenController {

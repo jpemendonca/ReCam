@@ -1879,7 +1879,7 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > presença, leitura da gravação). Teste novo. A suíte inteira do servidor rodou 4 vezes seguidas
   > sem falha. Entrou no mesmo commit da 9.10, porque o gate dela dependia disso.
 
-- [ ] **9.11 Ajustes de bateria conferidos sozinhos**
+- [x] **9.11 Ajustes de bateria conferidos sozinhos**
   - Origem: teste do autor em 2026-09-26: no Samsung A10 a tela de bateria sumiu depois dos
     ajustes, mas no Redmi 6A aparece toda vez sem dizer o que falta. Os ajustes são
     recomendações, não obrigação, e a pessoa não marca nada.
@@ -1893,6 +1893,15 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
     menu ⋮ da câmera.
   - Aceite: testes de widget com cada ajuste certo e faltando, e do check mudando ao voltar para o
     app; testes do controller decidindo quando a tela aparece sozinha.
+  > Validação (2026-09-26): o canal `io.recam.app/device` ganhou `isBackgroundRestricted`
+  > (`ActivityManager`) e `areNotificationsEnabled` (`NotificationManager`); a otimização de
+  > bateria continua pelo `permission_handler`. O controller devolve o fabricante e os ajustes
+  > faltando; a tela mostra cada um com check ou "Ajustar" (abre a tela certa do Android), confere
+  > de novo ao voltar para o app, e lista as dicas que nenhum app lê só em texto. Nunca bloqueia.
+  > Aparece antes do modo câmera só se falta algum ajuste lido, e sempre pelo novo "Ajustes de
+  > bateria" no menu ⋮ da câmera. Os passos antigos (Liberar, Abrir configurações) saíram. Testes
+  > de controller, de tela (checks, "Ajustar", conferência ao voltar, dicas sem caixa) e do menu.
+  > O Kotlin compilou no `flutter build apk`. Não instalado: os celulares estavam desconectados.
 
 ## Fase 10: servidor numa VPS
 

@@ -131,15 +131,14 @@ void main() {
       await tester.tap(find.text('Start camera mode'));
       await tester.pumpAndSettle();
       final guideShown = find.text('Keep the camera running').evaluate().length;
-      await tester.tap(find.text('Allow'));
-      await tester.tap(find.text('Open app settings'));
+      await tester.tap(find.text('Fix'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Continue to camera mode'));
       await tester.pumpAndSettle();
 
       // assert
       expect(guideShown, 1);
       expect(optimization.requests, 1);
-      expect(optimization.settingsOpened, 1);
       expect(find.byType(CameraModeScreen), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
