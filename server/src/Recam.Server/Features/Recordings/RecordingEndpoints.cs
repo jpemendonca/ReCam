@@ -18,6 +18,9 @@ public static class RecordingEndpoints
         services.AddSingleton<RecordingCleanupWorker>();
         services.AddHostedService(provider => provider.GetRequiredService<RecordingCleanupWorker>());
         services.AddSingleton<RecordingStateTracker>();
+        services.AddSingleton<RecordingCipher>();
+        services.AddSingleton<RecordingCipherWorker>();
+        services.AddHostedService(provider => provider.GetRequiredService<RecordingCipherWorker>());
 
         return services;
     }
@@ -89,10 +92,10 @@ public static class RecordingEndpoints
     }
 
     /// <summary>
-    /// Serves one segment file with Range support, so a player can seek. Only a name in
-    /// MediaMTX's format reaches the disk; anything else is simply not found.
+    /// Serves one segment with Range support, so a player can seek, deciphering it on the way
+    /// out. Only a name in MediaMTX's format reaches the disk; anything else is simply not found.
     /// </summary>
-    private static IResult ServeSegment(Guid cameraId, string segment, RecordingStore store)
+    private static IResult ServeSegment(Guid cameraId, string segment, RecordingStore store, RecordingCipher cipher)
     {
         var path = store.PathOf(cameraId, segment);
         if (path is null || !File.Exists(path))
@@ -100,7 +103,7 @@ public static class RecordingEndpoints
             return RecordingErrors.SegmentNotFound.ToHttpResult();
         }
 
-        return TypedResults.PhysicalFile(path, "video/mp4", enableRangeProcessing: true);
+        return TypedResults.Stream(cipher.OpenRead(path), "video/mp4", enableRangeProcessing: true);
     }
 
     private static string SegmentUrl(Guid cameraId, string fileName) =>

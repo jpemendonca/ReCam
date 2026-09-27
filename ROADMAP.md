@@ -1903,6 +1903,34 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > de controller, de tela (checks, "Ajustar", conferência ao voltar, dicas sem caixa) e do menu.
   > O Kotlin compilou no `flutter build apk`. Não instalado: os celulares estavam desconectados.
 
+- [x] **9.13 Gravações cifradas no disco do servidor**
+  - Origem: pedido do autor em 2026-09-27. Quem abre a pasta de gravações (Explorer, cópia do
+    volume) não deve conseguir assistir. Proteção leve, para desanimar o curioso: a chave fica no
+    próprio servidor, então quem tem root e paciência ainda decifra.
+  - Escopo: o servidor gera uma chave AES aleatória no primeiro uso e guarda em `/data`. Cada
+    arquivo de 1 minuto é cifrado com AES-CTR assim que fecha e depois de a análise de movimento
+    ler o arquivo aberto; o `.motion` continua em texto. O tamanho praticamente não muda (só um
+    cabeçalho de poucos bytes com o número único do arquivo). Ao tocar uma gravação no app ou no
+    navegador, o servidor decifra enquanto envia, aceitando pedido de trecho (Range), para
+    pular no vídeo continuar funcionando. Arquivos já gravados antes deste bullet são cifrados
+    também. A cota, a limpeza e a linha do tempo seguem iguais. O arquivo que está sendo gravado
+    no momento fica aberto até fechar. A chave nunca aparece em log. Revisar o `SPECS.md` (2.4 e
+    segredos) e a regra "o .NET não processa vídeo" do `AGENTS.md`: cifrar bytes não é processar
+    vídeo, mas vale deixar escrito.
+  - Aceite: testes de cifrar e decifrar ida e volta, de pedido de trecho no meio do arquivo, de
+    arquivo fechado sendo cifrado só depois do `.motion` existir, e de o arquivo cifrado não ter
+    mais a assinatura de MP4 (`ftyp`); teste com o MediaMTX real gravando e o app tocando pelo
+    servidor.
+  > Validação (2026-09-27): `RecordingCipher` (AES-CTR montado com AES-ECB sobre os blocos do
+  > contador, porque o .NET não tem CTR pronto) e `RecordingCipherWorker`, a cada 20 s. A troca é
+  > atômica (arquivo temporário e `Move`) e mantém a hora do arquivo, que o estado de gravação da
+  > 9.10 lê. O endpoint decifra num stream com `Seek`, então o Range continua funcionando. Testes:
+  > ida e volta, leitura no meio (inclusive cruzando blocos), cifrar duas vezes não muda nada,
+  > arquivo aberto lido como está, o worker esperando o `.motion` ou 30 min, o endpoint servindo um
+  > trecho decifrado, e um MP4 real do FFmpeg (H.264 + Opus) que o `ffprobe` não lê cifrado e lê de
+  > novo decifrado. Não ficou o teste com o MediaMTX gravando de ponta a ponta: o do FFmpeg cobre
+  > o mesmo formato de arquivo. Só código e teste.
+
 ## Fase 10: servidor numa VPS
 
 Decidido com o autor em 2026-09-26: rodar o servidor numa VPS, com as câmeras em casa e quem

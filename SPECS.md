@@ -872,3 +872,11 @@ seguinte em `docs/adr/`:
 > continua sendo a posição da chave. O servidor confere o disco a cada 5 s e manda
 > `CameraStatusChanged` quando o estado muda. Enums no hub passam a ir como texto em camelCase,
 > como na API REST.
+
+> Revisão (2026-09-27): gravações cifradas no disco (bullet 9.13). O servidor gera uma chave AES de
+> 256 bits em `/data/recordings.key` no primeiro uso (só o dono do arquivo lê). Cada arquivo fechado
+> vira `RECAMENC` + contador inicial aleatório de 16 bytes + AES-CTR do conteúdo, com o mesmo nome e
+> praticamente o mesmo tamanho. Fechado quer dizer: o `.motion` já existe, ou o arquivo tem mais de
+> 30 minutos. O servidor decifra enquanto envia, com Range. Proteção contra o curioso que abre a
+> pasta, não contra quem tem root no servidor e lê a chave. Perder a chave é perder as gravações;
+> o backup de `/data` precisa levar o arquivo junto.

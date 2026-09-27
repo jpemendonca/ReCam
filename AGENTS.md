@@ -100,7 +100,8 @@ Valem para qualquer bullet:
 Regras do domínio:
 
 - O .NET não processa vídeo. Ele repassa só a sinalização WHIP/WHEP (HTTP com SDP). Pacotes
-  RTP vão direto entre os celulares e o MediaMTX.
+  RTP vão direto entre os celulares e o MediaMTX. Cifrar e decifrar os arquivos gravados, byte a
+  byte, não conta como processar vídeo (bullet 9.13).
 - O app no modo câmera não grava nem guarda imagem ou vídeo no aparelho.
 - O app só fala com o servidor que o usuário pareou. Sem analytics, sem crash reporting de
   terceiros, sem anúncio, sem chamada de rede para outro destino.
