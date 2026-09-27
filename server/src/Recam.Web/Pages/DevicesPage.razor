@@ -40,9 +40,21 @@ else
         return Devices.LoadAsync();
     }
 
-    public void Dispose() => Devices.Changed -= OnChanged;
+    // The controller lives as long as the app; it stops listening when the page closes.
+    public void Dispose()
+    {
+        Devices.Changed -= OnChanged;
+        Devices.Dispose();
+    }
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    // Offline devices say when they were last around, in this computer's time.
+    private string State(DeviceInfo device) => device.Online
+        ? L["CameraOnline"]
+        : device.LastSeenAt is { } seen
+            ? L["DeviceLastSeen", seen.ToLocalTime().ToString("g", System.Globalization.CultureInfo.CurrentCulture)]
+            : L["CameraOffline"];
 
     private RenderFragment DeviceList(IReadOnlyList<DeviceInfo> devices) => @<ul class="devices">
         @foreach (var device in devices)
@@ -50,7 +62,7 @@ else
             <li class="device">
                 <span class="dot @(device.Online ? "on" : "off")"></span>
                 <span class="name">@device.Name</span>
-                <span class="state">@(device.Online ? L["CameraOnline"] : L["CameraOffline"])</span>
+                <span class="state">@State(device)</span>
                 <span class="spacer"></span>
                 @if (device.Id == Devices.ThisBrowser)
                 {

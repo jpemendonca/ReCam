@@ -179,5 +179,6 @@
   "batteryGuideDone": "Pronto",
   "batteryGuideMenu": "Ajustes de bateria",
   "versionApp": "Este celular: {version}",
-  "versionServer": "Servidor: {version}"
+  "versionServer": "Servidor: {version}",
+  "deviceLastSeen": "Offline · visto por último em {when}"
 }

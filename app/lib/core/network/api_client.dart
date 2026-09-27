@@ -104,12 +104,16 @@ class DeviceInfo {
     required this.name,
     required this.role,
     required this.online,
+    this.lastSeenAt,
   });
 
   final String id;
   final String name;
   final DeviceRole role;
   final bool online;
+
+  /// When the server last heard from it, in UTC; null when never.
+  final DateTime? lastSeenAt;
 
   /// Owners and viewers are both Monitors on screen.
   bool get isCamera => role == DeviceRole.camera;

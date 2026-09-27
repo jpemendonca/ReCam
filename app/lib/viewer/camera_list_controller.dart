@@ -61,12 +61,17 @@ class CameraListController extends ChangeNotifier {
 
   bool get connected => hub.connected;
 
+  /// Ticks when the server says a device paired, left, came online or went offline, so the
+  /// Devices tab loads its list again.
+  final devicesChanged = ValueNotifier(0);
+
   /// True when the server refused this viewer's pairing; the list can never load again.
   bool get pairingLost => _credentialRefused || hub.rejected;
 
   Future<void> start() async {
     hub.client.on('CameraStatusChanged', _onStatusChanged);
     hub.client.on('CameraRemoved', _onCameraRemoved);
+    hub.client.on('DevicesChanged', (_) => devicesChanged.value++);
     hub.onConnected = () => unawaited(refresh());
     hub.addListener(notifyListeners);
     hub.start();
@@ -174,6 +179,7 @@ class CameraListController extends ChangeNotifier {
   @override
   void dispose() {
     hub.removeListener(notifyListeners);
+    devicesChanged.dispose();
     super.dispose();
   }
 }

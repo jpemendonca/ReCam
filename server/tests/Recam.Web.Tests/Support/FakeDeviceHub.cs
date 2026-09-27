@@ -21,6 +21,11 @@ public sealed class FakeDeviceHub : IDeviceHub
 
     public event Action<Guid>? CameraRemoved;
 
+    public event Action? DevicesChanged;
+
+    /// <summary>Like the server saying a device paired, left, came online or went offline.</summary>
+    public void SendDevicesChanged() => DevicesChanged?.Invoke();
+
     public event Action? ConnectedChanged;
 
     public Task StartAsync(CancellationToken cancellationToken)

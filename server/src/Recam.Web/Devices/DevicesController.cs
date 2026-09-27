@@ -1,4 +1,5 @@
 using Recam.Web.Api;
+using Recam.Web.Realtime;
 
 namespace Recam.Web.Devices;
 
@@ -6,8 +7,9 @@ namespace Recam.Web.Devices;
 /// The devices on the server, cameras and Monitors, and removing one after the person confirms.
 /// This browser is marked and cannot remove itself; for that there is Sign out.
 /// </summary>
-public sealed class DevicesController(IRecamApi api)
+public sealed class DevicesController(IRecamApi api, IDeviceHub hub) : IDisposable
 {
+    private bool _listening;
     private List<DeviceInfo> _devices = [];
 
     public IReadOnlyList<DeviceInfo> Cameras => [.. _devices.Where(device => device.IsCamera)];
@@ -27,8 +29,15 @@ public sealed class DevicesController(IRecamApi api)
 
     public event Action? Changed;
 
+    /// <summary>Loads the list and keeps it current: the server says when it changes.</summary>
     public async Task LoadAsync()
     {
+        if (!_listening)
+        {
+            hub.DevicesChanged += OnDevicesChanged;
+            _listening = true;
+        }
+
         Loading = true;
         Failed = false;
         Changed?.Invoke();
@@ -82,5 +91,31 @@ public sealed class DevicesController(IRecamApi api)
 
         Confirming = null;
         await LoadAsync();
+    }
+
+    public void Dispose() => hub.DevicesChanged -= OnDevicesChanged;
+
+    // A quiet reload: the list stays on screen while the new one arrives.
+    private void OnDevicesChanged() => _ = RefreshAsync();
+
+    private async Task RefreshAsync()
+    {
+        try
+        {
+            _devices = [.. await api.GetDevicesAsync(CancellationToken.None)];
+            Failed = false;
+        }
+        catch (HttpRequestException)
+        {
+            // The next change, or reopening the page, tries again.
+            return;
+        }
+
+        if (Confirming is { } device && _devices.All(other => other.Id != device.Id))
+        {
+            Confirming = null;
+        }
+
+        Changed?.Invoke();
     }
 }

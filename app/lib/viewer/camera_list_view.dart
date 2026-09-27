@@ -137,7 +137,11 @@ class _CameraListViewState extends State<CameraListView> {
           listenable: _controller,
           builder: (context, _) => _RecordingsTab(list: _controller),
         ),
-        2 => DevicesView(api: widget.api, session: widget.session),
+        2 => DevicesView(
+          api: widget.api,
+          session: widget.session,
+          changes: _controller.devicesChanged,
+        ),
         3 => ListenableBuilder(
           listenable: _controller,
           builder: (context, _) => SettingsView(

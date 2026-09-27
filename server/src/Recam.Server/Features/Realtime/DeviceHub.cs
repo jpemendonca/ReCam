@@ -233,6 +233,8 @@ public sealed partial class DeviceHub(
         {
             await NotifyViewersAsync(device);
         }
+
+        await Clients.Group(ViewersGroup).DevicesChanged();
     }
 
     private Task NotifyViewersAsync(Device camera) =>

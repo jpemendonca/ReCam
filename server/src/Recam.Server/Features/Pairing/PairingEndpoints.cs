@@ -7,6 +7,7 @@ using Recam.Server.Infrastructure.Hosting;
 using Recam.Server.Infrastructure.Http;
 using Recam.Server.Infrastructure.Network;
 using Recam.Server.Infrastructure.Persistence;
+using Recam.Server.Infrastructure.Realtime;
 using Recam.Server.Infrastructure.Tls;
 
 namespace Recam.Server.Features.Pairing;
@@ -44,6 +45,7 @@ public static partial class PairingEndpoints
         IDbContextFactory<RecamDbContext> databaseFactory,
         TimeProvider timeProvider,
         ILoggerFactory loggerFactory,
+        IDeviceListChanges listChanges,
         CancellationToken cancellationToken)
     {
         var validation = PairRequestValidator.Validate(request);
@@ -75,6 +77,7 @@ public static partial class PairingEndpoints
         database.Devices.Add(device);
         await database.SaveChangesAsync(cancellationToken);
         LogPaired(logger, device.Id, device.Role);
+        await listChanges.DevicesChangedAsync();
 
         return TypedResults.Created(
             "/api/me",

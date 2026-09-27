@@ -1955,7 +1955,7 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > IDE) ficam `dev`, porque rodar o Git dentro do MSBuild no Windows esbarra no `%` do `cmd`.
   > Testes: script, `/health`, bUnit e widget. Percorrido no deploy desta mesma data.
 
-- [ ] **9.15 Tela Aparelhos atualizando sozinha, com Monitores online**
+- [x] **9.15 Tela Aparelhos atualizando sozinha, com Monitores online**
   - Origem: pergunta do autor em 2026-09-27. A lista de câmeras atualiza pelo hub, mas a tela
     Aparelhos (app e navegador) só carrega ao abrir, e os Monitores não mostram se estão online.
   - Escopo: o servidor avisa os Monitores pelo hub quando um aparelho entra, sai, é removido ou
@@ -1964,6 +1964,14 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
     visto pela última vez. Revisar o `SPECS.md` (hub e `GET /api/devices`).
   - Aceite: teste de integração do aviso chegando pelo hub quando um Monitor conecta, cai e é
     removido; testes de widget e bUnit da tela mudando sem reabrir.
+  > Validação (2026-09-27): servidor: `DevicesChanged()` no hub, mandado pela entrada e saída no
+  > hub (qualquer papel), pelo pareamento, pelo "Conectar navegador" e pela remoção; o aviso passa
+  > por `IDeviceListChanges` (Infrastructure), para as features não se referenciarem. `GET
+  > /api/devices` ganhou `lastSeenAt`. Navegador: o controller ouve o hub e recarrega em silêncio,
+  > sem piscar a lista; a página solta o aviso ao fechar. App: a lista de câmeras repassa o aviso
+  > por um `ValueNotifier`, e a aba Aparelhos recarrega. Offline mostra "visto por último em".
+  > Testes: hub (pareia, conecta, cai, removido), lista com `lastSeenAt`, bUnit e widget da tela
+  > mudando sem reabrir, controller do app. Só código e teste.
 
 - [x] **9.16 Investigar a falha intermitente do teste do hub do navegador**
   - Origem: em 2026-09-27 o teste "With its cookie and the web header, the browser opens the hub

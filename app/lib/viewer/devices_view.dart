@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:intl/intl.dart';
+
 import '../core/network/api_client.dart';
 import '../core/storage/credential_store.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -9,10 +11,18 @@ import 'devices_controller.dart';
 
 /// The Monitor's Devices tab: the cameras and Monitors on the server, and removing one.
 class DevicesView extends StatefulWidget {
-  const DevicesView({required this.api, required this.session, super.key});
+  const DevicesView({
+    required this.api,
+    required this.session,
+    this.changes,
+    super.key,
+  });
 
   final ApiClient api;
   final PairedSession session;
+
+  /// Notifies when the server says the list changed; the view loads it again.
+  final Listenable? changes;
 
   @override
   State<DevicesView> createState() => _DevicesViewState();
@@ -27,14 +37,18 @@ class _DevicesViewState extends State<DevicesView> {
   @override
   void initState() {
     super.initState();
+    widget.changes?.addListener(_reload);
     unawaited(_controller.load());
   }
 
   @override
   void dispose() {
+    widget.changes?.removeListener(_reload);
     _controller.dispose();
     super.dispose();
   }
+
+  void _reload() => unawaited(_controller.load());
 
   Future<void> _remove(DeviceInfo device) async {
     final l10n = AppLocalizations.of(context);
@@ -106,7 +120,14 @@ class _DevicesViewState extends State<DevicesView> {
             ? l10n.devicesThisPhone
             : device.online
             ? l10n.cameraOnline
-            : l10n.cameraOffline,
+            : switch (device.lastSeenAt) {
+                final seen? => l10n.deviceLastSeen(
+                  DateFormat.yMd(Localizations.localeOf(context).toString())
+                      .add_Hm()
+                      .format(seen.toLocal()),
+                ),
+                null => l10n.cameraOffline,
+              },
       ),
       trailing: thisPhone
           ? null

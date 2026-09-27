@@ -23,4 +23,7 @@ public interface IDeviceClient
 
     /// <summary>A camera left the server; Monitors drop it from their list.</summary>
     Task CameraRemoved(Guid cameraId);
+
+    /// <summary>The device list changed; the Devices screen loads it again.</summary>
+    Task DevicesChanged();
 }

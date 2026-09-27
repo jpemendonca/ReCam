@@ -25,6 +25,7 @@ public sealed class SignalRDeviceHub : IDeviceHub, IAsyncDisposable
         _connection.On<CameraInfo>("CameraStatusChanged", camera => CameraStatusChanged?.Invoke(camera));
         _connection.On<Guid, bool>("TorchChanged", (cameraId, on) => TorchChanged?.Invoke(cameraId, on));
         _connection.On<Guid>("CameraRemoved", cameraId => CameraRemoved?.Invoke(cameraId));
+        _connection.On("DevicesChanged", () => DevicesChanged?.Invoke());
         _connection.Reconnecting += _ => Notify();
         _connection.Reconnected += _ => Notify();
         _connection.Closed += _ => Notify();
@@ -37,6 +38,8 @@ public sealed class SignalRDeviceHub : IDeviceHub, IAsyncDisposable
     public event Action<Guid, bool>? TorchChanged;
 
     public event Action<Guid>? CameraRemoved;
+
+    public event Action? DevicesChanged;
 
     public event Action? ConnectedChanged;
 

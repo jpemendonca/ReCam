@@ -320,5 +320,13 @@
         "type": "String"
       }
     }
+  },
+  "deviceLastSeen": "Offline · last seen {when}",
+  "@deviceLastSeen": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
   }
 }

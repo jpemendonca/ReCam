@@ -223,6 +223,21 @@ void main() {
     });
   });
 
+  group('CameraListController device list', () {
+    test('devicesChanged_fromTheServer_ticksForTheDevicesTab', () async {
+      // arrange
+      api.cameraResults.add(ApiSuccess([_camera('a', 'Kitchen')]));
+      await controller.start();
+      final before = controller.devicesChanged.value;
+
+      // act
+      hubClient.receive('DevicesChanged', []);
+
+      // assert
+      expect(controller.devicesChanged.value, before + 1);
+    });
+  });
+
   group('CameraListController removal', () {
     test('onCameraRemoved_dropsTheCamera', () async {
       // arrange

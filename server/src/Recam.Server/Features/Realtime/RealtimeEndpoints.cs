@@ -16,6 +16,7 @@ public static class RealtimeEndpoints
         services.AddHostedService(provider => provider.GetRequiredService<RecordingStateWorker>());
         services.AddSingleton<DeviceConnections>();
         services.AddSingleton<IDeviceRemovals, RealtimeDeviceRemovals>();
+        services.AddSingleton<IDeviceListChanges, RealtimeDeviceListChanges>();
         return services;
     }
 

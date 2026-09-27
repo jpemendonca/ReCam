@@ -233,7 +233,16 @@ class HttpApiClient implements ApiClient {
               'online': final bool online,
             })
               if (DeviceRole.tryParse(role) case final DeviceRole parsed)
-                DeviceInfo(id: id, name: name, role: parsed, online: online),
+                DeviceInfo(
+                  id: id,
+                  name: name,
+                  role: parsed,
+                  online: online,
+                  lastSeenAt: switch (item['lastSeenAt']) {
+                    final String seen => DateTime.tryParse(seen)?.toUtc(),
+                    _ => null,
+                  },
+                ),
         ];
         return devices.length == json.length ? devices : null;
       },

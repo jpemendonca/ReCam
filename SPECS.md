@@ -888,3 +888,8 @@ seguinte em `docs/adr/`:
 > `scripts/build-apk.sh` passa para o app (`--dart-define`, nome da versão do APK, e o número de
 > commits como código da versão). Builds sem ela, como os do gate, mostram `dev`. `GET /health`
 > passa a responder `{ status: "ok", version }`.
+
+> Revisão (2026-09-27): tela Aparelhos ao vivo (bullet 9.15). O hub ganha `DevicesChanged()`, sem
+> dados, mandado aos Monitores quando um aparelho pareia, conecta, cai, é removido ou sai; a tela
+> Aparelhos do app e do navegador busca `GET /api/devices` de novo. A resposta ganha `lastSeenAt`,
+> mostrado como "visto por último" para quem está offline.

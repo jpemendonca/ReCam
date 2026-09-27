@@ -163,6 +163,33 @@ public sealed class DeviceHubTests
         }
     }
 
+    [Fact(DisplayName = "Monitors hear the device list changed when a device pairs, connects, drops and is removed")]
+    public async Task DevicesChanged_OnPairConnectDropRemove_ReachesMonitors()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
+        var changes = new SemaphoreSlim(0);
+        viewerConnection.On("DevicesChanged", () => changes.Release());
+        async Task HeardAsync(string when) =>
+            Assert.True(await changes.WaitAsync(Wait, TestContext.Current.CancellationToken), when);
+
+        // act
+        var monitor = await factory.PairDeviceAsync(DeviceRole.Viewer);
+        await HeardAsync("after pairing");
+        var monitorConnection = await factory.ConnectAsync(monitor.Credential);
+        await HeardAsync("after connecting");
+        await monitorConnection.DisposeAsync();
+        await HeardAsync("after dropping");
+        using var client = factory.CreateDeviceClient(owner.Credential);
+        using var removed = await client.DeleteAsync(new Uri($"/api/devices/{monitor.DeviceId}", UriKind.Relative), TestContext.Current.CancellationToken);
+
+        // assert
+        await HeardAsync("after removing");
+        Assert.Equal(HttpStatusCode.NoContent, removed.StatusCode);
+    }
+
     [Fact(DisplayName = "The torch cannot be switched while the camera is not sending video")]
     public async Task SetTorch_WhenCameraNotPublishing_ReturnsError()
     {

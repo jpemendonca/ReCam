@@ -4,7 +4,7 @@ using Recam.Server.Infrastructure.Realtime;
 namespace Recam.Server.Features.Realtime;
 
 public sealed class RealtimeDeviceRemovals(
-    DeviceConnections connections, IHubContext<DeviceHub, IDeviceClient> hub) : IDeviceRemovals
+    DeviceConnections connections, IHubContext<DeviceHub, IDeviceClient> hub, IDeviceListChanges listChanges) : IDeviceRemovals
 {
     public async Task DeviceRemovedAsync(Guid deviceId, bool wasCamera)
     {
@@ -13,5 +13,7 @@ public sealed class RealtimeDeviceRemovals(
         {
             await hub.Clients.Group(DeviceHub.ViewersGroup).CameraRemoved(deviceId);
         }
+
+        await listChanges.DevicesChangedAsync();
     }
 }

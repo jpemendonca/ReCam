@@ -5,6 +5,7 @@ using Recam.Server.Domain;
 using Recam.Server.Infrastructure.Auth;
 using Recam.Server.Infrastructure.Http;
 using Recam.Server.Infrastructure.Persistence;
+using Recam.Server.Infrastructure.Realtime;
 
 namespace Recam.Server.Features.Setup;
 
@@ -68,6 +69,7 @@ public static class BrowserLinkEndpoints
         HttpContext context,
         IDbContextFactory<RecamDbContext> databaseFactory,
         TimeProvider timeProvider,
+        IDeviceListChanges listChanges,
         CancellationToken cancellationToken)
     {
         await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
@@ -87,6 +89,7 @@ public static class BrowserLinkEndpoints
 
         database.Devices.Add(claimed.Value.Device);
         await database.SaveChangesAsync(cancellationToken);
+        await listChanges.DevicesChangedAsync();
         DeviceCookie.Append(context.Response, claimed.Value.Credential, request.Remember, now);
         return TypedResults.NoContent();
     }

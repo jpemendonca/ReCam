@@ -13,6 +13,9 @@ public interface IDeviceHub
 
     event Action<Guid>? CameraRemoved;
 
+    /// <summary>A device paired, left, came online or went offline: the device list is stale.</summary>
+    event Action? DevicesChanged;
+
     /// <summary>
     /// <see cref="Connected"/> changed: the connection opened, dropped or came back. Messages sent
     /// while it was down are lost, so listeners reload what they show.

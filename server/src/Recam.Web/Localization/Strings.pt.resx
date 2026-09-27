@@ -138,6 +138,9 @@
   <data name="ConnectWaiting" xml:space="preserve">
     <value>Esperando o celular…</value>
   </data>
+  <data name="DeviceLastSeen" xml:space="preserve">
+    <value>Offline · visto por último em {0}</value>
+  </data>
   <data name="DevicesCameras" xml:space="preserve">
     <value>Câmeras</value>
   </data>

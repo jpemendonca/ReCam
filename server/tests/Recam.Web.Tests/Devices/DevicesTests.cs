@@ -4,6 +4,7 @@ using Recam.Web.Api;
 using Recam.Web.Devices;
 using Recam.Web.Pages;
 using Recam.Web.Pairing;
+using Recam.Web.Realtime;
 using Recam.Web.Tests.Support;
 
 namespace Recam.Web.Tests.Devices;
@@ -12,12 +13,14 @@ public sealed class DevicesTests : BunitContext
 {
     private readonly FakeRecamApi _api = new() { Me = new MeInfo(Guid.NewGuid(), "Navegador · Chrome no Windows", "owner") };
     private readonly AddDeviceController _add;
+    private readonly FakeDeviceHub _hub = new();
 
     public DevicesTests()
     {
         _add = new AddDeviceController(_api);
         Services.AddLocalization();
         Services.AddSingleton<IRecamApi>(_api);
+        Services.AddSingleton<IDeviceHub>(_hub);
         Services.AddTransient<DevicesController>();
         Services.AddSingleton(_add);
     }
@@ -40,6 +43,26 @@ public sealed class DevicesTests : BunitContext
         Assert.Equal("Este navegador", monitors[0].QuerySelector(".self")!.TextContent);
         Assert.Null(monitors[0].QuerySelector("button"));
         Assert.NotNull(monitors[1].QuerySelector("button.remove"));
+    }
+
+    [Fact(DisplayName = "When the server says the list changed, a new Monitor shows up without reopening the page")]
+    public void DevicesChanged_NewMonitor_ShowsUp()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var page = Render<DevicesPage>();
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("ul.devices")[1].QuerySelectorAll("li")));
+        var seen = new DateTimeOffset(2026, 9, 27, 13, 5, 0, TimeSpan.Zero);
+        _api.OtherMonitors.Add(new DeviceInfo(Guid.NewGuid(), "Redmi 6A", "viewer", false, seen));
+
+        // act
+        _hub.SendDevicesChanged();
+
+        // assert
+        page.WaitForAssertion(() => Assert.Equal(2, page.FindAll("ul.devices")[1].QuerySelectorAll("li").Length));
+        var state = page.FindAll("ul.devices")[1].QuerySelectorAll("li")[1].QuerySelector(".state")!.TextContent;
+        Assert.StartsWith("Offline · visto por último em ", state, StringComparison.Ordinal);
+        Assert.Contains(seen.ToLocalTime().ToString("g", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")), state, StringComparison.Ordinal);
     }
 
     [Fact(DisplayName = "Removing asks first, then takes the device off the server")]

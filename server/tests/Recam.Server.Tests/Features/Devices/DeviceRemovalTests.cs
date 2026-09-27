@@ -61,8 +61,9 @@ public sealed class DeviceRemovalTests
 
         // assert
         Assert.Equal(
-            [new DeviceResponse(camera.DeviceId, "Samsung A10", DeviceRole.Camera, true), new DeviceResponse(owner.DeviceId, "Redmi 6A", DeviceRole.Owner, false)],
-            devices);
+            [(camera.DeviceId, "Samsung A10", DeviceRole.Camera, true), (owner.DeviceId, "Redmi 6A", DeviceRole.Owner, false)],
+            devices!.Select(device => (device.Id, device.Name, device.Role, device.Online)));
+        Assert.Equal(factory.Time.GetUtcNow(), devices![0].LastSeenAt);
     }
 
     [Fact(DisplayName = "A Monitor cannot remove itself from the list")]

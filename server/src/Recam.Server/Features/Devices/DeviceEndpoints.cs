@@ -60,7 +60,7 @@ public static class DeviceEndpoints
         return TypedResults.Ok(devices
             .OrderBy(device => device.Role == DeviceRole.Camera ? 0 : 1)
             .ThenBy(device => device.Name, StringComparer.CurrentCultureIgnoreCase)
-            .Select(device => new DeviceResponse(device.Id, device.Name, device.Role, presence.IsOnline(device.Id)))
+            .Select(device => new DeviceResponse(device.Id, device.Name, device.Role, presence.IsOnline(device.Id), device.LastSeenAt))
             .ToList());
     }
 
