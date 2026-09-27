@@ -204,14 +204,23 @@
   <data name="InviteFailed" xml:space="preserve">
     <value>Could not create the invitation. Check the connection to the server.</value>
   </data>
+  <data name="InviteOnComputer" xml:space="preserve">
+    <value>On another computer:</value>
+  </data>
+  <data name="InviteOnComputerText" xml:space="preserve">
+    <value>copy the link below and open it in the browser.</value>
+  </data>
+  <data name="InviteOnPhone" xml:space="preserve">
+    <value>On a phone:</value>
+  </data>
+  <data name="InviteOnPhoneText" xml:space="preserve">
+    <value>open the camera app and point it at this QR code. The link opens in the browser.</value>
+  </data>
   <data name="InviteOnce" xml:space="preserve">
     <value>Valid for {0}, once.</value>
   </data>
   <data name="InviteQrLabel" xml:space="preserve">
     <value>Invitation QR code</value>
-  </data>
-  <data name="InviteStep1" xml:space="preserve">
-    <value>In the browser, point your phone's camera at this QR code, or open the link below if you are not on a phone.</value>
   </data>
   <data name="InviteStep2" xml:space="preserve">
     <value>Tap Watch in this browser. It becomes a Monitor of these cameras.</value>

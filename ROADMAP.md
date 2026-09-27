@@ -2157,6 +2157,28 @@ o que continua por conta de quem roda o servidor.
   > repetir no 4G; fechar o Safari e abrir de novo dias depois. Se o ao vivo ficar preto só no 4G,
   > anotar o resultado do teste do roteador do Android e do IPv6 da VPS (conversa de 2026-09-27).
 
+- [ ] **11.4 Menu do topo do Monitor web em tela de celular**
+  - Origem: teste do autor em 2026-09-27, num celular: o menu do topo (Câmeras, Gravações,
+    Aparelhos, Configurações, Sair) quebra em duas linhas e ocupa boa parte da tela.
+  - Escopo: em tela estreita (até ~600 px), o topo vira uma barra compacta: nome do ReCam e um
+    botão de menu que abre as seções, ou uma barra de abas fixa embaixo, como no app. "Sair" vai
+    para dentro do menu ou de Configurações. Em tela larga fica como está. Sem biblioteca nova.
+  - Aceite: bUnit do menu abrindo e fechando; conferido no Chromium com tela de celular
+    (360 a 430 px) sem rolagem lateral e sem o topo quebrar em duas linhas.
+
+- [ ] **11.5 Convite de navegador fecha sozinho quando é usado**
+  - Origem: teste do autor em 2026-09-27: depois que o navegador do iPhone virou Monitor pelo
+    link, a tela "Adicionar Monitor › Em um navegador" do PC continuou mostrando o QR.
+  - Escopo: a tela do convite percebe quando o link foi resgatado e volta sozinha para
+    Aparelhos, onde o novo Monitor já aparece (9.15), com um aviso curto de que o navegador foi
+    conectado. Como o "Adicionar câmera" faz com o QR de pareamento. Pode ouvir o
+    `DevicesChanged` do hub e conferir o convite, ou perguntar ao servidor se o convite já foi
+    usado; nada de expor o segredo. Se o convite vencer sem uso, a tela diz isso e oferece um
+    novo.
+  - Aceite: teste de integração da consulta de "convite usado" (só o Monitor que criou vê);
+    bUnit da tela voltando para Aparelhos quando o convite é usado, e mostrando "venceu" quando
+    passa o prazo.
+
 ## Fase 5: distribuição
 
 - [x] **5.1 Modo atrás de proxy reverso**

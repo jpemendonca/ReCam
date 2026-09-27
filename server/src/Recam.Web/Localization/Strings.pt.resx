@@ -204,14 +204,23 @@
   <data name="InviteFailed" xml:space="preserve">
     <value>Não deu para criar o convite. Confira a conexão com o servidor.</value>
   </data>
+  <data name="InviteOnComputer" xml:space="preserve">
+    <value>Em outro computador:</value>
+  </data>
+  <data name="InviteOnComputerText" xml:space="preserve">
+    <value>copie o link abaixo e abra no navegador.</value>
+  </data>
+  <data name="InviteOnPhone" xml:space="preserve">
+    <value>No celular:</value>
+  </data>
+  <data name="InviteOnPhoneText" xml:space="preserve">
+    <value>abra o app de câmera e aponte para este QR code. O link abre no navegador.</value>
+  </data>
   <data name="InviteOnce" xml:space="preserve">
     <value>Vale por {0}, uma vez só.</value>
   </data>
   <data name="InviteQrLabel" xml:space="preserve">
     <value>QR code do convite</value>
-  </data>
-  <data name="InviteStep1" xml:space="preserve">
-    <value>No navegador, aponte a câmera do seu celular para este QR code, ou abra o link abaixo caso não esteja em um celular.</value>
   </data>
   <data name="InviteStep2" xml:space="preserve">
     <value>Toque em Assistir neste navegador. Ele vira um Monitor destas câmeras.</value>
