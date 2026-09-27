@@ -1955,6 +1955,26 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > IDE) ficam `dev`, porque rodar o Git dentro do MSBuild no Windows esbarra no `%` do `cmd`.
   > Testes: script, `/health`, bUnit e widget. Percorrido no deploy desta mesma data.
 
+- [ ] **9.15 Tela Aparelhos atualizando sozinha, com Monitores online**
+  - Origem: pergunta do autor em 2026-09-27. A lista de câmeras atualiza pelo hub, mas a tela
+    Aparelhos (app e navegador) só carrega ao abrir, e os Monitores não mostram se estão online.
+  - Escopo: o servidor avisa os Monitores pelo hub quando um aparelho entra, sai, é removido ou
+    fica online/offline (câmeras e Monitores). A tela Aparelhos ouve esses avisos e se atualiza
+    sozinha, como a lista de câmeras. Cada Monitor mostra online agora ou, se não, quando foi
+    visto pela última vez. Revisar o `SPECS.md` (hub e `GET /api/devices`).
+  - Aceite: teste de integração do aviso chegando pelo hub quando um Monitor conecta, cai e é
+    removido; testes de widget e bUnit da tela mudando sem reabrir.
+
+- [x] **9.16 Investigar a falha intermitente do teste do hub do navegador**
+  - Origem: em 2026-09-27 o teste "With its cookie and the web header, the browser opens the hub
+    and watches a camera" falhou uma vez na suíte completa e passou nas rodadas seguintes, com
+    erros de conexão do SQLite no log. Suspeita: escritas simultâneas no banco sob carga.
+  - Escopo: rodar a suíte completa várias vezes guardando o erro exato. Se não repetir, fechar sem
+    mudança. Se repetir, achar a causa e corrigir, com teste.
+  - Aceite: causa descrita na validação, ou registro de que não repetiu.
+  > Validação (2026-09-27): a suíte completa do servidor rodou 10 vezes seguidas, sem nenhuma
+  > falha. Fechado sem mudança, como combinado com o autor. Se voltar, reabrir guardando o log.
+
 ## Fase 10: servidor numa VPS
 
 Decidido com o autor em 2026-09-26: rodar o servidor numa VPS, com as câmeras em casa e quem
