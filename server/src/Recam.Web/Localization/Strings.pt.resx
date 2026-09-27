@@ -39,6 +39,12 @@
   <data name="AddMonitorButton" xml:space="preserve">
     <value>Adicionar Monitor</value>
   </data>
+  <data name="AddMonitorInBrowser" xml:space="preserve">
+    <value>Num navegador (iPhone, outro computador)</value>
+  </data>
+  <data name="AddMonitorOnPhone" xml:space="preserve">
+    <value>Em outro celular com o app</value>
+  </data>
   <data name="AddMonitorStep1" xml:space="preserve">
     <value>No celular que vai assistir, instale o app ReCam.</value>
   </data>
@@ -47,6 +53,9 @@
   </data>
   <data name="AddMonitorTitle" xml:space="preserve">
     <value>Adicionar Monitor</value>
+  </data>
+  <data name="AddMonitorWhere" xml:space="preserve">
+    <value>Onde vai assistir?</value>
   </data>
   <data name="AddQrLabel" xml:space="preserve">
     <value>QR code de pareamento</value>
@@ -179,6 +188,60 @@
   </data>
   <data name="HubReconnecting" xml:space="preserve">
     <value>Reconectando…</value>
+  </data>
+  <data name="InviteAddress" xml:space="preserve">
+    <value>Nesse navegador, abra o ReCam sempre por {0}: o acesso fica guardado só para esse endereço.</value>
+  </data>
+  <data name="InviteCopied" xml:space="preserve">
+    <value>Link copiado.</value>
+  </data>
+  <data name="InviteCopy" xml:space="preserve">
+    <value>Copiar link</value>
+  </data>
+  <data name="InviteCopyFailed" xml:space="preserve">
+    <value>O navegador não deixou copiar. Selecione o link e copie.</value>
+  </data>
+  <data name="InviteFailed" xml:space="preserve">
+    <value>Não deu para criar o convite. Confira a conexão com o servidor.</value>
+  </data>
+  <data name="InviteOnce" xml:space="preserve">
+    <value>Vale por {0}, uma vez só.</value>
+  </data>
+  <data name="InviteQrLabel" xml:space="preserve">
+    <value>QR code do convite</value>
+  </data>
+  <data name="InviteStep1" xml:space="preserve">
+    <value>No iPhone ou no outro computador, aponte a câmera para este QR code, ou abra o link abaixo.</value>
+  </data>
+  <data name="InviteStep2" xml:space="preserve">
+    <value>Toque em Assistir neste navegador. Ele vira um Monitor destas câmeras.</value>
+  </data>
+  <data name="JoinAlready" xml:space="preserve">
+    <value>Este navegador já é um Monitor.</value>
+  </data>
+  <data name="JoinFailed" xml:space="preserve">
+    <value>Não deu para falar com o servidor. Confira a conexão e tente de novo.</value>
+  </data>
+  <data name="JoinGone" xml:space="preserve">
+    <value>Este convite venceu ou já foi usado. No Monitor, abra Adicionar Monitor › Num navegador de novo.</value>
+  </data>
+  <data name="JoinInvalid" xml:space="preserve">
+    <value>Este link de convite está incompleto. Abra de novo pelo QR code ou peça outro.</value>
+  </data>
+  <data name="JoinOpenCameras" xml:space="preserve">
+    <value>Ver as câmeras</value>
+  </data>
+  <data name="JoinRemember" xml:space="preserve">
+    <value>Lembrar neste aparelho</value>
+  </data>
+  <data name="JoinSubmit" xml:space="preserve">
+    <value>Assistir neste navegador</value>
+  </data>
+  <data name="JoinText" xml:space="preserve">
+    <value>Um Monitor convidou este navegador. Ele vai ver as câmeras, o vídeo ao vivo e as gravações.</value>
+  </data>
+  <data name="JoinTitle" xml:space="preserve">
+    <value>Assistir neste navegador</value>
   </data>
   <data name="LanguageBrowser" xml:space="preserve">
     <value>Do navegador</value>
@@ -347,6 +410,9 @@
   </data>
   <data name="RemoveDeviceTitle" xml:space="preserve">
     <value>Remover {0}?</value>
+  </data>
+  <data name="ServerTakenInvite" xml:space="preserve">
+    <value>Ou, num navegador que já é Monitor, abra Adicionar Monitor › Num navegador e abra aqui o link que ele mostra.</value>
   </data>
   <data name="ServerTakenText" xml:space="preserve">
     <value>Para assistir neste navegador, abra o ReCam num celular Monitor, toque em ⋮ &gt; Adicionar Monitor &gt; Num navegador e leia este QR code.</value>

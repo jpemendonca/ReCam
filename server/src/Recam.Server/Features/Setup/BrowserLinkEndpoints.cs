@@ -3,20 +3,28 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Recam.Server.Domain;
 using Recam.Server.Infrastructure.Auth;
+using Recam.Server.Infrastructure.Hosting;
 using Recam.Server.Infrastructure.Http;
 using Recam.Server.Infrastructure.Persistence;
 using Recam.Server.Infrastructure.Realtime;
 
 namespace Recam.Server.Features.Setup;
 
-/// <summary>"Connect browser": a Monitor phone lets another browser in (SPECS.md 2.5 and 5.5).</summary>
+/// <summary>
+/// "Connect browser": a Monitor phone lets another browser in, or a Monitor invites one with a link
+/// (SPECS.md 2.5 and 5.5).
+/// </summary>
 public static class BrowserLinkEndpoints
 {
     public const string QrScheme = "recam://connect-browser";
 
+    /// <summary>The web Monitor page that collects an invitation; the link and claim follow in the fragment.</summary>
+    public const string InvitePath = "/connect";
+
     public static IEndpointRouteBuilder MapBrowserLinkEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPost("/api/browser-links", CreateAsync).RequireRateLimiting(SetupEndpoints.RateLimitPolicy);
+        endpoints.MapPost("/api/browser-links/invite", InviteAsync).RequireAuthorization(AuthExtensions.ViewerOrOwner);
         endpoints.MapPost("/api/browser-links/{id:guid}/approve", ApproveAsync).RequireAuthorization(AuthExtensions.ViewerOrOwner);
         endpoints.MapPost("/api/browser-links/{id:guid}/claim", ClaimAsync);
         return endpoints;
@@ -34,6 +42,39 @@ public static class BrowserLinkEndpoints
         var qrUri = $"{QrScheme}?v=1&l={issued.Link.Id:N}&s={issued.Approval}";
         return TypedResults.Created(
             $"/api/browser-links/{issued.Link.Id}", new BrowserLinkResponse(issued.Link.Id, qrUri, issued.Claim, issued.Link.ExpiresAt));
+    }
+
+    /// <summary>
+    /// The link goes to the first public URL when the server has one, otherwise to the address
+    /// this Monitor uses: the browser's cookie belongs to the address that created it.
+    /// </summary>
+    private static async Task<IResult> InviteAsync(
+        ClaimsPrincipal user,
+        HttpRequest request,
+        ServerSettings settings,
+        IDbContextFactory<RecamDbContext> databaseFactory,
+        TimeProvider timeProvider,
+        CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow();
+        await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
+        var inviterId = user.GetDeviceId();
+        var inviter = await database.Devices.SingleAsync(device => device.Id == inviterId, cancellationToken);
+        var invited = BrowserLink.Invite(inviter, now);
+        if (invited.IsFailure)
+        {
+            return invited.Error.ToHttpResult();
+        }
+
+        var link = invited.Value.Link;
+        await database.BrowserLinks.Where(expired => expired.ExpiresAt <= now).ExecuteDeleteAsync(cancellationToken);
+        database.BrowserLinks.Add(link);
+        await database.SaveChangesAsync(cancellationToken);
+        var address = settings.PublicUrls.Count > 0
+            ? settings.PublicUrls[0].GetLeftPart(UriPartial.Authority)
+            : $"{request.Scheme}://{request.Host}";
+        var url = $"{address}{InvitePath}#l={link.Id:N}&c={invited.Value.Claim}";
+        return TypedResults.Created($"/api/browser-links/{link.Id}", new BrowserInviteResponse(link.Id, url, link.ExpiresAt));
     }
 
     private static async Task<IResult> ApproveAsync(

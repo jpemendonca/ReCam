@@ -47,3 +47,20 @@ nav ::deep a.active {
   margin: 0 auto;
   padding: 32px 24px;
 }
+
+@media (max-width: 600px) {
+  .bar {
+    gap: 4px 16px;
+    padding: 8px 16px;
+  }
+
+  nav {
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+  }
+
+  .content {
+    padding: 20px 16px;
+  }
+}

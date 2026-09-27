@@ -6,6 +6,7 @@ namespace Recam.Server.Domain;
 /// "Connect browser" (SPECS.md 2.5): a browser that is not a Monitor shows a QR code; a Monitor
 /// phone reads it and approves; the browser then collects its own credential and becomes a
 /// Viewer. Two secrets, so that seeing the QR code is not enough to take the credential.
+/// "Add Monitor › In a browser" turns it around: a Monitor invites a browser with a link.
 /// </summary>
 public sealed class BrowserLink
 {
@@ -45,6 +46,31 @@ public sealed class BrowserLink
             ExpiresAt = now.Add(Lifetime),
         };
         return new IssuedBrowserLink(link, claim, approval);
+    }
+
+    /// <summary>
+    /// A link a Monitor hands to another browser, approved by that Monitor from the start. The
+    /// claim goes in the link, so whoever opens it within <see cref="Lifetime"/> becomes a Viewer,
+    /// once. Nobody holds an approval secret for it.
+    /// </summary>
+    public static Result<IssuedBrowserInvite> Invite(Device inviter, DateTimeOffset now)
+    {
+        if (!inviter.IsMonitor || inviter.IsRevoked)
+        {
+            return BrowserLinkErrors.ApproverNotMonitor;
+        }
+
+        var claim = SecretToken.Generate();
+        var link = new BrowserLink
+        {
+            Id = Guid.CreateVersion7(now),
+            ClaimHash = SecretToken.Hash(claim),
+            ApprovalHash = SecretToken.Hash(SecretToken.Generate()),
+            CreatedAt = now,
+            ExpiresAt = now.Add(Lifetime),
+            ApprovedBy = inviter.Id,
+        };
+        return new IssuedBrowserInvite(link, claim);
     }
 
     public Result Approve(string? approval, Device approver, DateTimeOffset now)

@@ -10,10 +10,34 @@
 </div>
 
 <section class="card">
-    <AddDevicePanel Kind="DeviceKind.Monitor" Paired="Paired" />
+    <h2>@L["AddMonitorWhere"]</h2>
+    <div class="choice" role="group" aria-label="@L["AddMonitorWhere"]">
+        <button class="@(target == Target.Phone ? "option on" : "option")" aria-pressed="@(target == Target.Phone ? "true" : "false")"
+                @onclick="() => target = Target.Phone">@L["AddMonitorOnPhone"]</button>
+        <button class="@(target == Target.Browser ? "option on" : "option")" aria-pressed="@(target == Target.Browser ? "true" : "false")"
+                @onclick="() => target = Target.Browser">@L["AddMonitorInBrowser"]</button>
+    </div>
+
+    @if (target == Target.Phone)
+    {
+        <AddDevicePanel Kind="DeviceKind.Monitor" Paired="Paired" />
+    }
+    else if (target == Target.Browser)
+    {
+        <InviteBrowserPanel />
+    }
 </section>
 
 @code {
+    private enum Target
+    {
+        None,
+        Phone,
+        Browser,
+    }
+
+    private Target target;
+
     // The new Monitor shows up in the device list.
     private void Paired() => Navigation.NavigateTo("devices");
 }

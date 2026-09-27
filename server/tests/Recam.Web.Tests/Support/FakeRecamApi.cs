@@ -117,10 +117,10 @@ public sealed class FakeRecamApi : IRecamApi
         return Task.FromResult(link);
     }
 
-    public Task<ClaimOutcome> ClaimBrowserLinkAsync(BrowserLinkInfo link, bool remember, CancellationToken cancellationToken)
+    public Task<ClaimOutcome> ClaimBrowserLinkAsync(Guid linkId, string claim, bool remember, CancellationToken cancellationToken)
     {
         ThrowIfOffline();
-        var entry = Links.SingleOrDefault(candidate => candidate.Link.Id == link.Id);
+        var entry = Links.SingleOrDefault(candidate => candidate.Link.Id == linkId && candidate.Link.Claim == claim);
         if (entry.Link is null)
         {
             return Task.FromResult(ClaimOutcome.Gone);
@@ -131,10 +131,24 @@ public sealed class FakeRecamApi : IRecamApi
             return Task.FromResult(ClaimOutcome.Waiting);
         }
 
+        Links.Remove(entry);
         OtherMonitor = true;
         RememberSent.Add(remember);
         Me = new MeInfo(Guid.NewGuid(), "Navegador · Firefox no Linux", "viewer");
         return Task.FromResult(ClaimOutcome.Claimed);
+    }
+
+    /// <summary>Invitations created, in order; each is an approved link whose claim is in its URL.</summary>
+    public List<BrowserInviteInfo> Invites { get; } = [];
+
+    public Task<BrowserInviteInfo> CreateBrowserInviteAsync(CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        var link = new BrowserLinkInfo(Guid.NewGuid(), string.Empty, $"invite{Invites.Count + 1}", TokenValidFor);
+        Links.Add((link, true));
+        var invite = new BrowserInviteInfo($"https://cameras.example.com/connect#l={link.Id:N}&c={link.Claim}", TokenValidFor);
+        Invites.Add(invite);
+        return Task.FromResult(invite);
     }
 
     public Task<PairingTokenInfo> CreatePairingTokenAsync(DeviceKind kind, CancellationToken cancellationToken)

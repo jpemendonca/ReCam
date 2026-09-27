@@ -19,7 +19,11 @@ public interface IRecamApi
     /// <summary>Starts "Connect browser": a QR code for a Monitor phone to approve.</summary>
     Task<BrowserLinkInfo> CreateBrowserLinkAsync(CancellationToken cancellationToken);
 
-    Task<ClaimOutcome> ClaimBrowserLinkAsync(BrowserLinkInfo link, bool remember, CancellationToken cancellationToken);
+    /// <summary>Collects this browser's credential with the claim of a "Connect browser" QR or of an invitation.</summary>
+    Task<ClaimOutcome> ClaimBrowserLinkAsync(Guid linkId, string claim, bool remember, CancellationToken cancellationToken);
+
+    /// <summary>"Add Monitor › In a browser": a link another browser opens to become a Monitor.</summary>
+    Task<BrowserInviteInfo> CreateBrowserInviteAsync(CancellationToken cancellationToken);
 
     Task<PairingTokenInfo> CreatePairingTokenAsync(DeviceKind kind, CancellationToken cancellationToken);
 

@@ -1,0 +1,71 @@
+@implements IAsyncDisposable
+@inject IStringLocalizer<Strings> L
+@inject InviteBrowserController Invite
+
+<div class="panel">
+    <ol class="steps">
+        <li>@L["InviteStep1"]</li>
+        <li>@L["InviteStep2"]</li>
+    </ol>
+
+    <div class="qr-side">
+        @switch (Invite.State)
+        {
+            case InviteState.Loading:
+                <div class="loading" aria-hidden="true"></div>
+                break;
+
+            case InviteState.Failed:
+                <p class="error" role="alert">@L["InviteFailed"]</p>
+                <button @onclick="Invite.StartAsync">@L["OfflineRetry"]</button>
+                break;
+
+            default:
+                <div class="qr" aria-label="@L["InviteQrLabel"]">@((MarkupString)(Invite.QrSvg ?? string.Empty))</div>
+                <p class="expires">@L["InviteOnce", Invite.Remaining.ToString(@"m\:ss", System.Globalization.CultureInfo.InvariantCulture)]</p>
+                <code class="uri">@Invite.Url</code>
+                <button class="secondary copy" @onclick="Invite.CopyAsync">@L["InviteCopy"]</button>
+                @if (Invite.Copied is { } copied)
+                {
+                    <p class="@(copied ? "ok" : "error")" role="status">@(copied ? L["InviteCopied"] : L["InviteCopyFailed"])</p>
+                }
+                break;
+        }
+    </div>
+</div>
+
+@if (Invite.Address is { } address)
+{
+    <p class="address">@L["InviteAddress", address]</p>
+}
+
+@code {
+    private static readonly TimeSpan Second = TimeSpan.FromSeconds(1);
+
+    private PeriodicTimer? timer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Invite.Changed += OnChanged;
+        await Invite.StartAsync();
+        _ = RunAsync();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Invite.Changed -= OnChanged;
+        timer?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+
+    private async Task RunAsync()
+    {
+        timer = new PeriodicTimer(Second);
+        while (await timer.WaitForNextTickAsync())
+        {
+            await InvokeAsync(() => Invite.Tick(Second));
+        }
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+}

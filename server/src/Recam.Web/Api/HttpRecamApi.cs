@@ -82,10 +82,10 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
         return new BrowserLinkInfo(link.Id, link.QrUri, link.Claim, ValidFor(link.ExpiresAt, response));
     }
 
-    public async Task<ClaimOutcome> ClaimBrowserLinkAsync(BrowserLinkInfo link, bool remember, CancellationToken cancellationToken)
+    public async Task<ClaimOutcome> ClaimBrowserLinkAsync(Guid linkId, string claim, bool remember, CancellationToken cancellationToken)
     {
         using var response = await http.PostAsJsonAsync(
-            new Uri($"api/browser-links/{link.Id}/claim", UriKind.Relative), new { claim = link.Claim, remember }, Json, cancellationToken);
+            new Uri($"api/browser-links/{linkId}/claim", UriKind.Relative), new { claim, remember }, Json, cancellationToken);
         return response.StatusCode switch
         {
             HttpStatusCode.NoContent => ClaimOutcome.Claimed,
@@ -93,6 +93,15 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
             HttpStatusCode.NotFound => ClaimOutcome.Gone,
             _ => throw new HttpRequestException($"Unexpected answer {(int)response.StatusCode} to the browser link.", null, response.StatusCode),
         };
+    }
+
+    public async Task<BrowserInviteInfo> CreateBrowserInviteAsync(CancellationToken cancellationToken)
+    {
+        using var response = await http.PostAsync(new Uri("api/browser-links/invite", UriKind.Relative), null, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var invite = await response.Content.ReadFromJsonAsync<CreatedInvite>(Json, cancellationToken)
+            ?? throw new HttpRequestException("The server answered an empty invitation.");
+        return new BrowserInviteInfo(invite.Url, ValidFor(invite.ExpiresAt, response));
     }
 
     public async Task<PairingTokenInfo> CreatePairingTokenAsync(DeviceKind kind, CancellationToken cancellationToken)
@@ -174,6 +183,8 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
     private sealed record FirstOpenStatus(bool Open);
 
     private sealed record CreatedLink(Guid Id, string QrUri, string Claim, DateTimeOffset ExpiresAt);
+
+    private sealed record CreatedInvite(Guid Id, string Url, DateTimeOffset ExpiresAt);
 
     private sealed record CreatedToken(Guid Id, string QrUri, DateTimeOffset ExpiresAt);
 

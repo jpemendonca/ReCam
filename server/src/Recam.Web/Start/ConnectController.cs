@@ -70,7 +70,7 @@ public sealed class ConnectController(IRecamApi api)
         _checking = true;
         try
         {
-            switch (await api.ClaimBrowserLinkAsync(link, Remember, CancellationToken.None))
+            switch (await api.ClaimBrowserLinkAsync(link.Id, link.Claim, Remember, CancellationToken.None))
             {
                 case ClaimOutcome.Claimed:
                     Connected = true;

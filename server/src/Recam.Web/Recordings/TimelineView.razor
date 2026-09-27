@@ -1,3 +1,4 @@
+@using System.Net
 @using System.Globalization
 @implements IDisposable
 @inject IStringLocalizer<Strings> L
@@ -76,14 +77,11 @@ else
             </rect>
         }
         @* Moved by clock.js as the video plays. *@
-        <line class="playhead" @ref="playhead" x1="0" x2="0" y1="0" y2="36" style="visibility: hidden" />
+        <line class="playhead" @ref="playhead" x1="0" x2="0" y1="0" y2="36" visibility="hidden" />
     </svg>
-    <div class="ticks" aria-hidden="true">
-        @foreach (var tick in Window.Ticks)
-        {
-            <span style="left: @F(Window.FractionOf(tick) * 100)%">@Clock(tick)</span>
-        }
-    </div>
+    @* An SVG of its own, not stretched like the bar, so the labels keep their shape; positions
+       are attributes because the CSP refuses inline styles. *@
+    <svg class="ticks" aria-hidden="true">@((MarkupString)TickLabels())</svg>
     <p class="hover-time" aria-live="polite">@(hovered is { } over ? Clock(SlotTime(over)) : string.Empty)</p>
 
     <div class="motion-row">
@@ -245,6 +243,10 @@ else
     }
 
     private static string F(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    // Razor keeps <text> for itself, so the SVG labels are written as markup.
+    private string TickLabels() => string.Concat(Window.Ticks.Select(tick =>
+        $"<text x=\"{F(Window.FractionOf(tick) * 100)}%\" y=\"12\" text-anchor=\"middle\">{WebUtility.HtmlEncode(Clock(tick))}</text>"));
 
     private DateTime SlotTime(int slot) => Window.TimeAt((slot + 0.5) / Slots);
 

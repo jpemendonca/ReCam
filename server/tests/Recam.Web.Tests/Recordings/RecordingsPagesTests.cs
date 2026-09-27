@@ -129,6 +129,28 @@ public sealed class RecordingsPagesTests : BunitContext
         Assert.NotNull(page.Find("svg line.playhead"));
     }
 
+    [Fact(DisplayName = "The timeline places its hour labels with attributes, since the CSP refuses inline styles")]
+    public void Timeline_Labels_NoInlineStyle()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 5)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(1),
+            [new RecordingSegmentInfo(start, start.AddMinutes(1), $"/api/recordings/{_camera.Id}/a.mp4")])];
+
+        // act
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+
+        // assert
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.recorded")));
+        Assert.Empty(page.FindAll("[style]"));
+        var labels = page.FindAll("svg.ticks text");
+        Assert.NotEmpty(labels);
+        Assert.All(labels, label => Assert.EndsWith("%", label.GetAttribute("x"), StringComparison.Ordinal));
+        Assert.Equal("hidden", page.Find("line.playhead").GetAttribute("visibility"));
+    }
+
     [Fact(DisplayName = "Motion shows on the bar; Next motion plays it and Motion only hides the rest")]
     public void Timeline_Motion_MarkedAndPlayed()
     {

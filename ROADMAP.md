@@ -2096,7 +2096,7 @@ o que continua por conta de quem roda o servidor.
   > navegador abre `ConnectBrowserScreen` sem pedir token) e do menu sem "Connect browser"; bUnit da
   > página inicial com o texto novo.
 
-- [ ] **11.2 Link de Monitor para navegador, e o Monitor web no celular**
+- [x] **11.2 Link de Monitor para navegador, e o Monitor web no celular**
   - Origem: continuação do 11.1. No iPhone não há app para ler o QR de "Conectar navegador", e o
     navegador do PC não lê QR.
   - Escopo:
@@ -2120,6 +2120,28 @@ o que continua por conta de quem roda o servidor.
     usado é recusado; o segredo não aparece no log), bUnit das duas escolhas e da página de
     resgate, e o caminho percorrido no Chromium com tela de celular (link aberto noutro perfil
     virando Monitor, telas sem rolagem lateral).
+  > Validação (2026-09-27): código escrito e caminho percorrido no Chromium (sem iPhone). Servidor:
+  > `BrowserLink.Invite` cria o link já aprovado por um Monitor (câmera recebe 403, sem credencial
+  > 401) e `POST /api/browser-links/invite` devolve `{ id, url, expiresAt }`, com o endereço do
+  > primeiro `RECAM_PUBLIC_URLS` ou o do pedido e o `claim` no fragmento de `/connect`. Navegador:
+  > "Adicionar Monitor" pergunta "Onde vai assistir?"; "Num navegador" mostra o QR do link, o link
+  > para copiar (área de transferência por `IClipboard`), a validade ("Vale por 10:00, uma vez só")
+  > e o aviso do endereço; a página `/connect` resgata com "Lembrar neste aparelho", recarrega na
+  > raiz e tira o convite do endereço. Layout de celular: até 600 px a navegação quebra em duas
+  > linhas, os títulos descem para baixo do "voltar" e os cartões têm menos margem. Achado no
+  > caminho: as horas da linha do tempo e a linha que acompanha o vídeo usavam estilo inline, que a
+  > CSP bloqueia (as horas ficavam todas empilhadas à esquerda, também no PC); agora são atributos
+  > de SVG, com teste que não deixa `style` voltar. Testes: 5 de integração (convite vira Viewer e o
+  > `claim` não aparece no log; endereço público; usado e vencido recusados; câmera e estranho
+  > recusados; celular Monitor também convida), 2 de domínio, 4 do controller do convite e 8 bUnit
+  > (escolha, QR e cópia, outro celular, página de resgate, convite usado, link incompleto,
+  > navegador que já é Monitor, leitura do fragmento). Observado no Chromium contra o servidor de
+  > dev: o PC criou o convite, um contexto novo com tela de iPhone abriu o link, tocou em "Assistir
+  > neste navegador" e caiu na lista de câmeras com cookie persistente e HttpOnly; o mesmo link
+  > aberto de novo nesse celular disse "Este navegador já é um Monitor", e noutro navegador disse
+  > que o convite venceu ou já foi usado. A 390 px, nenhuma das oito telas (câmeras, ao vivo,
+  > linha do tempo, gravações, aparelhos, configurações, adicionar câmera, adicionar Monitor) rola
+  > para o lado, e o console ficou sem erro de CSP. Falta o Safari de verdade (11.3).
 
 - [ ] **11.3 [aparelho] Validar no iPhone**
   - Escopo: iPhone do autor com Safari. Primeiro no Wi-Fi de casa, depois no 4G com o servidor

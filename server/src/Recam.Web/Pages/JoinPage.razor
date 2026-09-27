@@ -1,0 +1,65 @@
+@page "/connect"
+@implements IDisposable
+@inject IStringLocalizer<Strings> L
+@inject JoinController Join
+@inject NavigationManager Navigation
+
+<PageTitle>@L["JoinTitle"]</PageTitle>
+
+<section class="card">
+    <h1>@L["JoinTitle"]</h1>
+    @switch (Join.State)
+    {
+        case JoinState.Loading:
+            <div class="loading" aria-hidden="true"></div>
+            break;
+
+        case JoinState.Invalid:
+            <p class="error" role="alert">@L["JoinInvalid"]</p>
+            break;
+
+        case JoinState.AlreadyMonitor:
+            <p>@L["JoinAlready"]</p>
+            <a class="button" href="">@L["JoinOpenCameras"]</a>
+            break;
+
+        case JoinState.Gone:
+            <p class="error" role="alert">@L["JoinGone"]</p>
+            break;
+
+        default:
+            <p>@L["JoinText"]</p>
+            <label class="check">
+                <input type="checkbox" @bind="Join.Remember" />
+                @L["JoinRemember"]
+            </label>
+            @if (Join.Failed)
+            {
+                <p class="error" role="alert">@L["JoinFailed"]</p>
+            }
+            <button @onclick="JoinAsync" disabled="@Join.Busy">@L["JoinSubmit"]</button>
+            break;
+    }
+</section>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        Join.Changed += OnChanged;
+        await Join.LoadAsync(Navigation.Uri);
+    }
+
+    public void Dispose() => Join.Changed -= OnChanged;
+
+    // Starting over loads this browser as a Monitor and drops the invitation from the address.
+    private async Task JoinAsync()
+    {
+        await Join.JoinAsync();
+        if (Join.State == JoinState.Joined)
+        {
+            Navigation.NavigateTo("", forceLoad: true, replace: true);
+        }
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+}

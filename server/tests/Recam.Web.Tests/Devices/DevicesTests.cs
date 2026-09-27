@@ -104,12 +104,13 @@ public sealed class DevicesTests : BunitContext
         Assert.Empty(_api.Removed);
     }
 
-    [Fact(DisplayName = "Add Monitor shows a Monitor QR, and goes to the devices when a phone pairs")]
+    [Fact(DisplayName = "Add Monitor on another phone shows a Monitor QR, and goes to the devices when a phone pairs")]
     public async Task AddMonitor_Paired_GoesToDevices()
     {
         // arrange
         using var _ = Culture.Use("pt-BR");
         var page = Render<AddMonitor>();
+        page.FindAll("button.option")[0].Click();
         page.WaitForAssertion(() => Assert.NotNull(page.Find(".qr svg")));
         var steps = page.FindAll("ol.steps li").Select(step => step.TextContent).ToList();
         _api.UseLastToken();

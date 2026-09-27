@@ -57,7 +57,8 @@ e a Câmera é `Camera`. O celular Monitor pareia com o nome padrão "Monitor"; 
   UDP, então não serve para o WebRTC.
 - Notificações e detecção de pessoas e carros com IA. A detecção de movimento simples, marcada
   na linha do tempo, entrou na Fase 7 do ROADMAP em 2026-09-25.
-- iOS (compilar exige macOS).
+- App de iOS (compilar exige macOS). Desde 2026-09-27 o iPhone assiste pelo navegador, com um
+  convite de outro Monitor (Fase 11, seção 2.5); ele não filma.
 - Áudio e conversa bidirecional.
 - Fallback de WebRTC por TCP e fallback por HLS.
 - Contas com usuário e senha.
@@ -268,6 +269,19 @@ Desenho combinado com o autor em 2026-09-25 (Fase 6 do ROADMAP):
   navegador". Um celular Monitor lê pelo menu **Adicionar Monitor › Num navegador** e aprova
   (desde o 11.1, "Adicionar Monitor" pergunta "Onde vai assistir?"); o navegador vira
   um `Viewer` (seção 5.4). É o caminho para um segundo navegador e para quem limpou os cookies.
+- **Convite para outro navegador (Fase 11).** Em **Adicionar Monitor**, o navegador pergunta "Onde
+  vai assistir?". "Num navegador (iPhone, outro computador)" cria um convite (`POST
+  /api/browser-links/invite`): um `BrowserLink` já aprovado pelo Monitor que o criou. A tela
+  mostra um QR com o link `https://<endereço>/connect#l=<id>&c=<claim>` e o link para copiar. A
+  câmera do iPhone lê o QR e abre o navegador; a página `/connect` lê o fragmento, pergunta
+  "Lembrar neste aparelho" e resgata pela rota de resgate de sempre, virando `Viewer`. O fragmento
+  não vai ao servidor, então o `claim` não aparece em log de servidor nem de proxy. Vale 10 minutos
+  e uma vez só. O endereço é o primeiro de `RECAM_PUBLIC_URLS`, senão o que o navegador do Monitor
+  usa; como o cookie só vale para esse endereço, a tela avisa para abrir sempre por ele. Um celular
+  Monitor também pode criar convite pela API, mas o app não oferece isso.
+- **Tela de celular.** Até 600 px de largura, a navegação do topo quebra em duas linhas, os
+  títulos descem para baixo do "voltar" e os cartões têm menos margem. Nenhuma tela rola para o
+  lado a 390 px. Nada de estilo inline: a CSP recusa, então posição em SVG vai por atributo.
 - **Sair.** O botão **Sair** revoga o aparelho no servidor, não só apaga o cookie.
 - **Painel antigo.** O painel só leitura do `/setup` (bullets 1.12.11 e 1.12.16) sai: o Monitor
   web mostra o mesmo e mais. `GET /setup` redireciona para `/`.
@@ -411,6 +425,7 @@ Estado em 2026-09-26 (conferido no bullet 6.9). As revisões do log 12 contam co
 | `POST /api/web/first-open` | qualquer rede, só sem Monitor ativo, limite de 5 por minuto por IP | `{ code, remember }` | `204` e o cookie; o navegador vira `Owner` |
 | `POST /api/web/sign-out` | o próprio aparelho | — | `204`, revoga o aparelho e apaga o cookie |
 | `POST /api/browser-links` | qualquer um, limite de 5 por minuto por IP | — | `201 { id, qrUri, claim, expiresAt }`; o `claim` fica só no navegador |
+| `POST /api/browser-links/invite` | Monitores | — | `201 { id, url, expiresAt }`; o `url` leva o `claim` no fragmento (Fase 11) |
 | `POST /api/browser-links/{id}/approve` | Monitores | `{ secret }` do QR | `204` |
 | `POST /api/browser-links/{id}/claim` | quem tem o `claim` | `{ claim, remember }` | `204` e o cookie depois de aprovado; `409` antes |
 | `POST /api/pair` | qualquer um, limite de 5 por minuto por IP | `{ token, name, expectedRoles }` | `201 { deviceId, credential, role, serverName }` |
@@ -493,7 +508,8 @@ Servidor → cliente:
 
 - Sem usuário e senha. Cada celular pareado, e cada navegador, é um `Device` com credencial
   própria. Revisado em 2026-09-25 (fase 6): o navegador entra pelo código de primeira abertura ou
-  pelo "Conectar navegador"; não existe login.
+  pelo "Conectar navegador"; não existe login. Revisado em 2026-09-27 (Fase 11): também por um
+  convite que um Monitor cria, com o link aberto no outro navegador.
 - **Código de primeira abertura (fase 6).** Enquanto não há Monitor ativo, o servidor mantém em
   memória um código curto (8 caracteres de um alfabeto sem letras parecidas, mostrado como
   `XXXX-XXXX`) e o imprime no log com o endereço. É a única exceção à regra de não logar segredo.
@@ -894,3 +910,10 @@ seguinte em `docs/adr/`:
 > dados, mandado aos Monitores quando um aparelho pareia, conecta, cai, é removido ou sai; a tela
 > Aparelhos do app e do navegador busca `GET /api/devices` de novo. A resposta ganha `lastSeenAt`,
 > mostrado como "visto por último" para quem está offline.
+
+> Revisão (2026-09-27): Monitor no iPhone pelo navegador (bullet 11.2, ADR 0042). Um Monitor
+> convida outro navegador com um link (`POST /api/browser-links/invite`, um `BrowserLink` criado já
+> aprovado, `BrowserLink.Invite`), aberto em `/connect` com o `claim` no fragmento. O Monitor web
+> ganha a escolha "Onde vai assistir?" e o layout de celular. Seções 1.2, 2.5, 5.5 e 6. Antes, no
+> 11.1, o app juntou "Conectar navegador" dentro de "Adicionar Monitor" (só tela; o protocolo não
+> mudou).

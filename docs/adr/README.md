@@ -47,3 +47,4 @@ no log do `SPECS.md` e ganha o próximo número aqui.
 | [0039](0039-monitor-web-blazor-webassembly.md) | Monitor web em Blazor WebAssembly, cliente do mesmo protocolo | 2026-09-25 |
 | [0040](0040-app-abre-em-ler-qr.md) | App abre em "Ler QR code" e o QR decide o papel | 2026-09-25 |
 | [0041](0041-deteccao-de-movimento.md) | Detecção de movimento pelas notas do serviço motion | 2026-09-26 |
+| [0042](0042-convite-de-navegador.md) | Convite de Monitor para outro navegador | 2026-09-27 |

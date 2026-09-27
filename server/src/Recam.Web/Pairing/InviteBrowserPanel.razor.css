@@ -1,0 +1,62 @@
+.panel {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.steps {
+  flex: 1 1 260px;
+  margin: 0;
+  padding-left: 1.2em;
+  line-height: 1.7;
+}
+
+.qr-side {
+  flex: 0 1 280px;
+  min-width: 0;
+  text-align: center;
+}
+
+.qr {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+}
+
+.qr ::deep svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.expires,
+.address {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.uri {
+  display: block;
+  word-break: break-all;
+  text-align: left;
+  font-size: 0.8rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  user-select: all;
+}
+
+.copy {
+  margin-top: 8px;
+}
+
+.ok {
+  color: var(--accent);
+}
+
+.error {
+  color: var(--danger);
+}

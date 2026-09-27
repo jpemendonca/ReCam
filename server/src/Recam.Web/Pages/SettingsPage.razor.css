@@ -29,3 +29,19 @@
 .card + .card {
   margin-top: 16px;
 }
+
+@media (max-width: 600px) {
+  .card {
+    padding: 20px;
+  }
+
+  .bar {
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
+
+  .bar h1 {
+    flex-basis: 100%;
+    font-size: 1.2rem;
+  }
+}

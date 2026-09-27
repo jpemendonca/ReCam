@@ -63,3 +63,9 @@ label {
   color: var(--danger);
   margin: 0;
 }
+
+@media (max-width: 600px) {
+  .card {
+    padding: 20px;
+  }
+}

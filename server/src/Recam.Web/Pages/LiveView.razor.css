@@ -57,3 +57,15 @@ video {
 .error {
   color: var(--danger);
 }
+
+@media (max-width: 600px) {
+  .bar {
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
+
+  .bar h1 {
+    flex-basis: 100%;
+    font-size: 1.2rem;
+  }
+}

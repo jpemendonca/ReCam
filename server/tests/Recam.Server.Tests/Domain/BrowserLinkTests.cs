@@ -27,6 +27,36 @@ public sealed class BrowserLinkTests
         Assert.Equal(BrowserLinkErrors.NotFound, again.Error);
     }
 
+    [Fact(DisplayName = "An invitation from a Monitor lets the browser in without another approval")]
+    public void Invite_ByMonitor_ClaimsRightAway()
+    {
+        // arrange
+        var monitor = Monitor();
+        var invited = BrowserLink.Invite(monitor, Now);
+
+        // act
+        var claimed = invited.Value.Link.Claim(invited.Value.Claim, "Navegador · Safari no iPhone", Now);
+
+        // assert
+        Assert.Equal(monitor.Id, invited.Value.Link.ApprovedBy);
+        Assert.Equal(DeviceRole.Viewer, claimed.Value.Device.Role);
+        Assert.Equal(Now.Add(BrowserLink.Lifetime), invited.Value.Link.ExpiresAt);
+    }
+
+    [Fact(DisplayName = "A camera cannot invite a browser")]
+    public void Invite_ByCamera_Refused()
+    {
+        // arrange
+        var token = PairingToken.Issue(DeviceRole.Camera, Now);
+        var camera = Device.Pair(token.Token, "Porta", [DeviceRole.Camera], Now).Value.Device;
+
+        // act
+        var invited = BrowserLink.Invite(camera, Now);
+
+        // assert
+        Assert.Equal(BrowserLinkErrors.ApproverNotMonitor, invited.Error);
+    }
+
     [Fact(DisplayName = "Before a Monitor approves, the browser waits")]
     public void Claim_NotApproved_Waits()
     {
