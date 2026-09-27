@@ -146,9 +146,18 @@ public sealed class FakeRecamApi : IRecamApi
         ThrowIfOffline();
         var link = new BrowserLinkInfo(Guid.NewGuid(), string.Empty, $"invite{Invites.Count + 1}", TokenValidFor);
         Links.Add((link, true));
-        var invite = new BrowserInviteInfo($"https://cameras.example.com/connect#l={link.Id:N}&c={link.Claim}", TokenValidFor);
+        var invite = new BrowserInviteInfo(link.Id, $"https://cameras.example.com/connect#l={link.Id:N}&c={link.Claim}", TokenValidFor);
         Invites.Add(invite);
         return Task.FromResult(invite);
+    }
+
+    /// <summary>Invitations some browser already used.</summary>
+    public HashSet<Guid> UsedInvites { get; } = [];
+
+    public Task<BrowserInviteState> GetBrowserInviteStateAsync(Guid inviteId, CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        return Task.FromResult(UsedInvites.Contains(inviteId) ? BrowserInviteState.Used : BrowserInviteState.Waiting);
     }
 
     public Task<PairingTokenInfo> CreatePairingTokenAsync(DeviceKind kind, CancellationToken cancellationToken)

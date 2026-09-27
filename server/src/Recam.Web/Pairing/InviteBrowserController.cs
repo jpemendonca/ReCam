@@ -4,11 +4,17 @@ namespace Recam.Web.Pairing;
 
 /// <summary>
 /// "Add Monitor › In a browser": shows an invitation link, as a QR code and as text, that another
-/// browser (an iPhone, another computer) opens to become a Monitor. Replaces it with a new one when
-/// it expires; the page drives <see cref="Tick"/> every second.
+/// browser opens to become a Monitor. Every <see cref="CheckEvery"/> it asks the server whether the
+/// link was used, so the page can leave by itself; when it runs out, it says so. The page drives
+/// <see cref="Tick"/> every second.
 /// </summary>
 public sealed class InviteBrowserController(IRecamApi api, IClipboard clipboard)
 {
+    public static readonly TimeSpan CheckEvery = TimeSpan.FromSeconds(2);
+
+    private Guid _inviteId;
+    private TimeSpan _sinceCheck;
+
     public InviteState State { get; private set; } = InviteState.Loading;
 
     public string? Url { get; private set; }
@@ -33,6 +39,8 @@ public sealed class InviteBrowserController(IRecamApi api, IClipboard clipboard)
         try
         {
             var invite = await api.CreateBrowserInviteAsync(CancellationToken.None);
+            _inviteId = invite.Id;
+            _sinceCheck = TimeSpan.Zero;
             Url = invite.Url;
             QrSvg = Pairing.QrSvg.Render(invite.Url);
             Address = new Uri(invite.Url).GetLeftPart(UriPartial.Authority);
@@ -47,7 +55,7 @@ public sealed class InviteBrowserController(IRecamApi api, IClipboard clipboard)
         Changed?.Invoke();
     }
 
-    /// <summary>Counts down; an expired link is replaced by a new one.</summary>
+    /// <summary>Counts down, and now and then asks whether a browser used the link.</summary>
     public async Task Tick(TimeSpan elapsed)
     {
         if (State != InviteState.Ready)
@@ -56,13 +64,33 @@ public sealed class InviteBrowserController(IRecamApi api, IClipboard clipboard)
         }
 
         Remaining -= elapsed;
-        if (Remaining <= TimeSpan.Zero)
+        _sinceCheck += elapsed;
+        if (_sinceCheck >= CheckEvery || Remaining <= TimeSpan.Zero)
         {
-            await StartAsync();
-            return;
+            _sinceCheck = TimeSpan.Zero;
+            State = await CheckAsync() switch
+            {
+                BrowserInviteState.Used => InviteState.Used,
+                BrowserInviteState.Expired => InviteState.Expired,
+                _ when Remaining <= TimeSpan.Zero => InviteState.Expired,
+                _ => InviteState.Ready,
+            };
         }
 
         Changed?.Invoke();
+    }
+
+    // A check that fails leaves the link as it is; the next one tries again.
+    private async Task<BrowserInviteState> CheckAsync()
+    {
+        try
+        {
+            return await api.GetBrowserInviteStateAsync(_inviteId, CancellationToken.None);
+        }
+        catch (HttpRequestException)
+        {
+            return BrowserInviteState.Waiting;
+        }
     }
 
     public async Task CopyAsync()

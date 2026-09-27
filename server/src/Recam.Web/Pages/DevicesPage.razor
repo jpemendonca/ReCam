@@ -23,6 +23,10 @@ else if (Devices.Loading && Devices.Cameras.Count + Devices.Monitors.Count == 0)
 }
 else
 {
+    @if (Connected == "browser")
+    {
+        <p class="ok" role="status">@L["InviteConnected"]</p>
+    }
     @if (Devices.RemoveFailed)
     {
         <p class="error" role="alert">@L["RemoveDeviceFailed"]</p>
@@ -34,6 +38,10 @@ else
 }
 
 @code {
+    /// <summary>"browser" when the page opens right after an invitation was used.</summary>
+    [SupplyParameterFromQuery]
+    public string? Connected { get; set; }
+
     protected override Task OnInitializedAsync()
     {
         Devices.Changed += OnChanged;

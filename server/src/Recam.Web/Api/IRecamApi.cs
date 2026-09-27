@@ -25,6 +25,9 @@ public interface IRecamApi
     /// <summary>"Add Monitor › In a browser": a link another browser opens to become a Monitor.</summary>
     Task<BrowserInviteInfo> CreateBrowserInviteAsync(CancellationToken cancellationToken);
 
+    /// <summary>Whether a browser already used this Monitor's invitation, or it ran out.</summary>
+    Task<BrowserInviteState> GetBrowserInviteStateAsync(Guid inviteId, CancellationToken cancellationToken);
+
     Task<PairingTokenInfo> CreatePairingTokenAsync(DeviceKind kind, CancellationToken cancellationToken);
 
     /// <summary>Whether a phone already paired with the QR this browser created.</summary>

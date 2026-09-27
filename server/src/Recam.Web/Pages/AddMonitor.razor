@@ -24,7 +24,7 @@
     }
     else if (target == Target.Browser)
     {
-        <InviteBrowserPanel />
+        <InviteBrowserPanel Used="BrowserConnected" />
     }
 </section>
 
@@ -40,4 +40,6 @@
 
     // The new Monitor shows up in the device list.
     private void Paired() => Navigation.NavigateTo("devices");
+
+    private void BrowserConnected() => Navigation.NavigateTo("devices?connected=browser");
 }

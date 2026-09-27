@@ -95,13 +95,29 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
         };
     }
 
+    public async Task<BrowserInviteState> GetBrowserInviteStateAsync(Guid inviteId, CancellationToken cancellationToken)
+    {
+        using var response = await http.GetAsync(new Uri($"api/browser-links/{inviteId}/invite", UriKind.Relative), cancellationToken);
+        // A link gone from the server ran out long ago.
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return BrowserInviteState.Expired;
+        }
+
+        response.EnsureSuccessStatusCode();
+        var state = await response.Content.ReadFromJsonAsync<InviteStateBody>(Json, cancellationToken);
+        return state?.State ?? BrowserInviteState.Waiting;
+    }
+
+    private sealed record InviteStateBody(BrowserInviteState State);
+
     public async Task<BrowserInviteInfo> CreateBrowserInviteAsync(CancellationToken cancellationToken)
     {
         using var response = await http.PostAsync(new Uri("api/browser-links/invite", UriKind.Relative), null, cancellationToken);
         response.EnsureSuccessStatusCode();
         var invite = await response.Content.ReadFromJsonAsync<CreatedInvite>(Json, cancellationToken)
             ?? throw new HttpRequestException("The server answered an empty invitation.");
-        return new BrowserInviteInfo(invite.Url, ValidFor(invite.ExpiresAt, response));
+        return new BrowserInviteInfo(invite.Id, invite.Url, ValidFor(invite.ExpiresAt, response));
     }
 
     public async Task<PairingTokenInfo> CreatePairingTokenAsync(DeviceKind kind, CancellationToken cancellationToken)

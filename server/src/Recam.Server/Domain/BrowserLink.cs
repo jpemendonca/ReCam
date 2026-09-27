@@ -107,6 +107,20 @@ public sealed class BrowserLink
         return paired;
     }
 
+    /// <summary>
+    /// What the Monitor that made an invitation sees of it: whether a browser used it, or it ran
+    /// out. Anyone else gets the same answer as an unknown link.
+    /// </summary>
+    public Result<InviteState> InviteStateFor(Device requester, DateTimeOffset now)
+    {
+        if (ApprovedBy != requester.Id || requester.IsRevoked)
+        {
+            return BrowserLinkErrors.NotFound;
+        }
+
+        return DeviceId is not null ? InviteState.Used : IsExpired(now) ? InviteState.Expired : InviteState.Waiting;
+    }
+
     public bool IsExpired(DateTimeOffset now) => now >= ExpiresAt;
 
     private bool IsOpen(DateTimeOffset now) => !IsExpired(now);

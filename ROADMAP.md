@@ -2166,7 +2166,7 @@ o que continua por conta de quem roda o servidor.
   - Aceite: bUnit do menu abrindo e fechando; conferido no Chromium com tela de celular
     (360 a 430 px) sem rolagem lateral e sem o topo quebrar em duas linhas.
 
-- [ ] **11.5 Convite de navegador fecha sozinho quando é usado**
+- [x] **11.5 Convite de navegador fecha sozinho quando é usado**
   - Origem: teste do autor em 2026-09-27: depois que o navegador do iPhone virou Monitor pelo
     link, a tela "Adicionar Monitor › Em um navegador" do PC continuou mostrando o QR.
   - Escopo: a tela do convite percebe quando o link foi resgatado e volta sozinha para
@@ -2178,6 +2178,33 @@ o que continua por conta de quem roda o servidor.
   - Aceite: teste de integração da consulta de "convite usado" (só o Monitor que criou vê);
     bUnit da tela voltando para Aparelhos quando o convite é usado, e mostrando "venceu" quando
     passa o prazo.
+  > Validação (2026-09-27): domínio `BrowserLink.InviteStateFor` (só quem convidou; os outros
+  > recebem o mesmo "não encontrado" de um link qualquer) e a rota `GET .../invite`. No navegador,
+  > o controller pergunta a cada 2 s; usado, a página vai para `devices?connected=browser`, que mostra
+  > "Navegador conectado. Ele já é um Monitor."; vencido, mostra "Este link venceu sem ser usado." e
+  > "Gerar outro link". Escolhi perguntar ao servidor em vez de ouvir o `DevicesChanged`: não
+  > depende do hub estar conectado. Testes: integração (esperando, usado, vencido, outro Monitor
+  > recebe 404 sem segredo), controller (vencido espera pedido; usado muda de estado) e bUnit (a
+  > página volta sozinha; Aparelhos mostra o aviso). Só código e teste.
+
+- [ ] **11.6 Ao vivo preto no navegador do iPhone: `play()` explícito e painel de diagnóstico**
+  - Origem: teste do autor em 2026-09-27: no navegador do iPhone, o ao vivo abre, o relógio anda,
+    mas a imagem fica preta. No PC e no app funciona.
+  - Escopo:
+    - `whep.js` chama `video.play()` depois de ligar o fluxo recebido ao `<video>`, e de novo
+      quando chega uma trilha nova. Se o navegador recusar, o erro vai para o diagnóstico em vez
+      de sumir.
+    - Um botão "Diagnóstico" embaixo do vídeo, no ao vivo do navegador, abre um painel que se
+      atualiza a cada segundo com: estado da conexão e do ICE, par de candidatos em uso
+      (local/remoto, UDP ou TCP), bytes e quadros de vídeo recebidos e decodificados, codec e
+      perfil negociados, tamanho da imagem recebida, estado do `<video>` (pausado, `readyState`,
+      tamanho) e o último erro do `play()`. Nada disso sai do navegador; é para a pessoa tirar um
+      print. Textos nos `.resx`.
+    - O estado "Tocando" do ao vivo passa a esperar a conexão de mídia abrir de verdade, não só a
+      resposta do WHEP; se ela não abrir, mostra a falha e o botão de tentar de novo.
+  - Aceite: bUnit do botão abrindo e fechando o painel e mostrando os campos que o script
+    devolve; conferido no Chromium; o autor manda o print do painel no iPhone. Se o `play()`
+    resolver, anotar; se não, a causa vira bullet novo a partir do print.
 
 ## Fase 5: distribuição
 

@@ -65,6 +65,21 @@ public sealed class DevicesTests : BunitContext
         Assert.Contains(seen.ToLocalTime().ToString("g", System.Globalization.CultureInfo.GetCultureInfo("pt-BR")), state, StringComparison.Ordinal);
     }
 
+    [Fact(DisplayName = "Right after an invitation was used, Devices says the browser is connected")]
+    public void Render_AfterInvitation_SaysConnected()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+
+        Services.GetRequiredService<NavigationManager>().NavigateTo("devices?connected=browser");
+
+        // act
+        var page = Render<DevicesPage>();
+
+        // assert
+        page.WaitForAssertion(() => Assert.Equal("Navegador conectado. Ele já é um Monitor.", page.Find("p.ok").TextContent));
+    }
+
     [Fact(DisplayName = "Removing asks first, then takes the device off the server")]
     public void Remove_Confirmed_RemovesCamera()
     {

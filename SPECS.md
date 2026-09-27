@@ -917,3 +917,9 @@ seguinte em `docs/adr/`:
 > ganha a escolha "Onde vai assistir?" e o layout de celular. Seções 1.2, 2.5, 5.5 e 6. Antes, no
 > 11.1, o app juntou "Conectar navegador" dentro de "Adicionar Monitor" (só tela; o protocolo não
 > mudou).
+
+> Revisão (2026-09-27): `GET /api/browser-links/{id}/invite` (bullet 11.5), só para o Monitor que
+> criou o convite: `{ state: "waiting" | "used" | "expired" }`. Para qualquer outro aparelho, e para
+> um convite já apagado, responde como link desconhecido (404). Não carrega segredo. A tela do
+> convite consulta a cada 2 s, volta para Aparelhos quando ele é usado e, se vencer, pede para
+> gerar outro em vez de trocar sozinha.

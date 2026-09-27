@@ -23,6 +23,15 @@
                 <button @onclick="Invite.StartAsync">@L["OfflineRetry"]</button>
                 break;
 
+            case InviteState.Expired:
+                <p class="expired" role="status">@L["InviteExpired"]</p>
+                <button class="another" @onclick="Invite.StartAsync">@L["InviteAnother"]</button>
+                break;
+
+            case InviteState.Used:
+                <p class="ok" role="status">@L["InviteUsed"]</p>
+                break;
+
             default:
                 <div class="qr" aria-label="@L["InviteQrLabel"]">@((MarkupString)(Invite.QrSvg ?? string.Empty))</div>
                 <p class="expires">@L["InviteOnce", Invite.Remaining.ToString(@"m\:ss", System.Globalization.CultureInfo.InvariantCulture)]</p>
@@ -44,6 +53,12 @@
 
 @code {
     private static readonly TimeSpan Second = TimeSpan.FromSeconds(1);
+
+    /// <summary>Runs once a browser used the link, to leave this screen.</summary>
+    [Parameter]
+    public EventCallback Used { get; set; }
+
+    private bool leaving;
 
     private PeriodicTimer? timer;
 
@@ -70,5 +85,14 @@
         }
     }
 
-    private void OnChanged() => InvokeAsync(StateHasChanged);
+    private void OnChanged() => InvokeAsync(async () =>
+    {
+        if (Invite.State == InviteState.Used && !leaving)
+        {
+            leaving = true;
+            await Used.InvokeAsync();
+        }
+
+        StateHasChanged();
+    });
 }

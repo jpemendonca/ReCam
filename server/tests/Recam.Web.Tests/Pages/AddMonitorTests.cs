@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Recam.Web.Api;
 using Recam.Web.Pages;
@@ -35,6 +36,24 @@ public sealed class AddMonitorTests : BunitContext
         Assert.Empty(page.FindAll(".qr"));
         Assert.Empty(_api.Tokens);
         Assert.Empty(_api.Invites);
+    }
+
+    [Fact(DisplayName = "Once a browser uses the invitation, the page goes back to Devices by itself")]
+    public void InBrowser_WhenUsed_GoesBackToDevices()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var page = Render<AddMonitor>();
+        page.FindAll("button.option")[1].Click();
+        page.WaitForAssertion(() => Assert.NotNull(page.Find(".qr svg")));
+
+        // act
+        _api.UsedInvites.Add(_api.Invites[0].Id);
+
+        // assert
+        var navigation = Services.GetRequiredService<NavigationManager>();
+        page.WaitForAssertion(
+            () => Assert.EndsWith("/devices?connected=browser", navigation.Uri, StringComparison.Ordinal), TimeSpan.FromSeconds(5));
     }
 
     [Fact(DisplayName = "In a browser shows the invitation link as a QR code, copies it and names the address")]

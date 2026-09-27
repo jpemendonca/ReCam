@@ -192,6 +192,12 @@
   <data name="InviteAddress" xml:space="preserve">
     <value>Nesse navegador, abra o ReCam sempre por {0}: o acesso fica guardado só para esse endereço.</value>
   </data>
+  <data name="InviteAnother" xml:space="preserve">
+    <value>Gerar outro link</value>
+  </data>
+  <data name="InviteConnected" xml:space="preserve">
+    <value>Navegador conectado. Ele já é um Monitor.</value>
+  </data>
   <data name="InviteCopied" xml:space="preserve">
     <value>Link copiado.</value>
   </data>
@@ -200,6 +206,9 @@
   </data>
   <data name="InviteCopyFailed" xml:space="preserve">
     <value>O navegador não deixou copiar. Selecione o link e copie.</value>
+  </data>
+  <data name="InviteExpired" xml:space="preserve">
+    <value>Este link venceu sem ser usado.</value>
   </data>
   <data name="InviteFailed" xml:space="preserve">
     <value>Não deu para criar o convite. Confira a conexão com o servidor.</value>
@@ -224,6 +233,9 @@
   </data>
   <data name="InviteStep2" xml:space="preserve">
     <value>Toque em Assistir neste navegador. Ele vira um Monitor destas câmeras.</value>
+  </data>
+  <data name="InviteUsed" xml:space="preserve">
+    <value>Navegador conectado.</value>
   </data>
   <data name="JoinAlready" xml:space="preserve">
     <value>Este navegador já é um Monitor.</value>

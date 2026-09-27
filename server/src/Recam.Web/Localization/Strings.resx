@@ -192,6 +192,12 @@
   <data name="InviteAddress" xml:space="preserve">
     <value>On that browser, always open ReCam at {0}: its access is saved for that address only.</value>
   </data>
+  <data name="InviteAnother" xml:space="preserve">
+    <value>Make another link</value>
+  </data>
+  <data name="InviteConnected" xml:space="preserve">
+    <value>Browser connected. It is a Monitor now.</value>
+  </data>
   <data name="InviteCopied" xml:space="preserve">
     <value>Link copied.</value>
   </data>
@@ -200,6 +206,9 @@
   </data>
   <data name="InviteCopyFailed" xml:space="preserve">
     <value>The browser did not let us copy. Select the link and copy it.</value>
+  </data>
+  <data name="InviteExpired" xml:space="preserve">
+    <value>This link expired without being used.</value>
   </data>
   <data name="InviteFailed" xml:space="preserve">
     <value>Could not create the invitation. Check the connection to the server.</value>
@@ -224,6 +233,9 @@
   </data>
   <data name="InviteStep2" xml:space="preserve">
     <value>Tap Watch in this browser. It becomes a Monitor of these cameras.</value>
+  </data>
+  <data name="InviteUsed" xml:space="preserve">
+    <value>Browser connected.</value>
   </data>
   <data name="JoinAlready" xml:space="preserve">
     <value>This browser is already a Monitor.</value>

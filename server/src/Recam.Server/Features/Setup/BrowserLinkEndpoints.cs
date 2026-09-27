@@ -25,6 +25,7 @@ public static class BrowserLinkEndpoints
     {
         endpoints.MapPost("/api/browser-links", CreateAsync).RequireRateLimiting(SetupEndpoints.RateLimitPolicy);
         endpoints.MapPost("/api/browser-links/invite", InviteAsync).RequireAuthorization(AuthExtensions.ViewerOrOwner);
+        endpoints.MapGet("/api/browser-links/{id:guid}/invite", GetInviteStateAsync).RequireAuthorization(AuthExtensions.ViewerOrOwner);
         endpoints.MapPost("/api/browser-links/{id:guid}/approve", ApproveAsync).RequireAuthorization(AuthExtensions.ViewerOrOwner);
         endpoints.MapPost("/api/browser-links/{id:guid}/claim", ClaimAsync);
         return endpoints;
@@ -75,6 +76,33 @@ public static class BrowserLinkEndpoints
             : $"{request.Scheme}://{request.Host}";
         var url = $"{address}{InvitePath}#l={link.Id:N}&c={invited.Value.Claim}";
         return TypedResults.Created($"/api/browser-links/{link.Id}", new BrowserInviteResponse(link.Id, url, link.ExpiresAt));
+    }
+
+    /// <summary>
+    /// Lets the page that shows an invitation leave by itself once a browser used it. Only the
+    /// Monitor that made it gets an answer; it carries no secret.
+    /// </summary>
+    private static async Task<IResult> GetInviteStateAsync(
+        Guid id,
+        ClaimsPrincipal user,
+        IDbContextFactory<RecamDbContext> databaseFactory,
+        TimeProvider timeProvider,
+        CancellationToken cancellationToken)
+    {
+        await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
+        var link = await database.BrowserLinks.AsNoTracking().SingleOrDefaultAsync(candidate => candidate.Id == id, cancellationToken);
+        var requesterId = user.GetDeviceId();
+        var requester = await database.Devices.AsNoTracking().SingleAsync(device => device.Id == requesterId, cancellationToken);
+        if (link is null)
+        {
+            // Expired links get cleaned up; for their maker, that is still "expired".
+            return BrowserLinkErrors.NotFound.ToHttpResult();
+        }
+
+        var state = link.InviteStateFor(requester, timeProvider.GetUtcNow());
+        return state.IsFailure
+            ? state.Error.ToHttpResult()
+            : TypedResults.Ok(new BrowserInviteStateResponse(state.Value));
     }
 
     private static async Task<IResult> ApproveAsync(

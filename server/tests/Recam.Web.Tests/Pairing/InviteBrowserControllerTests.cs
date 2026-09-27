@@ -26,8 +26,8 @@ public sealed class InviteBrowserControllerTests
         Assert.Equal(TimeSpan.FromMinutes(10), invite.Remaining);
     }
 
-    [Fact(DisplayName = "When the invitation expires, a new one replaces it")]
-    public async Task Tick_PastExpiry_CreatesNewInvite()
+    [Fact(DisplayName = "When the invitation expires unused, it says so, and a new one comes only when asked")]
+    public async Task Tick_PastExpiry_SaysExpiredThenNewOnRequest()
     {
         // arrange
         var invite = new InviteBrowserController(_api, _clipboard);
@@ -35,10 +35,31 @@ public sealed class InviteBrowserControllerTests
 
         // act
         await invite.Tick(TimeSpan.FromMinutes(10));
+        var expired = (invite.State, _api.Invites.Count);
+        await invite.StartAsync();
 
         // assert
-        Assert.Equal(2, _api.Invites.Count);
+        Assert.Equal((InviteState.Expired, 1), expired);
+        Assert.Equal(InviteState.Ready, invite.State);
         Assert.Equal(_api.Invites[1].Url, invite.Url);
+    }
+
+    [Fact(DisplayName = "Once a browser uses the link, the next check says so")]
+    public async Task Tick_AfterUse_TurnsUsed()
+    {
+        // arrange
+        var invite = new InviteBrowserController(_api, _clipboard);
+        await invite.StartAsync();
+        await invite.Tick(InviteBrowserController.CheckEvery);
+        var before = invite.State;
+        _api.UsedInvites.Add(_api.Invites[0].Id);
+
+        // act
+        await invite.Tick(InviteBrowserController.CheckEvery);
+
+        // assert
+        Assert.Equal(InviteState.Ready, before);
+        Assert.Equal(InviteState.Used, invite.State);
     }
 
     [Fact(DisplayName = "Copy puts the link in the clipboard, and says so when the browser refuses")]

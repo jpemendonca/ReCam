@@ -174,6 +174,52 @@ public sealed class BrowserLinkEndpointsTests
         Assert.Equal(HttpStatusCode.NotFound, late.StatusCode);
     }
 
+    [Fact(DisplayName = "The Monitor that invited sees the invitation waiting, used, or expired; no one else sees it")]
+    public async Task InviteState_ForItsMaker_FollowsTheInvitation()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var other = await factory.PairDeviceAsync(DeviceRole.Viewer);
+        using var phone = factory.CreateDeviceClient(owner.Credential);
+        using var otherPhone = factory.CreateDeviceClient(other.Credential);
+        using var browser = factory.CreateBrowserClient();
+        var used = await PhoneInviteAsync(phone);
+        var late = await PhoneInviteAsync(phone);
+        var (usedId, usedClaim) = PartsOf(used);
+        var waiting = await StateAsync(phone, usedId);
+
+        // act
+        using var claimed = await ClaimAsync(browser, usedId, usedClaim);
+        var afterUse = await StateAsync(phone, usedId);
+        using var byOther = await otherPhone.GetAsync(StateUri(usedId), TestContext.Current.CancellationToken);
+        factory.Time.Advance(BrowserLink.Lifetime);
+        var afterTime = await StateAsync(phone, late.Id);
+
+        // assert
+        Assert.Equal(InviteState.Waiting, waiting);
+        Assert.Equal(InviteState.Used, afterUse);
+        Assert.Equal(HttpStatusCode.NotFound, byOther.StatusCode);
+        Assert.Equal(InviteState.Expired, afterTime);
+        var body = await byOther.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.DoesNotContain(usedClaim, body, StringComparison.Ordinal);
+    }
+
+    private static Uri StateUri(Guid id) => new($"/api/browser-links/{id}/invite", UriKind.Relative);
+
+    private static async Task<InviteState> StateAsync(HttpClient monitor, Guid id)
+    {
+        var response = await monitor.GetFromJsonAsync<BrowserInviteStateResponse>(StateUri(id), ApiJson.Options, TestContext.Current.CancellationToken);
+        return response!.State;
+    }
+
+    private static async Task<BrowserInviteResponse> PhoneInviteAsync(HttpClient phone)
+    {
+        using var response = await phone.PostAsync(InviteUri, null, TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        return (await response.Content.ReadFromJsonAsync<BrowserInviteResponse>(ApiJson.Options, TestContext.Current.CancellationToken))!;
+    }
+
     [Fact(DisplayName = "Only a Monitor can invite a browser")]
     public async Task Invite_ByCameraOrStranger_Refused()
     {
