@@ -14,6 +14,28 @@ class HttpApiClient implements ApiClient {
   final Duration timeout;
 
   @override
+  Future<String?> serverVersion(Uri baseUrl) async {
+    try {
+      final response = await _client
+          .get(baseUrl.resolve('/health'))
+          .timeout(timeout);
+      if (response.statusCode != HttpStatus.ok) return null;
+      final body = jsonDecode(response.body);
+      return body is Map<String, Object?> && body['version'] is String
+          ? body['version']! as String
+          : null;
+    } on IOException {
+      return null;
+    } on http.ClientException {
+      return null;
+    } on TimeoutException {
+      return null;
+    } on FormatException {
+      return null;
+    }
+  }
+
+  @override
   Future<bool> health(Uri baseUrl) async {
     try {
       final response = await _client

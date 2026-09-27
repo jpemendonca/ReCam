@@ -59,6 +59,9 @@ git config core.hooksPath .githooks
 bash scripts/gate.sh
 ```
 
+Builds that carry the version from Git: `bash scripts/build-server.sh` (Docker image) and
+`bash scripts/build-apk.sh` (APK). Other builds show the version `dev`.
+
 The gate runs formatting, analysis, build and tests for `server/` and `app/`. Server tests start
 a MediaMTX container, so Docker must be running.
 

@@ -1,0 +1,24 @@
+@inject IStringLocalizer<Strings> L
+@inject IRecamApi Api
+
+@* Which build runs here and on the server, to tell them apart after an update. *@
+<p class="versions">
+    @L["VersionBrowser", AppVersion.Current]<br />
+    @L["VersionServer", server ?? "…"]
+</p>
+
+@code {
+    private string? server;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            server = await Api.GetServerVersionAsync(CancellationToken.None);
+        }
+        catch (HttpRequestException)
+        {
+            server = "?";
+        }
+    }
+}

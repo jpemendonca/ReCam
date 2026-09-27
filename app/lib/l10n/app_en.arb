@@ -304,5 +304,21 @@
   "batteryTipXiaomi": "In the app's settings, turn on Autostart and set Battery saver to No restrictions.",
   "batteryTipRecents": "In recent apps, lock ReCam (hold its card and tap the lock), if your phone has that option.",
   "batteryGuideDone": "Done",
-  "batteryGuideMenu": "Battery settings"
+  "batteryGuideMenu": "Battery settings",
+  "versionApp": "This phone: {version}",
+  "@versionApp": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "versionServer": "Server: {version}",
+  "@versionServer": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  }
 }

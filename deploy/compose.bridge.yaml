@@ -4,7 +4,10 @@ name: recam
 
 services:
   server:
-    build: ../server
+    build:
+      context: ../server
+      args:
+        RECAM_VERSION: ${RECAM_VERSION:-dev}
     image: recam-server:local
     ports:
       - "8443:8443/tcp"

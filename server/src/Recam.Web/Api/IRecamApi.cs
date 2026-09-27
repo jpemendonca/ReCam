@@ -6,6 +6,9 @@ public interface IRecamApi
     /// <summary>This browser's device, or null when the browser is not a Monitor (no cookie, or revoked).</summary>
     Task<MeInfo?> GetMeAsync(CancellationToken cancellationToken);
 
+    /// <summary>The server's build version, from GET /health.</summary>
+    Task<string> GetServerVersionAsync(CancellationToken cancellationToken);
+
     /// <summary>True while the server has no Monitor, so this browser may become the first one.</summary>
     Task<bool> IsFirstOpenAsync(CancellationToken cancellationToken);
 

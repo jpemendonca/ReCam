@@ -64,6 +64,14 @@ public sealed class FakeRecamApi : IRecamApi
         }
     }
 
+    public string ServerVersion { get; set; } = "2026.09.27+4b4d231";
+
+    public Task<string> GetServerVersionAsync(CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        return Task.FromResult(ServerVersion);
+    }
+
     public Task<MeInfo?> GetMeAsync(CancellationToken cancellationToken)
     {
         ThrowIfOffline();

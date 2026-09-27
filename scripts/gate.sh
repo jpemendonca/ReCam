@@ -4,6 +4,9 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ran=0
 
+echo "== scripts =="
+bash "$root/scripts/version_test.sh"
+
 if [ -f "$root/server/Recam.slnx" ]; then
   echo "== server =="
   dotnet format "$root/server/Recam.slnx" --verify-no-changes

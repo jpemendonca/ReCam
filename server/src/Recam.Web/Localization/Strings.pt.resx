@@ -414,4 +414,10 @@
   <data name="TorchTurnOn" xml:space="preserve">
     <value>Ligar lanterna</value>
   </data>
+  <data name="VersionBrowser" xml:space="preserve">
+    <value>Este Monitor: {0}</value>
+  </data>
+  <data name="VersionServer" xml:space="preserve">
+    <value>Servidor: {0}</value>
+  </data>
 </root>

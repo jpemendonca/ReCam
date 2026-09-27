@@ -5,6 +5,8 @@ COPY src/Recam.Server/Recam.Server.csproj src/Recam.Server/
 COPY src/Recam.Web/Recam.Web.csproj src/Recam.Web/
 RUN dotnet restore src/Recam.Server/Recam.Server.csproj
 COPY src/ src/
+# The image has no .git: the version comes from scripts/version.sh on the host.
+ARG RECAM_VERSION=dev
 RUN dotnet publish src/Recam.Server/Recam.Server.csproj -c Release -o /app --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0

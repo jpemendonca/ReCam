@@ -66,5 +66,23 @@ void main() {
       expect(find.byKey(const Key('language-picker')), findsOneWidget);
       expect(find.textContaining('A câmera já está gravando.'), findsNothing);
     });
+
+    testWidgets('asTheSettingsTab_showsThisPhoneAndTheServerVersions', (
+      tester,
+    ) async {
+      // act
+      await show(tester);
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('versions')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+
+      // assert
+      expect(
+        find.text('Este celular: dev\nServidor: 2026.09.27+4b4d231'),
+        findsOneWidget,
+      );
+    });
   });
 }

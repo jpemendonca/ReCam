@@ -47,6 +47,7 @@ void main() {
       expect(find.text('Nobody is watching.'), findsOneWidget);
       expect(find.text('Battery 57%'), findsOneWidget);
       expect(find.text('Stop camera'), findsOneWidget);
+      expect(find.text('This phone: dev'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     });
 

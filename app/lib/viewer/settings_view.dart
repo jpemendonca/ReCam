@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../core/app_version.dart';
 import '../core/language/language_picker.dart';
 import '../core/network/api_client.dart';
 import '../core/storage/credential_store.dart';
@@ -35,6 +36,10 @@ class SettingsView extends StatefulWidget {
 }
 
 class _SettingsViewState extends State<SettingsView> {
+  late final _serverVersion = widget.api.serverVersion(
+    widget.session.serverUrl,
+  );
+
   late final _controller = RecordingsController(
     api: widget.api,
     session: widget.session,
@@ -172,6 +177,16 @@ class _SettingsViewState extends State<SettingsView> {
           if (widget.onDone == null) ...[
             const SizedBox(height: 32),
             const LanguagePicker(),
+            const SizedBox(height: 32),
+            FutureBuilder(
+              future: _serverVersion,
+              builder: (context, server) => Text(
+                '${l10n.versionApp(appVersion)}\n'
+                '${l10n.versionServer(server.data ?? '…')}',
+                key: const Key('versions'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
           ],
         ],
       ),

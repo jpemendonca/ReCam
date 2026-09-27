@@ -414,4 +414,10 @@
   <data name="TorchTurnOn" xml:space="preserve">
     <value>Turn flashlight on</value>
   </data>
+  <data name="VersionBrowser" xml:space="preserve">
+    <value>This Monitor: {0}</value>
+  </data>
+  <data name="VersionServer" xml:space="preserve">
+    <value>Server: {0}</value>
+  </data>
 </root>

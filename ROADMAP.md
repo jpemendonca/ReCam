@@ -1931,6 +1931,30 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > novo decifrado. Não ficou o teste com o MediaMTX gravando de ponta a ponta: o do FFmpeg cobre
   > o mesmo formato de arquivo. Só código e teste.
 
+- [x] **9.14 Versão automática no app e no navegador**
+  - Origem: pedido do autor em 2026-09-27. Saber qual build está rodando em cada aparelho, sem
+    numerar versão à mão (nada de 1.0, 1.1).
+  - Escopo: a versão sai do Git na hora do build: data do commit e hash curto, no formato
+    `2026.09.27+4b4d231` (com `-dirty` quando o build tem mudanças sem commit). O servidor e o
+    Monitor web recebem a mesma versão pelo MSBuild; na imagem Docker, que não tem a pasta
+    `.git`, ela entra como argumento de build. O app recebe pelo `--build-name` e
+    `--build-number` do Flutter. O app mostra a própria versão e a do servidor na aba
+    Configurações (e no modo câmera, num lugar discreto); o navegador mostra a dele e a do
+    servidor na página Configurações. `GET /health` passa a devolver a versão. Sem versão do Git
+    (build fora do repositório), aparece "dev".
+  - Aceite: teste do script que monta a versão (com e sem mudanças pendentes); testes de widget
+    e bUnit mostrando as versões; teste de integração do `/health` com a versão.
+  > Validação (2026-09-27): `scripts/version.sh` e `version_test.sh` (repositório descartável:
+  > fora do Git dá `dev`, limpo dá data+hash, com arquivo pendente ganha `-dirty`); o gate roda o
+  > teste. Servidor e Monitor web leem a `InformationalVersion`, que o `Directory.Build.props` tira
+  > do `RECAM_VERSION` (argumento de build no Dockerfile e nos composes). O app lê
+  > `String.fromEnvironment('RECAM_VERSION')`, sem dependência nova. Scripts de build:
+  > `build-server.sh` e `build-apk.sh`. O app mostra "Este celular" e "Servidor" no fim de
+  > Configurações e a própria versão em texto pequeno no modo câmera; o navegador mostra "Este
+  > Monitor" e "Servidor" na página Configurações. Decisão: os builds de desenvolvimento (gate,
+  > IDE) ficam `dev`, porque rodar o Git dentro do MSBuild no Windows esbarra no `%` do `cmd`.
+  > Testes: script, `/health`, bUnit e widget. Percorrido no deploy desta mesma data.
+
 ## Fase 10: servidor numa VPS
 
 Decidido com o autor em 2026-09-26: rodar o servidor numa VPS, com as câmeras em casa e quem

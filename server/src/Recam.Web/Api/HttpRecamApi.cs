@@ -15,6 +15,14 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
+    public async Task<string> GetServerVersionAsync(CancellationToken cancellationToken)
+    {
+        var health = await http.GetFromJsonAsync<HealthInfo>(new Uri("health", UriKind.Relative), Json, cancellationToken);
+        return health?.Version ?? string.Empty;
+    }
+
+    private sealed record HealthInfo(string Status, string Version);
+
     public async Task<MeInfo?> GetMeAsync(CancellationToken cancellationToken)
     {
         using var response = await http.GetAsync(new Uri("api/me", UriKind.Relative), cancellationToken);

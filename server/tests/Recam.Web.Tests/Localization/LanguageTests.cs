@@ -50,4 +50,19 @@ public sealed class LanguageTests : BunitContext
         Assert.True(reload.Options.ForceLoad);
         Assert.Contains("Idioma", picker.Find("label").TextContent, StringComparison.Ordinal);
     }
+
+    [Fact(DisplayName = "Settings show this Monitor's version and the server's")]
+    public void VersionInfo_ShowsBothVersions()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        Services.AddSingleton<Recam.Web.Api.IRecamApi>(new FakeRecamApi { ServerVersion = "2026.09.27+abc1234" });
+
+        // act
+        var info = Render<VersionInfo>();
+
+        // assert
+        info.WaitForAssertion(() => Assert.Contains("Servidor: 2026.09.27+abc1234", info.Find(".versions").TextContent, StringComparison.Ordinal));
+        Assert.Contains("Este Monitor: dev", info.Find(".versions").TextContent, StringComparison.Ordinal);
+    }
 }

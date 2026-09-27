@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../core/app_version.dart';
 import '../core/media/video_quality.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'camera_mode_controller.dart';
@@ -173,6 +174,14 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.stop),
                     label: Text(l10n.cameraModeExit),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    l10n.versionApp(appVersion),
+                    key: const Key('camera-version'),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.outline,
+                    ),
                   ),
                 ],
               );

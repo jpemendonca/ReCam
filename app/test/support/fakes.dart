@@ -51,6 +51,11 @@ class FakeApiClient implements ApiClient {
   >
   pairCalls = [];
 
+  String? serverVersionResult = '2026.09.27+4b4d231';
+
+  @override
+  Future<String?> serverVersion(Uri baseUrl) async => serverVersionResult;
+
   @override
   Future<bool> health(Uri baseUrl) async {
     healthCalls.add(baseUrl);

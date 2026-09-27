@@ -3,6 +3,9 @@ import '../pairing/device_role.dart';
 abstract interface class ApiClient {
   Future<bool> health(Uri baseUrl);
 
+  /// The server's build version, from `GET /health`; null when it does not answer.
+  Future<String?> serverVersion(Uri baseUrl);
+
   Future<ApiResult<PairResult>> pair(
     Uri baseUrl, {
     required String token,

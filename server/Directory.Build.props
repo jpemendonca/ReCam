@@ -9,4 +9,13 @@
     <AnalysisLevel>latest-recommended</AnalysisLevel>
   </PropertyGroup>
 
+  <!-- The version shown in the app and the browser (bullet 9.14). scripts/version.sh makes it
+       from Git and passes it as RECAM_VERSION; builds without it, like the gate's, are "dev". -->
+  <PropertyGroup>
+    <RecamVersion Condition="'$(RecamVersion)' == ''">$(RECAM_VERSION)</RecamVersion>
+    <RecamVersion Condition="'$(RecamVersion)' == ''">dev</RecamVersion>
+    <InformationalVersion>$(RecamVersion)</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
 </Project>

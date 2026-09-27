@@ -880,3 +880,11 @@ seguinte em `docs/adr/`:
 > 30 minutos. O servidor decifra enquanto envia, com Range. Proteção contra o curioso que abre a
 > pasta, não contra quem tem root no servidor e lê a chave. Perder a chave é perder as gravações;
 > o backup de `/data` precisa levar o arquivo junto.
+
+> Revisão (2026-09-27): versão automática (bullet 9.14). `scripts/version.sh` monta a versão do
+> Git: data do commit e hash curto, como `2026.09.27+4b4d231`, com `-dirty` se houver mudança sem
+> commit, ou `dev` fora do repositório. `scripts/build-server.sh` passa ela para a imagem (argumento
+> de build `RECAM_VERSION`, que vira a `InformationalVersion` do servidor e do Monitor web), e
+> `scripts/build-apk.sh` passa para o app (`--dart-define`, nome da versão do APK, e o número de
+> commits como código da versão). Builds sem ela, como os do gate, mostram `dev`. `GET /health`
+> passa a responder `{ status: "ok", version }`.
