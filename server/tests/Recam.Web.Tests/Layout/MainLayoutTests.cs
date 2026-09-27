@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Recam.Web.Api;
 using Recam.Web.Cameras;
@@ -36,6 +37,28 @@ public sealed class MainLayoutTests : BunitContext
         layout.WaitForAssertion(() => Assert.Equal(["Câmeras", "Gravações", "Aparelhos", "Configurações"], layout.FindAll("nav a").Select(link => link.TextContent)));
         Assert.Equal("Sair", layout.Find("nav button").TextContent);
         Assert.True(_hub.Connected);
+    }
+
+    [Fact(DisplayName = "On a phone the menu button opens the sections, and choosing one closes them")]
+    public void MenuButton_OpensAndClosesOnNavigation()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        _api.Me = new MeInfo(Guid.NewGuid(), "Navegador", "owner");
+        var layout = Render<MainLayout>();
+        layout.WaitForAssertion(() => Assert.NotEmpty(layout.FindAll("button.menu-toggle")));
+        var closed = layout.Find("nav").ClassList.Contains("open");
+
+        // act
+        layout.Find("button.menu-toggle").Click();
+        var opened = (layout.Find("nav").ClassList.Contains("open"), layout.Find("button.menu-toggle").GetAttribute("aria-expanded"));
+        Services.GetRequiredService<NavigationManager>().NavigateTo("devices");
+
+        // assert
+        Assert.False(closed);
+        Assert.Equal((true, "true"), opened);
+        layout.WaitForAssertion(() => Assert.False(layout.Find("nav").ClassList.Contains("open")));
+        Assert.Equal("Menu", layout.Find("button.menu-toggle").GetAttribute("aria-label"));
     }
 
     [Fact(DisplayName = "Before the code, the top bar has only the name")]

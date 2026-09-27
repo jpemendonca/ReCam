@@ -9,7 +9,10 @@
     <a class="brand" href="">@L["AppTitle"]</a>
     @if (Start.State == StartState.Monitor)
     {
-        <nav>
+        @* On a phone the sections hide behind this button; on a wide screen it is not shown. *@
+        <button class="menu-toggle" aria-expanded="@(menuOpen ? "true" : "false")" aria-controls="sections"
+                aria-label="@L["NavMenu"]" @onclick="() => menuOpen = !menuOpen">☰</button>
+        <nav id="sections" class="@(menuOpen ? "open" : null)">
             <NavLink href="" Match="NavLinkMatch.All">@L["NavCameras"]</NavLink>
             <NavLink href="recordings">@L["NavRecordings"]</NavLink>
             <NavLink href="devices">@L["NavDevices"]</NavLink>
@@ -23,14 +26,28 @@
 </main>
 
 @code {
+    private bool menuOpen;
+
     protected override async Task OnInitializedAsync()
     {
+        Navigation.LocationChanged += CloseMenu;
         Start.Changed += OnChanged;
         await Start.EnsureLoadedAsync(CancellationToken.None);
         await ConnectIfMonitorAsync();
     }
 
-    public void Dispose() => Start.Changed -= OnChanged;
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= CloseMenu;
+        Start.Changed -= OnChanged;
+    }
+
+    // Choosing a section closes the phone menu.
+    private void CloseMenu(object? sender, LocationChangedEventArgs change) => InvokeAsync(() =>
+    {
+        menuOpen = false;
+        StateHasChanged();
+    });
 
     // Leaving starts the app over, so nothing of this Monitor stays in memory.
     private async Task SignOutAsync()

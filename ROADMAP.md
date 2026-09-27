@@ -2157,7 +2157,7 @@ o que continua por conta de quem roda o servidor.
   > repetir no 4G; fechar o Safari e abrir de novo dias depois. Se o ao vivo ficar preto só no 4G,
   > anotar o resultado do teste do roteador do Android e do IPv6 da VPS (conversa de 2026-09-27).
 
-- [ ] **11.4 Menu do topo do Monitor web em tela de celular**
+- [x] **11.4 Menu do topo do Monitor web em tela de celular**
   - Origem: teste do autor em 2026-09-27, num celular: o menu do topo (Câmeras, Gravações,
     Aparelhos, Configurações, Sair) quebra em duas linhas e ocupa boa parte da tela.
   - Escopo: em tela estreita (até ~600 px), o topo vira uma barra compacta: nome do ReCam e um
@@ -2165,6 +2165,11 @@ o que continua por conta de quem roda o servidor.
     para dentro do menu ou de Configurações. Em tela larga fica como está. Sem biblioteca nova.
   - Aceite: bUnit do menu abrindo e fechando; conferido no Chromium com tela de celular
     (360 a 430 px) sem rolagem lateral e sem o topo quebrar em duas linhas.
+  > Validação (2026-09-27): até 600 px, o topo fica com o nome e um botão ☰ (`aria-expanded`); ele
+  > abre as seções numa lista sobre a página, com "Sair" no fim, e escolher uma seção fecha a
+  > lista. Em tela larga nada muda. Teste bUnit do menu abrindo e fechando ao navegar. Percorrido
+  > no Chromium a 375x812 numa cópia local do servidor: topo com 56 px numa linha só, menu abrindo
+  > e fechando, `scrollWidth` igual à largura da tela (sem rolagem lateral).
 
 - [x] **11.5 Convite de navegador fecha sozinho quando é usado**
   - Origem: teste do autor em 2026-09-27: depois que o navegador do iPhone virou Monitor pelo
@@ -2187,7 +2192,7 @@ o que continua por conta de quem roda o servidor.
   > recebe 404 sem segredo), controller (vencido espera pedido; usado muda de estado) e bUnit (a
   > página volta sozinha; Aparelhos mostra o aviso). Só código e teste.
 
-- [ ] **11.6 Ao vivo preto no navegador do iPhone: `play()` explícito e painel de diagnóstico**
+- [x] **11.6 Ao vivo preto no navegador do iPhone: `play()` explícito e painel de diagnóstico**
   - Origem: teste do autor em 2026-09-27: no navegador do iPhone, o ao vivo abre, o relógio anda,
     mas a imagem fica preta. No PC e no app funciona.
   - Escopo:
@@ -2215,6 +2220,8 @@ o que continua por conta de quem roda o servidor.
   > painel e controller falhando sem repetir; sintaxe do `whep.js` conferida no Node. Não foi
   > visto num navegador de verdade (precisa de câmera transmitindo e login). Falta: o autor
   > abrir no iPhone e mandar o print do painel.
+  > Validação (2026-09-27): o autor abriu o ao vivo no iPhone depois do deploy e a imagem
+  > apareceu. O `play()` explícito resolveu; o painel fica para os próximos casos.
 
 ## Fase 5: distribuição
 

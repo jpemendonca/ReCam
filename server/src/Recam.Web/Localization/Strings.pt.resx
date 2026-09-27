@@ -354,6 +354,9 @@
   <data name="NavDevices" xml:space="preserve">
     <value>Aparelhos</value>
   </data>
+  <data name="NavMenu" xml:space="preserve">
+    <value>Menu</value>
+  </data>
   <data name="NavRecordings" xml:space="preserve">
     <value>Gravações</value>
   </data>
