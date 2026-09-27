@@ -37,6 +37,7 @@ Formato de cada bullet: **Origem** (de onde veio), **Escopo** (o que entra e o q
 A fila segue a ordem do arquivo, não o número da fase. Desde 2026-09-25 as Fases 6 (Monitor no
 navegador) e 7 (clarear e movimento) ficam antes da Fase 5 (distribuição), porque mudam o primeiro
 uso que a distribuição vai ensinar.
+A Fase 11 (Monitor no iPhone pelo navegador), anotada em 2026-09-27, também fica antes da Fase 5.
 
 ---
 
@@ -2042,6 +2043,57 @@ servidor; o projeto só precisa funcionar nesse cenário e explicar como montar.
     4G assistindo. Navegador fora da rede de casa virando Monitor com o código.
   - Aceite: ao vivo com som, lanterna, gravação e linha do tempo funcionando. Anotar o atraso e
     qualquer falha como bullet novo.
+
+## Fase 11: Monitor no iPhone pelo navegador
+
+Decidido com o autor em 2026-09-27. Não existe app de iPhone, e o autor quer usar o iPhone só
+para assistir. O caminho é o navegador do iPhone virar Monitor. Só um Monitor que já existe pode
+criar o convite, então nada disso funciona antes da configuração inicial no PC. Assistir de fora
+de casa depende de o servidor ser alcançável de fora (VPS da Fase 10, porta aberta ou Tailscale),
+o que continua por conta de quem roda o servidor.
+
+- [ ] **11.1 App: "Adicionar Monitor" numa opção só**
+  - Origem: o autor achou confuso ter "Adicionar Monitor" e "Conectar navegador" lado a lado no
+    app (2026-09-27). Os nomes não dizem que um mostra QR e o outro lê.
+  - Escopo: sai o item "Conectar navegador" do menu. "Adicionar Monitor" pergunta "Onde vai
+    assistir?", com duas escolhas: "Em outro celular" (mostra o QR de pareamento, como hoje) e
+    "Num navegador" (abre a leitura do QR que o navegador mostra, o fluxo do atual "Conectar
+    navegador"). O texto que o navegador mostra ao pedir aprovação passa a citar "Adicionar Monitor
+    › Num navegador". Textos nos ARB (en e pt) e nos `.resx`. O protocolo não muda.
+  - Aceite: widget tests das duas escolhas levando à tela certa, e do menu sem "Conectar
+    navegador".
+
+- [ ] **11.2 Link de Monitor para navegador, e o Monitor web no celular**
+  - Origem: continuação do 11.1. No iPhone não há app para ler o QR de "Conectar navegador", e o
+    navegador do PC não lê QR.
+  - Escopo:
+    - "Adicionar Monitor" no navegador pergunta "Onde vai assistir?", como no app: "Em outro
+      celular com o app" (o QR de pareamento de hoje) e "Num navegador (iPhone, outro computador)".
+    - A segunda escolha cria um convite já aprovado pelo Monitor que o gerou (um `BrowserLink`
+      criado por um Monitor, rota nova no `SPECS.md` 5.5) e mostra um QR com um link `https://`,
+      mais o link para copiar. A câmera do iPhone lê o QR e abre no Safari; o navegador resgata o
+      convite pela rota de resgate que já existe e vira `Viewer`, com "Lembrar neste aparelho".
+    - O segredo vai no fragmento (`#`), que o navegador não manda ao servidor, então não aparece
+      em log de servidor nem de proxy. Vale 10 minutos e uma vez só, como os QR de pareamento.
+    - Endereço do link: o primeiro de `RECAM_PUBLIC_URLS` quando existe, senão o endereço que o
+      navegador do Monitor está usando. O cookie vale só para o endereço em que foi criado, então
+      a tela avisa que é preciso abrir sempre pelo mesmo endereço.
+    - Layout do Monitor web em tela de celular (~360 a 430 px): navegação do topo, lista de
+      câmeras, vídeo ao vivo, linha do tempo, botões de movimento e de clarear cabendo sem rolagem
+      lateral.
+    - Revisar `SPECS.md` (1.2, 2.5, 5.5, 6 e o log de decisões, com ADR) e o README.
+  - Fora do escopo: app de iPhone; o iPhone como câmera.
+  - Aceite: testes de integração do convite (só Monitor cria; resgate vira `Viewer`; vencido ou
+    usado é recusado; o segredo não aparece no log), bUnit das duas escolhas e da página de
+    resgate, e o caminho percorrido no Chromium com tela de celular (link aberto noutro perfil
+    virando Monitor, telas sem rolagem lateral).
+
+- [ ] **11.3 [aparelho] Validar no iPhone**
+  - Escopo: iPhone do autor com Safari. Primeiro no Wi-Fi de casa, depois no 4G com o servidor
+    alcançável de fora. Ler com a câmera do iPhone o QR de "Adicionar Monitor › Num navegador".
+  - Aceite: o iPhone vira Monitor; ao vivo (com o botão de som), lanterna, gravações, linha do
+    tempo e movimento funcionam; fechar e abrir o Safari dias depois continua logado. Anotar o
+    aviso de certificado, o atraso e qualquer falha como bullet novo.
 
 ## Fase 5: distribuição
 
