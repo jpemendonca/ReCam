@@ -299,7 +299,7 @@
   "batteryCheckBackground": "Background use allowed",
   "batteryCheckNotifications": "Notifications on (they show the camera is active)",
   "batteryCheckFix": "Fix",
-  "batteryTipsTitle": "Also helps (the app cannot check these):",
+  "batteryTipsTitle": "Also helps:",
   "batteryTipSamsung": "In Settings > Battery > Background usage limits, keep ReCam out of Sleeping and Deep sleeping apps.",
   "batteryTipXiaomi": "In the app's settings, turn on Autostart and set Battery saver to No restrictions.",
   "batteryTipRecents": "In recent apps, lock ReCam (hold its card and tap the lock), if your phone has that option.",

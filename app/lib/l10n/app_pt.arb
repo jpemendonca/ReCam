@@ -172,7 +172,7 @@
   "batteryCheckBackground": "Uso em segundo plano liberado",
   "batteryCheckNotifications": "Notificações ligadas (mostram que a câmera está ativa)",
   "batteryCheckFix": "Ajustar",
-  "batteryTipsTitle": "Também ajuda (o app não consegue conferir):",
+  "batteryTipsTitle": "Também ajuda:",
   "batteryTipSamsung": "Em Configurações > Bateria > Limites de uso em segundo plano, deixe o ReCam fora de Apps em suspensão e Apps em suspensão profunda.",
   "batteryTipXiaomi": "Nas configurações do app, ligue Início automático e escolha Economia de bateria: Sem restrições.",
   "batteryTipRecents": "Nos apps recentes, trave o ReCam (segure o card dele e toque no cadeado), se o seu celular tiver essa opção.",

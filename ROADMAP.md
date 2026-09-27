@@ -1973,6 +1973,11 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > Testes: hub (pareia, conecta, cai, removido), lista com `lastSeenAt`, bUnit e widget da tela
   > mudando sem reabrir, controller do app. Só código e teste.
 
+- [x] **9.17 Título das dicas de bateria sem o parêntese**
+  - Origem: pedido do autor em 2026-09-27: na tela "Manter a câmera ligada", o título "Também
+    ajuda (o app não consegue conferir):" fica só "Também ajuda:".
+  > Validação (2026-09-27): texto trocado em `pt` e `en`. Testes do app verdes.
+
 - [x] **9.16 Investigar a falha intermitente do teste do hub do navegador**
   - Origem: em 2026-09-27 o teste "With its cookie and the web header, the browser opens the hub
     and watches a camera" falhou uma vez na suíte completa e passou nas rodadas seguintes, com
