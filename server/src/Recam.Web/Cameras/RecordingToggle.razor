@@ -1,21 +1,22 @@
 @inject IStringLocalizer<Strings> L
 @inject CameraListController Cameras
 
-@if (Camera.CanRecord)
-{
-    <label class="toggle" @onclick:stopPropagation="true">
-        <input type="checkbox" checked="@Camera.Recording" disabled="@busy" @onchange="ToggleAsync" />
-        <span>@L["RecordAlways"]</span>
-    </label>
-}
-else
-{
-    <span class="muted">@L["RecordingNeedsH264"]</span>
-}
-@if (failed)
-{
-    <span class="error" role="alert">@L["RecordingFailed"]</span>
-}
+@* A real switch, with what the server sees on disk next to it: not only what was asked. *@
+<div class="recording @StateClass" @onclick:stopPropagation="true">
+    @if (Camera.CanRecord)
+    {
+        <label class="switch">
+            <input type="checkbox" role="switch" checked="@Camera.Recording" disabled="@busy" @onchange="ToggleAsync" />
+            <span class="track" aria-hidden="true"></span>
+            <span>@L["RecordSwitch"]</span>
+        </label>
+    }
+    <span class="state" role="status">@StateText</span>
+    @if (failed)
+    {
+        <span class="error" role="alert">@L["RecordingFailed"]</span>
+    }
+</div>
 
 @code {
     [Parameter, EditorRequired]
@@ -23,6 +24,27 @@ else
 
     private bool busy;
     private bool failed;
+
+    private CameraRecordingState State => Camera.ShownRecordingState;
+
+    private string StateClass => State switch
+    {
+        CameraRecordingState.Recording => "on",
+        CameraRecordingState.Starting => "starting",
+        CameraRecordingState.Off => "off",
+        _ => "problem",
+    };
+
+    private string StateText => State switch
+    {
+        CameraRecordingState.Recording => L["RecordingStateRecording"],
+        CameraRecordingState.Starting => L["RecordingStateStarting"],
+        CameraRecordingState.Offline => L["RecordingStateOffline"],
+        CameraRecordingState.NoSpace => L["RecordingStateNoSpace"],
+        CameraRecordingState.Stalled => L["RecordingStateStalled"],
+        CameraRecordingState.NeedsH264 => L["RecordingNeedsH264"],
+        _ => L["RecordingStateOff"],
+    };
 
     private async Task ToggleAsync(ChangeEventArgs change)
     {

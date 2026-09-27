@@ -261,14 +261,32 @@
   <data name="PreviewShow" xml:space="preserve">
     <value>Ver imagem</value>
   </data>
-  <data name="RecordAlways" xml:space="preserve">
-    <value>Gravar sempre</value>
+  <data name="RecordSwitch" xml:space="preserve">
+    <value>Gravar</value>
   </data>
   <data name="RecordingFailed" xml:space="preserve">
     <value>Não deu para mudar a gravação. Confira a conexão com o servidor.</value>
   </data>
   <data name="RecordingNeedsH264" xml:space="preserve">
     <value>Não grava: este celular não tem H.264</value>
+  </data>
+  <data name="RecordingStateNoSpace" xml:space="preserve">
+    <value>Não está gravando: o disco do servidor está cheio</value>
+  </data>
+  <data name="RecordingStateOff" xml:space="preserve">
+    <value>Gravação desligada</value>
+  </data>
+  <data name="RecordingStateOffline" xml:space="preserve">
+    <value>Não está gravando: a câmera está offline</value>
+  </data>
+  <data name="RecordingStateRecording" xml:space="preserve">
+    <value>Gravando</value>
+  </data>
+  <data name="RecordingStateStalled" xml:space="preserve">
+    <value>Não está gravando: o vídeo não chega ao servidor</value>
+  </data>
+  <data name="RecordingStateStarting" xml:space="preserve">
+    <value>Começando a gravar…</value>
   </data>
   <data name="RecordingsChooseCamera" xml:space="preserve">
     <value>Escolha uma câmera para ver as gravações dela.</value>

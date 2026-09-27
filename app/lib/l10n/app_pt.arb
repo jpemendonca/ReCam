@@ -168,5 +168,11 @@
   "languageTitle": "Idioma",
   "languageDevice": "Do celular",
   "languagePortuguese": "Português",
-  "languageEnglish": "English"
+  "languageEnglish": "English",
+  "recordingStateOff": "Gravação desligada",
+  "recordingStateStarting": "Começando a gravar…",
+  "recordingStateRecording": "Gravando",
+  "recordingStateOffline": "Não está gravando: a câmera está offline",
+  "recordingStateNoSpace": "Não está gravando: o disco do servidor está cheio",
+  "recordingStateStalled": "Não está gravando: o vídeo não chega ao servidor"
 }

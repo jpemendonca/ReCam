@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.DependencyInjection;
 using Recam.Server.Domain;
 using Recam.Server.Features.Realtime;
 using Recam.Server.Infrastructure.Realtime;
@@ -132,6 +133,34 @@ public sealed class DeviceHubTests
         using var client = factory.CreateDeviceClient(owner.Credential);
         var cameras = await client.GetFromJsonAsync<List<CameraStatus>>(CamerasUri, ApiJson.Options, TestContext.Current.CancellationToken);
         Assert.False(Assert.Single(cameras!).Online);
+    }
+
+    [Fact(DisplayName = "A camera that drops right while it connects still ends up offline")]
+    public async Task Cameras_DropDuringConnect_EndsOffline()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        using var client = factory.CreateDeviceClient(owner.Credential);
+
+        // act
+        // No wait between the two: the drop lands while the server still registers the camera.
+        var cameraConnection = await factory.ConnectAsync(camera.Credential);
+        await cameraConnection.DisposeAsync();
+
+        // assert
+        using var timeout = new CancellationTokenSource(Wait);
+        while (true)
+        {
+            var cameras = await client.GetFromJsonAsync<List<CameraStatus>>(CamerasUri, ApiJson.Options, timeout.Token);
+            if (!Assert.Single(cameras!).Online)
+            {
+                break;
+            }
+
+            await Task.Delay(50, timeout.Token);
+        }
     }
 
     [Fact(DisplayName = "The torch cannot be switched while the camera is not sending video")]
@@ -328,6 +357,31 @@ public sealed class DeviceHubTests
     }
 
     /// <summary>Records the value of a one-argument bool message a client receives.</summary>
+    [Fact(DisplayName = "When the first recording file arrives, viewers hear the camera is recording")]
+    public async Task RecordingState_FileArrives_ViewersHearRecording()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
+        using var updates = new StatusInbox(viewerConnection);
+        await using var cameraConnection = await factory.ConnectAsync(camera.Credential);
+        var worker = factory.Services.GetRequiredService<RecordingStateWorker>();
+        await worker.CheckAsync(TestContext.Current.CancellationToken);
+        var starting = await updates.WaitForAsync(status => status.RecordingState == RecordingState.Starting);
+
+        // act
+        var segment = RecordingFiles.Write(factory.RecordingsDirectory, camera.DeviceId, factory.Time.GetUtcNow(), 1000);
+        File.SetLastWriteTimeUtc(segment, factory.Time.GetUtcNow().UtcDateTime);
+        await worker.CheckAsync(TestContext.Current.CancellationToken);
+
+        // assert
+        var recording = await updates.WaitForAsync(status => status.RecordingState == RecordingState.Recording);
+        Assert.True(starting.Recording);
+        Assert.Equal(camera.DeviceId, recording.Id);
+    }
+
     private sealed class TorchInbox : IDisposable
     {
         private readonly SemaphoreSlim _signal = new(0);

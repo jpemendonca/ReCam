@@ -417,7 +417,7 @@ Estado em 2026-09-26 (conferido no bullet 6.9). As revisões do log 12 contam co
 | `GET /api/pairing-tokens/{id}` | o Monitor que criou o token | — | `{ used }`; `404` para qualquer outro |
 | `GET /api/me` | qualquer aparelho | — | `{ deviceId, name, role }` |
 | `DELETE /api/me` | qualquer aparelho | — | `204`, o aparelho se revoga |
-| `GET /api/cameras` | Monitores | — | `[{ id, name, online, publishing, batteryLevel, isCharging, temperatureC, telemetryAt, recording, canRecord, torchOn }]` |
+| `GET /api/cameras` | Monitores | — | `[{ id, name, online, publishing, batteryLevel, isCharging, temperatureC, telemetryAt, recording, canRecord, torchOn, recordingState }]` |
 | `GET /api/devices` | Monitores | — | `[{ id, name, role, online }]`, câmeras primeiro |
 | `DELETE /api/devices/{id}` | Monitores | — | `204`; `409` para si mesmo, `404` já removido |
 | `GET /api/cameras/{id}/recording-days` | Monitores | — | `["AAAA-MM-DD"]`, dias UTC, do mais novo ao mais antigo |
@@ -864,3 +864,11 @@ seguinte em `docs/adr/`:
 > Revisão (2026-09-26): toda câmera nova é criada com "Gravar sempre" ligado (bullet 9.9). Uma
 > câmera sem H.264 desliga sozinha ao informar o encoder, como antes. Câmeras já pareadas não
 > mudam. A tela do espaço depois da primeira câmera passa a dizer que ela já está gravando.
+
+> Revisão (2026-09-26): o status da câmera ganha `recordingState` (bullet 9.10), o que a gravação
+> faz de verdade: `off`, `needsH264`, `offline`, `noSpace` (disco com menos de 100 MB livres e nada
+> chegando), `starting` (ligada, primeiro arquivo ainda não chegou), `recording` (um arquivo da
+> câmera foi escrito nos últimos 30 s) ou `stalled` (ligada e conectada, 30 s sem arquivo). `recording`
+> continua sendo a posição da chave. O servidor confere o disco a cada 5 s e manda
+> `CameraStatusChanged` quando o estado muda. Enums no hub passam a ir como texto em camelCase,
+> como na API REST.

@@ -43,7 +43,7 @@
                         {
                             <span class="torch" title="@L["CameraTorchOn"]" aria-label="@L["CameraTorchOn"]">🔦</span>
                         }
-                        @if (camera.Recording)
+                        @if (camera.ShownRecordingState == CameraRecordingState.Recording)
                         {
                             <span class="badge" title="@L["CameraRecording"]"><span class="rec" aria-hidden="true"></span>@L["CameraRecording"]</span>
                         }

@@ -46,6 +46,22 @@ public sealed partial class RecordingStore(ServerSettings settings)
         return segments;
     }
 
+    /// <summary>When a segment of this camera was last written, or null when it has none.</summary>
+    public DateTimeOffset? LastWrite(Guid cameraId)
+    {
+        var folder = new DirectoryInfo(Path.Combine(Directory, CameraFolder(cameraId)));
+        if (!folder.Exists)
+        {
+            return null;
+        }
+
+        var newest = folder.EnumerateFiles()
+            .Where(file => TryParseStart(file.Name) is not null)
+            .Select(file => (DateTimeOffset?)new DateTimeOffset(file.LastWriteTimeUtc, TimeSpan.Zero))
+            .Max();
+        return newest;
+    }
+
     /// <summary>Free space on the disk that holds the recordings.</summary>
     public long FreeBytes()
     {

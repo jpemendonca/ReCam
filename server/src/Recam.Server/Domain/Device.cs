@@ -262,8 +262,8 @@ public sealed class Device
 
     public void MarkSeen(DateTimeOffset now) => LastSeenAt = now;
 
-    public CameraStatus ToCameraStatus(bool online, bool publishing, bool torchOn) =>
-        new(Id, Name, online, publishing, BatteryLevel, IsCharging, TemperatureC, TelemetryAt, RecordingEnabled, CanRecord, torchOn);
+    public CameraStatus ToCameraStatus(bool online, bool publishing, bool torchOn, RecordingState recordingState) =>
+        new(Id, Name, online, publishing, BatteryLevel, IsCharging, TemperatureC, TelemetryAt, RecordingEnabled, CanRecord, torchOn, recordingState);
 
     public bool HasCredentialSecret(string secret) =>
         CryptographicOperations.FixedTimeEquals(SecretToken.Hash(secret), CredentialHash);

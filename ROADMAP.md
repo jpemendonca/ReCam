@@ -1841,7 +1841,7 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
   > texto novo da tela do espaço (no app a tela não tinha teste; ganhou, junto com o seletor de
   > idioma só na aba). `SPECS.md` revisado. Só código e teste.
 
-- [ ] **9.10 Chave de gravação visível, com o estado real**
+- [x] **9.10 Chave de gravação visível, com o estado real**
   - Origem: teste do autor em 2026-09-26: a opção de gravar fica escondida dentro da câmera, numa
     caixa que não diz se a gravação começou.
   - Escopo: uma chave "Gravar" à vista no card da câmera (navegador) e na linha da câmera (app),
@@ -1852,6 +1852,32 @@ Decidido com o autor em 2026-09-26: gravar e ouvir ao vivo, como o Alfred. Revis
     servidor ainda não souber distinguir esses estados, este bullet inclui essa parte.
   - Aceite: testes de widget e bUnit de cada estado e da troca de "Começando…" para "Gravando";
     teste de integração do estado vindo do servidor.
+  > Validação (2026-09-26): servidor: `RecordingState` e a regra pura `RecordingStates.Of` no
+  > domínio; o `RecordingStateTracker` (Infrastructure) lê a presença e a hora do último arquivo
+  > gravado da câmera, e lembra desde quando ela espera o primeiro arquivo; o
+  > `RecordingStateWorker` (Realtime) confere a cada 5 s e avisa os Monitores só quando o estado
+  > muda. O "aviso depois de 30 s" é o estado "Não está gravando: o vídeo não chega ao servidor".
+  > Enums no hub passaram a ir como texto. Navegador: a caixa virou um switch com o estado ao
+  > lado (ponto pulsando ao gravar, amarelo começando, contorno vermelho com o motivo), no card
+  > e no ao vivo; o selo "Gravando" do card só aparece gravando de verdade. App: o mesmo estado
+  > ao lado do switch na linha da câmera e no ao vivo. Logo depois de ligar, antes do servidor
+  > olhar o disco, os dois mostram "Começando…". Testes: domínio (cada estado), tracker (começando,
+  > parada, gravando com o tempo), hub (viewer ouve "gravando" quando o arquivo chega), bUnit e
+  > widget (cada estado e a troca). Só código e teste; o visual do switch nunca foi visto num
+  > navegador de verdade.
+
+- [x] **9.12 Aparelho preso como online quando a conexão cai durante a entrada**
+  - Origem: achado em 2026-09-26, investigando a falha intermitente do gate (teste "A camera that
+    disconnects shows as offline to viewers").
+  - Causa: o `OnConnectedAsync` do hub usava o token da conexão. Se ela caía no meio da entrada, a
+    entrada era cancelada, e o SignalR não chama o `OnDisconnectedAsync` de uma entrada que falhou:
+    o aparelho ficava online no servidor até ele reiniciar. A 9.9 alongou a entrada da câmera
+    (ela já começa gravando) e aumentou a janela.
+  - Aceite: a entrada termina mesmo com a conexão caindo; teste de câmera que cai logo ao
+    conectar terminando offline; suíte do servidor sem a falha intermitente.
+  > Validação (2026-09-26): a entrada usa `CancellationToken.None` nos passos curtos (grupo,
+  > presença, leitura da gravação). Teste novo. A suíte inteira do servidor rodou 4 vezes seguidas
+  > sem falha. Entrou no mesmo commit da 9.10, porque o gate dela dependia disso.
 
 - [ ] **9.11 Ajustes de bateria conferidos sozinhos**
   - Origem: teste do autor em 2026-09-26: no Samsung A10 a tela de bateria sumiu depois dos

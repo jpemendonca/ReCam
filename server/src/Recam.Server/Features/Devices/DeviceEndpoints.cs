@@ -7,6 +7,7 @@ using Recam.Server.Infrastructure.Http;
 using Recam.Server.Infrastructure.Persistence;
 using Recam.Server.Infrastructure.Presence;
 using Recam.Server.Infrastructure.Realtime;
+using Recam.Server.Infrastructure.Recordings;
 
 namespace Recam.Server.Features.Devices;
 
@@ -93,7 +94,7 @@ public static class DeviceEndpoints
     }
 
     private static async Task<Ok<List<CameraStatus>>> GetCamerasAsync(
-        IDbContextFactory<RecamDbContext> databaseFactory, DevicePresence presence, CancellationToken cancellationToken)
+        IDbContextFactory<RecamDbContext> databaseFactory, RecordingStateTracker recordingStates, CancellationToken cancellationToken)
     {
         await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
         var cameras = await database.Devices.AsNoTracking()
@@ -101,8 +102,7 @@ public static class DeviceEndpoints
             .OrderBy(device => device.Name)
             .ToListAsync(cancellationToken);
         return TypedResults.Ok(cameras
-            .Select(camera => camera.ToCameraStatus(
-                presence.IsOnline(camera.Id), presence.IsPublishing(camera.Id), presence.IsTorchOn(camera.Id)))
+            .Select(recordingStates.StatusOf)
             .ToList());
     }
 }

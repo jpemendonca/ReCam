@@ -238,6 +238,20 @@ class PairingTokenResult {
   final Duration validFor;
 }
 
+/// What is really happening with a camera's recording, as the server sees it on disk.
+enum RecordingState {
+  off,
+  needsH264,
+  offline,
+  noSpace,
+  starting,
+  recording,
+  stalled;
+
+  static RecordingState? tryParse(Object? name) =>
+      values.where((state) => state.name == name).firstOrNull;
+}
+
 /// A camera as viewers see it: stored telemetry plus live presence. The same shape comes
 /// from `GET /api/cameras` and the hub message `CameraStatusChanged`.
 class CameraInfo {
@@ -252,6 +266,7 @@ class CameraInfo {
     this.recording = false,
     this.canRecord = true,
     this.torchOn = false,
+    this._recordingState,
   });
 
   final String id;
@@ -271,6 +286,27 @@ class CameraInfo {
   /// The torch as the camera last reported it; off while it sends no video.
   final bool torchOn;
 
+  final RecordingState? _recordingState;
+
+  /// What the server sees on disk; worked out from the switch when an older server says nothing.
+  RecordingState get recordingState =>
+      _recordingState ??
+      (!canRecord
+          ? RecordingState.needsH264
+          : recording
+          ? RecordingState.recording
+          : RecordingState.off);
+
+  /// The state to show next to the switch. Right after a switch, before the server looks at the
+  /// disk again, it shows what was asked: "Starting" when turned on, "Off" when turned off.
+  RecordingState get shownRecordingState =>
+      switch ((recording, recordingState)) {
+        (true, RecordingState.off) => RecordingState.starting,
+        (false, final state) when state != RecordingState.needsH264 =>
+          RecordingState.off,
+        (_, final state) => state,
+      };
+
   /// Returns null for data that does not describe a camera.
   static CameraInfo? tryParse(Object? json) {
     if (json is! Map<String, Object?>) return null;
@@ -284,6 +320,7 @@ class CameraInfo {
     final recording = json['recording'];
     final canRecord = json['canRecord'];
     final torchOn = json['torchOn'];
+    final recordingState = RecordingState.tryParse(json['recordingState']);
     if (id is! String || name is! String || online is! bool) return null;
     return CameraInfo(
       id: id,
@@ -296,6 +333,7 @@ class CameraInfo {
       recording: recording == true,
       canRecord: canRecord != false,
       torchOn: torchOn == true,
+      recordingState: recordingState,
     );
   }
 }

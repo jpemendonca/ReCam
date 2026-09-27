@@ -57,12 +57,12 @@ public sealed class CameraListTests : BunitContext
         var list = Render<CameraList>();
 
         // assert
-        Assert.Empty(list.FindAll("input[type=checkbox]"));
-        Assert.Equal("Não grava: este celular não tem H.264", list.Find(".muted").TextContent);
+        Assert.Empty(list.FindAll("input[role=switch]"));
+        Assert.Equal("Não grava: este celular não tem H.264", list.Find(".recording .state").TextContent);
     }
 
-    [Fact(DisplayName = "Turning Record always on asks the server for that camera")]
-    public void Toggle_RecordAlways_CallsHub()
+    [Fact(DisplayName = "Turning the Record switch on asks the server for that camera")]
+    public void Toggle_Record_CallsHub()
     {
         // arrange
         var camera = Support.Cameras.Make("Porta");
@@ -70,10 +70,52 @@ public sealed class CameraListTests : BunitContext
         var list = Render<CameraList>();
 
         // act
-        list.Find("input[type=checkbox]").Change(true);
+        list.Find("input[role=switch]").Change(true);
 
         // assert
         Assert.Contains($"SetRecording {camera.Id} True", _hub.Calls);
+    }
+
+    [Theory(DisplayName = "Next to the switch, the card says what really happens with the recording")]
+    [InlineData(true, CameraRecordingState.Recording, "Gravando", "on")]
+    [InlineData(true, CameraRecordingState.Off, "Começando a gravar…", "starting")]
+    [InlineData(true, CameraRecordingState.Starting, "Começando a gravar…", "starting")]
+    [InlineData(true, CameraRecordingState.Offline, "Não está gravando: a câmera está offline", "problem")]
+    [InlineData(true, CameraRecordingState.NoSpace, "Não está gravando: o disco do servidor está cheio", "problem")]
+    [InlineData(true, CameraRecordingState.Stalled, "Não está gravando: o vídeo não chega ao servidor", "problem")]
+    [InlineData(false, CameraRecordingState.Recording, "Gravação desligada", "off")]
+    public void Render_RecordingState_ShowsWhatHappens(bool switchedOn, CameraRecordingState state, string text, string look)
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        _api.Cameras.Add(Support.Cameras.Make("Porta", recording: switchedOn, recordingState: state));
+
+        // act
+        var list = Render<CameraList>();
+
+        // assert
+        Assert.Equal(text, list.Find(".recording .state").TextContent);
+        Assert.Contains(look, list.Find(".recording").ClassList);
+        Assert.Equal(switchedOn, list.Find("input[role=switch]").HasAttribute("checked"));
+    }
+
+    [Fact(DisplayName = "When the server hears the first file, Starting turns into Recording on the card")]
+    public void StatusChanged_FirstFile_TurnsStartingIntoRecording()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var camera = Support.Cameras.Make("Porta", recording: true, recordingState: CameraRecordingState.Starting);
+        _api.Cameras.Add(camera);
+        var list = Render<CameraList>();
+        var before = list.Find(".recording .state").TextContent;
+
+        // act
+        _hub.SendStatus(camera with { RecordingState = CameraRecordingState.Recording });
+
+        // assert
+        Assert.Equal("Começando a gravar…", before);
+        list.WaitForAssertion(() => Assert.Equal("Gravando", list.Find(".recording .state").TextContent));
+        Assert.Equal("Gravando", list.Find(".badge").TextContent);
     }
 
     [Fact(DisplayName = "An empty server says there is no camera yet")]

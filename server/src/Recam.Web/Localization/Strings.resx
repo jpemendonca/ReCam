@@ -261,14 +261,32 @@
   <data name="PreviewShow" xml:space="preserve">
     <value>Show picture</value>
   </data>
-  <data name="RecordAlways" xml:space="preserve">
-    <value>Record always</value>
+  <data name="RecordSwitch" xml:space="preserve">
+    <value>Record</value>
   </data>
   <data name="RecordingFailed" xml:space="preserve">
     <value>Could not change the recording. Check the connection with the server.</value>
   </data>
   <data name="RecordingNeedsH264" xml:space="preserve">
     <value>Can't record: this phone has no H.264</value>
+  </data>
+  <data name="RecordingStateNoSpace" xml:space="preserve">
+    <value>Not recording: the server's disk is full</value>
+  </data>
+  <data name="RecordingStateOff" xml:space="preserve">
+    <value>Recording off</value>
+  </data>
+  <data name="RecordingStateOffline" xml:space="preserve">
+    <value>Not recording: the camera is offline</value>
+  </data>
+  <data name="RecordingStateRecording" xml:space="preserve">
+    <value>Recording</value>
+  </data>
+  <data name="RecordingStateStalled" xml:space="preserve">
+    <value>Not recording: the video does not reach the server</value>
+  </data>
+  <data name="RecordingStateStarting" xml:space="preserve">
+    <value>Starting to record…</value>
   </data>
   <data name="RecordingsChooseCamera" xml:space="preserve">
     <value>Choose a camera to see its recordings.</value>

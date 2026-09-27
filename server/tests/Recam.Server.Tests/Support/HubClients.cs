@@ -1,5 +1,8 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Recam.Server.Tests.Support;
 
@@ -22,5 +25,11 @@ public static class HubClients
                 options.Transports = HttpTransportType.LongPolling;
                 options.AccessTokenProvider = () => Task.FromResult<string?>(credential);
             })
+            .WithCamelCaseEnums()
             .Build();
+
+    /// <summary>Reads enums as the server sends them: camelCase names.</summary>
+    public static IHubConnectionBuilder WithCamelCaseEnums(this IHubConnectionBuilder builder) =>
+        builder.AddJsonProtocol(options =>
+            options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
 }

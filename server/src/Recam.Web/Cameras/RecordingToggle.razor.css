@@ -1,23 +1,113 @@
-.toggle {
+.recording {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.switch {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  font-weight: 600;
 }
 
-.toggle input {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--danger);
+/* The checkbox stays for keyboards and screen readers; the track is what people see. */
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
 }
 
-.muted {
-  color: var(--muted);
+.track {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--line);
+  transition: background 0.15s;
+}
+
+.track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s;
+}
+
+.switch input:checked + .track {
+  background: var(--danger);
+}
+
+.switch input:checked + .track::after {
+  transform: translateX(18px);
+}
+
+.switch input:focus-visible + .track {
+  outline: 2px solid var(--accent, var(--danger));
+  outline-offset: 2px;
+}
+
+.switch input:disabled + .track {
+  opacity: 0.6;
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.state::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.on .state {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.on .state::before {
+  background: var(--danger);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.starting .state::before {
+  background: #f9a825;
+}
+
+.problem .state {
+  color: var(--danger);
+}
+
+.problem .state::before {
+  background: transparent;
+  border: 2px solid var(--danger);
+  width: 6px;
+  height: 6px;
 }
 
 .error {
-  display: block;
+  flex-basis: 100%;
   color: var(--danger);
   font-size: 0.9rem;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
 }

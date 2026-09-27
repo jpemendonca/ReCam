@@ -17,6 +17,8 @@ public static class RecordingEndpoints
         services.AddSingleton<RecordingStore>();
         services.AddSingleton<RecordingCleanupWorker>();
         services.AddHostedService(provider => provider.GetRequiredService<RecordingCleanupWorker>());
+        services.AddSingleton<RecordingStateTracker>();
+
         return services;
     }
 

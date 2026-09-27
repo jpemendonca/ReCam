@@ -7,6 +7,7 @@ using Recam.Server.Infrastructure.Auth;
 using Recam.Server.Infrastructure.Persistence;
 using Recam.Server.Infrastructure.Presence;
 using Recam.Server.Infrastructure.Realtime;
+using Recam.Server.Infrastructure.Recordings;
 
 namespace Recam.Server.Features.Realtime;
 
@@ -20,6 +21,7 @@ public sealed partial class DeviceHub(
     DevicePresence presence,
     WatchLeases leases,
     DeviceConnections connections,
+    RecordingStateTracker recordingStates,
     TimeProvider timeProvider,
     ILogger<DeviceHub> logger) : Hub<IDeviceClient>
 {
@@ -33,26 +35,30 @@ public sealed partial class DeviceHub(
         var role = user.FindFirstValue(ClaimTypes.Role);
         LogConnected(logger, deviceId, role, Context.ConnectionId);
         connections.Add(deviceId, Context);
+
+        // Not cancelled when the connection drops meanwhile: SignalR runs OnDisconnectedAsync only
+        // after this finishes, and a cancelled entry would leave the device online for good.
+        var entry = CancellationToken.None;
         if (user.IsInRole(nameof(DeviceRole.Owner)) || user.IsInRole(nameof(DeviceRole.Viewer)))
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, ViewersGroup, Context.ConnectionAborted);
+            await Groups.AddToGroupAsync(Context.ConnectionId, ViewersGroup, entry);
         }
 
         var isCamera = user.IsInRole(nameof(DeviceRole.Camera));
         if (presence.Connect(deviceId, isCamera))
         {
-            await PresenceChangedAsync(deviceId, Context.ConnectionAborted);
+            await PresenceChangedAsync(deviceId, entry);
         }
 
         // A camera that reconnects while someone watches, or that records, resumes publishing
         // on its own.
         if (isCamera)
         {
-            await using var database = await databaseFactory.CreateDbContextAsync(Context.ConnectionAborted);
+            await using var database = await databaseFactory.CreateDbContextAsync(entry);
             var recording = await database.Devices
                 .Where(device => device.Id == deviceId)
                 .Select(device => device.RecordingEnabled)
-                .SingleAsync(Context.ConnectionAborted);
+                .SingleAsync(entry);
             var watchers = presence.Watchers(deviceId);
             if (watchers > 0 || recording)
             {
@@ -230,8 +236,7 @@ public sealed partial class DeviceHub(
     }
 
     private Task NotifyViewersAsync(Device camera) =>
-        Clients.Group(ViewersGroup).CameraStatusChanged(
-            camera.ToCameraStatus(presence.IsOnline(camera.Id), presence.IsPublishing(camera.Id), presence.IsTorchOn(camera.Id)));
+        Clients.Group(ViewersGroup).CameraStatusChanged(recordingStates.StatusOf(camera));
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Device {DeviceId} ({Role}) connected on {ConnectionId}")]
     private static partial void LogConnected(ILogger logger, Guid deviceId, string? role, string connectionId);

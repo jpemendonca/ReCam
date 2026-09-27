@@ -12,4 +12,5 @@ public sealed record CameraStatus(
     DateTimeOffset? TelemetryAt,
     bool Recording,
     bool CanRecord,
-    bool TorchOn);
+    bool TorchOn,
+    RecordingState RecordingState);

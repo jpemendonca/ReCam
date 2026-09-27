@@ -295,5 +295,11 @@
   "languageTitle": "Language",
   "languageDevice": "Phone's language",
   "languagePortuguese": "Português",
-  "languageEnglish": "English"
+  "languageEnglish": "English",
+  "recordingStateOff": "Recording off",
+  "recordingStateStarting": "Starting to record…",
+  "recordingStateRecording": "Recording",
+  "recordingStateOffline": "Not recording: the camera is offline",
+  "recordingStateNoSpace": "Not recording: the server's disk is full",
+  "recordingStateStalled": "Not recording: the video does not reach the server"
 }

@@ -81,5 +81,6 @@ public sealed class BrowserMonitorTests
                     options.Headers["X-Recam-Web"] = "1";
                 }
             })
+            .WithCamelCaseEnums()
             .Build();
 }
