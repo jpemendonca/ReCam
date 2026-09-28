@@ -188,5 +188,6 @@
   "peopleOnly": "Só pessoas",
   "peopleTitle": "Pessoas neste dia",
   "peopleNone": "Ninguém neste dia.",
-  "peopleRow": "{time} · Pessoa · {camera}"
+  "peopleRow": "{time} · Pessoa · {camera}",
+  "peopleShow": "Mostrar pessoas"
 }

@@ -12,7 +12,9 @@ public sealed class TimelineControllerTests
     private readonly FakeRecamApi _api = new() { Me = new MeInfo(Guid.NewGuid(), "Navegador", "owner") };
     private readonly Guid _cameraId = Guid.NewGuid();
 
-    private TimelineController NewController() => new(_api) { UtcOffsetOf = _ => SaoPaulo };
+    private readonly FakePeopleBoxesStore _peopleBoxes = new();
+
+    private TimelineController NewController() => new(_api, _peopleBoxes) { UtcOffsetOf = _ => SaoPaulo };
 
     [Fact(DisplayName = "Recordings of an early UTC morning show on the previous local day, and empty days are dropped")]
     public async Task Load_EarlyUtcMorning_OpensPreviousLocalDay()
@@ -210,6 +212,48 @@ public sealed class TimelineControllerTests
 
         // assert
         Assert.Equal(new DateTime(2026, 9, 25, 12, 11, 55), controller.PlayingFrom);
+    }
+
+    [Fact(DisplayName = "Playing a file brings its people, and only a file the detect service looked at has them")]
+    public async Task Play_AnalyzedFile_LoadsPeople()
+    {
+        // arrange
+        var utcDay = new DateOnly(2026, 9, 25);
+        AddPiece(utcDay, At(utcDay, 15, 0), 30);
+        _api.SegmentPeople[$"/api/recordings/{_cameraId}/segment-5.mp4"] =
+            new SegmentPeopleInfo([new PeopleSecondInfo(3, [new PersonBoxInfo(0.1, 0.2, 0.3, 0.4)])]);
+        var controller = NewController();
+        await controller.LoadAsync(_cameraId);
+
+        // act
+        controller.PlayAt(new DateTime(2026, 9, 25, 12, 5, 0));
+        var analyzed = controller.PlayingPeople;
+        controller.PlayAt(new DateTime(2026, 9, 25, 12, 6, 0));
+
+        // assert
+        Assert.NotNull(analyzed);
+        Assert.Single(analyzed.At(3.5));
+        Assert.Null(controller.PlayingPeople);
+    }
+
+    [Fact(DisplayName = "Show people starts from what this browser saved, and saving it keeps it")]
+    public async Task SetShowPeople_Saves()
+    {
+        // arrange
+        _peopleBoxes.Show = false;
+        var utcDay = new DateOnly(2026, 9, 25);
+        AddPiece(utcDay, At(utcDay, 15, 0), 30);
+        var controller = NewController();
+        await controller.LoadAsync(_cameraId);
+        var loaded = controller.ShowPeople;
+
+        // act
+        await controller.SetShowPeopleAsync(true);
+
+        // assert
+        Assert.False(loaded);
+        Assert.True(controller.ShowPeople);
+        Assert.True(_peopleBoxes.Show);
     }
 
     [Fact(DisplayName = "With Motion only, motion that goes past the end of a file continues in the next one")]

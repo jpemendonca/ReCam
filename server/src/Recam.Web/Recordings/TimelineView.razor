@@ -6,6 +6,7 @@
 @inject BrightenController Brighten
 @inject CameraListController Cameras
 @inject IVideoClock VideoClock
+@inject IPeopleOverlay PeopleOverlay
 
 @if (Timeline.Failed)
 {
@@ -142,12 +143,24 @@ else
         <p class="playing-from">@L["TimelinePlaying", Timeline.PlayingFrom!.Value.ToString("t", CultureInfo.CurrentCulture)]</p>
         @* One <video> for every file: replacing it, or letting it shrink while the next file loads,
            made the page jump to the top on "Next motion". *@
-        <div class="player">
-            <video @ref="video" src="@source" controls autoplay playsinline @onended="Timeline.PlayNext"></video>
+        <div class="player" @ref="player">
+            @* The page's own full screen button takes the boxes along; the video's own would not. *@
+            <video @ref="video" src="@source" controls controlslist="nofullscreen" autoplay playsinline @onended="Timeline.PlayNext"></video>
+            @* Filled by people.js as the video plays. *@
+            <svg class="people-boxes" @ref="boxes" aria-hidden="true"></svg>
             <span class="video-clock" @ref="clock"></span>
         </div>
         <div class="brighten-row">
             <BrightenControls Controller="Brighten" />
+            <button class="secondary full-screen" @onclick="() => PeopleOverlay.FullScreenAsync(player)">@L["PlayerFullScreen"]</button>
+            @if (Timeline.PlayingPeople is not null)
+            {
+                <label>
+                    <input class="show-people" type="checkbox" checked="@Timeline.ShowPeople"
+                           @onchange="e => Timeline.SetShowPeopleAsync(e.Value is true)" />
+                    @L["PeopleShow"]
+                </label>
+            }
         </div>
     }
 }
@@ -193,6 +206,9 @@ else
 
     private Guid loaded;
     private ElementReference video;
+    private ElementReference player;
+    private ElementReference boxes;
+    private PersonTrack? boxesFollow;
     private ElementReference clock;
     private TimelineSegment? clockFollows;
     private ElementReference playhead;
@@ -236,6 +252,21 @@ else
         if (Timeline.Source is not null)
         {
             await Brighten.ApplyAsync(video);
+        }
+
+        // The boxes follow the file playing, when it has people and they are wanted.
+        var track = Timeline.ShowPeople ? Timeline.PlayingPeople : null;
+        if (track != boxesFollow)
+        {
+            boxesFollow = track;
+            if (track is null)
+            {
+                await PeopleOverlay.StopAsync();
+            }
+            else
+            {
+                await PeopleOverlay.FollowAsync(video, boxes, track);
+            }
         }
 
         if (window is { } shown && shown != windowShown)

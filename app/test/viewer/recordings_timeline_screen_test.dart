@@ -45,6 +45,7 @@ void main() {
               cameraId: 'cam',
               player: player,
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
               utcOffsetOf: (_) => Duration.zero,
             ),
           ),
@@ -116,6 +117,7 @@ void main() {
               cameraId: 'cam',
               player: player,
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
               utcOffsetOf: (_) => Duration.zero,
             ),
           ),
@@ -211,6 +213,64 @@ void main() {
       expect(find.byKey(const Key('person-mark')), findsOneWidget);
     });
 
+    testWidgets('segmentWithPeople_drawsBoxesThatShowPeopleTurnsOff', (
+      tester,
+    ) async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      final api = _noonApi(day)
+        ..peopleBySegment['/api/recordings/cam/noon.mp4'] = const SegmentPeople(
+          seconds: [
+            PeopleSecond(
+              at: 3,
+              people: [PersonBox(x: 0.1, y: 0.2, width: 0.3, height: 0.4)],
+            ),
+          ],
+        );
+      await tester.pumpWidget(_screen(api, FakeRecordingPlayer()));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
+      await tester.pumpAndSettle();
+      // The hour window is 12:30 to 13:30; a quarter in is 12:45, inside the recording.
+      final hours = tester.getRect(find.byKey(const Key('timeline-hours')));
+      await tester.tapAt(Offset(hours.left + hours.width / 4, hours.center.dy));
+      await tester.pump();
+      await tester.pump();
+      final drawn = find.byKey(const Key('people-boxes')).evaluate().length;
+
+      // act
+      await tester.ensureVisible(find.byKey(const Key('show-people')));
+      await tester.tap(find.byKey(const Key('show-people')));
+      await tester.pump();
+
+      // assert
+      expect(drawn, 1);
+      expect(find.text('Show people'), findsOneWidget);
+      expect(find.byKey(const Key('people-boxes')), findsNothing);
+    });
+
+    testWidgets('segmentNotAnalyzed_hasNoBoxesAndNoSwitch', (tester) async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      final api = _noonApi(day);
+      await tester.pumpWidget(_screen(api, FakeRecordingPlayer()));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
+      await tester.pumpAndSettle();
+
+      // act
+      // The hour window is 12:30 to 13:30; a quarter in is 12:45, inside the recording.
+      final hours = tester.getRect(find.byKey(const Key('timeline-hours')));
+      await tester.tapAt(Offset(hours.left + hours.width / 4, hours.center.dy));
+      await tester.pump();
+      await tester.pump();
+
+      // assert
+      expect(find.byKey(const Key('recording-video')), findsOneWidget);
+      expect(find.byKey(const Key('people-boxes')), findsNothing);
+      expect(find.byKey(const Key('show-people')), findsNothing);
+    });
+
     testWidgets('notAnalyzed_showsNothingAboutPeople', (tester) async {
       // arrange
       final day = DateTime.utc(2026, 9, 25);
@@ -300,6 +360,7 @@ void main() {
               cameraId: 'cam',
               player: player,
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
               utcOffsetOf: (_) => Duration.zero,
             ),
           ),
@@ -385,6 +446,7 @@ void main() {
               cameraId: 'cam',
               player: player,
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
               utcOffsetOf: (_) => Duration.zero,
             ),
           ),
@@ -458,6 +520,7 @@ void main() {
               cameraId: 'cam',
               player: player,
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
               utcOffsetOf: (_) => Duration.zero,
             ),
           ),
@@ -524,6 +587,7 @@ void main() {
               cameraId: 'cam',
               player: player,
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
               utcOffsetOf: (_) => Duration.zero,
             ),
           ),
@@ -578,6 +642,7 @@ void main() {
               cameraId: 'cam',
               player: FakeRecordingPlayer(),
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
             ),
           ),
         ),
@@ -623,6 +688,7 @@ Widget _screen(FakeApiClient api, FakeRecordingPlayer player) => MaterialApp(
       cameraId: 'cam',
       player: player,
       segments: FakeSegmentSource(),
+      peopleBoxes: FakePeopleBoxesStore(),
       utcOffsetOf: (_) => Duration.zero,
     ),
   ),

@@ -7,7 +7,7 @@ namespace Recam.Web.Recordings;
 /// where the person clicks and moves on to the next file by itself, and the motion the server
 /// found in them, with the people the optional detect service saw. Same behavior as the app.
 /// </summary>
-public sealed class TimelineController(IRecamApi api)
+public sealed class TimelineController(IRecamApi api, IPeopleBoxesStore peopleBoxes)
 {
     /// <summary>Motion plays from a little before the event, so the start of it shows.</summary>
     public static readonly TimeSpan MotionLead = TimeSpan.FromSeconds(5);
@@ -58,6 +58,12 @@ public sealed class TimelineController(IRecamApi api)
 
     public TimelineSegment? Playing => _playing is { } index ? _timeline[index] : null;
 
+    /// <summary>Where the people are in the file playing; null when the detect service did not look at it.</summary>
+    public PersonTrack? PlayingPeople { get; private set; }
+
+    /// <summary>The boxes around people show over the player. Kept in this browser.</summary>
+    public bool ShowPeople { get; private set; } = true;
+
     /// <summary>Wall-clock time the playback started from.</summary>
     public DateTime? PlayingFrom { get; private set; }
 
@@ -73,6 +79,7 @@ public sealed class TimelineController(IRecamApi api)
     {
         _cameraId = cameraId;
         SetLoading();
+        ShowPeople = await peopleBoxes.ReadAsync();
         await LoadQuotaAsync();
         try
         {
@@ -127,6 +134,7 @@ public sealed class TimelineController(IRecamApi api)
     {
         SelectedDay = day;
         _playing = null;
+        PlayingPeople = null;
         Source = null;
         PlayingFrom = null;
         SetLoading();
@@ -213,6 +221,14 @@ public sealed class TimelineController(IRecamApi api)
         }
     }
 
+    /// <summary>Turns the boxes around people on or off, and remembers it in this browser.</summary>
+    public async Task SetShowPeopleAsync(bool show)
+    {
+        ShowPeople = show;
+        Changed?.Invoke();
+        await peopleBoxes.SaveAsync(show);
+    }
+
     /// <summary>Plays a motion event from a little before it, like the motion buttons.</summary>
     public void PlayMark(MotionMark mark) => PlayAt(mark.Start - MotionLead);
 
@@ -257,7 +273,29 @@ public sealed class TimelineController(IRecamApi api)
         var segment = _timeline[index];
         PlayingFrom = segment.Start + from;
         Source = $"{segment.Url.TrimStart('/')}#t={(int)from.TotalSeconds}";
+        PlayingPeople = null;
         Changed?.Invoke();
+        _ = LoadPeopleAsync(segment);
+    }
+
+    // The boxes are a detail: without them the recording still plays.
+    private async Task LoadPeopleAsync(TimelineSegment segment)
+    {
+        SegmentPeopleInfo? people;
+        try
+        {
+            people = await api.GetSegmentPeopleAsync(segment.Url, CancellationToken.None);
+        }
+        catch (HttpRequestException)
+        {
+            return;
+        }
+
+        if (people is not null && Playing == segment)
+        {
+            PlayingPeople = new PersonTrack(people);
+            Changed?.Invoke();
+        }
     }
 
     private async Task<List<MotionMark>> LoadMotionAsync(DateOnly day)

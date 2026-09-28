@@ -360,6 +360,12 @@
   <data name="PeopleTitle" xml:space="preserve">
     <value>Pessoas neste dia</value>
   </data>
+  <data name="PeopleShow" xml:space="preserve">
+    <value>Mostrar pessoas</value>
+  </data>
+  <data name="PlayerFullScreen" xml:space="preserve">
+    <value>Tela cheia</value>
+  </data>
   <data name="NavCameras" xml:space="preserve">
     <value>Câmeras</value>
   </data>

@@ -206,3 +206,28 @@ video {
   border-left: 4px solid var(--person);
   font-variant-numeric: tabular-nums;
 }
+
+.people-boxes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.people-boxes ::deep .person-box {
+  fill: none;
+  stroke: var(--person);
+  stroke-width: 3;
+}
+
+.player:fullscreen {
+  display: flex;
+  align-items: center;
+  background: #000;
+}
+
+.player:fullscreen video {
+  width: 100%;
+  height: 100%;
+}

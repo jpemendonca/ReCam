@@ -23,6 +23,8 @@ public static class MotionEndpoints
             .RequireAuthorization(AuthExtensions.ViewerOrOwner);
         endpoints.MapPut("/api/cameras/{cameraId:guid}/motion-sensitivity", SetSensitivityAsync)
             .RequireAuthorization(AuthExtensions.ViewerOrOwner);
+        endpoints.MapGet("/api/recordings/{cameraId:guid}/{segment}/people", GetSegmentPeople)
+            .RequireAuthorization(AuthExtensions.ViewerOrOwner);
         return endpoints;
     }
 
@@ -58,6 +60,29 @@ public static class MotionEndpoints
         return TypedResults.Ok(new MotionResponse(
             sensitivity.Value,
             [.. events.Select(found => new MotionEventResponse(found.Start, found.End, found.Peak, PeopleInMotion.HasPerson(found, people)))]));
+    }
+
+    /// <summary>
+    /// The people found in one recording file, for the boxes drawn over the player: every second
+    /// looked at, with only the boxes that count as a person. Not found until the detect service
+    /// looked at the file, or when it does not run.
+    /// </summary>
+    private static IResult GetSegmentPeople(Guid cameraId, string segment, RecordingStore store)
+    {
+        if (store.PathOf(cameraId, segment) is not { } path || !File.Exists(path))
+        {
+            return RecordingErrors.SegmentNotFound.ToHttpResult();
+        }
+
+        var startsAt = RecordingStore.TryParseStart(segment)!.Value;
+        if (store.ReadPeople(new RecordingSegment(cameraId, segment, startsAt, 0)) is not { } samples)
+        {
+            return RecordingErrors.PeopleNotAnalyzed.ToHttpResult();
+        }
+
+        return TypedResults.Ok(new SegmentPeopleResponse([.. samples.Select(sample => new PeopleSecondResponse(
+            (sample.At - startsAt).TotalSeconds,
+            [.. sample.People.Where(PeopleInMotion.IsPerson).Select(box => new PersonBoxResponse(box.X, box.Y, box.Width, box.Height))]))]));
     }
 
     private static async Task<IResult> SetSensitivityAsync(

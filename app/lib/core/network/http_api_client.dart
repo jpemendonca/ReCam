@@ -360,6 +360,52 @@ class HttpApiClient implements ApiClient {
   }
 
   @override
+  Future<ApiResult<SegmentPeople>> segmentPeople(
+    Uri baseUrl,
+    String credential,
+    String segmentPath,
+  ) => _sendJson(
+    () => _client.get(
+      baseUrl.resolve('$segmentPath/people'),
+      headers: {HttpHeaders.authorizationHeader: 'Bearer $credential'},
+    ),
+    expectedStatus: HttpStatus.ok,
+    parse: (json, _) {
+      if (json case {'seconds': final List<Object?> rawSeconds}) {
+        final seconds = [
+          for (final item in rawSeconds)
+            if (item case {
+              'at': final num at,
+              'people': final List<Object?> rawPeople,
+            })
+              PeopleSecond(
+                at: at.toDouble(),
+                people: [
+                  for (final box in rawPeople)
+                    if (box case {
+                      'x': final num x,
+                      'y': final num y,
+                      'width': final num width,
+                      'height': final num height,
+                    })
+                      PersonBox(
+                        x: x.toDouble(),
+                        y: y.toDouble(),
+                        width: width.toDouble(),
+                        height: height.toDouble(),
+                      ),
+                ],
+              ),
+        ];
+        return seconds.length == rawSeconds.length
+            ? SegmentPeople(seconds: seconds)
+            : null;
+      }
+      return null;
+    },
+  );
+
+  @override
   Future<ApiResult<MotionInfo>> motion(
     Uri baseUrl,
     String credential,

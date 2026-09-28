@@ -346,5 +346,6 @@
         "type": "String"
       }
     }
-  }
+  },
+  "peopleShow": "Show people"
 }

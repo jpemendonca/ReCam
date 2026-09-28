@@ -53,6 +53,38 @@ public sealed class MotionEndpointsTests
         Assert.Null(motion.Events[1].Person);
     }
 
+    [Fact(DisplayName = "A file's people come second by second, only the confident boxes, and not before it was analyzed")]
+    public async Task GetSegmentPeople_AnalyzedAndNot_ReturnsBoxesOr404()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        WriteScores(factory, camera.DeviceId);
+        var folder = Path.Combine(factory.RecordingsDirectory, $"rec-{camera.DeviceId:N}");
+        var first = $"{Noon.UtcDateTime:yyyy-MM-dd_HH-mm-ss-ffffff}.mp4";
+        var second = $"{Noon.AddSeconds(60).UtcDateTime:yyyy-MM-dd_HH-mm-ss-ffffff}.mp4";
+        File.WriteAllText(Path.Combine(folder, first + ".people"), "1\n2 0.88 0.1 0.2 0.3 0.4 0.3 0.6 0.1 0.1 0.2\n");
+        using var client = factory.CreateDeviceClient(owner.Credential);
+        using var cameraClient = factory.CreateDeviceClient(camera.Credential);
+
+        // act
+        var people = await client.GetFromJsonAsync<SegmentPeopleResponse>(
+            $"/api/recordings/{camera.DeviceId}/{first}/people", ApiJson.Options, TestContext.Current.CancellationToken);
+        using var notAnalyzed = await client.GetAsync($"/api/recordings/{camera.DeviceId}/{second}/people", TestContext.Current.CancellationToken);
+        using var unknown = await client.GetAsync($"/api/recordings/{camera.DeviceId}/nothing.mp4/people", TestContext.Current.CancellationToken);
+        using var byCamera = await cameraClient.GetAsync($"/api/recordings/{camera.DeviceId}/{first}/people", TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Equal(2, people!.Seconds.Count);
+        Assert.Equal(1, people.Seconds[0].At);
+        Assert.Empty(people.Seconds[0].People);
+        Assert.Equal(new PersonBoxResponse(0.1, 0.2, 0.3, 0.4), Assert.Single(people.Seconds[1].People));
+        Assert.Equal(HttpStatusCode.NotFound, notAnalyzed.StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, byCamera.StatusCode);
+    }
+
     [Fact(DisplayName = "A lower sensitivity also changes what was already recorded")]
     public async Task SetSensitivity_Low_DropsSmallMotion()
     {

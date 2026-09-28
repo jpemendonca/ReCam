@@ -10,6 +10,7 @@ import '../core/network/api_client.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'brighten_controller.dart';
 import 'brighten_panel.dart';
+import 'people_boxes.dart';
 import 'recording_timeline_controller.dart';
 import 'recordings_controller.dart';
 import 'timeline_window.dart';
@@ -173,6 +174,23 @@ class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
                               child: _controller.player.buildVideo(),
                             ),
                           ),
+                          // Over the picture, outside "Brighten", which only changes the video.
+                          if (_controller.playingPeople case final track?
+                              when _controller.showPeople)
+                            ValueListenableBuilder(
+                              valueListenable: _controller.player.aspectRatio,
+                              builder: (context, ratio, _) => ratio == null
+                                  ? const SizedBox.shrink()
+                                  : Center(
+                                      child: AspectRatio(
+                                        aspectRatio: ratio,
+                                        child: PeopleBoxes(
+                                          track: track,
+                                          position: _controller.player.position,
+                                        ),
+                                      ),
+                                    ),
+                            ),
                           // The file's start plus where the player is: it follows every file.
                           ValueListenableBuilder(
                             valueListenable: _controller.player.position,
@@ -192,6 +210,15 @@ class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
             ),
             if (playing != null) ...[
               _PlayerControls(player: _controller.player),
+              if (_controller.playingPeople != null)
+                SwitchListTile(
+                  key: const Key('show-people'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.peopleShow),
+                  value: _controller.showPeople,
+                  onChanged: (value) =>
+                      unawaited(_controller.setShowPeople(value)),
+                ),
               const SizedBox(height: 8),
               Text(
                 l10n.timelinePlaying(
@@ -484,10 +511,7 @@ class _PeopleList extends StatelessWidget {
             ListTile(
               key: const Key('person-row'),
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(
-                Icons.person,
-                color: _HourBarState._personColor,
-              ),
+              leading: const Icon(Icons.person, color: PeopleBoxes.color),
               title: Text(l10n.peopleRow(time.format(mark.start), cameraName)),
               onTap: () => unawaited(controller.playMark(mark)),
             ),
@@ -515,7 +539,6 @@ class _HourBarState extends State<_HourBar> {
   static const _motionHeight = 10.0;
   static const _minimumMark = 3.0;
   static const _motionColor = Color(0xFFE08600);
-  static const _personColor = Color(0xFF2E7D32);
 
   late TimelineWindow _window = _initialWindow(TimelineZoom.hour);
 
@@ -705,7 +728,7 @@ class _HourBarState extends State<_HourBar> {
                                 child: mark.person == true
                                     ? const ColoredBox(
                                         key: Key('person-mark'),
-                                        color: _personColor,
+                                        color: PeopleBoxes.color,
                                       )
                                     : const ColoredBox(
                                         key: Key('motion-mark'),

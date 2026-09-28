@@ -6,6 +6,8 @@ import '../core/media/recording_player.dart';
 import '../core/media/recording_relay.dart';
 import '../core/network/api_client.dart';
 import '../core/storage/credential_store.dart';
+import '../core/storage/people_boxes_store.dart';
+import 'person_track.dart';
 
 typedef RecordingTimelineFactory = RecordingTimelineController Function(
   String cameraId,
@@ -49,6 +51,7 @@ class RecordingTimelineController extends ChangeNotifier {
     required this.cameraId,
     required this.player,
     required this._segments,
+    required this._peopleBoxes,
     Duration Function(DateTime utc)? utcOffsetOf,
   }) : _utcOffsetOf = utcOffsetOf ?? ((utc) => utc.toLocal().timeZoneOffset) {
     player.onFinished = () => unawaited(_playNext());
@@ -58,6 +61,9 @@ class RecordingTimelineController extends ChangeNotifier {
   final PairedSession _session;
   final String cameraId;
   final RecordingPlayer player;
+  final PeopleBoxesStore _peopleBoxes;
+  PersonTrack? _playingPeople;
+  bool _showPeople = true;
   final SegmentSource _segments;
   final Duration Function(DateTime utc) _utcOffsetOf;
 
@@ -141,6 +147,7 @@ class RecordingTimelineController extends ChangeNotifier {
   Future<void> load() async {
     _setLoading();
     unawaited(_loadQuota());
+    _showPeople = await _peopleBoxes.read();
     final result = await _api.recordingDays(
       _session.serverUrl,
       _session.credential,
@@ -188,6 +195,7 @@ class RecordingTimelineController extends ChangeNotifier {
     _selectedDay = day;
     _playing = null;
     _playingFrom = null;
+    _playingPeople = null;
     _setLoading();
     final (windowStart, windowEnd, utcDays) = _window(day);
     final segments = <TimelineSegment>[];
@@ -292,6 +300,18 @@ class RecordingTimelineController extends ChangeNotifier {
     if (previous != null) await playAt(previous.start.subtract(motionLead));
   }
 
+  /// Where the people are in the segment playing; null when the detect service did not look at it.
+  PersonTrack? get playingPeople => _playingPeople;
+
+  /// The boxes around people show over the player. Kept on this phone.
+  bool get showPeople => _showPeople;
+
+  Future<void> setShowPeople(bool show) async {
+    _showPeople = show;
+    notifyListeners();
+    await _peopleBoxes.write(show);
+  }
+
   /// Plays a motion event from a little before it, like the motion buttons.
   Future<void> playMark(MotionMark mark) =>
       playAt(mark.start.subtract(motionLead));
@@ -312,7 +332,9 @@ class RecordingTimelineController extends ChangeNotifier {
   Future<void> _play(int index, Duration from) async {
     _playing = index;
     _playingFrom = _timeline[index].start.add(from);
+    _playingPeople = null;
     notifyListeners();
+    unawaited(_loadPeople(_timeline[index]));
     await player.play(await _segments.urlFor(_timeline[index].url), from: from);
   }
 
@@ -331,6 +353,19 @@ class RecordingTimelineController extends ChangeNotifier {
     if (next == null) return;
     final lead = next.start.subtract(motionLead);
     await playAt(lead.isAfter(ended) ? lead : ended);
+  }
+
+  // The boxes are a detail: without them the recording still plays.
+  Future<void> _loadPeople(TimelineSegment segment) async {
+    final result = await _api.segmentPeople(
+      _session.serverUrl,
+      _session.credential,
+      segment.url,
+    );
+    if (result is ApiSuccess<SegmentPeople> && playing == segment) {
+      _playingPeople = PersonTrack(result.value);
+      notifyListeners();
+    }
   }
 
   // Null when the server could not answer.

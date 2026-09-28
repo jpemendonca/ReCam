@@ -2459,7 +2459,7 @@ Decisões da conversa:
   > tocar pela lista) e tela (marcas, lista, filtro, dia sem análise, dia analisado sem ninguém), no
   > bUnit e no widget test. Gate verde (418 no servidor, no web e no detect, 305 no app).
 
-- [ ] **12.4 Caixa ao redor da pessoa no player**
+- [x] **12.4 Caixa ao redor da pessoa no player**
   - Origem: pergunta do autor em 2026-09-28 ("vai aparecer um retângulo verde ao redor da
     detecção?").
   - Escopo: no player das gravações, no navegador e no app, um retângulo verde desenhado por cima
@@ -2475,6 +2475,32 @@ Decisões da conversa:
   - Aceite: teste da interpolação (meio do caminho, caixa que some, duas pessoas), teste da rota
     e widget test no app e bUnit no navegador (caixas desenhadas, chave liga e desliga, sem chave
     quando o arquivo não foi analisado).
+  > Validação (2026-09-28): código escrito; no navegador, percorrido no Chromium com a stack real
+  > (servidor, MediaMTX, `motion` e `detect` no compose); no app, só código e testes (sem celular).
+  > Servidor: `GET /api/recordings/{cameraId}/{segmento}/people`, só caixas de 0,5 ou mais, 404
+  > quando não analisado. Navegador: `PersonTrack` em C# (interpolação, cada caixa segue a mais
+  > próxima até 0,25 do quadro, sem par ela fica parada até o fim do segundo e some) exposto ao
+  > `wwwroot/js/people.js` por `[JSInvokable]`; o script só encaixa as caixas na parte do `<video>`
+  > que a imagem ocupa, a cada quadro. Chave **Mostrar pessoas** no `localStorage`
+  > (`JsPeopleBoxesStore`). Mudança além do texto do bullet: o botão de tela cheia do próprio
+  > `<video>` não deixa desenhar por cima, então ele ficou escondido (`controlslist="nofullscreen"`)
+  > e o Monitor ganhou um botão **Tela cheia** que leva o player inteiro. App: `PersonTrack` em
+  > Dart com as mesmas regras, `PeopleBoxes` (`CustomPaint` com `Ticker`, correndo o tempo pelo
+  > relógio entre os avisos de posição do player), desenhado fora do filtro do **Clarear**;
+  > `RecordingPlayer` ganhou `aspectRatio`; chave guardada no `SecurePeopleBoxesStore`. O app não
+  > tem tela cheia, então não há o que acompanhar ali. Observado no Chromium: a câmera "Quarto"
+  > pareada pela API, um segmento de 12 s em que a foto de um homem atravessa a cena ganhou
+  > `.motion`, `.people` (x de 0,17 a 0,33 nos três primeiros segundos) e depois foi cifrado; a tela
+  > de gravações mostrou "17:36 · Pessoa · Quarto" e a marca verde (o 12.3 funcionando);
+  > tocar na linha abriu o vídeo, e aos 3,5 s havia um retângulo verde (`rgb(46, 125, 50)`) em volta
+  > do homem, que um segundo depois tinha andado 56 px para a direita; desligar **Mostrar pessoas**
+  > tirou a caixa e gravou `off`; nenhum erro no console (a CSP não reclamou). Para tocar no
+  > Chromium do Playwright, que não tem H.264, esse segmento foi gravado em VP9; o MediaMTX grava
+  > H.264. A caixa ficou alguns pixels à frente do homem andando (cerca de 0,3 s), aceitável para
+  > a linha do tempo. Testes: `PersonTrack` nos dois lados, rota, controller (pessoas do arquivo
+  > tocando, chave lembrada) e tela (caixas desenhadas, chave desliga, sem caixa e sem chave quando
+  > não analisado, tela cheia) no bUnit e no widget test, e o cliente HTTP do app. `SPECS.md` 2.6 e
+  > 5. Gate verde (427 no servidor, no web e no detect, 314 no app).
 
 - [ ] **12.5 [aparelho] Medir no PC antigo**
   - Origem: conversa com o autor em 2026-09-28 (i5 de 3ª geração, sem AVX2).
@@ -2483,6 +2509,7 @@ Decisões da conversa:
     vivo continua abaixo de 1 s de atraso com ele rodando. Conferir a lista de pessoas e as caixas
     no player.
   - Aceite: nota de validação com os números medidos.
+  > Bloqueado (2026-09-28): aguardando validação no aparelho (PC antigo do autor).
 
 ## Fora da fila (anotado, não executar)
 

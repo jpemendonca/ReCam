@@ -205,10 +205,23 @@ class FakeRecordingPlayer implements RecordingPlayer {
   }
 
   @override
+  final ValueNotifier<double?> aspectRatio = ValueNotifier(16 / 9);
+
+  @override
   Widget buildVideo() => const SizedBox(key: Key('recording-video'));
 
   @override
   Future<void> dispose() async => disposed = true;
+}
+
+class FakePeopleBoxesStore implements PeopleBoxesStore {
+  bool show = true;
+
+  @override
+  Future<bool> read() async => show;
+
+  @override
+  Future<void> write(bool value) async => show = value;
 }
 
 class FakeSegmentSource implements SegmentSource {

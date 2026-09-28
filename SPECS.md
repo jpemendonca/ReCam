@@ -324,6 +324,17 @@ Desenho combinado com o autor em 2026-09-28 (Fase 12 do ROADMAP, na branch
   evento toca foram analisados e ninguém passou disso; não analisado nos outros casos. Não vai
   para o banco. A limpeza da cota apaga o `.people` junto com o segmento, e os que ficaram sem
   segmento.
+- **Caixas no player.** Tocando um arquivo, o Monitor (app e navegador) pede as pessoas dele e
+  desenha um retângulo verde em cada uma, por cima do vídeo, sem mexer na gravação. Entre dois
+  segundos a caixa anda de um lugar para o outro (interpolação linear); cada caixa segue a mais
+  próxima do segundo seguinte, até 0,25 do quadro de distância; sem ninguém perto no segundo
+  seguinte, ela fica parada até o fim do segundo e some. No navegador, a conta fica em C#
+  (`PersonTrack`) e o `wwwroot/js/people.js` só encaixa as caixas na parte do `<video>` que a
+  imagem ocupa, a cada quadro; o botão **Tela cheia** do Monitor leva o player inteiro, com as
+  caixas (o do próprio `<video>` fica escondido). No app, o `PeopleBoxes` desenha sobre a imagem,
+  fora do filtro do **Clarear**, e corre o tempo pelo relógio entre os avisos de posição do player.
+  A chave **Mostrar pessoas**, ligada por padrão, só aparece quando o arquivo foi analisado e fica
+  guardada no próprio Monitor (`localStorage` no navegador, armazenamento seguro no app).
 
 ## 3. Modelo de dados
 
@@ -479,6 +490,7 @@ Estado em 2026-09-26 (conferido no bullet 6.9). As revisões do log 12 contam co
 | `GET /api/cameras/{id}/recordings?day=AAAA-MM-DD` | Monitores | — | `[{ start, end, segments: [{ start, end, url }] }]` |
 | `GET /api/recordings/{cameraId}/{segmento}` | Monitores | `Range` | o arquivo `video/mp4` |
 | `GET /api/cameras/{id}/motion?day=AAAA-MM-DD` | Monitores | — | `{ sensitivity, events: [{ start, end, peak, person }] }` dos segmentos que começam no dia UTC (Fase 7). `person` é `true`/`false` quando o `detect` olhou o evento e `null` quando não (seção 2.6, Fase 12) |
+| `GET /api/recordings/{cameraId}/{segmento}/people` | Monitores | — | `{ seconds: [{ at, people: [{ x, y, width, height }] }] }`: cada segundo olhado pelo `detect`, em segundos desde o início do arquivo, só com as caixas de confiança 0,5 ou mais; `404` quando o `detect` não olhou o arquivo (seção 2.6, Fase 12) |
 | `PUT /api/cameras/{id}/motion-sensitivity` | Monitores | `{ sensitivity: "low" \| "medium" \| "high" }` | `204` (Fase 7) |
 | `GET /api/recordings/quota` | Monitores | — | `{ quotaMb, usedBytes, freeBytes }` |
 | `PUT /api/recordings/quota` | Monitores | `{ quotaMb }` | `204` |
@@ -976,3 +988,6 @@ seguinte em `docs/adr/`:
 > Revisão (2026-09-28): eventos de movimento com pessoa (bullet 12.2, só na branch da Fase 12).
 > `GET /api/cameras/{id}/motion` ganha `person` em cada evento: `true`, `false` ou `null` (não
 > analisado). Seções 2.6 e 5.
+
+> Revisão (2026-09-28): caixas ao redor das pessoas no player (bullet 12.4, só na branch da Fase
+> 12). Rota nova `GET /api/recordings/{cameraId}/{segmento}/people`. Seções 2.6 e 5.
