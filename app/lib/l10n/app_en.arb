@@ -61,6 +61,9 @@
       }
     }
   },
+  "cameraModeNoNetwork": "No connection. Turn on Wi-Fi and try again.",
+  "cameraModeUnreachable": "Could not reach the server. Check that this phone is on the same network as the server and that the server is on.",
+  "cameraModeBack": "Back",
   "cameraModeExit": "Stop camera",
   "cameraModeNotificationTitle": "ReCam camera is on",
   "cameraModeNotificationText": "This phone is working as a camera.",

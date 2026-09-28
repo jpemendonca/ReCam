@@ -10,6 +10,7 @@ import 'camera/camera_pairing_controller.dart';
 import 'core/device/battery_optimization.dart';
 import 'core/device/battery_reader.dart';
 import 'core/device/keep_alive.dart';
+import 'core/device/network_status.dart';
 import 'core/device/screen_controller.dart';
 import 'core/language/language_controller.dart';
 import 'core/media/camera_capture.dart';
@@ -61,6 +62,7 @@ Future<void> main() async {
         screen: PluginScreenController(),
         keepAlive: ForegroundServiceKeepAlive(),
         capture: PluginCameraCapture(),
+        network: PlatformNetworkStatus(),
         publisher: WhipPublisher(
           session: session,
           signaling: SignalingClient(http.Client()),

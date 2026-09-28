@@ -1,20 +1,14 @@
 /// What the camera sends. Full is the SPECS.md 2.3 ceiling; reduced keeps a hot phone from
-/// overheating (SPECS.md 11).
+/// overheating (SPECS.md 11). Both keep the capture's resolution: a recording whose picture
+/// changes size midway does not play in the browser (bullet 11.9).
 enum VideoQuality {
-  full(maxBitrate: 700000, maxFramerate: 15, scaleDownBy: 1),
+  full(maxBitrate: 700000, maxFramerate: 15),
+  reduced(maxBitrate: 400000, maxFramerate: 10);
 
-  /// 854x480 from the 1280x720 capture.
-  reduced(maxBitrate: 400000, maxFramerate: 10, scaleDownBy: 1.5);
-
-  const VideoQuality({
-    required this.maxBitrate,
-    required this.maxFramerate,
-    required this.scaleDownBy,
-  });
+  const VideoQuality({required this.maxBitrate, required this.maxFramerate});
 
   final int maxBitrate;
   final int maxFramerate;
-  final double scaleDownBy;
 
   static const reduceAtC = 42.0;
   static const restoreBelowC = 38.0;

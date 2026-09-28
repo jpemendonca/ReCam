@@ -58,6 +58,7 @@ void main() {
               keepAlive: FakeKeepAlive(),
               publisher: FakePublisher(),
               capture: FakeCapture(),
+              network: FakeNetworkStatus(),
             ),
           ),
         ),

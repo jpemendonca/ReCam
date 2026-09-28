@@ -87,6 +87,17 @@ class FakeBatteryOptimization implements BatteryOptimization {
   Future<void> requestNotifications() async => notificationRequests++;
 }
 
+class FakeNetworkStatus implements NetworkStatus {
+  bool online = true;
+  int checks = 0;
+
+  @override
+  Future<bool> hasNetwork() async {
+    checks++;
+    return online;
+  }
+}
+
 class FakeScreenController implements ScreenController {
   bool inCameraMode = false;
 

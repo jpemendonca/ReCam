@@ -2344,6 +2344,64 @@ o que continua por conta de quem roda o servidor.
   - Aceite: o autor chega ao ao vivo seguindo só o README paralelo; cada tropeço vira bullet; o
     `README.preview.md` é apagado.
 
+- [ ] **11.8 [aparelho] Modo câmera sem internet: avisar na hora, e com rede ruim tentar e explicar**
+  - Origem: teste do autor em 2026-09-28. O Samsung A10 já pareado, em modo avião, toca em
+    "Iniciar modo câmera": a tela fica em "Conectando ao servidor…" sem dizer que não há rede.
+  - Escopo:
+    - Antes de conectar, o app confere se o celular tem alguma rede (Wi-Fi ou dados). Sem rede,
+      não entra no modo câmera: mostra na hora "Sem conexão. Ligue o Wi-Fi e tente de novo.",
+      com o botão de tentar de novo.
+    - Com rede, mas sem chegar ao servidor (rede ruim, servidor desligado, IP mudou), continua
+      tentando por um tempo fixo (30 s) mostrando "Conectando ao servidor…". Passado esse tempo,
+      troca por uma mensagem clara ("Não foi possível falar com o servidor. Confira se o celular
+      está na mesma rede e se o servidor está ligado.") com "Tentar de novo" e "Voltar". A tela
+      nunca sai sozinha por falta de rede.
+    - A conferência de rede usa só o que o Android já sabe (`ConnectivityManager`, pelo canal
+      nativo que já existe); nada de chamada a site de fora para "testar a internet".
+    - Textos nos ARB, en e pt.
+  - Aceite: testes de widget dos três casos (sem rede, rede sem servidor passando do prazo,
+    conexão que chega dentro do prazo) e teste de que ficar sem rede não apaga o pareamento. No
+    A10: modo avião mostra o aviso na hora; Wi-Fi ligado com o servidor parado mostra a mensagem
+    depois de 30 s; ligar o servidor e tocar em "Tentar de novo" entra no modo câmera.
+  > Em andamento (2026-09-28): feito o código. O Android responde `hasNetwork` pelo canal
+  > `io.recam.app/device` (`ConnectivityManager`, rede ativa com `NET_CAPABILITY_INTERNET`; o
+  > manifesto ganhou `ACCESS_NETWORK_STATE`). Sem rede, o `CameraModeController` não liga serviço,
+  > tela nem hub, e a tela mostra "Sem conexão. Ligue o Wi-Fi e tente de novo." com "Tentar de
+  > novo" e "Voltar". Com rede, a primeira conexão tem 30 s (`connectTimeout`); passado o prazo, a
+  > tela mostra "Não foi possível falar com o servidor…", e o hub segue tentando por trás: se
+  > conectar, a mensagem some sozinha. "Tentar de novo" corta a espera do backoff
+  > (`HubSession.retryNow`). Queda depois de já ter conectado não tem prazo, como antes. Nada
+  > disso apaga o pareamento. Testes: controller (sem rede não começa, volta com a rede, prazo
+  > vencido, tentar de novo conecta na hora, conexão no prazo, queda depois de conectado), hub
+  > (`retryNow`) e widget (as duas mensagens, sem pareamento perdido). Falta: conferir no A10.
+
+- [ ] **11.9 [aparelho] Primeiro minuto de cada gravação não toca no navegador**
+  - Origem: teste do autor em 2026-09-28, servidor na VPS. Na tela de gravações, o arquivo do
+    primeiro minuto de uma transmissão fica preto e o play não faz nada; os seguintes tocam.
+  - Causa (conferida no arquivo decifrado): no começo da transmissão o WebRTC do celular sobe a
+    resolução aos poucos enquanto mede a rede (320x180, 480x270, 640x360, 960x540 e só então
+    1280x720). O MediaMTX grava tudo no mesmo MP4, e o Chromium para com
+    `PIPELINE_ERROR_DECODE` quando a resolução muda no meio do arquivo. Os minutos seguintes ficam
+    em 1280x720 do começo ao fim e tocam. O mesmo vale para o "celular quente" (9.x), que reduz a
+    resolução no meio da transmissão (`scaleResolutionDownBy`).
+  - Escopo:
+    - O `WhipPublisher` pede `degradationPreference: maintain-resolution` no sender: com rede
+      fraca, o celular baixa quadros por segundo e qualidade, não a resolução.
+    - A qualidade reduzida por calor passa a baixar só bitrate e quadros por segundo, mantendo a
+      resolução.
+    - Não mexer no MediaMTX nem no servidor.
+  - Aceite: teste do publisher conferindo a preferência e que a qualidade reduzida não muda a
+    resolução. Na VPS: o arquivo do primeiro minuto de uma transmissão nova toca no navegador, e o
+    `ffprobe` dele mostra uma resolução só.
+  > Em andamento (2026-09-28): feito o código. `WhipPublisher.withQuality` põe
+  > `degradationPreference: maintain-resolution` e `scaleResolutionDownBy: 1` nos parâmetros do
+  > sender; o publisher aplica logo depois de criar o sender (pelo `setQuality`, que engole a
+  > recusa de um celular que não aceite, e aí ele transmite como antes) e a cada troca de
+  > qualidade. `VideoQuality` perdeu a escala: a reduzida é 10 fps e 400 kbps em 1280x720. A
+  > preferência chega ao libwebrtc pelo `setParameters` do `flutter_webrtc` no Android. Testes:
+  > `withQuality` nas duas qualidades e o `VideoQuality`. Falta: transmissão nova na VPS e o
+  > primeiro minuto tocando no navegador.
+
 ## Fase 12: pessoas nas gravações (branch)
 
 Decidido com o autor em 2026-09-28, na branch `claude/person-activity-detection-4pq7pg`, que pode

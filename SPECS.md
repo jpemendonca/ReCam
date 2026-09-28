@@ -191,6 +191,11 @@ Para rodar num celular fraco e não ser morto pelo Android:
 - Foreground service do tipo `camera` enquanto o modo câmera está ativo, para manter a
   prioridade do processo. A lógica roda no isolate principal.
 - Reconexão ao servidor com backoff exponencial: 1, 2, 4, 8, 16, 30 s, e depois 30 s fixo.
+- Ao entrar: sem nenhuma rede no celular (conferido pelo `ConnectivityManager`, sem chamada para
+  fora), o modo câmera não começa e a tela diz isso. Com rede, a primeira conexão tem 30 s; depois
+  disso a tela diz que o servidor não respondeu e continua tentando por trás. "Tentar de novo"
+  tenta na hora. Depois de conectar uma vez, queda de rede só volta a "Conectando…", sem prazo
+  (revisado em 2026-09-28, bullet 11.8).
 
 ### 2.4 Gravação
 
@@ -991,3 +996,14 @@ seguinte em `docs/adr/`:
 
 > Revisão (2026-09-28): caixas ao redor das pessoas no player (bullet 12.4, só na branch da Fase
 > 12). Rota nova `GET /api/recordings/{cameraId}/{segmento}/people`. Seções 2.6 e 5.
+
+> Revisão (2026-09-28): o modo câmera confere a rede antes de começar e dá 30 s à primeira
+> conexão (bullet 11.8). Seção 2.3. O app passa a declarar `ACCESS_NETWORK_STATE`, só para ler o
+> estado da rede no próprio aparelho.
+
+> Revisão (2026-09-28): a câmera mantém a resolução da captura o tempo todo (bullet 11.9). O
+> sender pede `degradationPreference: maintain-resolution`: com rede fraca, o libwebrtc baixa
+> quadros e bitrate, não o tamanho da imagem. Sem isso ele começava em 320x180 e subia até 1280x720
+> no primeiro minuto, e o MP4 com resolução trocando no meio não tocava no navegador. Pelo mesmo
+> motivo, a qualidade reduzida por calor (revisão de 2026-09-25) passa a ser 1280x720 a 10 fps e
+> 400 kbps, sem a escala de 1,5.
