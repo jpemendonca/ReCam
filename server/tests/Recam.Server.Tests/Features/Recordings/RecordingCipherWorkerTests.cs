@@ -33,6 +33,51 @@ public sealed class RecordingCipherWorkerTests
         Assert.True(File.Exists(Path.Combine(factory.DataDirectory, RecordingCipher.KeyFileName)));
     }
 
+    [Fact(DisplayName = "While the detect service runs, a file waits for its people too, but not forever")]
+    public async Task CipherClosed_DetectRunning_WaitsForPeopleOrAge()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        var now = factory.Time.GetUtcNow();
+        var looked = RecordingFiles.Write(factory.RecordingsDirectory, camera.DeviceId, now.AddMinutes(-3), 100);
+        RecordingFiles.WriteMotion(looked, (0.5, 0.01));
+        File.WriteAllText(looked + RecordingStore.PeopleSuffix, "0\n");
+        var waiting = RecordingFiles.Write(factory.RecordingsDirectory, camera.DeviceId, now.AddMinutes(-2), 100);
+        RecordingFiles.WriteMotion(waiting, (0.5, 0.01));
+        var old = RecordingFiles.Write(factory.RecordingsDirectory, camera.DeviceId, now - RecordingCipherWorker.GiveUpOnMotion - TimeSpan.FromMinutes(1), 100);
+        RecordingFiles.WriteMotion(old, (0.5, 0.01));
+        RecordingFiles.WriteDetectHeartbeat(factory.RecordingsDirectory, now.AddMinutes(-1));
+        var worker = factory.Services.GetRequiredService<RecordingCipherWorker>();
+
+        // act
+        worker.CipherClosed();
+
+        // assert
+        Assert.True(RecordingCipher.IsCiphered(looked));
+        Assert.False(RecordingCipher.IsCiphered(waiting));
+        Assert.True(RecordingCipher.IsCiphered(old));
+    }
+
+    [Fact(DisplayName = "A detect service that stopped no longer holds files back")]
+    public async Task CipherClosed_DetectStale_DoesNotWaitForPeople()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        var now = factory.Time.GetUtcNow();
+        var scored = RecordingFiles.Write(factory.RecordingsDirectory, camera.DeviceId, now.AddMinutes(-2), 100);
+        RecordingFiles.WriteMotion(scored, (0.5, 0.01));
+        RecordingFiles.WriteDetectHeartbeat(factory.RecordingsDirectory, now - RecordingCipherWorker.DetectStale - TimeSpan.FromMinutes(1));
+        var worker = factory.Services.GetRequiredService<RecordingCipherWorker>();
+
+        // act
+        worker.CipherClosed();
+
+        // assert
+        Assert.True(RecordingCipher.IsCiphered(scored));
+    }
+
     [Fact(DisplayName = "A ciphered recording still plays through the server, in ranges")]
     public async Task ServeSegment_Ciphered_ServesPlainRanges()
     {

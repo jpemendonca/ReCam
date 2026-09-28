@@ -286,6 +286,39 @@ Desenho combinado com o autor em 2026-09-25 (Fase 6 do ROADMAP):
 - **Painel antigo.** O painel só leitura do `/setup` (bullets 1.12.11 e 1.12.16) sai: o Monitor
   web mostra o mesmo e mais. `GET /setup` redireciona para `/`.
 
+### 2.6 Pessoas nas gravações (opcional)
+
+Desenho combinado com o autor em 2026-09-28 (Fase 12 do ROADMAP, na branch
+`claude/person-activity-detection-4pq7pg`):
+
+- **Opcional na instalação.** O serviço `detect` só existe no `deploy/compose.detect.yaml`, somado
+  ao compose escolhido. Quem não sobe esse arquivo não baixa nem constrói nada disso, e o ReCam
+  funciona como antes.
+- **Só nas gravações e só onde teve movimento.** O `detect` (projeto `Recam.Detect`, worker .NET
+  de console) roda a cada 20 s sobre `recam-recordings`. Pega cada segmento que já tem o
+  `.motion` e ainda não tem o `.people`, e olha só os segundos em que o `.motion` passou de 0,3% (o
+  limite da sensibilidade alta; o servidor aplica a da câmera depois). O FFmpeg entrega um quadro
+  por segundo, já reduzido para caber num quadrado de 416 px, no canto de cima à esquerda, com
+  cinza em volta (`0x727272`), em BGR cru por pipe.
+- **Modelo.** YOLOX-Tiny em ONNX (Megvii, Apache-2.0), rodando no `Microsoft.ML.OnnxRuntime` em
+  CPU, com a telemetria do ONNX Runtime desligada. O arquivo é baixado no build da imagem, da
+  release oficial, conferido por SHA-256, e nunca em tempo de execução. Só a classe "pessoa" do
+  COCO fica; candidatos abaixo de 0,3 saem, e caixas que se sobrepõem mais de 45% viram uma.
+- **Arquivo `<segmento>.people`**, ao lado do `.mp4`: uma linha por segundo olhado, `segundos`
+  seguido de cinco números por pessoa, `confiança x y largura altura`, com a confiança de 0 a 1 e a
+  caixa em frações do quadro, a partir do canto de cima à esquerda. Segundo sem ninguém é só o
+  número. Arquivo vazio quer dizer que o segmento não tinha nada para olhar.
+  Exemplo: `3 0.9148 0.2978 0.2385 0.1307 0.6587`.
+- **Cifra das gravações.** O servidor cifra um segmento depois que o `motion` o marcou (seção
+  2.4). Enquanto o `detect` roda, ele espera também o `.people`. O `detect` mostra que roda
+  tocando `/recordings/.detect` antes de cada segmento; sem toque há 5 minutos, o servidor não
+  espera mais. Nos dois casos, depois de 30 minutos o segmento é cifrado de qualquer jeito, e o
+  que o `detect` não leu a tempo fica sem análise. Segmento já cifrado não é lido.
+- **Container.** Imagem própria (`server/src/Recam.Detect/Dockerfile`) sobre a mesma
+  `linuxserver/ffmpeg` do `motion`, com o worker publicado self-contained. Usuário `1654:1654`,
+  `network_mode: none`, sem porta. `cpus` vem de `RECAM_DETECT_CPUS` (padrão 1) e as threads do
+  modelo de `RECAM_DETECT_THREADS` (padrão 1), para não roubar o servidor.
+
 ## 3. Modelo de dados
 
 ```
@@ -548,6 +581,9 @@ Servidor → cliente:
 - Serviço `motion` nos dois composes (seção 2.4): `linuxserver/ffmpeg` com tag exata, usuário
   `1654:1654`, `network_mode: none`, `deploy/motion.sh` montado só leitura e o volume
   `recam-recordings`. Não expõe porta.
+- Detecção de pessoas opcional: `deploy/compose.detect.yaml` soma o serviço `detect` (seção 2.6),
+  construído de `server/src/Recam.Detect/Dockerfile`, usuário `1654:1654`, `network_mode: none`,
+  sem porta, com o volume `recam-recordings`.
 - Observabilidade opcional: `deploy/compose.observability.yaml` soma ao compose escolhido o
   Aspire Dashboard (`mcr.microsoft.com/dotnet/aspire-dashboard`, tag exata), com o painel em
   `127.0.0.1:18888` e o OTLP gRPC em `127.0.0.1:4317`, os dois só no loopback. Sem ele, o servidor
@@ -626,7 +662,7 @@ O agente nunca escreve valor real de segredo em arquivo nenhum.
 
 Cada item deste log tem um ADR em `docs/adr/` (índice em [`docs/adr/README.md`](docs/adr/README.md)),
 na ordem em que aparece aqui: as 16 decisões iniciais são os ADRs 0001 a 0016, e as revisões
-datadas, de cima para baixo, os ADRs 0017 a 0041. O ADR traz contexto, decisão e consequências; o
+datadas, de cima para baixo, os ADRs 0017 a 0043. O ADR traz contexto, decisão e consequências; o
 log continua sendo o resumo.
 
 Decisões iniciais (2026-09-24):
@@ -923,3 +959,10 @@ seguinte em `docs/adr/`:
 > um convite já apagado, responde como link desconhecido (404). Não carrega segredo. A tela do
 > convite consulta a cada 2 s, volta para Aparelhos quando ele é usado e, se vencer, pede para
 > gerar outro em vez de trocar sozinha.
+
+> Revisão (2026-09-28): pessoas nas gravações, opcional (bullet 12.1, ADR 0043, só na branch da
+> Fase 12). Serviço `detect` num compose à parte, com YOLOX-Tiny em ONNX Runtime, que grava o
+> `<segmento>.people` ao lado do vídeo (seção 2.6). A regra "o .NET não processa vídeo" passa a
+> dizer que vale para o `Recam.Server`. A cifra das gravações espera o `.people` enquanto o
+> `detect` roda. O ROADMAP pedia YOLO nano da Ultralytics; ficou o YOLOX-Tiny porque a Ultralytics
+> não publica o modelo em ONNX (exportar exige PyTorch no build) e o YOLOX tem licença Apache-2.0.

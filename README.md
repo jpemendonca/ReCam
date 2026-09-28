@@ -46,6 +46,12 @@ You need one phone and one computer to start:
 Want the padlock without the warning? Put a reverse proxy in front:
 [docs/reverse-proxy.md](docs/reverse-proxy.md).
 
+Want to know when a person shows up in the recordings? Person detection is optional and runs only
+on your machine, with no network. Add `-f compose.detect.yaml` to the command you used, for example
+`docker compose -f compose.yaml -f compose.detect.yaml up -d`. It only looks at cameras set to
+record, in the seconds with motion, and uses about one CPU core while it works. To turn it off:
+`docker compose -f compose.yaml -f compose.detect.yaml rm -sf detect`.
+
 Lost every Monitor? `docker compose exec server ./Recam.Server reset-owner` removes them, and the
 server prints a new first-time code.
 

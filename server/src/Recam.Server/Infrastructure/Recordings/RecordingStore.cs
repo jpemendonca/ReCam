@@ -16,6 +16,12 @@ public sealed partial class RecordingStore(ServerSettings settings)
     /// <summary>The motion service writes a segment's scores next to it, with this suffix.</summary>
     public const string MotionSuffix = ".motion";
 
+    /// <summary>The optional detect service writes the people it found next to a segment, with this suffix.</summary>
+    public const string PeopleSuffix = ".people";
+
+    /// <summary>The detect service touches this file, at the recordings root, while it runs.</summary>
+    public const string DetectHeartbeatFileName = ".detect";
+
     public string Directory => settings.RecordingsDirectory;
 
     public IReadOnlyList<RecordingSegment> ListSegments()
@@ -60,6 +66,13 @@ public sealed partial class RecordingStore(ServerSettings settings)
             .Select(file => (DateTimeOffset?)new DateTimeOffset(file.LastWriteTimeUtc, TimeSpan.Zero))
             .Max();
         return newest;
+    }
+
+    /// <summary>When the detect service last showed it is running, or null when it never ran.</summary>
+    public DateTimeOffset? DetectLastSeen()
+    {
+        var heartbeat = new FileInfo(Path.Combine(Directory, DetectHeartbeatFileName));
+        return heartbeat.Exists ? new DateTimeOffset(heartbeat.LastWriteTimeUtc, TimeSpan.Zero) : null;
     }
 
     /// <summary>Free space on the disk that holds the recordings.</summary>

@@ -2355,7 +2355,7 @@ Decisões da conversa:
 - Opcional: um compose à parte, `deploy/compose.detect.yaml`, como o de observabilidade. Quem não
   sobe esse compose não baixa nada a mais, e o ReCam funciona igual a hoje.
 
-- [ ] **12.1 Container opcional que acha pessoas nos segmentos com movimento**
+- [x] **12.1 Container opcional que acha pessoas nos segmentos com movimento**
   - Origem: conversa com o autor em 2026-09-28.
   - Escopo:
     - Projeto novo `server/src/Recam.Detect`, um worker .NET de console na mesma solução (o gate
@@ -2385,6 +2385,30 @@ Decisões da conversa:
     segmento feito de uma foto com pessoa e outra sem (fotos de licença livre, CC0, guardadas nos
     testes): o `.people` do primeiro passa de 0,5 e o do segundo fica abaixo. `docker compose -f
     compose.yaml -f compose.detect.yaml config` passa.
+  > Validação (2026-09-28): código escrito e cadeia percorrida no Docker deste ambiente, sem
+  > celular. Mudança no modelo, registrada no `SPECS.md` 12 e no ADR 0043: no lugar do YOLO nano da
+  > Ultralytics ficou o YOLOX-Tiny (Megvii, Apache-2.0, ONNX pronto na release oficial, SHA-256
+  > fixo no Dockerfile), porque a Ultralytics só publica os pesos em PyTorch e exportar exigiria
+  > PyTorch no build. `Recam.Detect`: `MotionSeconds` (segundos acima de 0,3%), `SegmentFrames`
+  > (ffprobe e FFmpeg por pipe, um quadro por segundo em 416 px com borda cinza), `PersonDetector`
+  > (ONNX Runtime 1.30.0, telemetria desligada), `YoloxDecoder` (grades 8/16/32, só pessoa, corte
+  > em 0,3, sobreposição acima de 45% vira uma caixa), `PeopleFile` e `SegmentScanner` (pula
+  > segmento cifrado, toca `/recordings/.detect` antes de cada segmento). Imagem sobre a mesma
+  > `linuxserver/ffmpeg` do `motion` (acrescenta cerca de 260 MB), usuário 1654. Mudança fora do
+  > texto do bullet, necessária para ele funcionar: a cifra das gravações (9.13) apagaria a chance
+  > de ler o vídeo, então o `RecordingCipherWorker` espera também o `.people` enquanto o
+  > heartbeat tem menos de 5 minutos, com o mesmo limite de 30 minutos. `compose.detect.yaml` com
+  > `network_mode: none`, `RECAM_DETECT_CPUS` e `RECAM_DETECT_THREADS` no `.env.example`, seção no
+  > README, `SPECS.md` 2.6 e 7, regra do `AGENTS.md` reescrita. As fotos dos testes vieram do
+  > Darknet (domínio público), não de um banco CC0, porque o Wikimedia está bloqueado aqui.
+  > Observado: `docker compose -f compose.yaml -f compose.detect.yaml up -d --build` subiu os quatro
+  > serviços; um segmento cinza em que a foto de um homem aparece no segundo 3 ganhou `.motion`
+  > (0,95 no 3,0), depois `.people` com `3 0.9148 0.2978 0.2385 0.1307 0.6587`, e só então foi
+  > cifrado. Parado, o `detect` usa 0% de CPU e 83 MB. Testes: decodificador (caixa relativa, outras
+  > classes, sobreposição, borda), `MotionSeconds`, `PeopleFile`, cifra esperando e não esperando o
+  > detect, e Testcontainers construindo a imagem pelo Dockerfile: pessoa com 0,91, cachorro sem
+  > ninguém acima de 0,5, segmento cifrado e segmento sem `.motion` pulados. Gate verde (404 no
+  > servidor e no web, 299 no app).
 
 - [ ] **12.2 O servidor marca os eventos de movimento com pessoa**
   - Origem: continuação do 12.1.
