@@ -389,7 +389,13 @@ class HttpApiClient implements ApiClient {
                   final DateTime from,
                   final DateTime to,
                 ))
-                  MotionEventInfo(start: from, end: to),
+                  MotionEventInfo(
+                    start: from,
+                    end: to,
+                    person: item['person'] is bool
+                        ? item['person'] as bool
+                        : null,
+                  ),
           ];
           if (sensitivity == null || events.length != rawEvents.length) {
             return null;

@@ -55,7 +55,7 @@ else
     <svg class="hours" viewBox="0 0 @Width 36" preserveAspectRatio="none" role="img" aria-label="@L["TimelineBarLabel"]"
          @onmouseleave="() => hovered = null">
         <rect class="track" x="0" y="0" width="@Width" height="36" rx="6" />
-        @if (!Timeline.OnlyMotion)
+        @if (!OnlyMarks)
         {
             @foreach (var segment in Timeline.Timeline.Where(Shows))
             {
@@ -63,9 +63,9 @@ else
                       x="@X(segment.Start)" y="0" width="@SpanWidth(segment.Start, segment.End, 1)" height="36" />
             }
         }
-        @foreach (var mark in Timeline.Motion.Where(mark => mark.End > Window.Start && mark.Start < Window.End))
+        @foreach (var mark in Timeline.ShownMotion.Where(mark => mark.End > Window.Start && mark.Start < Window.End))
         {
-            <rect class="motion" x="@X(mark.Start)" y="@(Timeline.OnlyMotion ? 0 : 24)" width="@SpanWidth(mark.Start, mark.End, 3)" height="@(Timeline.OnlyMotion ? 36 : 12)" />
+            <rect class="@(mark.Person == true ? "motion person" : "motion")" x="@X(mark.Start)" y="@(OnlyMarks ? 0 : 24)" width="@SpanWidth(mark.Start, mark.End, 3)" height="@(OnlyMarks ? 36 : 12)" />
         }
         @for (var slot = 0; slot < Slots; slot++)
         {
@@ -85,12 +85,19 @@ else
     <p class="hover-time" aria-live="polite">@(hovered is { } over ? Clock(SlotTime(over)) : string.Empty)</p>
 
     <div class="motion-row">
-        <button class="secondary previous-motion" @onclick="Timeline.PlayPreviousMotion" disabled="@(Timeline.Motion.Count == 0)">@L["MotionPrevious"]</button>
-        <button class="secondary next-motion" @onclick="Timeline.PlayNextMotion" disabled="@(Timeline.Motion.Count == 0)">@L["MotionNext"]</button>
+        <button class="secondary previous-motion" @onclick="Timeline.PlayPreviousMotion" disabled="@(Timeline.ShownMotion.Count == 0)">@L["MotionPrevious"]</button>
+        <button class="secondary next-motion" @onclick="Timeline.PlayNextMotion" disabled="@(Timeline.ShownMotion.Count == 0)">@L["MotionNext"]</button>
         <label>
             <input class="only-motion" type="checkbox" @bind="Timeline.OnlyMotion" />
             @L["MotionOnly"]
         </label>
+        @if (Timeline.PeopleAnalyzed)
+        {
+            <label>
+                <input class="only-people" type="checkbox" @bind="Timeline.OnlyPeople" />
+                @L["PeopleOnly"]
+            </label>
+        }
         <label>
             @L["MotionSensitivity"]
             <select class="sensitivity" value="@Timeline.Sensitivity" @onchange="e => Timeline.SetSensitivityAsync(e.Value?.ToString() ?? string.Empty)">
@@ -104,6 +111,30 @@ else
     @if (Timeline.SensitivityFailed)
     {
         <p class="error" role="alert">@L["MotionSensitivityFailed"]</p>
+    }
+
+    @if (Timeline.PeopleAnalyzed)
+    {
+        <section class="people">
+            <h2>@L["PeopleTitle"]</h2>
+            @if (Timeline.People.Count == 0)
+            {
+                <p class="note">@L["PeopleNone"]</p>
+            }
+            else
+            {
+                <ul>
+                    @foreach (var mark in Timeline.People)
+                    {
+                        <li>
+                            <button class="person-row" @onclick="() => Timeline.PlayMark(mark)">
+                                @L["PeopleRow", mark.Start.ToString("t", CultureInfo.CurrentCulture), Cameras.Camera(CameraId)?.Name ?? string.Empty]
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
     }
 
     @if (Timeline.Source is { } source)
@@ -229,6 +260,9 @@ else
             await VideoClock.FollowAsync(video, clock, playhead, playing.Start);
         }
     }
+
+    // The bar shows only the marks, full height, when either filter is on.
+    private bool OnlyMarks => Timeline.OnlyMotion || (Timeline.OnlyPeople && Timeline.PeopleAnalyzed);
 
     private bool Shows(TimelineSegment segment) => segment.End > Window.Start && segment.Start < Window.End;
 

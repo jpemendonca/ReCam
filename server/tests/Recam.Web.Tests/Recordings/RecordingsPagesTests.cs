@@ -178,6 +178,80 @@ public sealed class RecordingsPagesTests : BunitContext
         Assert.Equal(("333.33", "50", "36"), (mark.GetAttribute("x"), mark.GetAttribute("width"), mark.GetAttribute("height")));
     }
 
+    [Fact(DisplayName = "People get their own mark and a list of the day; a row plays it and People only hides the rest")]
+    public void Timeline_People_ListedAndPlayed()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20),
+            [new RecordingSegmentInfo(start, start.AddMinutes(20), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        _api.Motion[day] =
+        [
+            new MotionEventInfo(start.AddMinutes(2), start.AddMinutes(3), 0.04, Person: true),
+            new MotionEventInfo(start.AddMinutes(10), start.AddMinutes(13), 0.04, Person: false),
+        ];
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Single(page.FindAll(".person-row")));
+
+        // act
+        var marks = page.FindAll("rect.motion").Count;
+        var personMarks = page.FindAll("rect.motion.person").Count;
+        var row = page.Find(".person-row").TextContent.Trim();
+        page.Find(".person-row").Click();
+        var source = page.Find("video").GetAttribute("src");
+        page.Find("input.only-people").Change(true);
+
+        // assert
+        Assert.Equal((2, 1), (marks, personMarks));
+        Assert.Equal("14:02 · Pessoa · Porta", row);
+        Assert.Equal("Pessoas neste dia", page.Find(".people h2").TextContent);
+        Assert.Equal($"api/recordings/{_camera.Id}/a.mp4#t=115", source);
+        Assert.Single(page.FindAll("rect.motion"));
+        Assert.Empty(page.FindAll("rect.recorded"));
+    }
+
+    [Fact(DisplayName = "Without the detect service, the timeline shows nothing about people")]
+    public void Timeline_NotAnalyzed_ShowsNoPeople()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20),
+            [new RecordingSegmentInfo(start, start.AddMinutes(20), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        _api.Motion[day] = [new MotionEventInfo(start.AddMinutes(10), start.AddMinutes(13), 0.04)];
+
+        // act
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.motion")));
+
+        // assert
+        Assert.Empty(page.FindAll(".people"));
+        Assert.Empty(page.FindAll("input.only-people"));
+        Assert.Empty(page.FindAll("rect.motion.person"));
+    }
+
+    [Fact(DisplayName = "An analyzed day with nobody says so")]
+    public void Timeline_AnalyzedNobody_SaysNobody()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20),
+            [new RecordingSegmentInfo(start, start.AddMinutes(20), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        _api.Motion[day] = [new MotionEventInfo(start.AddMinutes(10), start.AddMinutes(13), 0.04, Person: false)];
+
+        // act
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Single(page.FindAll(".people")));
+
+        // assert
+        Assert.Equal("Ninguém neste dia.", page.Find(".people .note").TextContent);
+    }
+
     [Fact(DisplayName = "Choosing another sensitivity saves it and redraws the motion")]
     public void Timeline_Sensitivity_Saved()
     {

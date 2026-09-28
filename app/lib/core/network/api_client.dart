@@ -150,10 +150,13 @@ enum MotionSensitivity { low, medium, high }
 
 /// Something moved in the recording between [start] and [end]. Times in UTC.
 class MotionEventInfo {
-  const MotionEventInfo({required this.start, required this.end});
+  const MotionEventInfo({required this.start, required this.end, this.person});
 
   final DateTime start;
   final DateTime end;
+
+  /// Whether the optional detect service saw a person; null when it did not look.
+  final bool? person;
 }
 
 /// A camera's motion in one UTC day, and the sensitivity that found it.

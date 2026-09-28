@@ -26,10 +26,12 @@ RecordingPieceInfo _halfHour() => _piece([
     DateTime.utc(2026, 9, 25, 15, minute),
 ]);
 
-MotionEventInfo _motion(DateTime start, int seconds) => MotionEventInfo(
-  start: start,
-  end: start.add(Duration(seconds: seconds)),
-);
+MotionEventInfo _motion(DateTime start, int seconds, {bool? person}) =>
+    MotionEventInfo(
+      start: start,
+      end: start.add(Duration(seconds: seconds)),
+      person: person,
+    );
 
 void main() {
   late FakeApiClient api;
@@ -233,6 +235,67 @@ void main() {
 
       // assert
       expect(controller.playingFrom, DateTime.utc(2026, 9, 25, 12, 19, 55));
+    });
+
+    test('onlyPeople_skipsMotionWithoutAPerson', () async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      api.recordingsByDay[day] = [_halfHour()];
+      api.motionByDay[day] = [
+        _motion(DateTime.utc(2026, 9, 25, 15, 5, 10), 5, person: true),
+        _motion(DateTime.utc(2026, 9, 25, 15, 10), 20, person: false),
+        _motion(DateTime.utc(2026, 9, 25, 15, 20), 40, person: true),
+      ];
+      await controller.selectDay(day);
+      controller.onlyPeople = true;
+
+      // act
+      await controller.playNextMotion();
+      final first = controller.playingFrom;
+      player.finish();
+      await settle();
+
+      // assert
+      expect(controller.peopleAnalyzed, isTrue);
+      expect(controller.people, hasLength(2));
+      expect(controller.shownMotion, hasLength(2));
+      expect(first, DateTime.utc(2026, 9, 25, 12, 5, 5));
+      expect(controller.playingFrom, DateTime.utc(2026, 9, 25, 12, 19, 55));
+    });
+
+    test('onlyPeople_notAnalyzed_keepsAllMotion', () async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      api.recordingsByDay[day] = [_halfHour()];
+      api.motionByDay[day] = [
+        _motion(DateTime.utc(2026, 9, 25, 15, 5), 20),
+        _motion(DateTime.utc(2026, 9, 25, 15, 20), 40),
+      ];
+      await controller.selectDay(day);
+
+      // act
+      controller.onlyPeople = true;
+
+      // assert
+      expect(controller.peopleAnalyzed, isFalse);
+      expect(controller.people, isEmpty);
+      expect(controller.shownMotion, hasLength(2));
+    });
+
+    test('playMark_playsFromFiveSecondsBefore', () async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      api.recordingsByDay[day] = [_halfHour()];
+      api.motionByDay[day] = [
+        _motion(DateTime.utc(2026, 9, 25, 15, 12), 8, person: true),
+      ];
+      await controller.selectDay(day);
+
+      // act
+      await controller.playMark(controller.people.single);
+
+      // assert
+      expect(controller.playingFrom, DateTime.utc(2026, 9, 25, 12, 11, 55));
     });
 
     test('onlyMotion_motionPastTheSegmentEnd_playsTheNextSegment', () async {

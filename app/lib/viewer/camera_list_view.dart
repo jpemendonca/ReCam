@@ -317,6 +317,7 @@ class _RecordingsTabState extends State<_RecordingsTab> {
     CameraInfo selected,
   ) => RecordingsTimelinePane(
     key: ValueKey(selected.id),
+    cameraName: selected.name,
     recordingCameras: widget.list.recordingCameras,
     create: () => widget.list.openRecordings(selected.id),
     brighten: () => widget.list.openBrighten(selected.id),

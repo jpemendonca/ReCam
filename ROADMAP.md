@@ -2434,7 +2434,7 @@ Decisões da conversa:
   > isso) e rota (evento com pessoa e evento não analisado). `SPECS.md` 2.6 e 5. Gate verde (412
   > no servidor, no web e no detect, 299 no app).
 
-- [ ] **12.3 Pessoas na linha do tempo, no navegador e no app**
+- [x] **12.3 Pessoas na linha do tempo, no navegador e no app**
   - Origem: continuação do 12.2; é a tela que o autor pediu ("às 14h uma pessoa entrou no
     quarto").
   - Escopo: na tela de gravações, os eventos com pessoa ganham uma marca própria na barra das 24 h
@@ -2445,6 +2445,19 @@ Decisões da conversa:
   - Fora: frases geradas por modelo de linguagem.
   - Aceite: widget test no app e teste bUnit no navegador (marca, lista, filtro, e a tela sem
     nada novo quando nenhum evento foi analisado).
+  > Validação (2026-09-28): código escrito e testes; não percorrido no celular nem no navegador.
+  > Navegador: `MotionEventInfo` e `MotionMark` com `Person`; `TimelineController` com
+  > `PeopleAnalyzed`, `People`, `OnlyPeople`, `ShownMotion` (o que a barra e os botões de movimento
+  > usam) e `PlayMark`; o "Só pessoas" liga o mesmo comportamento do "Só movimento" com só os
+  > eventos com pessoa. Na `TimelineView`, a marca de pessoa é verde (`--person`, claro e escuro), a
+  > seção "Pessoas neste dia" lista "14:02 · Pessoa · Porta" e tocar na linha toca 5 s antes; sem
+  > evento analisado, nada disso aparece. App: o mesmo no `RecordingTimelineController`, marca
+  > `person-mark` verde na barra, `_PeopleList` com `ListTile` por pessoa e chave "Só pessoas"; o
+  > `RecordingsTimelinePane` passou a receber o nome da câmera (tela própria e aba Gravações). O
+  > cliente HTTP lê `person` quando é booleano. Textos novos nos `.resx` e nos ARB, em `en` e `pt`.
+  > Testes: controller (só pessoas no próximo movimento e no fim do arquivo, dia não analisado,
+  > tocar pela lista) e tela (marcas, lista, filtro, dia sem análise, dia analisado sem ninguém), no
+  > bUnit e no widget test. Gate verde (418 no servidor, no web e no detect, 305 no app).
 
 - [ ] **12.4 Caixa ao redor da pessoa no player**
   - Origem: pergunta do autor em 2026-09-28 ("vai aparecer um retângulo verde ao redor da

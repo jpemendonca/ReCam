@@ -31,10 +31,13 @@ class TimelineSegment {
 
 /// A motion event placed on the phone's clock, like [TimelineSegment].
 class MotionMark {
-  const MotionMark({required this.start, required this.end});
+  const MotionMark({required this.start, required this.end, this.person});
 
   final DateTime start;
   final DateTime end;
+
+  /// Whether the optional detect service saw a person; null when it did not look.
+  final bool? person;
 }
 
 /// A camera's recordings, day by day, in the phone's time zone, playback that starts where the
@@ -71,6 +74,7 @@ class RecordingTimelineController extends ChangeNotifier {
   List<MotionMark> _motion = const [];
   MotionSensitivity? _sensitivity;
   bool _onlyMotion = false;
+  bool _onlyPeople = false;
   bool _sensitivityFailed = false;
   RecordingQuota? _quota;
 
@@ -109,6 +113,30 @@ class RecordingTimelineController extends ChangeNotifier {
     _onlyMotion = value;
     notifyListeners();
   }
+
+  /// Like [onlyMotion], with only the motion that had a person in it.
+  bool get onlyPeople => _onlyPeople;
+
+  set onlyPeople(bool value) {
+    _onlyPeople = value;
+    notifyListeners();
+  }
+
+  /// The detect service looked at some motion of the selected day. Without it,
+  /// nothing about people shows.
+  bool get peopleAnalyzed => _motion.any((mark) => mark.person != null);
+
+  /// Motion of the selected day that had a person in it, in order.
+  List<MotionMark> get people => [
+    for (final mark in _motion)
+      if (mark.person == true) mark,
+  ];
+
+  /// The motion the bar and the motion buttons use: all of it, or only people.
+  List<MotionMark> get shownMotion =>
+      _onlyPeople && peopleAnalyzed ? people : _motion;
+
+  bool get _onlyMarks => _onlyMotion || (_onlyPeople && peopleAnalyzed);
 
   Future<void> load() async {
     _setLoading();
@@ -235,9 +263,10 @@ class RecordingTimelineController extends ChangeNotifier {
   /// Plays the first motion after the one playing, or the day's first.
   Future<void> playNextMotion() async {
     final from = _playingFrom;
+    final marks = shownMotion;
     final next = from == null
-        ? _motion.firstOrNull
-        : _motion
+        ? marks.firstOrNull
+        : marks
               .where(
                 (mark) => mark.start
                     .subtract(motionLead)
@@ -250,9 +279,10 @@ class RecordingTimelineController extends ChangeNotifier {
   /// Plays the motion before the one playing, or the day's last.
   Future<void> playPreviousMotion() async {
     final from = _playingFrom;
+    final marks = shownMotion;
     final previous = from == null
-        ? _motion.lastOrNull
-        : _motion
+        ? marks.lastOrNull
+        : marks
               .where(
                 (mark) => mark.start
                     .subtract(motionLead)
@@ -261,6 +291,10 @@ class RecordingTimelineController extends ChangeNotifier {
               .lastOrNull;
     if (previous != null) await playAt(previous.start.subtract(motionLead));
   }
+
+  /// Plays a motion event from a little before it, like the motion buttons.
+  Future<void> playMark(MotionMark mark) =>
+      playAt(mark.start.subtract(motionLead));
 
   /// Plays from a wall-clock time on the selected day. In a gap, starts at the next recording.
   Future<void> playAt(DateTime wallTime) async {
@@ -285,13 +319,15 @@ class RecordingTimelineController extends ChangeNotifier {
   Future<void> _playNext() async {
     final current = _playing;
     if (current == null || current + 1 >= _timeline.length) return;
-    if (!_onlyMotion) {
+    if (!_onlyMarks) {
       await _play(current + 1, Duration.zero);
       return;
     }
     // Motion that goes on past this segment continues in the next one; otherwise, skips ahead.
     final ended = _timeline[current].end;
-    final next = _motion.where((mark) => mark.end.isAfter(ended)).firstOrNull;
+    final next = shownMotion
+        .where((mark) => mark.end.isAfter(ended))
+        .firstOrNull;
     if (next == null) return;
     final lead = next.start.subtract(motionLead);
     await playAt(lead.isAfter(ended) ? lead : ended);
@@ -315,7 +351,13 @@ class RecordingTimelineController extends ChangeNotifier {
             !found.start.isBefore(windowEnd)) {
           continue;
         }
-        marks.add(MotionMark(start: _wall(found.start), end: _wall(found.end)));
+        marks.add(
+          MotionMark(
+            start: _wall(found.start),
+            end: _wall(found.end),
+            person: found.person,
+          ),
+        );
       }
     }
     return marks;

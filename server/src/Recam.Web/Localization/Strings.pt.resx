@@ -348,6 +348,18 @@
   <data name="MotionSummary" xml:space="preserve">
     <value>Movimentos neste dia: {0}</value>
   </data>
+  <data name="PeopleNone" xml:space="preserve">
+    <value>Ninguém neste dia.</value>
+  </data>
+  <data name="PeopleOnly" xml:space="preserve">
+    <value>Só pessoas</value>
+  </data>
+  <data name="PeopleRow" xml:space="preserve">
+    <value>{0} · Pessoa · {1}</value>
+  </data>
+  <data name="PeopleTitle" xml:space="preserve">
+    <value>Pessoas neste dia</value>
+  </data>
   <data name="NavCameras" xml:space="preserve">
     <value>Câmeras</value>
   </data>
