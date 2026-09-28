@@ -2339,7 +2339,7 @@ o que continua por conta de quem roda o servidor.
   - Aceite: o autor chega ao ao vivo seguindo só o README paralelo; cada tropeço vira bullet; o
     `README.preview.md` é apagado.
 
-- [ ] **11.8 [aparelho] Modo câmera sem internet: avisar na hora, e com rede ruim tentar e explicar**
+- [x] **11.8 [aparelho] Modo câmera sem internet: avisar na hora, e com rede ruim tentar e explicar**
   - Origem: teste do autor em 2026-09-28. O Samsung A10 já pareado, em modo avião, toca em
     "Iniciar modo câmera": a tela fica em "Conectando ao servidor…" sem dizer que não há rede.
   - Escopo:
@@ -2369,6 +2369,8 @@ o que continua por conta de quem roda o servidor.
   > disso apaga o pareamento. Testes: controller (sem rede não começa, volta com a rede, prazo
   > vencido, tentar de novo conecta na hora, conexão no prazo, queda depois de conectado), hub
   > (`retryNow`) e widget (as duas mensagens, sem pareamento perdido). Falta: conferir no A10.
+  > Validação (2026-09-28): o autor testou no A10 e o aviso de sem conexão e a tentativa com
+  > prazo funcionaram.
 
 - [x] **11.9 [aparelho] Primeiro minuto de cada gravação não toca no navegador**
   - Origem: teste do autor em 2026-09-28, servidor na VPS. Na tela de gravações, o arquivo do
