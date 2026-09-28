@@ -2341,8 +2341,7 @@ o que continua por conta de quem roda o servidor.
 
 - [ ] **11.8 [aparelho] Modo câmera sem internet: avisar na hora, e com rede ruim tentar e explicar**
   - Origem: teste do autor em 2026-09-28. O Samsung A10 já pareado, em modo avião, toca em
-    "Iniciar modo câmera": a tela fica em "Conectando ao servidor…" e depois de um tempo volta
-    sozinha para a tela anterior, sem dizer por quê.
+    "Iniciar modo câmera": a tela fica em "Conectando ao servidor…" sem dizer que não há rede.
   - Escopo:
     - Antes de conectar, o app confere se o celular tem alguma rede (Wi-Fi ou dados). Sem rede,
       não entra no modo câmera: mostra na hora "Sem conexão. Ligue o Wi-Fi e tente de novo.",
@@ -2352,11 +2351,6 @@ o que continua por conta de quem roda o servidor.
       troca por uma mensagem clara ("Não foi possível falar com o servidor. Confira se o celular
       está na mesma rede e se o servidor está ligado.") com "Tentar de novo" e "Voltar". A tela
       nunca sai sozinha por falta de rede.
-    - Investigar por que a tela volta sozinha hoje: a única saída automática é "pareamento
-      perdido" (`HubSession.rejected`), que também apaga o pareamento. Se falta de rede estiver
-      caindo nesse caminho (certificado dado como trocado, ou 401 falso), é bug sério: o celular
-      perderia o pareamento só por ficar sem Wi-Fi. Corrigir para que só uma recusa de verdade
-      do servidor apague o pareamento.
     - A conferência de rede usa só o que o Android já sabe (`ConnectivityManager`, pelo canal
       nativo que já existe); nada de chamada a site de fora para "testar a internet".
     - Textos nos ARB, en e pt.
