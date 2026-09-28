@@ -2401,6 +2401,19 @@ o que continua por conta de quem roda o servidor.
   > Validação (2026-09-28): o autor iniciou uma transmissão nova do A10 para a VPS, com o app da
   > branch da Fase 12, e o arquivo do primeiro minuto tocou no navegador.
 
+- [ ] **11.10 Logs dos containers com tamanho limitado**
+  - Origem: pergunta do autor em 2026-09-28. O compose não configura rotação: com o driver padrão
+    `json-file`, o log de cada container cresce para sempre, e o do servidor escreve várias linhas
+    a cada ao vivo aberto ou fechado. Em meses, pode encher o disco e parar as gravações.
+  - Escopo:
+    - Todo serviço de `compose.yaml`, `compose.bridge.yaml` e `compose.detect.yaml` ganha
+      `logging` com `json-file`, `max-size: 10m` e `max-file: 3`.
+    - No servidor, o `HttpClient` (as chamadas ao MediaMTX) passa a logar só `Warning` ou pior.
+    - Revisão no `SPECS.md` (Deploy).
+  - Aceite: `docker compose config` mostra o limite em todos os serviços; na VPS, `docker inspect`
+    confirma a opção, e abrir e fechar o ao vivo não gera mais as linhas de "Start processing HTTP
+    request".
+
 ## Fase futura: IA local nos eventos de movimento (a discutir)
 
 Anotado com o autor em 2026-09-28, sem decisão e sem bullets ainda. Nada aqui entra na fila até
