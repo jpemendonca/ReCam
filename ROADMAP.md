@@ -2410,7 +2410,7 @@ Decisões da conversa:
   > ninguém acima de 0,5, segmento cifrado e segmento sem `.motion` pulados. Gate verde (404 no
   > servidor e no web, 299 no app).
 
-- [ ] **12.2 O servidor marca os eventos de movimento com pessoa**
+- [x] **12.2 O servidor marca os eventos de movimento com pessoa**
   - Origem: continuação do 12.1.
   - Escopo: o domínio junta os `.people` aos eventos que o `MotionEvents` já monta. Um evento tem
     pessoa quando algum segundo dentro dele (com a mesma folga da emenda) tem confiança de 0,5 ou
@@ -2422,6 +2422,17 @@ Decisões da conversa:
   - Fora: guardar pessoas no banco. O arquivo ao lado do segmento basta, como no 7.2.
   - Aceite: teste do domínio (os três estados, pessoa na borda do evento, evento emendado de dois
     segmentos), teste do store e teste do endpoint. Revisão do `SPECS.md` (seção 5).
+  > Validação (2026-09-28): só código escrito e testes; sem celular e sem navegador. Domínio:
+  > `PersonBox`, `PeopleSample`, `SegmentPeople` e `PeopleInMotion.HasPerson` (confiança 0,5, folga
+  > de 1 s, segmento termina no seguinte ou em 60 s, como na linha do tempo). `RecordingStore`:
+  > `ReadPeople` (null quando não há arquivo, linha quebrada ignorada), `Delete` apaga o `.people`, e
+  > `DeleteOrphanMotion` virou `DeleteOrphanNotes`, que também apaga `.people` órfão. Rota:
+  > `MotionEventResponse` ganhou `Person` (`bool?`), campo novo que clientes antigos ignoram.
+  > Testes: domínio (com pessoa, só caixa fraca, não analisado, borda de 1 s e 2 s, evento em dois
+  > segmentos), store (leitura, arquivo faltando, apagar e órfãos), ida e volta do formato com o
+  > `PeopleFile` do `Recam.Detect` (o projeto de testes do servidor referencia o worker só para
+  > isso) e rota (evento com pessoa e evento não analisado). `SPECS.md` 2.6 e 5. Gate verde (412
+  > no servidor, no web e no detect, 299 no app).
 
 - [ ] **12.3 Pessoas na linha do tempo, no navegador e no app**
   - Origem: continuação do 12.2; é a tela que o autor pediu ("às 14h uma pessoa entrou no

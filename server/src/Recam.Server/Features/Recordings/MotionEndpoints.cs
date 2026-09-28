@@ -12,7 +12,8 @@ namespace Recam.Server.Features.Recordings;
 
 /// <summary>
 /// Motion in the recordings (SPECS.md 2.4): the motion service scores each closed segment, and
-/// these routes turn the scores into events with the camera's sensitivity.
+/// these routes turn the scores into events with the camera's sensitivity. When the optional detect
+/// service runs, each event also says whether a person was in it (SPECS.md 2.6).
 /// </summary>
 public static class MotionEndpoints
 {
@@ -49,12 +50,14 @@ public static class MotionEndpoints
             return MediaErrors.CameraNotFound.ToHttpResult();
         }
 
-        var samples = store.ListSegments()
+        var segments = store.ListSegments()
             .Where(segment => segment.CameraId == cameraId && DateOnly.FromDateTime(segment.StartsAt.UtcDateTime) == date)
-            .SelectMany(store.ReadMotion);
-        var events = MotionEvents.Find(samples, sensitivity.Value, [.. presence.TorchChanges(cameraId)]);
+            .ToList();
+        var events = MotionEvents.Find(segments.SelectMany(store.ReadMotion), sensitivity.Value, [.. presence.TorchChanges(cameraId)]);
+        List<SegmentPeople> people = [.. segments.Select(segment => new SegmentPeople(segment.StartsAt, store.ReadPeople(segment)))];
         return TypedResults.Ok(new MotionResponse(
-            sensitivity.Value, [.. events.Select(found => new MotionEventResponse(found.Start, found.End, found.Peak))]));
+            sensitivity.Value,
+            [.. events.Select(found => new MotionEventResponse(found.Start, found.End, found.Peak, PeopleInMotion.HasPerson(found, people)))]));
     }
 
     private static async Task<IResult> SetSensitivityAsync(

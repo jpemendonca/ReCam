@@ -32,6 +32,27 @@ public sealed class MotionEndpointsTests
         Assert.Equal(Noon.AddSeconds(60 + 30), motion.Events[1].Start);
     }
 
+    [Fact(DisplayName = "Each event says whether the detect service saw a person, or null when it did not look")]
+    public async Task GetMotion_WithPeopleFiles_MarksEvents()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        WriteScores(factory, camera.DeviceId);
+        var first = Path.Combine(factory.RecordingsDirectory, $"rec-{camera.DeviceId:N}", $"{Noon.UtcDateTime:yyyy-MM-dd_HH-mm-ss-ffffff}.mp4");
+        File.WriteAllText(first + ".people", "1\n2 0.88 0.1 0.2 0.3 0.4\n");
+        using var client = factory.CreateDeviceClient(owner.Credential);
+
+        // act
+        var motion = await client.GetFromJsonAsync<MotionResponse>(MotionUri(camera.DeviceId), ApiJson.Options, TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.Equal(2, motion!.Events.Count);
+        Assert.True(motion.Events[0].Person);
+        Assert.Null(motion.Events[1].Person);
+    }
+
     [Fact(DisplayName = "A lower sensitivity also changes what was already recorded")]
     public async Task SetSensitivity_Low_DropsSmallMotion()
     {

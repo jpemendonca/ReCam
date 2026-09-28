@@ -318,6 +318,12 @@ Desenho combinado com o autor em 2026-09-28 (Fase 12 do ROADMAP, na branch
   `linuxserver/ffmpeg` do `motion`, com o worker publicado self-contained. Usuário `1654:1654`,
   `network_mode: none`, sem porta. `cpus` vem de `RECAM_DETECT_CPUS` (padrão 1) e as threads do
   modelo de `RECAM_DETECT_THREADS` (padrão 1), para não roubar o servidor.
+- **Eventos com pessoa.** O servidor lê os `.people` dos segmentos do dia e marca cada evento de
+  movimento (`PeopleInMotion`): com pessoa quando algum segundo entre 1 s antes do início e 1 s
+  depois do fim tem uma caixa de confiança 0,5 ou mais; sem pessoa quando todos os segmentos que o
+  evento toca foram analisados e ninguém passou disso; não analisado nos outros casos. Não vai
+  para o banco. A limpeza da cota apaga o `.people` junto com o segmento, e os que ficaram sem
+  segmento.
 
 ## 3. Modelo de dados
 
@@ -472,7 +478,7 @@ Estado em 2026-09-26 (conferido no bullet 6.9). As revisões do log 12 contam co
 | `GET /api/cameras/{id}/recording-days` | Monitores | — | `["AAAA-MM-DD"]`, dias UTC, do mais novo ao mais antigo |
 | `GET /api/cameras/{id}/recordings?day=AAAA-MM-DD` | Monitores | — | `[{ start, end, segments: [{ start, end, url }] }]` |
 | `GET /api/recordings/{cameraId}/{segmento}` | Monitores | `Range` | o arquivo `video/mp4` |
-| `GET /api/cameras/{id}/motion?day=AAAA-MM-DD` | Monitores | — | `{ sensitivity, events: [{ start, end, peak }] }` dos segmentos que começam no dia UTC (Fase 7) |
+| `GET /api/cameras/{id}/motion?day=AAAA-MM-DD` | Monitores | — | `{ sensitivity, events: [{ start, end, peak, person }] }` dos segmentos que começam no dia UTC (Fase 7). `person` é `true`/`false` quando o `detect` olhou o evento e `null` quando não (seção 2.6, Fase 12) |
 | `PUT /api/cameras/{id}/motion-sensitivity` | Monitores | `{ sensitivity: "low" \| "medium" \| "high" }` | `204` (Fase 7) |
 | `GET /api/recordings/quota` | Monitores | — | `{ quotaMb, usedBytes, freeBytes }` |
 | `PUT /api/recordings/quota` | Monitores | `{ quotaMb }` | `204` |
@@ -966,3 +972,7 @@ seguinte em `docs/adr/`:
 > dizer que vale para o `Recam.Server`. A cifra das gravações espera o `.people` enquanto o
 > `detect` roda. O ROADMAP pedia YOLO nano da Ultralytics; ficou o YOLOX-Tiny porque a Ultralytics
 > não publica o modelo em ONNX (exportar exige PyTorch no build) e o YOLOX tem licença Apache-2.0.
+
+> Revisão (2026-09-28): eventos de movimento com pessoa (bullet 12.2, só na branch da Fase 12).
+> `GET /api/cameras/{id}/motion` ganha `person` em cada evento: `true`, `false` ou `null` (não
+> analisado). Seções 2.6 e 5.
