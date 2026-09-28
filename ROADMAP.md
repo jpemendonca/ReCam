@@ -2370,6 +2370,25 @@ o que continua por conta de quem roda o servidor.
   > vencido, tentar de novo conecta na hora, conexão no prazo, queda depois de conectado), hub
   > (`retryNow`) e widget (as duas mensagens, sem pareamento perdido). Falta: conferir no A10.
 
+- [ ] **11.9 [aparelho] Primeiro minuto de cada gravação não toca no navegador**
+  - Origem: teste do autor em 2026-09-28, servidor na VPS. Na tela de gravações, o arquivo do
+    primeiro minuto de uma transmissão fica preto e o play não faz nada; os seguintes tocam.
+  - Causa (conferida no arquivo decifrado): no começo da transmissão o WebRTC do celular sobe a
+    resolução aos poucos enquanto mede a rede (320x180, 480x270, 640x360, 960x540 e só então
+    1280x720). O MediaMTX grava tudo no mesmo MP4, e o Chromium para com
+    `PIPELINE_ERROR_DECODE` quando a resolução muda no meio do arquivo. Os minutos seguintes ficam
+    em 1280x720 do começo ao fim e tocam. O mesmo vale para o "celular quente" (9.x), que reduz a
+    resolução no meio da transmissão (`scaleResolutionDownBy`).
+  - Escopo:
+    - O `WhipPublisher` pede `degradationPreference: maintain-resolution` no sender: com rede
+      fraca, o celular baixa quadros por segundo e qualidade, não a resolução.
+    - A qualidade reduzida por calor passa a baixar só bitrate e quadros por segundo, mantendo a
+      resolução.
+    - Não mexer no MediaMTX nem no servidor.
+  - Aceite: teste do publisher conferindo a preferência e que a qualidade reduzida não muda a
+    resolução. Na VPS: o arquivo do primeiro minuto de uma transmissão nova toca no navegador, e o
+    `ffprobe` dele mostra uma resolução só.
+
 ## Fase futura: IA local nos eventos de movimento (a discutir)
 
 Anotado com o autor em 2026-09-28, sem decisão e sem bullets ainda. Nada aqui entra na fila até
