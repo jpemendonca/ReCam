@@ -2339,6 +2339,17 @@ o que continua por conta de quem roda o servidor.
   - Aceite: o autor chega ao ao vivo seguindo só o README paralelo; cada tropeço vira bullet; o
     `README.preview.md` é apagado.
 
+- [x] **11.8 Documentar os containers da stack e desativação do motion no README**
+  - Origem: pedido do autor em 2026-09-28 durante testes em máquina de entrada.
+  - Escopo: no `README.md`, detalhar o papel de cada serviço (`server`, `mediamtx`, `motion`),
+    o que roda em cada container, e que o serviço de detecção de movimento (`motion`) pode ser
+    interrompido em hardware extremamente modesto para economizar recursos sem afetar o vídeo
+    ao vivo, o pareamento ou a gravação contínua (embora não seja necessário, pois o consumo
+    é inferior a 60 MB de RAM).
+  - Aceite: seção explicativa no `README.md`.
+  > Validação (2026-09-28): seção "The containers" adicionada ao `README.md` detalhando os três
+  > serviços da stack e a nota sobre desativação em hardware de baixo consumo.
+
 ## Fase futura: IA local nos eventos de movimento (a discutir)
 
 Anotado com o autor em 2026-09-28, sem decisão e sem bullets ainda. Nada aqui entra na fila até

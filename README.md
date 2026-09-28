@@ -51,6 +51,16 @@ server prints a new first-time code.
 
 Requirements: Android 9 or newer. Reference devices: Samsung Galaxy A10 and Xiaomi Redmi 6A.
 
+## The containers
+
+ReCam runs three lightweight, decoupled containers:
+
+- **`server` (`recam-server`)**: The brain and web frontend. Powered by .NET 10 with an internal SQLite database, it serves the Blazor WebAssembly Monitor on port `8443`, manages pairing tokens, issues QR codes, proxies WebRTC signaling (WHIP/WHEP), handles remote controls (such as toggling the camera flashlight), and enforces recording storage quotas.
+- **`mediamtx` (`recam-mediamtx`)**: The media plane. A high-performance Go-based streaming server (`bluenviron/mediamtx`). It receives the raw WebRTC RTP video stream directly from cameras on port `8189/udp`, broadcasts live video to watching monitors with sub-second latency, and continuously segments recordings into 1-minute files in `/recordings`.
+- **`motion` (`recam-motion`)**: The motion detector. A zero-network worker running FFmpeg (`motion.sh`). It inspects `/recordings`, analyzes closed 1-minute video segments, and records timestamps where motion occurred so the player timeline highlights activity.
+
+> **Low-spec hardware:** The architecture is fully decoupled. If running on extremely constrained machines, the `motion` service can be stopped or omitted from `compose.yaml` to save memory. Live video, pairing, continuous recording, and video playback will continue working completely unaffected (only timeline motion highlights will be absent). However, disabling it is rarely necessary: the motion worker uses minimal resources (~60 MB RAM and virtually 0% idle CPU on an old 2012 Core i5).
+
 ## Development
 
 Prerequisites: .NET 10 SDK, Flutter, Docker.
