@@ -2367,8 +2367,10 @@ Decisões da conversa:
       tem o `.motion` pronto e ainda não tem o `.people`. Só olha os segundos em que o `.motion`
       passou do limite da sensibilidade alta (0,3%), um quadro por segundo, pedido ao FFmpeg por
       pipe em RGB cru (sem biblioteca de imagem). Grava ao lado do `.mp4` um
-      `<segmento>.people` com uma linha por segundo olhado: `<segundos do início> <maior confiança
-      de pessoa, de 0 a 1>`. Arquivo ilegível vira `.people` vazio, como no `motion`.
+      `<segmento>.people` com uma linha por segundo olhado: `<segundos do início>` seguido de
+      zero ou mais caixas de pessoa, cada uma `<confiança> <x> <y> <largura> <altura>`, com
+      confiança de 0 a 1 e coordenadas de 0 a 1 relativas ao quadro. Segundo sem pessoa fica só
+      com o tempo. As caixas já saem aqui para o 12.4 não precisar reprocessar nada. Arquivo ilegível vira `.people` vazio, como no `motion`.
     - Só a classe "pessoa" do modelo. Os outros resultados são descartados.
     - Compose: serviço `detect` só no `compose.detect.yaml`, usuário 1654, `network_mode: none`,
       sem porta, limite de CPU configurável no `.env` (padrão 1 núcleo) para não roubar o
@@ -2379,7 +2381,7 @@ Decisões da conversa:
       desligar.
   - Fora: carro, animal, zonas, notificação, vídeo ao vivo, descrição em texto, GPU.
   - Aceite: teste do pós-processamento (saída do modelo para confiança de pessoa, só a classe
-    pessoa, limites) com tensor de exemplo, e teste com Testcontainers rodando o worker sobre um
+    pessoa, limites, caixas em coordenadas relativas) com tensor de exemplo, e teste com Testcontainers rodando o worker sobre um
     segmento feito de uma foto com pessoa e outra sem (fotos de licença livre, CC0, guardadas nos
     testes): o `.people` do primeiro passa de 0,5 e o do segundo fica abaixo. `docker compose -f
     compose.yaml -f compose.detect.yaml config` passa.
@@ -2409,11 +2411,29 @@ Decisões da conversa:
   - Aceite: widget test no app e teste bUnit no navegador (marca, lista, filtro, e a tela sem
     nada novo quando nenhum evento foi analisado).
 
-- [ ] **12.4 [aparelho] Medir no PC antigo**
+- [ ] **12.4 Caixa ao redor da pessoa no player**
+  - Origem: pergunta do autor em 2026-09-28 ("vai aparecer um retângulo verde ao redor da
+    detecção?").
+  - Escopo: no player das gravações, no navegador e no app, um retângulo verde desenhado por cima
+    do vídeo em cada pessoa, lido das caixas do `.people`. Nada é gravado no vídeo, e o servidor
+    só repassa as caixas. Como a análise é de um quadro por segundo, a posição é interpolada entre
+    dois segundos seguidos, para a caixa andar em vez de pular; sem caixa no segundo seguinte, ela
+    some. As caixas acompanham o tamanho do vídeo na tela (tela cheia, giro, "Clarear").
+    Chave "Mostrar pessoas" no player, ligada por padrão e guardada no próprio Monitor, como o
+    ajuste do 7.1. A chave só aparece quando o arquivo tocando foi analisado. O servidor entrega as
+    caixas do segmento numa rota nova, só para Monitores; o formato vai no `SPECS.md` 5. Textos
+    nos ARB e nos `.resx`.
+  - Fora: caixa no vídeo ao vivo, mais quadros por segundo, nome ou rótulo na caixa.
+  - Aceite: teste da interpolação (meio do caminho, caixa que some, duas pessoas), teste da rota
+    e widget test no app e bUnit no navegador (caixas desenhadas, chave liga e desliga, sem chave
+    quando o arquivo não foi analisado).
+
+- [ ] **12.5 [aparelho] Medir no PC antigo**
   - Origem: conversa com o autor em 2026-09-28 (i5 de 3ª geração, sem AVX2).
   - Escopo: subir o `compose.detect.yaml` no PC antigo, gravar um dia com movimento e pessoa, e
     anotar quanto tempo o `detect` leva por segmento, quanto de CPU e memória usa, e se o vídeo ao
-    vivo continua abaixo de 1 s de atraso com ele rodando. Conferir a lista de pessoas na tela.
+    vivo continua abaixo de 1 s de atraso com ele rodando. Conferir a lista de pessoas e as caixas
+    no player.
   - Aceite: nota de validação com os números medidos.
 
 ## Fora da fila (anotado, não executar)
