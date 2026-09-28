@@ -2335,6 +2335,9 @@ o que continua por conta de quem roda o servidor.
     (instalação rápida, primeiro uso e problemas comuns). Ele não é a versão final: depois do
     teste, o que funcionou vai para o `README.md` de verdade e o `README.preview.md` é apagado.
     O app ainda não tem APK publicado (5.4), então no teste ele vem instalado por `adb`.
+    Nesta branch (Fase 12), o `README.preview.md` instala com a detecção de pessoas ligada
+    (`COMPOSE_FILE=compose.yaml:compose.detect.yaml` no `.env`), para ver também quanto ela pesa
+    num processador antigo.
   - A observar: instalação do Docker no Mint, compose em rede `host` achando o IP da rede local
     sozinho, firewall, atraso na rede local, e uso de processador do FFmpeg de movimento e da
     cifra num processador antigo.
