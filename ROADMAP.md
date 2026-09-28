@@ -2574,6 +2574,18 @@ Decisões da conversa:
   - Aceite: nota de validação com os números medidos.
   > Bloqueado (2026-09-28): aguardando validação no aparelho (PC antigo do autor).
 
+- [ ] **12.6 Lista "Pessoas neste dia": mais recentes primeiro e altura limitada**
+  - Origem: teste do autor em 2026-09-28. Num dia com muitas passagens, a lista cresce sem fim e
+    empurra o player para baixo, e começa pela mais antiga.
+  - Escopo:
+    - No navegador, a lista vai do mais recente para o mais antigo, com altura máxima e rolagem
+      própria, e funciona na largura de celular.
+    - No app, conferir a mesma lista: se também começa pela mais antiga ou cresce sem limite,
+      aplicar a mesma regra.
+    - A ordem de "Próximo movimento" e "Movimento anterior" não muda.
+  - Aceite: bUnit e teste de widget da ordem e do limite; conferido no navegador e no app com um
+    dia de muitas passagens.
+
 ## Fora da fila (anotado, não executar)
 
 Itens que dependem de decisão futura. O loop para antes daqui.
