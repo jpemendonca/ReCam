@@ -2375,7 +2375,7 @@ o que continua por conta de quem roda o servidor.
   > vencido, tentar de novo conecta na hora, conexão no prazo, queda depois de conectado), hub
   > (`retryNow`) e widget (as duas mensagens, sem pareamento perdido). Falta: conferir no A10.
 
-- [ ] **11.9 [aparelho] Primeiro minuto de cada gravação não toca no navegador**
+- [x] **11.9 [aparelho] Primeiro minuto de cada gravação não toca no navegador**
   - Origem: teste do autor em 2026-09-28, servidor na VPS. Na tela de gravações, o arquivo do
     primeiro minuto de uma transmissão fica preto e o play não faz nada; os seguintes tocam.
   - Causa (conferida no arquivo decifrado): no começo da transmissão o WebRTC do celular sobe a
@@ -2401,6 +2401,8 @@ o que continua por conta de quem roda o servidor.
   > preferência chega ao libwebrtc pelo `setParameters` do `flutter_webrtc` no Android. Testes:
   > `withQuality` nas duas qualidades e o `VideoQuality`. Falta: transmissão nova na VPS e o
   > primeiro minuto tocando no navegador.
+  > Validação (2026-09-28): o autor iniciou uma transmissão nova do A10 para a VPS, com o app da
+  > branch da Fase 12, e o arquivo do primeiro minuto tocou no navegador.
 
 ## Fase 12: pessoas nas gravações (branch)
 
