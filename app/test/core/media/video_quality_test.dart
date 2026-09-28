@@ -69,19 +69,17 @@ void main() {
       expect(next, VideoQuality.reduced);
     });
 
-    test('reduced_isAbout480pAt10FpsAnd400Kbps', () {
+    test('reduced_is10FpsAnd400Kbps', () {
       // arrange
       const quality = VideoQuality.reduced;
 
       // act
-      final width = (1280 / quality.scaleDownBy).round();
-      final height = (720 / quality.scaleDownBy).round();
+      final framerate = quality.maxFramerate;
+      final bitrate = quality.maxBitrate;
 
       // assert
-      expect(width, 853);
-      expect(height, 480);
-      expect(quality.maxFramerate, 10);
-      expect(quality.maxBitrate, 400000);
+      expect(framerate, 10);
+      expect(bitrate, 400000);
     });
   });
 }

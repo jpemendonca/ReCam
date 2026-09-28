@@ -932,3 +932,10 @@ seguinte em `docs/adr/`:
 > Revisão (2026-09-28): o modo câmera confere a rede antes de começar e dá 30 s à primeira
 > conexão (bullet 11.8). Seção 2.3. O app passa a declarar `ACCESS_NETWORK_STATE`, só para ler o
 > estado da rede no próprio aparelho.
+
+> Revisão (2026-09-28): a câmera mantém a resolução da captura o tempo todo (bullet 11.9). O
+> sender pede `degradationPreference: maintain-resolution`: com rede fraca, o libwebrtc baixa
+> quadros e bitrate, não o tamanho da imagem. Sem isso ele começava em 320x180 e subia até 1280x720
+> no primeiro minuto, e o MP4 com resolução trocando no meio não tocava no navegador. Pelo mesmo
+> motivo, a qualidade reduzida por calor (revisão de 2026-09-25) passa a ser 1280x720 a 10 fps e
+> 400 kbps, sem a escala de 1,5.

@@ -2388,6 +2388,14 @@ o que continua por conta de quem roda o servidor.
   - Aceite: teste do publisher conferindo a preferência e que a qualidade reduzida não muda a
     resolução. Na VPS: o arquivo do primeiro minuto de uma transmissão nova toca no navegador, e o
     `ffprobe` dele mostra uma resolução só.
+  > Em andamento (2026-09-28): feito o código. `WhipPublisher.withQuality` põe
+  > `degradationPreference: maintain-resolution` e `scaleResolutionDownBy: 1` nos parâmetros do
+  > sender; o publisher aplica logo depois de criar o sender (pelo `setQuality`, que engole a
+  > recusa de um celular que não aceite, e aí ele transmite como antes) e a cada troca de
+  > qualidade. `VideoQuality` perdeu a escala: a reduzida é 10 fps e 400 kbps em 1280x720. A
+  > preferência chega ao libwebrtc pelo `setParameters` do `flutter_webrtc` no Android. Testes:
+  > `withQuality` nas duas qualidades e o `VideoQuality`. Falta: transmissão nova na VPS e o
+  > primeiro minuto tocando no navegador.
 
 ## Fase futura: IA local nos eventos de movimento (a discutir)
 

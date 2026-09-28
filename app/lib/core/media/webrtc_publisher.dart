@@ -41,6 +41,25 @@ class WhipPublisher implements WebRtcPublisher {
   final PairedSession _session;
   final SignalingClient _signaling;
 
+  /// The sender's parameters for [quality]. The picture keeps its size whatever the network
+  /// or the temperature: libwebrtc drops frames and bitrate instead. Left to itself it starts
+  /// small and grows while it measures the network, and a recording whose picture changes size
+  /// midway does not play in the browser (bullet 11.9).
+  static RTCRtpParameters withQuality(
+    RTCRtpParameters parameters,
+    VideoQuality quality,
+  ) {
+    parameters.degradationPreference =
+        RTCDegradationPreference.MAINTAIN_RESOLUTION;
+    for (final encoding in parameters.encodings ?? <RTCRtpEncoding>[]) {
+      encoding
+        ..maxBitrate = quality.maxBitrate
+        ..maxFramerate = quality.maxFramerate
+        ..scaleResolutionDownBy = 1;
+    }
+    return parameters;
+  }
+
   RTCPeerConnection? _connection;
   RTCRtpSender? _sender;
   VideoQuality _quality = VideoQuality.full;
@@ -83,12 +102,14 @@ class WhipPublisher implements WebRtcPublisher {
           RTCRtpEncoding(
             maxBitrate: _quality.maxBitrate,
             maxFramerate: _quality.maxFramerate,
-            scaleResolutionDownBy: _quality.scaleDownBy,
+            scaleResolutionDownBy: 1,
           ),
         ],
       ),
     );
     _sender = transceiver.sender;
+    // The resolution preference only goes through setParameters, not the transceiver's init.
+    await setQuality(_quality);
     await _preferH264(transceiver);
     final audio = feed.audioTrack;
     if (audio != null) {
@@ -171,16 +192,9 @@ class WhipPublisher implements WebRtcPublisher {
     _quality = quality;
     final sender = _sender;
     if (sender == null) return;
-    final parameters = sender.parameters;
-    for (final encoding in parameters.encodings ?? <RTCRtpEncoding>[]) {
-      encoding
-        ..maxBitrate = quality.maxBitrate
-        ..maxFramerate = quality.maxFramerate
-        ..scaleResolutionDownBy = quality.scaleDownBy;
-    }
     // A sender that is closing refuses new parameters; the next start uses the quality anyway.
     try {
-      await sender.setParameters(parameters);
+      await sender.setParameters(withQuality(sender.parameters, quality));
     } on Object {
       return;
     }
