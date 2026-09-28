@@ -2326,6 +2326,36 @@ o que continua por conta de quem roda o servidor.
 
 ---
 
+- [ ] **11.7 [aparelho] Teste no PC antigo com o README paralelo**
+  - Origem: pedido do autor em 2026-09-28. Um PC antigo (i5 de 3ª geração, SSD) com Linux Mint
+    instalado do zero faz o papel de um usuário novo.
+  - Escopo: o autor segue só o `README.preview.md`, escrito como se fosse o README definitivo
+    (instalação rápida, primeiro uso e problemas comuns). Ele não é a versão final: depois do
+    teste, o que funcionou vai para o `README.md` de verdade e o `README.preview.md` é apagado.
+    O app ainda não tem APK publicado (5.4), então no teste ele vem instalado por `adb`.
+  - A observar: instalação do Docker no Mint, compose em rede `host` achando o IP da rede local
+    sozinho, firewall, atraso na rede local, e uso de processador do FFmpeg de movimento e da
+    cifra num processador antigo.
+  - Aceite: o autor chega ao ao vivo seguindo só o README paralelo; cada tropeço vira bullet; o
+    `README.preview.md` é apagado.
+
+## Fase futura: IA local nos eventos de movimento (a discutir)
+
+Anotado com o autor em 2026-09-28, sem decisão e sem bullets ainda. Nada aqui entra na fila até
+ser discutido e detalhado.
+
+- Ideia: um container opcional, instalado à parte, que olha um quadro de cada evento de movimento
+  e devolve uma etiqueta (pessoa, carro, animal) ou uma frase curta que aparece na linha do tempo.
+  Quem não instala segue com o ReCam leve. Tudo roda em casa, sem nuvem.
+- Desenho provável: o servidor só expõe os eventos e um quadro de cada um; o container busca,
+  analisa e devolve o resultado. O núcleo não processa vídeo e a IA fica trocável.
+- Peso: detectar pessoa/carro com modelo pequeno (tipo YOLO nano) é leve em processador comum.
+  Descrever a cena em texto (modelo de visão com linguagem) é pesado: segundos a minutos por
+  imagem em processador; serve para a linha do tempo, não para o ao vivo.
+- A ver: qual modelo e formato, exigência de hardware (processadores sem AVX2, como um i5 de 3ª
+  geração, podem não rodar a descrição), como o resultado entra no banco e na tela, e se começa só
+  pela detecção de pessoas.
+
 ## Fora da fila (anotado, não executar)
 
 Itens que dependem de decisão futura. O loop para antes daqui.
