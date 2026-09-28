@@ -191,6 +191,11 @@ Para rodar num celular fraco e não ser morto pelo Android:
 - Foreground service do tipo `camera` enquanto o modo câmera está ativo, para manter a
   prioridade do processo. A lógica roda no isolate principal.
 - Reconexão ao servidor com backoff exponencial: 1, 2, 4, 8, 16, 30 s, e depois 30 s fixo.
+- Ao entrar: sem nenhuma rede no celular (conferido pelo `ConnectivityManager`, sem chamada para
+  fora), o modo câmera não começa e a tela diz isso. Com rede, a primeira conexão tem 30 s; depois
+  disso a tela diz que o servidor não respondeu e continua tentando por trás. "Tentar de novo"
+  tenta na hora. Depois de conectar uma vez, queda de rede só volta a "Conectando…", sem prazo
+  (revisado em 2026-09-28, bullet 11.8).
 
 ### 2.4 Gravação
 
@@ -923,3 +928,7 @@ seguinte em `docs/adr/`:
 > um convite já apagado, responde como link desconhecido (404). Não carrega segredo. A tela do
 > convite consulta a cada 2 s, volta para Aparelhos quando ele é usado e, se vencer, pede para
 > gerar outro em vez de trocar sozinha.
+
+> Revisão (2026-09-28): o modo câmera confere a rede antes de começar e dá 30 s à primeira
+> conexão (bullet 11.8). Seção 2.3. O app passa a declarar `ACCESS_NETWORK_STATE`, só para ler o
+> estado da rede no próprio aparelho.

@@ -2358,6 +2358,17 @@ o que continua por conta de quem roda o servidor.
     conexão que chega dentro do prazo) e teste de que ficar sem rede não apaga o pareamento. No
     A10: modo avião mostra o aviso na hora; Wi-Fi ligado com o servidor parado mostra a mensagem
     depois de 30 s; ligar o servidor e tocar em "Tentar de novo" entra no modo câmera.
+  > Em andamento (2026-09-28): feito o código. O Android responde `hasNetwork` pelo canal
+  > `io.recam.app/device` (`ConnectivityManager`, rede ativa com `NET_CAPABILITY_INTERNET`; o
+  > manifesto ganhou `ACCESS_NETWORK_STATE`). Sem rede, o `CameraModeController` não liga serviço,
+  > tela nem hub, e a tela mostra "Sem conexão. Ligue o Wi-Fi e tente de novo." com "Tentar de
+  > novo" e "Voltar". Com rede, a primeira conexão tem 30 s (`connectTimeout`); passado o prazo, a
+  > tela mostra "Não foi possível falar com o servidor…", e o hub segue tentando por trás: se
+  > conectar, a mensagem some sozinha. "Tentar de novo" corta a espera do backoff
+  > (`HubSession.retryNow`). Queda depois de já ter conectado não tem prazo, como antes. Nada
+  > disso apaga o pareamento. Testes: controller (sem rede não começa, volta com a rede, prazo
+  > vencido, tentar de novo conecta na hora, conexão no prazo, queda depois de conectado), hub
+  > (`retryNow`) e widget (as duas mensagens, sem pareamento perdido). Falta: conferir no A10.
 
 ## Fase futura: IA local nos eventos de movimento (a discutir)
 

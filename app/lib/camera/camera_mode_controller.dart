@@ -4,12 +4,26 @@ import 'package:flutter/foundation.dart';
 
 import '../core/device/battery_reader.dart';
 import '../core/device/keep_alive.dart';
+import '../core/device/network_status.dart';
 import '../core/device/screen_controller.dart';
 import '../core/media/camera_capture.dart';
 import '../core/media/video_quality.dart';
 import '../core/media/webrtc_publisher.dart';
 import '../core/network/hub_session.dart';
 import '../core/storage/credential_store.dart';
+
+/// Why camera mode is not running, for the screen to explain.
+enum CameraModeProblem {
+  /// Nothing wrong: connected, or still trying within [CameraModeController.connectTimeout].
+  none,
+
+  /// The phone has no network at all; camera mode did not start.
+  noNetwork,
+
+  /// The first connection did not open within [CameraModeController.connectTimeout]. The
+  /// session keeps trying in the background.
+  unreachable,
+}
 
 typedef CameraModeFactory = CameraModeController Function(
   PairedSession session,
@@ -18,6 +32,10 @@ typedef CameraModeFactory = CameraModeController Function(
 /// Camera mode: stays connected to the hub, reports the battery, and publishes video only
 /// while the server asks (someone is watching). Sends a battery report when the connection
 /// opens, when the reading changes and at least every [reportInterval].
+///
+/// Before starting it checks that the phone has a network, and gives the first connection
+/// [connectTimeout] before saying the server cannot be reached. Once connected, a drop is
+/// retried for as long as camera mode runs.
 ///
 /// The camera is open while something uses it: publishing, the on-screen thumbnail, or both
 /// sharing the same track. It is released when neither needs it.
@@ -29,9 +47,11 @@ class CameraModeController extends ChangeNotifier {
     required this._keepAlive,
     required this._publisher,
     required this._capture,
+    required this._network,
     DateTime Function()? now,
     this.reportInterval = const Duration(seconds: 60),
     this.checkInterval = const Duration(seconds: 15),
+    this.connectTimeout = const Duration(seconds: 30),
   }) : _now = now ?? DateTime.now;
 
   final HubSession _hub;
@@ -40,11 +60,19 @@ class CameraModeController extends ChangeNotifier {
   final KeepAlive _keepAlive;
   final WebRtcPublisher _publisher;
   final CameraCapture _capture;
+  final NetworkStatus _network;
   final DateTime Function() _now;
   final Duration reportInterval;
   final Duration checkInterval;
+  final Duration connectTimeout;
 
   Timer? _checkTimer;
+  Timer? _connectTimer;
+  bool _begun = false;
+  bool _everConnected = false;
+  CameraModeProblem _problem = CameraModeProblem.none;
+  String _notificationTitle = '';
+  String _notificationText = '';
   BatteryReading? _lastSent;
   DateTime? _lastSentAt;
   bool _publishing = false;
@@ -58,6 +86,8 @@ class CameraModeController extends ChangeNotifier {
   Future<void> _publishingChange = Future.value();
 
   bool get connected => _hub.connected;
+
+  CameraModeProblem get problem => _problem;
 
   /// True when the server refused this camera's pairing; camera mode cannot go on.
   bool get pairingLost => _hub.rejected;
@@ -84,7 +114,9 @@ class CameraModeController extends ChangeNotifier {
     required String notificationTitle,
     required String notificationText,
   }) async {
-    _hub.addListener(notifyListeners);
+    _notificationTitle = notificationTitle;
+    _notificationText = notificationText;
+    _hub.addListener(_onHubChanged);
     _hub.onConnected = () => unawaited(_report(force: true));
     _hub.client.on('StartPublishing', (_) => _queue(_startPublishing));
     _hub.client.on('StopPublishing', (_) => _queue(_stopPublishing));
@@ -94,10 +126,53 @@ class CameraModeController extends ChangeNotifier {
       'SetTorch',
       (args) => _queue(() => _setTorch(args.firstOrNull == true)),
     );
-    await _keepAlive.start(title: notificationTitle, text: notificationText);
+    await _begin();
+  }
+
+  /// After a problem: checks the network again, or tries the server again right away.
+  Future<void> retry() async {
+    if (_begun) {
+      _problem = CameraModeProblem.none;
+      _waitForFirstConnection();
+      notifyListeners();
+      _hub.retryNow();
+      return;
+    }
+    await _begin();
+  }
+
+  Future<void> _begin() async {
+    if (!await _network.hasNetwork()) {
+      _problem = CameraModeProblem.noNetwork;
+      notifyListeners();
+      return;
+    }
+    _begun = true;
+    _problem = CameraModeProblem.none;
+    notifyListeners();
+    await _keepAlive.start(title: _notificationTitle, text: _notificationText);
     await _screen.enterCameraMode();
+    _waitForFirstConnection();
     _hub.start();
     _checkTimer = Timer.periodic(checkInterval, (_) => checkBattery());
+  }
+
+  void _waitForFirstConnection() {
+    _connectTimer?.cancel();
+    _connectTimer = Timer(connectTimeout, () {
+      if (_everConnected) return;
+      _problem = CameraModeProblem.unreachable;
+      notifyListeners();
+    });
+  }
+
+  void _onHubChanged() {
+    if (_hub.connected) {
+      _everConnected = true;
+      _connectTimer?.cancel();
+      _problem = CameraModeProblem.none;
+    }
+    notifyListeners();
   }
 
   /// Sends the battery if it changed or the last report is older than [reportInterval].
@@ -118,7 +193,9 @@ class CameraModeController extends ChangeNotifier {
   Future<void> stop() async {
     _checkTimer?.cancel();
     _checkTimer = null;
-    _hub.removeListener(notifyListeners);
+    _connectTimer?.cancel();
+    _hub.removeListener(_onHubChanged);
+    if (!_begun) return;
     _queue(_closePreview);
     _queue(_stopPublishing);
     await _publishingChange;
@@ -233,7 +310,8 @@ class CameraModeController extends ChangeNotifier {
   @override
   void dispose() {
     _checkTimer?.cancel();
-    _hub.removeListener(notifyListeners);
+    _connectTimer?.cancel();
+    _hub.removeListener(_onHubChanged);
     super.dispose();
   }
 }

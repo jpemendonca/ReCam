@@ -36,6 +36,7 @@ class HubSession extends ChangeNotifier {
   bool _connected = false;
   bool _rejected = false;
   Completer<void>? _closed;
+  Completer<void>? _wake;
   Timer? _heartbeatTimer;
 
   /// Runs every time the connection opens, including reconnections.
@@ -52,8 +53,15 @@ class HubSession extends ChangeNotifier {
     unawaited(_run());
   }
 
+  /// Cuts the wait before the next attempt short, when the person asks to try again.
+  void retryNow() {
+    final wake = _wake;
+    if (wake != null && !wake.isCompleted) wake.complete();
+  }
+
   Future<void> stop() async {
     _running = false;
+    retryNow();
     _stopHeartbeat();
     _completeClosed();
     await client.disconnect();
@@ -100,8 +108,15 @@ class HubSession extends ChangeNotifier {
         _stopHeartbeat();
         _setConnected(false);
       }
-      if (_running) await _delay(_backoff.next());
+      if (_running) await _wait(_backoff.next());
     }
+  }
+
+  Future<void> _wait(Duration duration) async {
+    final wake = Completer<void>();
+    _wake = wake;
+    await Future.any([_delay(duration), wake.future]);
+    _wake = null;
   }
 
   void _startHeartbeat() {

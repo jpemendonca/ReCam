@@ -8,7 +8,8 @@ import '../l10n/generated/app_localizations.dart';
 import 'camera_mode_controller.dart';
 
 /// Shown while the phone works as a camera: connection, battery and whether someone is
-/// watching, plus the button to stop.
+/// watching, plus the button to stop. Without a network, or when the server does not answer in
+/// time, it says so and offers to try again.
 class CameraModeScreen extends StatefulWidget {
   const CameraModeScreen({
     required this.create,
@@ -78,6 +79,15 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
           child: ListenableBuilder(
             listenable: _controller,
             builder: (context, _) {
+              final problem = _controller.problem;
+              if (problem != CameraModeProblem.none) {
+                return _Problem(
+                  message: problem == CameraModeProblem.noNetwork
+                      ? l10n.cameraModeNoNetwork
+                      : l10n.cameraModeUnreachable,
+                  onRetry: _controller.retry,
+                );
+              }
               final reading = _controller.lastReading;
               final preview = _controller.preview;
               return Column(
@@ -189,6 +199,42 @@ class _CameraModeScreenState extends State<CameraModeScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _Problem extends StatelessWidget {
+  const _Problem({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.wifi_off, size: 64, color: theme.colorScheme.error),
+        const SizedBox(height: 16),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleMedium,
+        ),
+        const SizedBox(height: 24),
+        FilledButton.icon(
+          onPressed: onRetry,
+          icon: const Icon(Icons.refresh),
+          label: Text(l10n.retryButton),
+        ),
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cameraModeBack),
+        ),
+      ],
     );
   }
 }

@@ -34,6 +34,7 @@ void main() {
       keepAlive: keepAlive,
       publisher: publisher,
       capture: capture,
+      network: FakeNetworkStatus(),
       now: () => now,
     );
   });
@@ -365,6 +366,7 @@ void main() {
         keepAlive: keepAlive,
         publisher: publisher,
         capture: capture,
+        network: FakeNetworkStatus(),
       );
       await offline.start(notificationTitle: 't', notificationText: 'x');
       await settle();
@@ -583,6 +585,134 @@ void main() {
       // assert
       expect(screen.inCameraMode, isFalse);
       expect(keepAlive.running, isFalse);
+    });
+  });
+  group('CameraModeController connection', () {
+    CameraModeController build({
+      required FakeNetworkStatus network,
+      Delay? delay,
+    }) => CameraModeController(
+      hub: HubSession(client: client, delay: delay ?? (_) async {}),
+      battery: battery,
+      screen: screen,
+      keepAlive: keepAlive,
+      publisher: publisher,
+      capture: capture,
+      network: network,
+      connectTimeout: const Duration(milliseconds: 20),
+    );
+
+    test('withoutNetwork_saysSoAndDoesNotStart', () async {
+      // arrange
+      final network = FakeNetworkStatus()..online = false;
+      final offline = build(network: network);
+
+      // act
+      await offline.start(notificationTitle: 't', notificationText: 'x');
+      await settle();
+
+      // assert
+      expect(offline.problem, CameraModeProblem.noNetwork);
+      expect(client.connectCalls, 0);
+      expect(keepAlive.running, isFalse);
+      expect(screen.inCameraMode, isFalse);
+      await offline.stop();
+      offline.dispose();
+    });
+
+    test('retry_onceTheNetworkIsBack_connects', () async {
+      // arrange
+      final network = FakeNetworkStatus()..online = false;
+      final offline = build(network: network);
+      await offline.start(notificationTitle: 't', notificationText: 'x');
+      network.online = true;
+
+      // act
+      await offline.retry();
+      await settle();
+
+      // assert
+      expect(offline.problem, CameraModeProblem.none);
+      expect(offline.connected, isTrue);
+      expect(keepAlive.running, isTrue);
+      await offline.stop();
+      offline.dispose();
+    });
+
+    test('whenServerDoesNotAnswerInTime_saysItCannotBeReached', () async {
+      // arrange
+      client.connectResults.add(HubConnectOutcome.unreachable);
+      final waiting = build(
+        network: FakeNetworkStatus(),
+        delay: (_) => Completer<void>().future,
+      );
+
+      // act
+      await waiting.start(notificationTitle: 't', notificationText: 'x');
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      // assert
+      expect(waiting.problem, CameraModeProblem.unreachable);
+      expect(waiting.pairingLost, isFalse);
+      await waiting.stop();
+      waiting.dispose();
+    });
+
+    test('retry_afterTheTimeout_triesRightAwayAndConnects', () async {
+      // arrange
+      client.connectResults.add(HubConnectOutcome.unreachable);
+      final waiting = build(
+        network: FakeNetworkStatus(),
+        delay: (_) => Completer<void>().future,
+      );
+      await waiting.start(notificationTitle: 't', notificationText: 'x');
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      // act
+      await waiting.retry();
+      await settle();
+
+      // assert
+      expect(client.connectCalls, 2);
+      expect(waiting.problem, CameraModeProblem.none);
+      expect(waiting.connected, isTrue);
+      await waiting.stop();
+      waiting.dispose();
+    });
+
+    test('whenConnectedInTime_neverShowsAProblem', () async {
+      // arrange
+      final quick = build(network: FakeNetworkStatus());
+
+      // act
+      await quick.start(notificationTitle: 't', notificationText: 'x');
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      // assert
+      expect(quick.problem, CameraModeProblem.none);
+      expect(quick.connected, isTrue);
+      await quick.stop();
+      quick.dispose();
+    });
+
+    test('whenADropOutlastsTheTimeout_keepsTryingWithoutAProblem', () async {
+      // arrange
+      final dropped = build(
+        network: FakeNetworkStatus(),
+        delay: (_) => Completer<void>().future,
+      );
+      await dropped.start(notificationTitle: 't', notificationText: 'x');
+      await settle();
+
+      // act
+      client.drop();
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      // assert
+      expect(dropped.connected, isFalse);
+      expect(dropped.problem, CameraModeProblem.none);
+      await dropped.stop();
+      dropped.dispose();
     });
   });
 }

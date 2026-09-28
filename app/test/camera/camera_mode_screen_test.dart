@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,6 +27,7 @@ void main() {
         keepAlive: FakeKeepAlive(),
         publisher: FakePublisher(),
         capture: FakeCapture(),
+        network: FakeNetworkStatus(),
       );
 
       // act
@@ -61,6 +64,7 @@ void main() {
         keepAlive: FakeKeepAlive(),
         publisher: FakePublisher(),
         capture: FakeCapture(),
+        network: FakeNetworkStatus(),
       );
       await tester.pumpWidget(
         MaterialApp(
@@ -96,6 +100,7 @@ void main() {
         keepAlive: FakeKeepAlive(),
         publisher: FakePublisher(),
         capture: FakeCapture(),
+        network: FakeNetworkStatus(),
       );
       await tester.pumpWidget(
         MaterialApp(
@@ -142,6 +147,7 @@ void main() {
         keepAlive: FakeKeepAlive(),
         publisher: FakePublisher(),
         capture: capture,
+        network: FakeNetworkStatus(),
       );
       await tester.pumpWidget(
         MaterialApp(
@@ -175,6 +181,91 @@ void main() {
       expect(find.byKey(const Key('camera-preview')), findsNothing);
       expect(find.text('Show image'), findsOneWidget);
       expect(capture.isOpen, isFalse);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('withoutNetwork_saysSoAndTryAgainConnects', (tester) async {
+      // arrange
+      final network = FakeNetworkStatus()..online = false;
+      var lost = 0;
+      CameraModeController create() => CameraModeController(
+        hub: HubSession(client: FakeHubClient(), delay: (_) async {}),
+        battery: FakeBatteryReader(),
+        screen: FakeScreenController(),
+        keepAlive: FakeKeepAlive(),
+        publisher: FakePublisher(),
+        capture: FakeCapture(),
+        network: network,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: CameraModeScreen(create: create, onPairingLost: () => lost++),
+        ),
+      );
+      await tester.runAsync(settle);
+      await tester.pump();
+      final shownOffline = find
+          .text('No connection. Turn on Wi-Fi and try again.')
+          .evaluate()
+          .length;
+      final backShown = find.text('Back').evaluate().length;
+
+      // act
+      network.online = true;
+      await tester.tap(find.text('Try again'));
+      await tester.runAsync(settle);
+      await tester.pump();
+
+      // assert
+      expect(shownOffline, 1);
+      expect(backShown, 1);
+      expect(lost, 0);
+      expect(find.text('Connected. This phone is a camera.'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('whenServerDoesNotAnswerInTime_explainsAndKeepsThePairing', (
+      tester,
+    ) async {
+      // arrange
+      final client = FakeHubClient()
+        ..connectResults.add(HubConnectOutcome.unreachable);
+      var lost = 0;
+      CameraModeController create() => CameraModeController(
+        hub: HubSession(client: client, delay: (_) => Completer<void>().future),
+        battery: FakeBatteryReader(),
+        screen: FakeScreenController(),
+        keepAlive: FakeKeepAlive(),
+        publisher: FakePublisher(),
+        capture: FakeCapture(),
+        network: FakeNetworkStatus(),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: CameraModeScreen(create: create, onPairingLost: () => lost++),
+        ),
+      );
+      await tester.pump();
+      final connectingFirst = find
+          .text('Connecting to the server…')
+          .evaluate()
+          .length;
+
+      // act
+      await tester.pump(const Duration(seconds: 30));
+
+      // assert
+      expect(connectingFirst, 1);
+      expect(
+        find.textContaining('Could not reach the server.'),
+        findsOneWidget,
+      );
+      expect(find.text('Try again'), findsOneWidget);
+      expect(lost, 0);
       await tester.pumpWidget(const SizedBox());
     });
   });

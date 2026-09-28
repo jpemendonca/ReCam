@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/core/network/hub_client.dart';
 import 'package:recam/core/network/hub_session.dart';
@@ -113,6 +115,29 @@ void main() {
 
       // assert
       expect(client.connectCalls, greaterThanOrEqualTo(2));
+      await session.stop();
+    });
+
+    test('retryNow_cutsTheWaitShort', () async {
+      // arrange
+      final client = FakeHubClient()
+        ..connectResults.add(HubConnectOutcome.unreachable);
+      final session = HubSession(
+        client: client,
+        delay: (_) => Completer<void>().future,
+      );
+      session.start();
+      await settle();
+      final connectedBefore = session.connected;
+
+      // act
+      session.retryNow();
+      await settle();
+
+      // assert
+      expect(connectedBefore, isFalse);
+      expect(client.connectCalls, 2);
+      expect(session.connected, isTrue);
       await session.stop();
     });
 
