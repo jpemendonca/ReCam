@@ -38,6 +38,8 @@ A fila segue a ordem do arquivo, não o número da fase. Desde 2026-09-25 as Fas
 navegador) e 7 (clarear e movimento) ficam antes da Fase 5 (distribuição), porque mudam o primeiro
 uso que a distribuição vai ensinar.
 A Fase 11 (Monitor no iPhone pelo navegador), anotada em 2026-09-27, também fica antes da Fase 5.
+Na branch `claude/person-activity-detection-4pq7pg`, aberta em 2026-09-28, a fila começa na
+Fase 12 (detecção de pessoas). Ela pode não ir para a `main`.
 
 ---
 
@@ -2339,22 +2341,80 @@ o que continua por conta de quem roda o servidor.
   - Aceite: o autor chega ao ao vivo seguindo só o README paralelo; cada tropeço vira bullet; o
     `README.preview.md` é apagado.
 
-## Fase futura: IA local nos eventos de movimento (a discutir)
+## Fase 12: pessoas nas gravações (branch)
 
-Anotado com o autor em 2026-09-28, sem decisão e sem bullets ainda. Nada aqui entra na fila até
-ser discutido e detalhado.
+Decidido com o autor em 2026-09-28, na branch `claude/person-activity-detection-4pq7pg`, que pode
+não ir para a `main`. A meta final é uma linha do tempo que diz "14:02, pessoa no Quarto". Esta
+fase faz só a primeira parte: saber se tinha pessoa em cada evento de movimento que o 7.2 já acha.
 
-- Ideia: um container opcional, instalado à parte, que olha um quadro de cada evento de movimento
-  e devolve uma etiqueta (pessoa, carro, animal) ou uma frase curta que aparece na linha do tempo.
-  Quem não instala segue com o ReCam leve. Tudo roda em casa, sem nuvem.
-- Desenho provável: o servidor só expõe os eventos e um quadro de cada um; o container busca,
-  analisa e devolve o resultado. O núcleo não processa vídeo e a IA fica trocável.
-- Peso: detectar pessoa/carro com modelo pequeno (tipo YOLO nano) é leve em processador comum.
-  Descrever a cena em texto (modelo de visão com linguagem) é pesado: segundos a minutos por
-  imagem em processador; serve para a linha do tempo, não para o ao vivo.
-- A ver: qual modelo e formato, exigência de hardware (processadores sem AVX2, como um i5 de 3ª
-  geração, podem não rodar a descrição), como o resultado entra no banco e na tela, e se começa só
-  pela detecção de pessoas.
+Decisões da conversa:
+- Só detecção de pessoa, com um modelo YOLO nano. Nada de descrever a cena em texto ("mexeu nas
+  gavetas") nesta fase: isso pede modelo de visão com linguagem, pesado demais para o PC alvo.
+- Só nas gravações (câmeras com "Gravar sempre"), nunca no vídeo ao vivo.
+- Tudo local. Nenhuma API externa, nenhuma chamada de rede do container de detecção.
+- Opcional: um compose à parte, `deploy/compose.detect.yaml`, como o de observabilidade. Quem não
+  sobe esse compose não baixa nada a mais, e o ReCam funciona igual a hoje.
+
+- [ ] **12.1 Container opcional que acha pessoas nos segmentos com movimento**
+  - Origem: conversa com o autor em 2026-09-28.
+  - Escopo:
+    - Projeto novo `server/src/Recam.Detect`, um worker .NET de console na mesma solução (o gate
+      já o cobre), com imagem própria que traz o FFmpeg. Dependência nova pedida por este bullet:
+      `Microsoft.ML.OnnxRuntime` (CPU). O modelo é o YOLO nano em ONNX (Ultralytics, AGPL-3.0,
+      compatível com o ReCam), baixado no build da imagem com SHA-256 fixo, nunca em tempo de
+      execução. Versão exata do modelo e do pacote no ADR.
+    - Mesmo padrão do `motion`: monta `recam-recordings`, roda em loop, pega cada segmento que já
+      tem o `.motion` pronto e ainda não tem o `.people`. Só olha os segundos em que o `.motion`
+      passou do limite da sensibilidade alta (0,3%), um quadro por segundo, pedido ao FFmpeg por
+      pipe em RGB cru (sem biblioteca de imagem). Grava ao lado do `.mp4` um
+      `<segmento>.people` com uma linha por segundo olhado: `<segundos do início> <maior confiança
+      de pessoa, de 0 a 1>`. Arquivo ilegível vira `.people` vazio, como no `motion`.
+    - Só a classe "pessoa" do modelo. Os outros resultados são descartados.
+    - Compose: serviço `detect` só no `compose.detect.yaml`, usuário 1654, `network_mode: none`,
+      sem porta, limite de CPU configurável no `.env` (padrão 1 núcleo) para não roubar o
+      servidor. Comentário no topo com o comando para subir, como no de observabilidade.
+    - "O .NET não processa vídeo" continua valendo para o `Recam.Server`. Revisão do `SPECS.md`
+      (seções 2.4 e 7, regra reescrita para dizer que vale para o servidor principal, e o
+      container opcional descrito) e ADR novo. Seção curta no `README.md` dizendo como ligar e
+      desligar.
+  - Fora: carro, animal, zonas, notificação, vídeo ao vivo, descrição em texto, GPU.
+  - Aceite: teste do pós-processamento (saída do modelo para confiança de pessoa, só a classe
+    pessoa, limites) com tensor de exemplo, e teste com Testcontainers rodando o worker sobre um
+    segmento feito de uma foto com pessoa e outra sem (fotos de licença livre, CC0, guardadas nos
+    testes): o `.people` do primeiro passa de 0,5 e o do segundo fica abaixo. `docker compose -f
+    compose.yaml -f compose.detect.yaml config` passa.
+
+- [ ] **12.2 O servidor marca os eventos de movimento com pessoa**
+  - Origem: continuação do 12.1.
+  - Escopo: o domínio junta os `.people` aos eventos que o `MotionEvents` já monta. Um evento tem
+    pessoa quando algum segundo dentro dele (com a mesma folga da emenda) tem confiança de 0,5 ou
+    mais. Três estados por evento: com pessoa, sem pessoa, e não analisado (sem `.people`, que é o
+    caso de quem não instalou o 12.1 ou do segmento ainda na fila). O
+    `GET /api/cameras/{id}/motion?day=` ganha esse campo sem quebrar quem já o usa. A leitura dos
+    `.people` fica no `RecordingStore`, e a limpeza da cota apaga o `.people` junto com o
+    segmento, e os órfãos.
+  - Fora: guardar pessoas no banco. O arquivo ao lado do segmento basta, como no 7.2.
+  - Aceite: teste do domínio (os três estados, pessoa na borda do evento, evento emendado de dois
+    segmentos), teste do store e teste do endpoint. Revisão do `SPECS.md` (seção 5).
+
+- [ ] **12.3 Pessoas na linha do tempo, no navegador e no app**
+  - Origem: continuação do 12.2; é a tela que o autor pediu ("às 14h uma pessoa entrou no
+    quarto").
+  - Escopo: na tela de gravações, os eventos com pessoa ganham uma marca própria na barra das 24 h
+    e uma lista simples do dia, uma linha por evento: hora, "Pessoa" e o nome da câmera. Tocar na
+    linha toca a partir de 5 s antes, como o "Próximo movimento". Filtro "Só pessoas" ao lado do
+    "Só movimento". Marca, lista e filtro só aparecem quando algum evento do dia foi analisado;
+    sem o 12.1, a tela fica igual a hoje. Textos nos ARB e nos `.resx`, em `en` e `pt`.
+  - Fora: frases geradas por modelo de linguagem.
+  - Aceite: widget test no app e teste bUnit no navegador (marca, lista, filtro, e a tela sem
+    nada novo quando nenhum evento foi analisado).
+
+- [ ] **12.4 [aparelho] Medir no PC antigo**
+  - Origem: conversa com o autor em 2026-09-28 (i5 de 3ª geração, sem AVX2).
+  - Escopo: subir o `compose.detect.yaml` no PC antigo, gravar um dia com movimento e pessoa, e
+    anotar quanto tempo o `detect` leva por segmento, quanto de CPU e memória usa, e se o vídeo ao
+    vivo continua abaixo de 1 s de atraso com ele rodando. Conferir a lista de pessoas na tela.
+  - Aceite: nota de validação com os números medidos.
 
 ## Fora da fila (anotado, não executar)
 
@@ -2370,12 +2430,10 @@ Itens que dependem de decisão futura. O loop para antes daqui.
 - iOS.
 - Fallback por TCP ou HLS.
 - Publicação nas lojas de apps de servidor caseiro (Umbrel, CasaOS, Unraid, Synology).
-- Detecção de pessoas e carros com IA, marcada na linha do tempo (conversa de 2026-09-25).
-  Opcional na instalação, num compose à parte como o de observabilidade, porque pesa no PC:
-  quem não quiser não sobe. Rodaria no PC (nunca no celular), num container próprio com um modelo
-  pequeno (via ONNX Runtime, possivelmente em .NET), só nos momentos que o 7.2 já marcou como
-  movimento. Precisa revisar a regra "o .NET não processa vídeo" para valer só no servidor
-  principal. Zonas (ignorar rua e calçada) entram junto ou logo depois.
+- Carros e animais com IA, e zonas (ignorar rua e calçada). A detecção de pessoas virou a Fase 12,
+  na branch `claude/person-activity-detection-4pq7pg` (2026-09-28).
+- Descrever a cena em texto ("alguém mexeu nas gavetas") com modelo de visão com linguagem. Pesado
+  demais para o PC alvo; fica para depois da Fase 12 (2026-09-28).
 - Modo noturno (conversa de 2026-09-25): botão no Monitor que manda a câmera aceitar de 5 a 15
   quadros por segundo em vez de 15 fixos, para expor por mais tempo no escuro. Vale para todos os
   Monitores e para a gravação, como a lanterna. Antes do botão, testar no A10 e no 6A se o
