@@ -178,8 +178,7 @@ Pairings and recordings stay until you start it again.
 - **`motion`**: FFmpeg, with no network. Scores motion in each closed recording, for the timeline.
   About 60 MB of RAM and almost no CPU at rest.
 - **`detect`** (optional): looks for people in the seconds with motion, with the YOLOX-Tiny model
-  on the CPU, with no network. About 150 MB of RAM and at most one CPU core
-  ([measurements on a 2012 PC](docs/relatorio-benchmark-deteccao.md)).
+  on the CPU, with no network. About 150 MB of RAM and at most one CPU core.
 
 On a very small machine, `motion` can be left out: live video, pairing, recording and playback go
 on working, only the motion marks on the timeline disappear (and, with them, person detection).

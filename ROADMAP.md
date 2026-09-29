@@ -2605,8 +2605,7 @@ Decisões da conversa:
     no player.
   - Aceite: nota de validação com os números medidos.
   > Bloqueado (2026-09-28): aguardando validação no aparelho (PC antigo do autor).
-  > Validação (2026-09-29): medido pelo autor no i5-3470 com Linux Mint, relatório em
-  > `docs/relatorio-benchmark-deteccao.md`. Em 5 minutos com servidor, MediaMTX e `detect`: cerca
+  > Validação (2026-09-29): medido pelo autor no i5-3470 com Linux Mint. Em 5 minutos com servidor, MediaMTX e `detect`: cerca
   > de 410 MB de RAM no total (`detect` 147 MB, estável), CPU média de 3,2% da máquina e pico de
   > 7,5%, temperatura até 66 °C. A lista de pessoas e as caixas no player funcionaram. O tempo por
   > segmento e o atraso do ao vivo não entraram no relatório.
