@@ -45,6 +45,19 @@ Then get the address and the first-time code:
 sudo docker compose exec server ./Recam.Server code
 ```
 
+Keep this output at hand. You need the address and the code in the next section:
+
+```text
+==================== ReCam ====================
+No Monitor yet. On a computer:
+  1. Open https://192.168.0.10:8443 in the browser and accept the certificate warning.
+  2. Type the first-time code RHGJ-JCAU
+===============================================
+```
+
+The code works once: the first browser that types it becomes your Monitor. If you lose it, run the
+same command again.
+
 On a VPS, add a line `RECAM_HOST=` with the VPS public IP to `.env` before you build, and open
 ports 8443/tcp and 8189/udp in the provider's panel. With Docker Desktop on Windows or macOS, set
 `RECAM_HOST` to the computer's network address and add `-f compose.bridge.yaml` to each
@@ -55,7 +68,7 @@ ports 8443/tcp and 8189/udp in the provider's panel. With Docker Desktop on Wind
 1. On a computer or phone in the same network, open the address the last command showed, like
    `https://192.168.0.10:8443`. The browser warns that the connection is not private, because the
    server signs its own certificate. Choose **Advanced**, then **Proceed**.
-2. Type the first-time code. This browser becomes your **Monitor** and shows an **Add camera** QR
+2. Type the first-time code from the same output. This browser becomes your **Monitor** and shows an **Add camera** QR
    code.
 3. On the phone that will film, open the ReCam app, tap **Scan QR code** and scan the code on the
    screen. Give the camera a name.
