@@ -2435,6 +2435,17 @@ o que continua por conta de quem roda o servidor.
   > Validação (2026-09-28): seção "The containers" adicionada ao `README.md` detalhando os três
   > serviços da stack e a nota sobre desativação em hardware de baixo consumo.
 
+- [x] **11.12 README genérico, com a detecção de pessoas ligada no guia**
+  - Origem: pedido do autor em 2026-09-29. O README citava a máquina e as circunstâncias do teste
+    dele, e a detecção vinha como passo opcional no meio da instalação.
+  - Escopo: o começo do README vira só comandos para copiar e colar, com a detecção ligada; os
+    requisitos ficam genéricos; uma seção "Person detection" no fim diz o que ela custa, quando
+    não vale a pena (1 núcleo ou 1 GB de RAM, disco pequeno, gente passando o dia todo) e como
+    desligar. O `compose.detect.yaml` continua um arquivo à parte: o padrão vem do `.env` que o
+    guia escreve.
+  - Aceite: README sem aparelho, marca ou máquina do autor.
+  > Validação (2026-09-29): README reescrito como descrito. Só documentação.
+
 ## Fase 12: pessoas nas gravações
 
 Juntada à `main` em 2026-09-29, depois do teste no PC antigo; o serviço segue opcional.

@@ -8,66 +8,58 @@ subscriptions required.
 
 You need:
 
-- **A computer that stays on**, running Linux (Ubuntu, Linux Mint, Debian or similar), or a VPS.
-  An old one is fine: a 2012 Core i5 runs everything, person detection included, with about
-  400 MB of RAM and 3% of the CPU.
+- **A computer that stays on**, running Linux (Ubuntu, Debian or similar), or a VPS. Any computer
+  from the last ten years is enough.
 - **An Android phone to film** (Android 9 or newer), with the ReCam app. Later you can add more
   phones, as cameras or as Monitors that watch.
-- The computer and the phone on the same network (or a VPS both can reach).
+- The computer and the phone on the same network, or a VPS both can reach.
 
-> Status: pre-alpha, tested on real phones and on an old PC. There is no published image or APK
-> yet: the server is built from source, as below. Follow progress in [ROADMAP.md](ROADMAP.md).
+> Status: pre-alpha. There is no published image or APK yet: the server is built from source, as
+> below. Follow progress in [ROADMAP.md](ROADMAP.md).
 
 ## Install
 
-Run these on the computer, one at a time, in a terminal.
+Run these on the computer, one at a time, in a terminal:
 
-1. Install Docker and Git:
+```bash
+sudo apt update && sudo apt install -y docker.io docker-compose-v2 git
+```
 
-   ```bash
-   sudo apt update && sudo apt install -y docker.io docker-compose-v2 git
-   ```
+```bash
+git clone https://github.com/jpemendonca/ReCam.git && cd ReCam/deploy
+```
 
-2. Get ReCam:
+```bash
+echo "COMPOSE_FILE=compose.yaml:compose.detect.yaml" >> .env
+```
 
-   ```bash
-   git clone https://github.com/jpemendonca/ReCam.git && cd ReCam/deploy
-   ```
+```bash
+sudo bash ../scripts/build-server.sh build && sudo docker compose up -d
+```
 
-3. Optional: turn on person detection. It looks for people in the recordings, where there was
-   motion, and marks them on the timeline. It runs only on this computer, with no network, and
-   uses at most one CPU core. Skip this step to leave it off:
+The last one takes a few minutes the first time. Then check that the four lines say `Up`:
 
-   ```bash
-   echo "COMPOSE_FILE=compose.yaml:compose.detect.yaml" >> .env
-   ```
+```bash
+sudo docker compose ps
+```
 
-4. Build and start it (the first time takes a few minutes):
+And show the address and the first-time code:
 
-   ```bash
-   sudo bash ../scripts/build-server.sh build && sudo docker compose up -d
-   ```
+```bash
+sudo docker compose exec server ./Recam.Server code
+```
 
-5. Check that it is running. Every line must say `Up` (three lines, four with person detection):
+The third command turns on person detection, which marks people in the recordings. To install
+without it, skip that command; see [Person detection](#person-detection).
 
-   ```bash
-   sudo docker compose ps
-   ```
-
-6. Show the address and the first-time code:
-
-   ```bash
-   sudo docker compose exec server ./Recam.Server code
-   ```
-
-On a VPS, add `RECAM_HOST=` with the VPS public IP to `.env` before step 4, and allow ports
+On a VPS, add `RECAM_HOST=` with the VPS public IP to `.env` before building, and allow ports
 8443/tcp and 8189/udp in the provider's panel. On Windows or macOS with Docker Desktop, set
 `RECAM_HOST` to the computer's network address and use `-f compose.bridge.yaml` in every
 `docker compose` command.
 
 ## First use
 
-1. On a computer or phone in the same network, open the address from step 6, like
+1. On a computer or phone in the same network, open the address shown by the last command, like
    `https://192.168.0.10:8443`. The browser warns that the connection is not private: this is
    expected, because the server makes its own certificate. Choose **Advanced**, then **Proceed**.
 2. Type the first-time code. This browser becomes your **Monitor** and shows an **Add camera** QR
@@ -77,7 +69,7 @@ On a VPS, add `RECAM_HOST=` with the VPS public IP to `.env` before step 4, and 
 4. The live video opens in the browser, and the camera already records. Choose how much space the
    recordings may take; when it fills up, the oldest are deleted. Toggle the phone's flashlight
    from the live view.
-5. With person detection on, when someone walks in front of the camera, the recordings page shows
+5. When someone walks in front of the camera, the recordings page shows
    it under **People on this day** a minute or two later, and the player draws a box around the
    person. **Show people** turns the boxes off.
 
@@ -89,7 +81,7 @@ Want the padlock without the warning? Put a reverse proxy in front:
 
 ## If something goes wrong
 
-- **Step 5 shows `Restarting`, or a line is missing.** See why:
+- **`docker compose ps` shows `Restarting`, or a line is missing.** See why:
 
   ```bash
   sudo docker compose logs server
@@ -105,7 +97,7 @@ Want the padlock without the warning? Put a reverse proxy in front:
   sudo ufw allow 8443/tcp && sudo ufw allow 8189/udp
   ```
 
-- **Step 6 shows several addresses, or one that is not your network's.** Tell ReCam which one to
+- **The code command shows several addresses, or one that is not your network's.** Tell ReCam which one to
   use: add a line `RECAM_HOST=` with the computer's address in your network (like
   `RECAM_HOST=192.168.0.10`) to `.env`, and start again:
 
@@ -130,13 +122,7 @@ Want the padlock without the warning? Put a reverse proxy in front:
   "Looked for people in N segment(s)" means it works. On a slow computer it may run a few minutes
   behind.
 
-- **Turn person detection off.** Remove the `COMPOSE_FILE=` line from `.env`, then:
-
-  ```bash
-  sudo docker compose -f compose.yaml -f compose.detect.yaml rm -sf detect
-  ```
-
-- **Lost the code.** Run step 6 again. The code only exists until the first Monitor.
+- **Lost the code.** Run the code command again. The code only exists until the first Monitor.
 
 - **Lost every Monitor.** This removes them and makes a new first-time code:
 
@@ -177,11 +163,33 @@ Pairings and recordings stay until you start it again.
   watches, and writes the recordings in 1-minute files. About 50 MB of RAM.
 - **`motion`**: FFmpeg, with no network. Scores motion in each closed recording, for the timeline.
   About 60 MB of RAM and almost no CPU at rest.
-- **`detect`** (optional): looks for people in the seconds with motion, with the YOLOX-Tiny model
+- **`detect`** (on by default, see [Person detection](#person-detection)): looks for people in the seconds with motion, with the YOLOX-Tiny model
   on the CPU, with no network. About 150 MB of RAM and at most one CPU core.
 
 On a very small machine, `motion` can be left out: live video, pairing, recording and playback go
 on working, only the motion marks on the timeline disappear (and, with them, person detection).
+
+## Person detection
+
+On by default with the commands above. The `detect` service looks for people only in the
+recordings, only in the seconds with motion, one frame per second, on this computer and with no
+network. It uses about 150 MB of RAM and, for a few seconds after each minute with motion, up to
+one CPU core; the rest of the time, almost nothing.
+
+It may not be worth it:
+
+- On a machine with a single CPU core or 1 GB of RAM, like the smallest free VPS plans: while it
+  works, live video and the Monitor may slow down. `RECAM_DETECT_CPUS=0.5` in `.env` halves its
+  share, and it just runs further behind.
+- On a small disk: its image takes about 1.4 GB.
+- When people pass in front of the camera all day (a shop, a living room): every event becomes
+  "person", and motion alone says as much.
+
+To turn it off, remove the `COMPOSE_FILE=` line from `.env`, then:
+
+```bash
+sudo docker compose -f compose.yaml -f compose.detect.yaml rm -sf detect
+```
 
 ## Development
 
