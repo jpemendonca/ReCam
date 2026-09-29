@@ -29,11 +29,7 @@ git clone https://github.com/jpemendonca/ReCam.git && cd ReCam/deploy
 ```
 
 ```bash
-echo "COMPOSE_FILE=compose.yaml:compose.detect.yaml" >> .env
-```
-
-```bash
-sudo bash ../scripts/build-server.sh build && sudo docker compose up -d
+sudo bash ../scripts/build-server.sh && sudo docker compose up -d
 ```
 
 The build takes a few minutes the first time. Check that the four lines say `Up`:
@@ -139,7 +135,7 @@ To get the padlock without the warning, put a reverse proxy in front:
 In `ReCam/deploy`:
 
 ```bash
-git pull && sudo bash ../scripts/build-server.sh build && sudo docker compose up -d
+git pull && sudo bash ../scripts/build-server.sh && sudo docker compose up -d
 ```
 
 Your pairings and recordings stay.
@@ -161,29 +157,31 @@ Your pairings and recordings stay until you start it again.
   writes recordings in 1-minute files. About 50 MB of RAM.
 - **`motion`**: FFmpeg with no network access. It scores motion in each finished recording for the
   timeline. About 60 MB of RAM and close to zero CPU at rest.
-- **`detect`**: looks for people in the seconds with motion, one frame per second, with the
-  YOLOX-Tiny model on the CPU and no network access. About 150 MB of RAM, and up to one CPU core
-  for a few seconds after each minute with motion.
+- **`detect`**: a small .NET program that looks for people. It reads the seconds `motion` marked,
+  one frame per second, and runs the YOLOX-Tiny model on the CPU, with no network access. About
+  150 MB of RAM, and up to one CPU core for a few seconds after each minute with motion.
 
-On a very small machine you can leave `motion` out. Live video, pairing, recording and playback
-keep working; you lose the motion marks on the timeline and person detection with them.
+## Small machines
 
-## Person detection
+Person detection may not pay off on a machine with one CPU core or 1 GB of RAM, like the smallest
+free VPS plans: live video and the Monitor may slow down while it works. You can also skip it for a
+camera where people pass all day, like a shop, since every event would say "person".
 
-Person detection may not pay off in three cases:
-
-- A machine with one CPU core or 1 GB of RAM, like the smallest free VPS plans. Live video and the
-  Monitor may slow down while it works. `RECAM_DETECT_CPUS=0.5` in `.env` gives it half a core,
-  and it falls further behind.
-- A small disk. Its image takes about 1.4 GB.
-- A camera where people pass all day, like a shop or a living room. Every event says "person", and
-  motion tells you the same.
-
-To turn it off, delete the `COMPOSE_FILE=` line from `.env` and run:
+To give it half a core, add `RECAM_DETECT_CPUS=0.5` to `.env`; it falls further behind. To turn it
+off, run this in `ReCam/deploy`:
 
 ```bash
-sudo docker compose -f compose.yaml -f compose.detect.yaml rm -sf detect
+printf 'services:\n  detect:\n    deploy:\n      replicas: 0\n' > compose.override.yaml && sudo docker compose up -d
 ```
+
+On a very small machine you can turn off `motion` too. Live video, pairing, recording and playback
+keep working; you lose the motion marks and the people on the timeline:
+
+```bash
+printf 'services:\n  detect:\n    deploy:\n      replicas: 0\n  motion:\n    deploy:\n      replicas: 0\n' > compose.override.yaml && sudo docker compose up -d
+```
+
+To turn both back on, delete `compose.override.yaml` and run `sudo docker compose up -d`.
 
 ## Development
 
@@ -197,7 +195,7 @@ bash scripts/gate.sh
 The gate checks formatting, analysis, build and tests for `server/` and `app/`. Server tests start
 a MediaMTX container, so keep Docker running.
 
-`bash scripts/build-server.sh` builds the Docker image and `bash scripts/build-apk.sh` builds the
+`bash scripts/build-server.sh` builds the Docker images and `bash scripts/build-apk.sh` builds the
 APK, both stamped with the version from Git. Other builds show the version `dev`.
 
 Architecture, protocol and decisions: [SPECS.md](SPECS.md). Code rules: [CODESTYLE.md](CODESTYLE.md).

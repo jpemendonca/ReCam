@@ -1012,3 +1012,9 @@ seguinte em `docs/adr/`:
 > as revisões acima dizem "só na branch", vale para a `main`. O serviço `detect` continua
 > opcional. O README passa a ter o guia de instalação testado no PC antigo (bullet 11.7), com a
 > detecção como passo opcional.
+
+> Revisão (2026-09-29): o serviço `detect` entrou no `compose.yaml` e no `compose.bridge.yaml`, e o
+> `compose.detect.yaml` foi apagado; onde a seção 2.6 e o ADR 0043 citam esse arquivo, vale o
+> compose principal. Para desligar, a pessoa cria um `deploy/compose.override.yaml` (fora do Git)
+> com `replicas: 0` no `detect`, e no `motion` se quiser. O `scripts/build-server.sh` constrói as
+> duas imagens.

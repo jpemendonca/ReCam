@@ -52,6 +52,22 @@ services:
       - recam-recordings:/recordings
     restart: unless-stopped
 
+  detect:
+    # Looks for people in the seconds the motion service marked, on the CPU, with no network.
+    build:
+      context: ../server
+      dockerfile: src/Recam.Detect/Dockerfile
+    image: recam-detect:local
+    depends_on:
+      - server
+    network_mode: none
+    cpus: ${RECAM_DETECT_CPUS:-1}
+    environment:
+      RECAM_DETECT_THREADS: ${RECAM_DETECT_THREADS:-1}
+    volumes:
+      - recam-recordings:/recordings
+    restart: unless-stopped
+
 volumes:
   recam-data:
   recam-recordings:
