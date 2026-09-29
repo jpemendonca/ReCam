@@ -6,66 +6,183 @@
 Turn spare Android phones into security cameras. Self-hosted, open source, no ads, no
 subscriptions required.
 
-You need one phone and one computer to start:
+You need:
 
-- **The ReCam server**, a Docker container on your own machine or VPS. It pairs your phones,
-  relays the video and serves the Monitor you open in the browser.
-- **The ReCam app**, on the phone that will film. Later you can add more phones, as cameras or as
-  Monitors that watch.
+- **A computer that stays on**, running Linux (Ubuntu, Linux Mint, Debian or similar), or a VPS.
+  An old one is fine: a 2012 Core i5 runs everything, person detection included, with about
+  400 MB of RAM and 3% of the CPU.
+- **An Android phone to film** (Android 9 or newer), with the ReCam app. Later you can add more
+  phones, as cameras or as Monitors that watch.
+- The computer and the phone on the same network (or a VPS both can reach).
 
-> Status: pre-alpha. The main path is written and tested, but not yet validated on real phones.
-> There is no published image or APK yet: build from source. Follow progress in
-> [ROADMAP.md](ROADMAP.md).
+> Status: pre-alpha, tested on real phones and on an old PC. There is no published image or APK
+> yet: the server is built from source, as below. Follow progress in [ROADMAP.md](ROADMAP.md).
 
-## How it works
+## Install
 
-1. **Start the server.** Get the code with `git clone https://github.com/jpemendonca/ReCam.git`
-   and go to `ReCam/deploy`. Then:
-   - **Linux at home:** `docker compose up -d`.
-   - **VPS:** `cp .env.example .env`, set `RECAM_HOST` to the VPS public IP in `.env`, and run
-     `docker compose up -d`. Cameras and Monitors then reach it from anywhere.
-   - **Windows or macOS (Docker Desktop):** `cp .env.example .env`, set `RECAM_HOST` to the
-     computer's network address, and run `docker compose -f compose.bridge.yaml up -d`.
+Run these on the computer, one at a time, in a terminal.
 
-   Allow ports 8443/tcp and 8189/udp in the firewall (on a VPS, also in the provider's panel).
-2. **Read the first-time code.** Run `docker compose exec server ./Recam.Server code` (with Docker
-   Desktop, `docker compose -f compose.bridge.yaml exec server ./Recam.Server code`). It shows the
-   address to open and a code like `ABCD-EFGH`. The same framed block is at the top of
-   `docker compose logs server`, and in the output of `docker compose up` without `-d`.
-3. **Open the browser** at `https://<server-ip>:8443`. The certificate is self-signed, so the
-   browser warns once. This is expected: choose to proceed (in Chrome, **Advanced** and then
-   **Proceed**). Type the code. This browser is now the Monitor and shows an **Add camera** QR
+1. Install Docker and Git:
+
+   ```bash
+   sudo apt update && sudo apt install -y docker.io docker-compose-v2 git
+   ```
+
+2. Get ReCam:
+
+   ```bash
+   git clone https://github.com/jpemendonca/ReCam.git && cd ReCam/deploy
+   ```
+
+3. Optional: turn on person detection. It looks for people in the recordings, where there was
+   motion, and marks them on the timeline. It runs only on this computer, with no network, and
+   uses at most one CPU core. Skip this step to leave it off:
+
+   ```bash
+   echo "COMPOSE_FILE=compose.yaml:compose.detect.yaml" >> .env
+   ```
+
+4. Build and start it (the first time takes a few minutes):
+
+   ```bash
+   sudo bash ../scripts/build-server.sh build && sudo docker compose up -d
+   ```
+
+5. Check that it is running. Every line must say `Up` (three lines, four with person detection):
+
+   ```bash
+   sudo docker compose ps
+   ```
+
+6. Show the address and the first-time code:
+
+   ```bash
+   sudo docker compose exec server ./Recam.Server code
+   ```
+
+On a VPS, add `RECAM_HOST=` with the VPS public IP to `.env` before step 4, and allow ports
+8443/tcp and 8189/udp in the provider's panel. On Windows or macOS with Docker Desktop, set
+`RECAM_HOST` to the computer's network address and use `-f compose.bridge.yaml` in every
+`docker compose` command.
+
+## First use
+
+1. On a computer or phone in the same network, open the address from step 6, like
+   `https://192.168.0.10:8443`. The browser warns that the connection is not private: this is
+   expected, because the server makes its own certificate. Choose **Advanced**, then **Proceed**.
+2. Type the first-time code. This browser becomes your **Monitor** and shows an **Add camera** QR
    code.
-4. **On the phone that will film**, open ReCam, tap **Scan QR code**, scan it and name the
-   camera. The phone switches to camera mode, and its live video opens in the browser by itself.
-   Toggle the phone's flashlight from there.
-5. **Liked it?** From the browser, **Add camera** adds another camera and **Add Monitor** lets your
-   main phone watch too. **Add Monitor › In a browser** shows a link, as a QR code, that turns
-   another browser into a Monitor: point an iPhone's camera at it to watch there, no app needed.
+3. On the phone that will film, install the ReCam app, open it, tap **Scan QR code** and scan the
+   QR code on the screen. Give the camera a name.
+4. The live video opens in the browser, and the camera already records. Choose how much space the
+   recordings may take; when it fills up, the oldest are deleted. Toggle the phone's flashlight
+   from the live view.
+5. With person detection on, when someone walks in front of the camera, the recordings page shows
+   it under **People on this day** a minute or two later, and the player draws a box around the
+   person. **Show people** turns the boxes off.
+
+To watch from another phone with the app, use **Add Monitor** in the browser. To watch in another
+browser, use **Add Monitor › In a browser**, which shows a link as a QR code.
 
 Want the padlock without the warning? Put a reverse proxy in front:
 [docs/reverse-proxy.md](docs/reverse-proxy.md).
 
-Want to know when a person shows up in the recordings? Person detection is optional and runs only
-on your machine, with no network. Add `-f compose.detect.yaml` to the command you used, for example
-`docker compose -f compose.yaml -f compose.detect.yaml up -d`. It only looks at cameras set to
-record, in the seconds with motion, and uses about one CPU core while it works. To turn it off:
-`docker compose -f compose.yaml -f compose.detect.yaml rm -sf detect`.
+## If something goes wrong
 
-Lost every Monitor? `docker compose exec server ./Recam.Server reset-owner` removes them, and the
-server prints a new first-time code.
+- **Step 5 shows `Restarting`, or a line is missing.** See why:
 
-Requirements: Android 9 or newer. Reference devices: Samsung Galaxy A10 and Xiaomi Redmi 6A.
+  ```bash
+  sudo docker compose logs server
+  ```
+
+  "address already in use" means another program uses port 8443 or 8189. Stop it, then run
+  `sudo docker compose up -d` again.
+
+- **The browser cannot open the address.** The computer and the phone or other computer must be
+  on the same network. If the computer has a firewall on, allow ReCam's two ports:
+
+  ```bash
+  sudo ufw allow 8443/tcp && sudo ufw allow 8189/udp
+  ```
+
+- **Step 6 shows several addresses, or one that is not your network's.** Tell ReCam which one to
+  use: add a line `RECAM_HOST=` with the computer's address in your network (like
+  `RECAM_HOST=192.168.0.10`) to `.env`, and start again:
+
+  ```bash
+  nano .env
+  ```
+
+  ```bash
+  sudo docker compose up -d
+  ```
+
+- **The live video stays black or keeps loading.** The video uses port 8189/udp. Allow it in the
+  firewall (above). The **Diagnostics** button under the video shows what the browser receives.
+
+- **Nobody shows up under People on this day.** Detection only looks at cameras that record, in
+  the seconds with motion. See what it is doing:
+
+  ```bash
+  sudo docker compose logs detect
+  ```
+
+  "Looked for people in N segment(s)" means it works. On a slow computer it may run a few minutes
+  behind.
+
+- **Turn person detection off.** Remove the `COMPOSE_FILE=` line from `.env`, then:
+
+  ```bash
+  sudo docker compose -f compose.yaml -f compose.detect.yaml rm -sf detect
+  ```
+
+- **Lost the code.** Run step 6 again. The code only exists until the first Monitor.
+
+- **Lost every Monitor.** This removes them and makes a new first-time code:
+
+  ```bash
+  sudo docker compose exec server ./Recam.Server reset-owner
+  ```
+
+- **Start over from nothing.** This deletes every pairing and every recording:
+
+  ```bash
+  sudo docker compose down -v && sudo docker compose up -d
+  ```
+
+## Update
+
+In `ReCam/deploy`:
+
+```bash
+git pull && sudo bash ../scripts/build-server.sh build && sudo docker compose up -d
+```
+
+Pairings and recordings stay.
+
+## Stop
+
+```bash
+sudo docker compose down
+```
+
+Pairings and recordings stay until you start it again.
 
 ## The containers
 
-ReCam runs three lightweight, decoupled containers:
+- **`server`**: .NET 10 with a SQLite database. Serves the Monitor in the browser on port
+  `8443`, pairs phones, relays the WebRTC signaling (WHIP/WHEP), sends commands such as the
+  flashlight, and keeps recordings within their space. About 210 MB of RAM.
+- **`mediamtx`**: receives the video from the cameras on port `8189/udp`, sends it live to whoever
+  watches, and writes the recordings in 1-minute files. About 50 MB of RAM.
+- **`motion`**: FFmpeg, with no network. Scores motion in each closed recording, for the timeline.
+  About 60 MB of RAM and almost no CPU at rest.
+- **`detect`** (optional): looks for people in the seconds with motion, with the YOLOX-Tiny model
+  on the CPU, with no network. About 150 MB of RAM and at most one CPU core
+  ([measurements on a 2012 PC](docs/relatorio-benchmark-deteccao.md)).
 
-- **`server` (`recam-server`)**: The brain and web frontend. Powered by .NET 10 with an internal SQLite database, it serves the Blazor WebAssembly Monitor on port `8443`, manages pairing tokens, issues QR codes, proxies WebRTC signaling (WHIP/WHEP), handles remote controls (such as toggling the camera flashlight), and enforces recording storage quotas.
-- **`mediamtx` (`recam-mediamtx`)**: The media plane. A high-performance Go-based streaming server (`bluenviron/mediamtx`). It receives the raw WebRTC RTP video stream directly from cameras on port `8189/udp`, broadcasts live video to watching monitors with sub-second latency, and continuously segments recordings into 1-minute files in `/recordings`.
-- **`motion` (`recam-motion`)**: The motion detector. A zero-network worker running FFmpeg (`motion.sh`). It inspects `/recordings`, analyzes closed 1-minute video segments, and records timestamps where motion occurred so the player timeline highlights activity.
-
-> **Low-spec hardware:** The architecture is fully decoupled. If running on extremely constrained machines, the `motion` service can be stopped or omitted from `compose.yaml` to save memory. Live video, pairing, continuous recording, and video playback will continue working completely unaffected (only timeline motion highlights will be absent). However, disabling it is rarely necessary: the motion worker uses minimal resources (~60 MB RAM and virtually 0% idle CPU on an old 2012 Core i5).
+On a very small machine, `motion` can be left out: live video, pairing, recording and playback go
+on working, only the motion marks on the timeline disappear (and, with them, person detection).
 
 ## Development
 

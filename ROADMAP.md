@@ -2328,7 +2328,7 @@ o que continua por conta de quem roda o servidor.
 
 ---
 
-- [ ] **11.7 [aparelho] Teste no PC antigo com o README paralelo**
+- [x] **11.7 [aparelho] Teste no PC antigo com o README paralelo**
   - Origem: pedido do autor em 2026-09-28. Um PC antigo (i5 de 3ª geração, SSD) com Linux Mint
     instalado do zero faz o papel de um usuário novo.
   - Escopo: o autor segue só o `README.preview.md`, escrito como se fosse o README definitivo
@@ -2343,6 +2343,11 @@ o que continua por conta de quem roda o servidor.
     cifra num processador antigo.
   - Aceite: o autor chega ao ao vivo seguindo só o README paralelo; cada tropeço vira bullet; o
     `README.preview.md` é apagado.
+  > Validação (2026-09-29): o autor instalou no PC antigo (i5-3470, Linux Mint) seguindo o
+  > `README.preview.md`, tanto da `main` quanto da branch da detecção, e tudo funcionou. O guia
+  > foi para o `README.md` (instalação, primeiro uso, problemas comuns, atualizar, parar e os
+  > containers), com a detecção de pessoas como passo opcional, e o `README.preview.md` foi
+  > apagado.
 
 - [x] **11.8 [aparelho] Modo câmera sem internet: avisar na hora, e com rede ruim tentar e explicar**
   - Origem: teste do autor em 2026-09-28. O Samsung A10 já pareado, em modo avião, toca em
@@ -2430,8 +2435,9 @@ o que continua por conta de quem roda o servidor.
   > Validação (2026-09-28): seção "The containers" adicionada ao `README.md` detalhando os três
   > serviços da stack e a nota sobre desativação em hardware de baixo consumo.
 
-## Fase 12: pessoas nas gravações (branch)
+## Fase 12: pessoas nas gravações
 
+Juntada à `main` em 2026-09-29, depois do teste no PC antigo; o serviço segue opcional.
 Decidido com o autor em 2026-09-28, na branch `claude/person-activity-detection-4pq7pg`, que pode
 não ir para a `main`. A meta final é uma linha do tempo que diz "14:02, pessoa no Quarto". Esta
 fase faz só a primeira parte: saber se tinha pessoa em cada evento de movimento que o 7.2 já acha.
@@ -2591,7 +2597,7 @@ Decisões da conversa:
   > não analisado, tela cheia) no bUnit e no widget test, e o cliente HTTP do app. `SPECS.md` 2.6 e
   > 5. Gate verde (427 no servidor, no web e no detect, 314 no app).
 
-- [ ] **12.5 [aparelho] Medir no PC antigo**
+- [x] **12.5 [aparelho] Medir no PC antigo**
   - Origem: conversa com o autor em 2026-09-28 (i5 de 3ª geração, sem AVX2).
   - Escopo: subir o `compose.detect.yaml` no PC antigo, gravar um dia com movimento e pessoa, e
     anotar quanto tempo o `detect` leva por segmento, quanto de CPU e memória usa, e se o vídeo ao
@@ -2599,6 +2605,11 @@ Decisões da conversa:
     no player.
   - Aceite: nota de validação com os números medidos.
   > Bloqueado (2026-09-28): aguardando validação no aparelho (PC antigo do autor).
+  > Validação (2026-09-29): medido pelo autor no i5-3470 com Linux Mint, relatório em
+  > `docs/relatorio-benchmark-deteccao.md`. Em 5 minutos com servidor, MediaMTX e `detect`: cerca
+  > de 410 MB de RAM no total (`detect` 147 MB, estável), CPU média de 3,2% da máquina e pico de
+  > 7,5%, temperatura até 66 °C. A lista de pessoas e as caixas no player funcionaram. O tempo por
+  > segmento e o atraso do ao vivo não entraram no relatório.
 
 - [ ] **12.6 Lista "Pessoas neste dia": mais recentes primeiro e altura limitada**
   - Origem: teste do autor em 2026-09-28. Num dia com muitas passagens, a lista cresce sem fim e

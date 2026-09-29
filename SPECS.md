@@ -1007,3 +1007,8 @@ seguinte em `docs/adr/`:
 > no primeiro minuto, e o MP4 com resolução trocando no meio não tocava no navegador. Pelo mesmo
 > motivo, a qualidade reduzida por calor (revisão de 2026-09-25) passa a ser 1280x720 a 10 fps e
 > 400 kbps, sem a escala de 1,5.
+
+> Revisão (2026-09-29): a Fase 12 (pessoas nas gravações, seção 2.6) foi juntada à `main`; onde
+> as revisões acima dizem "só na branch", vale para a `main`. O serviço `detect` continua
+> opcional. O README passa a ter o guia de instalação testado no PC antigo (bullet 11.7), com a
+> detecção como passo opcional.
