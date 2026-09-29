@@ -2413,6 +2413,17 @@ o que continua por conta de quem roda o servidor.
   - Aceite: `docker compose config` mostra o limite em todos os serviços; na VPS, `docker inspect`
     confirma a opção, e abrir e fechar o ao vivo não gera mais as linhas de "Start processing HTTP
     request".
+- [x] **11.11 Documentar os containers da stack e desativação do motion no README**
+  - Origem: pedido do autor em 2026-09-28 durante testes em máquina de entrada. (Criado como
+    11.8 no GitHub; renumerado no merge porque a 11.8 local já existia.)
+  - Escopo: no `README.md`, detalhar o papel de cada serviço (`server`, `mediamtx`, `motion`),
+    o que roda em cada container, e que o serviço de detecção de movimento (`motion`) pode ser
+    interrompido em hardware extremamente modesto para economizar recursos sem afetar o vídeo
+    ao vivo, o pareamento ou a gravação contínua (embora não seja necessário, pois o consumo
+    é inferior a 60 MB de RAM).
+  - Aceite: seção explicativa no `README.md`.
+  > Validação (2026-09-28): seção "The containers" adicionada ao `README.md` detalhando os três
+  > serviços da stack e a nota sobre desativação em hardware de baixo consumo.
 
 ## Fase futura: IA local nos eventos de movimento (a discutir)
 
