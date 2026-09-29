@@ -18,7 +18,8 @@ You need:
 
 ## Install
 
-Open a terminal on the computer and run these, one at a time:
+Open a terminal on the computer and run these, one at a time. Skip the first one if you already
+have Docker and Git:
 
 ```bash
 sudo apt update && sudo apt install -y docker.io docker-compose-v2 git
@@ -160,28 +161,6 @@ Your pairings and recordings stay until you start it again.
 - **`detect`**: a small .NET program that looks for people. It reads the seconds `motion` marked,
   one frame per second, and runs the YOLOX-Tiny model on the CPU, with no network access. About
   150 MB of RAM, and up to one CPU core for a few seconds after each minute with motion.
-
-## Small machines
-
-Person detection may not pay off on a machine with one CPU core or 1 GB of RAM, like the smallest
-free VPS plans: live video and the Monitor may slow down while it works. You can also skip it for a
-camera where people pass all day, like a shop, since every event would say "person".
-
-To give it half a core, add `RECAM_DETECT_CPUS=0.5` to `.env`; it falls further behind. To turn it
-off, run this in `ReCam/deploy`:
-
-```bash
-printf 'services:\n  detect:\n    deploy:\n      replicas: 0\n' > compose.override.yaml && sudo docker compose up -d
-```
-
-On a very small machine you can turn off `motion` too. Live video, pairing, recording and playback
-keep working; you lose the motion marks and the people on the timeline:
-
-```bash
-printf 'services:\n  detect:\n    deploy:\n      replicas: 0\n  motion:\n    deploy:\n      replicas: 0\n' > compose.override.yaml && sudo docker compose up -d
-```
-
-To turn both back on, delete `compose.override.yaml` and run `sudo docker compose up -d`.
 
 ## Development
 

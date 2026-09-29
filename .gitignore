@@ -1,6 +1,5 @@
 # Secrets and local config
 .env
-deploy/compose.override.yaml
 *.env.local
 key.properties
 *.jks
