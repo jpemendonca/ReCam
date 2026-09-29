@@ -28,6 +28,7 @@ void main() {
         cameraId: cameraId,
         player: FakeRecordingPlayer(),
         segments: FakeSegmentSource(),
+        peopleBoxes: FakePeopleBoxesStore(),
       ),
       adjustments: FakeAdjustmentStore(),
     );

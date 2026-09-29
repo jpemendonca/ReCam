@@ -36,6 +36,9 @@ abstract interface class RecordingPlayer {
   /// The current segment's position, length and whether it plays.
   ValueListenable<PlaybackPosition> get position;
 
+  /// Width over height of the current segment's picture; null before one plays.
+  ValueListenable<double?> get aspectRatio;
+
   Future<void> pause();
 
   Future<void> resume();
@@ -59,9 +62,13 @@ abstract interface class RecordingPlayer {
 class VideoPlayerRecordingPlayer implements RecordingPlayer {
   final _current = ValueNotifier<VideoPlayerController?>(null);
   final _position = ValueNotifier(const PlaybackPosition());
+  final _aspectRatio = ValueNotifier<double?>(null);
 
   @override
   ValueListenable<PlaybackPosition> get position => _position;
+
+  @override
+  ValueListenable<double?> get aspectRatio => _aspectRatio;
   void Function()? _onFinished;
   bool _finishReported = false;
   bool _muted = false;
@@ -88,6 +95,7 @@ class VideoPlayerRecordingPlayer implements RecordingPlayer {
     await controller.setVolume(_muted ? 0 : 1);
     if (from > Duration.zero) await controller.seekTo(from);
     _current.value = controller;
+    _aspectRatio.value = controller.value.aspectRatio;
     await previous?.dispose();
     await controller.play();
   }

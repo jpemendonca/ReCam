@@ -44,6 +44,12 @@ public interface IRecamApi
 
     Task SetMotionSensitivityAsync(Guid cameraId, string sensitivity, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The people in one recording file, from its URL (<see cref="RecordingSegmentInfo.Url"/>); null
+    /// when the optional detect service did not look at it.
+    /// </summary>
+    Task<SegmentPeopleInfo?> GetSegmentPeopleAsync(string segmentUrl, CancellationToken cancellationToken);
+
     Task<QuotaInfo> GetQuotaAsync(CancellationToken cancellationToken);
 
     Task SetQuotaAsync(int megabytes, CancellationToken cancellationToken);

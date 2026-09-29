@@ -21,4 +21,12 @@ public static class RecordingFiles
         File.WriteAllLines(
             segmentPath + ".motion",
             samples.Select(sample => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{sample.Seconds:0.0} {sample.Changed:0.0000}")));
+
+    /// <summary>Marks the detect service as last seen at <paramref name="at"/>.</summary>
+    public static void WriteDetectHeartbeat(string recordingsDirectory, DateTimeOffset at)
+    {
+        var heartbeat = Path.Combine(recordingsDirectory, ".detect");
+        File.WriteAllText(heartbeat, string.Empty);
+        File.SetLastWriteTimeUtc(heartbeat, at.UtcDateTime);
+    }
 }

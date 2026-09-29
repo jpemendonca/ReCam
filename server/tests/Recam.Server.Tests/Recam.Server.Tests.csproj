@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Recam.Server\Recam.Server.csproj" />
+    <!-- Only for the round trip of the .people file between the detect service and the server. -->
+    <ProjectReference Include="..\..\src\Recam.Detect\Recam.Detect.csproj" />
   </ItemGroup>
 
   <ItemGroup>

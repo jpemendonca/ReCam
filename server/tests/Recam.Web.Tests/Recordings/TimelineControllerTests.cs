@@ -12,7 +12,9 @@ public sealed class TimelineControllerTests
     private readonly FakeRecamApi _api = new() { Me = new MeInfo(Guid.NewGuid(), "Navegador", "owner") };
     private readonly Guid _cameraId = Guid.NewGuid();
 
-    private TimelineController NewController() => new(_api) { UtcOffsetOf = _ => SaoPaulo };
+    private readonly FakePeopleBoxesStore _peopleBoxes = new();
+
+    private TimelineController NewController() => new(_api, _peopleBoxes) { UtcOffsetOf = _ => SaoPaulo };
 
     [Fact(DisplayName = "Recordings of an early UTC morning show on the previous local day, and empty days are dropped")]
     public async Task Load_EarlyUtcMorning_OpensPreviousLocalDay()
@@ -145,6 +147,113 @@ public sealed class TimelineControllerTests
 
         // assert
         Assert.Equal(new DateTime(2026, 9, 25, 12, 19, 55), controller.PlayingFrom);
+    }
+
+    [Fact(DisplayName = "With People only, next motion and the end of a file skip motion without a person")]
+    public async Task OnlyPeople_SkipsMotionWithoutPerson()
+    {
+        // arrange
+        var utcDay = new DateOnly(2026, 9, 25);
+        AddPiece(utcDay, At(utcDay, 15, 0), 30);
+        _api.Motion[utcDay] =
+        [
+            new MotionEventInfo(At(utcDay, 15, 5).AddSeconds(10), At(utcDay, 15, 5).AddSeconds(15), 0.05, Person: true),
+            new MotionEventInfo(At(utcDay, 15, 10), At(utcDay, 15, 10).AddSeconds(20), 0.05, Person: false),
+            new MotionEventInfo(At(utcDay, 15, 20), At(utcDay, 15, 20).AddSeconds(40), 0.05, Person: true),
+        ];
+        var controller = NewController();
+        await controller.LoadAsync(_cameraId);
+        controller.OnlyPeople = true;
+
+        // act
+        controller.PlayNextMotion();
+        var first = controller.PlayingFrom;
+        controller.PlayNext();
+
+        // assert
+        Assert.True(controller.PeopleAnalyzed);
+        Assert.Equal(2, controller.People.Count);
+        Assert.Equal(2, controller.ShownMotion.Count);
+        Assert.Equal(new DateTime(2026, 9, 25, 12, 5, 5), first);
+        Assert.Equal(new DateTime(2026, 9, 25, 12, 19, 55), controller.PlayingFrom);
+    }
+
+    [Fact(DisplayName = "Without the detect service, nothing about people shows and People only changes nothing")]
+    public async Task OnlyPeople_NotAnalyzed_KeepsAllMotion()
+    {
+        // arrange
+        var utcDay = new DateOnly(2026, 9, 25);
+        AddPiece(utcDay, At(utcDay, 15, 0), 30);
+        AddMotion(utcDay, (At(utcDay, 15, 5), 20), (At(utcDay, 15, 20), 40));
+        var controller = NewController();
+        await controller.LoadAsync(_cameraId);
+
+        // act
+        controller.OnlyPeople = true;
+
+        // assert
+        Assert.False(controller.PeopleAnalyzed);
+        Assert.Empty(controller.People);
+        Assert.Equal(2, controller.ShownMotion.Count);
+    }
+
+    [Fact(DisplayName = "Playing a person from the list starts five seconds before it")]
+    public async Task PlayMark_Person_PlaysFromLead()
+    {
+        // arrange
+        var utcDay = new DateOnly(2026, 9, 25);
+        AddPiece(utcDay, At(utcDay, 15, 0), 30);
+        _api.Motion[utcDay] = [new MotionEventInfo(At(utcDay, 15, 12), At(utcDay, 15, 12).AddSeconds(8), 0.05, Person: true)];
+        var controller = NewController();
+        await controller.LoadAsync(_cameraId);
+
+        // act
+        controller.PlayMark(controller.People[0]);
+
+        // assert
+        Assert.Equal(new DateTime(2026, 9, 25, 12, 11, 55), controller.PlayingFrom);
+    }
+
+    [Fact(DisplayName = "Playing a file brings its people, and only a file the detect service looked at has them")]
+    public async Task Play_AnalyzedFile_LoadsPeople()
+    {
+        // arrange
+        var utcDay = new DateOnly(2026, 9, 25);
+        AddPiece(utcDay, At(utcDay, 15, 0), 30);
+        _api.SegmentPeople[$"/api/recordings/{_cameraId}/segment-5.mp4"] =
+            new SegmentPeopleInfo([new PeopleSecondInfo(3, [new PersonBoxInfo(0.1, 0.2, 0.3, 0.4)])]);
+        var controller = NewController();
+        await controller.LoadAsync(_cameraId);
+
+        // act
+        controller.PlayAt(new DateTime(2026, 9, 25, 12, 5, 0));
+        var analyzed = controller.PlayingPeople;
+        controller.PlayAt(new DateTime(2026, 9, 25, 12, 6, 0));
+
+        // assert
+        Assert.NotNull(analyzed);
+        Assert.Single(analyzed.At(3.5));
+        Assert.Null(controller.PlayingPeople);
+    }
+
+    [Fact(DisplayName = "Show people starts from what this browser saved, and saving it keeps it")]
+    public async Task SetShowPeople_Saves()
+    {
+        // arrange
+        _peopleBoxes.Show = false;
+        var utcDay = new DateOnly(2026, 9, 25);
+        AddPiece(utcDay, At(utcDay, 15, 0), 30);
+        var controller = NewController();
+        await controller.LoadAsync(_cameraId);
+        var loaded = controller.ShowPeople;
+
+        // act
+        await controller.SetShowPeopleAsync(true);
+
+        // assert
+        Assert.False(loaded);
+        Assert.True(controller.ShowPeople);
+        Assert.True(_peopleBoxes.Show);
     }
 
     [Fact(DisplayName = "With Motion only, motion that goes past the end of a file continues in the next one")]

@@ -16,6 +16,8 @@ public sealed class RecordingsPagesTests : BunitContext
     private readonly FakeRecamApi _api = new() { Me = new MeInfo(Guid.NewGuid(), "Navegador", "owner") };
     private readonly CameraInfo _camera = Support.Cameras.Make("Porta", recording: true);
     private readonly FakeVideoClock _clock = new();
+    private readonly FakePeopleOverlay _overlay = new();
+    private readonly FakePeopleBoxesStore _peopleBoxes = new();
 
     public RecordingsPagesTests()
     {
@@ -24,7 +26,8 @@ public sealed class RecordingsPagesTests : BunitContext
         Services.AddSingleton<IRecamApi>(_api);
         Services.AddSingleton<IDeviceHub>(new FakeDeviceHub());
         Services.AddSingleton<CameraListController>();
-        Services.AddTransient(_ => new TimelineController(_api) { UtcOffsetOf = _ => TimeSpan.Zero });
+        Services.AddTransient(_ => new TimelineController(_api, _peopleBoxes) { UtcOffsetOf = _ => TimeSpan.Zero });
+        Services.AddSingleton<IPeopleOverlay>(_overlay);
         Services.AddTransient<QuotaController>();
         Services.AddSingleton<IVideoClock>(_clock);
         Services.AddSingleton<ILanguageStore>(new FakeLanguageStore());
@@ -176,6 +179,133 @@ public sealed class RecordingsPagesTests : BunitContext
         var mark = page.Find("rect.motion");
         // The hour window opens on the latest recording, 13:50 to 14:50.
         Assert.Equal(("333.33", "50", "36"), (mark.GetAttribute("x"), mark.GetAttribute("width"), mark.GetAttribute("height")));
+    }
+
+    [Fact(DisplayName = "People get their own mark and a list of the day; a row plays it and People only hides the rest")]
+    public void Timeline_People_ListedAndPlayed()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20),
+            [new RecordingSegmentInfo(start, start.AddMinutes(20), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        _api.Motion[day] =
+        [
+            new MotionEventInfo(start.AddMinutes(2), start.AddMinutes(3), 0.04, Person: true),
+            new MotionEventInfo(start.AddMinutes(10), start.AddMinutes(13), 0.04, Person: false),
+        ];
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Single(page.FindAll(".person-row")));
+
+        // act
+        var marks = page.FindAll("rect.motion").Count;
+        var personMarks = page.FindAll("rect.motion.person").Count;
+        var row = page.Find(".person-row").TextContent.Trim();
+        page.Find(".person-row").Click();
+        var source = page.Find("video").GetAttribute("src");
+        page.Find("input.only-people").Change(true);
+
+        // assert
+        Assert.Equal((2, 1), (marks, personMarks));
+        Assert.Equal("14:02 · Pessoa · Porta", row);
+        Assert.Equal("Pessoas neste dia", page.Find(".people h2").TextContent);
+        Assert.Equal($"api/recordings/{_camera.Id}/a.mp4#t=115", source);
+        Assert.Single(page.FindAll("rect.motion"));
+        Assert.Empty(page.FindAll("rect.recorded"));
+    }
+
+    [Fact(DisplayName = "Without the detect service, the timeline shows nothing about people")]
+    public void Timeline_NotAnalyzed_ShowsNoPeople()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20),
+            [new RecordingSegmentInfo(start, start.AddMinutes(20), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        _api.Motion[day] = [new MotionEventInfo(start.AddMinutes(10), start.AddMinutes(13), 0.04)];
+
+        // act
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.motion")));
+
+        // assert
+        Assert.Empty(page.FindAll(".people"));
+        Assert.Empty(page.FindAll("input.only-people"));
+        Assert.Empty(page.FindAll("rect.motion.person"));
+    }
+
+    [Fact(DisplayName = "An analyzed day with nobody says so")]
+    public void Timeline_AnalyzedNobody_SaysNobody()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20),
+            [new RecordingSegmentInfo(start, start.AddMinutes(20), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        _api.Motion[day] = [new MotionEventInfo(start.AddMinutes(10), start.AddMinutes(13), 0.04, Person: false)];
+
+        // act
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Single(page.FindAll(".people")));
+
+        // assert
+        Assert.Equal("Ninguém neste dia.", page.Find(".people .note").TextContent);
+    }
+
+    [Fact(DisplayName = "A file with people gets boxes over the player, which Show people turns off and on")]
+    public void Timeline_FileWithPeople_DrawsBoxes()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        var url = $"/api/recordings/{_camera.Id}/a.mp4";
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20), [new RecordingSegmentInfo(start, start.AddMinutes(20), url)])];
+        _api.SegmentPeople[url] = new SegmentPeopleInfo([new PeopleSecondInfo(3, [new PersonBoxInfo(0.1, 0.2, 0.3, 0.4)])]);
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("rect.slot")));
+
+        // act
+        // The hour window opens on the latest recording, 13:50 to 14:50; slot 20 is 14:10:30.
+        page.FindAll("rect.slot")[20].Click();
+        page.WaitForAssertion(() => Assert.Single(_overlay.Followed));
+        var label = page.Find("input.show-people").ParentElement!.TextContent.Trim();
+        page.Find("input.show-people").Change(false);
+        var stopsWhenOff = _overlay.Stops;
+        page.Find("input.show-people").Change(true);
+        page.Find("button.full-screen").Click();
+
+        // assert
+        Assert.Equal("Mostrar pessoas", label);
+        Assert.True(stopsWhenOff >= 1);
+        Assert.True(_peopleBoxes.Show);
+        Assert.Equal(2, _overlay.Followed.Count);
+        Assert.Equal(1, _overlay.FullScreens);
+        Assert.Equal("nofullscreen", page.Find("video").GetAttribute("controlslist"));
+    }
+
+    [Fact(DisplayName = "A file the detect service did not look at has no boxes and no Show people")]
+    public void Timeline_FileNotAnalyzed_HasNoBoxes()
+    {
+        // arrange
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20),
+            [new RecordingSegmentInfo(start, start.AddMinutes(20), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("rect.slot")));
+
+        // act
+        // The hour window opens on the latest recording, 13:50 to 14:50; slot 20 is 14:10:30.
+        page.FindAll("rect.slot")[20].Click();
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("video")));
+
+        // assert
+        Assert.Empty(page.FindAll("input.show-people"));
+        Assert.Empty(_overlay.Followed);
     }
 
     [Fact(DisplayName = "Choosing another sensitivity saves it and redraws the motion")]

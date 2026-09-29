@@ -335,5 +335,20 @@
         "type": "String"
       }
     }
-  }
+  },
+  "peopleOnly": "People only",
+  "peopleTitle": "People on this day",
+  "peopleNone": "Nobody on this day.",
+  "peopleRow": "{time} · Person · {camera}",
+  "@peopleRow": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "camera": {
+        "type": "String"
+      }
+    }
+  },
+  "peopleShow": "Show people"
 }

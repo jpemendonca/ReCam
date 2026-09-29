@@ -41,6 +41,8 @@ builder.Services.AddTransient<InviteBrowserController>();
 builder.Services.AddTransient<JoinController>();
 builder.Services.AddTransient<TimelineController>();
 builder.Services.AddScoped<IVideoClock, JsVideoClock>();
+builder.Services.AddScoped<IPeopleOverlay, JsPeopleOverlay>();
+builder.Services.AddScoped<IPeopleBoxesStore, JsPeopleBoxesStore>();
 builder.Services.AddTransient<QuotaController>();
 builder.Services.AddTransient<DevicesController>();
 builder.Services.AddScoped<IBrightenSurface, JsBrightenSurface>();

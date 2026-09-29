@@ -204,6 +204,15 @@ public sealed class FakeRecamApi : IRecamApi
         return Recordings.GetValueOrDefault(utcDay) ?? [];
     }
 
+    /// <summary>People by recording file URL; a file missing here was not analyzed.</summary>
+    public Dictionary<string, SegmentPeopleInfo> SegmentPeople { get; } = [];
+
+    public Task<SegmentPeopleInfo?> GetSegmentPeopleAsync(string segmentUrl, CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        return Task.FromResult(SegmentPeople.GetValueOrDefault(segmentUrl));
+    }
+
     public Task<MotionInfo> GetMotionAsync(Guid cameraId, DateOnly utcDay, CancellationToken cancellationToken)
     {
         ThrowIfOffline();

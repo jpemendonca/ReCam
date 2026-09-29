@@ -10,6 +10,7 @@ import '../core/network/api_client.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'brighten_controller.dart';
 import 'brighten_panel.dart';
+import 'people_boxes.dart';
 import 'recording_timeline_controller.dart';
 import 'recordings_controller.dart';
 import 'timeline_window.dart';
@@ -37,6 +38,7 @@ class RecordingsTimelineScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => RecordingsTimelinePane(
+    cameraName: cameraName,
     create: create,
     brighten: brighten,
     recordingCameras: recordingCameras,
@@ -50,6 +52,7 @@ class RecordingsTimelineScreen extends StatelessWidget {
 /// ([header]) instead.
 class RecordingsTimelinePane extends StatefulWidget {
   const RecordingsTimelinePane({
+    required this.cameraName,
     required this.create,
     required this.brighten,
     this.recordingCameras = 1,
@@ -57,6 +60,9 @@ class RecordingsTimelinePane extends StatefulWidget {
     this.header,
     super.key,
   });
+
+  /// Shown in the list of the people the detect service found.
+  final String cameraName;
 
   /// How many cameras record now; the hours the space holds are shared among them.
   final int recordingCameras;
@@ -168,6 +174,23 @@ class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
                               child: _controller.player.buildVideo(),
                             ),
                           ),
+                          // Over the picture, outside "Brighten", which only changes the video.
+                          if (_controller.playingPeople case final track?
+                              when _controller.showPeople)
+                            ValueListenableBuilder(
+                              valueListenable: _controller.player.aspectRatio,
+                              builder: (context, ratio, _) => ratio == null
+                                  ? const SizedBox.shrink()
+                                  : Center(
+                                      child: AspectRatio(
+                                        aspectRatio: ratio,
+                                        child: PeopleBoxes(
+                                          track: track,
+                                          position: _controller.player.position,
+                                        ),
+                                      ),
+                                    ),
+                            ),
                           // The file's start plus where the player is: it follows every file.
                           ValueListenableBuilder(
                             valueListenable: _controller.player.position,
@@ -187,6 +210,15 @@ class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
             ),
             if (playing != null) ...[
               _PlayerControls(player: _controller.player),
+              if (_controller.playingPeople != null)
+                SwitchListTile(
+                  key: const Key('show-people'),
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(l10n.peopleShow),
+                  value: _controller.showPeople,
+                  onChanged: (value) =>
+                      unawaited(_controller.setShowPeople(value)),
+                ),
               const SizedBox(height: 8),
               Text(
                 l10n.timelinePlaying(
@@ -241,6 +273,13 @@ class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
                 ),
                 const SizedBox(height: 16),
                 _MotionControls(controller: _controller),
+                if (_controller.peopleAnalyzed) ...[
+                  const SizedBox(height: 16),
+                  _PeopleList(
+                    controller: _controller,
+                    cameraName: widget.cameraName,
+                  ),
+                ],
               ],
             ],
           ],
@@ -364,6 +403,7 @@ class _MotionControls extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final motion = controller.motion;
+    final shown = controller.shownMotion;
     final sensitivity = controller.sensitivity;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -378,7 +418,7 @@ class _MotionControls extends StatelessWidget {
             Expanded(
               child: OutlinedButton.icon(
                 key: const Key('previous-motion'),
-                onPressed: motion.isEmpty
+                onPressed: shown.isEmpty
                     ? null
                     : () => unawaited(controller.playPreviousMotion()),
                 icon: const Icon(Icons.skip_previous),
@@ -389,7 +429,7 @@ class _MotionControls extends StatelessWidget {
             Expanded(
               child: OutlinedButton.icon(
                 key: const Key('next-motion'),
-                onPressed: motion.isEmpty
+                onPressed: shown.isEmpty
                     ? null
                     : () => unawaited(controller.playNextMotion()),
                 icon: const Icon(Icons.skip_next),
@@ -405,6 +445,14 @@ class _MotionControls extends StatelessWidget {
           value: controller.onlyMotion,
           onChanged: (value) => controller.onlyMotion = value,
         ),
+        if (controller.peopleAnalyzed)
+          SwitchListTile(
+            key: const Key('only-people'),
+            contentPadding: EdgeInsets.zero,
+            title: Text(l10n.peopleOnly),
+            value: controller.onlyPeople,
+            onChanged: (value) => controller.onlyPeople = value,
+          ),
         Text(l10n.motionSensitivity),
         const SizedBox(height: 8),
         if (sensitivity != null)
@@ -434,6 +482,39 @@ class _MotionControls extends StatelessWidget {
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         ],
+      ],
+    );
+  }
+}
+
+/// The motion of the day that had a person in it, one row each; a row plays it.
+class _PeopleList extends StatelessWidget {
+  const _PeopleList({required this.controller, required this.cameraName});
+
+  final RecordingTimelineController controller;
+  final String cameraName;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final time = DateFormat.Hm(Localizations.localeOf(context).toString());
+    final people = controller.people;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(l10n.peopleTitle, style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        if (people.isEmpty)
+          Text(l10n.peopleNone)
+        else
+          for (final mark in people)
+            ListTile(
+              key: const Key('person-row'),
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.person, color: PeopleBoxes.color),
+              title: Text(l10n.peopleRow(time.format(mark.start), cameraName)),
+              onTap: () => unawaited(controller.playMark(mark)),
+            ),
       ],
     );
   }
@@ -524,6 +605,10 @@ class _HourBarState extends State<_HourBar> {
     final locale = Localizations.localeOf(context).toString();
     final colors = Theme.of(context).colorScheme;
     final controller = widget.controller;
+    // The bar shows only the marks, full height, when either filter is on.
+    final onlyMarks =
+        controller.onlyMotion ||
+        (controller.onlyPeople && controller.peopleAnalyzed);
     final withSeconds = _window.zoom == TimelineZoom.minute;
     String clock(DateTime time) => withSeconds
         ? DateFormat.Hms(locale).format(time)
@@ -615,7 +700,7 @@ class _HourBarState extends State<_HourBar> {
                             size: Size(width, _barHeight),
                             painter: _HourBarPainter(
                               window: _window,
-                              segments: controller.onlyMotion
+                              segments: onlyMarks
                                   ? const []
                                   : controller.timeline,
                               playing: controller.playing,
@@ -625,7 +710,7 @@ class _HourBarState extends State<_HourBar> {
                               ticks: colors.outline,
                             ),
                           ),
-                          for (final mark in controller.motion)
+                          for (final mark in controller.shownMotion)
                             if (mark.end.isAfter(_window.start) &&
                                 mark.start.isBefore(_window.end))
                               Positioned(
@@ -634,16 +719,21 @@ class _HourBarState extends State<_HourBar> {
                                     (_window.xOf(mark.end, width) -
                                             _window.xOf(mark.start, width))
                                         .clamp(_minimumMark, 1e9),
-                                top: controller.onlyMotion
+                                top: onlyMarks
                                     ? _trackTop
                                     : _barHeight - _trackTop - _motionHeight,
-                                height: controller.onlyMotion
+                                height: onlyMarks
                                     ? _barHeight - 2 * _trackTop
                                     : _motionHeight,
-                                child: const ColoredBox(
-                                  key: Key('motion-mark'),
-                                  color: _motionColor,
-                                ),
+                                child: mark.person == true
+                                    ? const ColoredBox(
+                                        key: Key('person-mark'),
+                                        color: PeopleBoxes.color,
+                                      )
+                                    : const ColoredBox(
+                                        key: Key('motion-mark'),
+                                        color: _motionColor,
+                                      ),
                               ),
                           if (controller.playing != null &&
                               _head != null &&

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../pairing/device_role.dart';
 
 abstract interface class ApiClient {
@@ -73,6 +75,14 @@ abstract interface class ApiClient {
   );
 
   /// Returns null when the server saved the camera's new sensitivity.
+  /// The people in one recording file, from its path (`/api/recordings/...`). Fails when the
+  /// optional detect service did not look at it (404).
+  Future<ApiResult<SegmentPeople>> segmentPeople(
+    Uri baseUrl,
+    String credential,
+    String segmentPath,
+  );
+
   Future<ApiFailureKind?> setMotionSensitivity(
     Uri baseUrl,
     String credential,
@@ -150,10 +160,13 @@ enum MotionSensitivity { low, medium, high }
 
 /// Something moved in the recording between [start] and [end]. Times in UTC.
 class MotionEventInfo {
-  const MotionEventInfo({required this.start, required this.end});
+  const MotionEventInfo({required this.start, required this.end, this.person});
 
   final DateTime start;
   final DateTime end;
+
+  /// Whether the optional detect service saw a person; null when it did not look.
+  final bool? person;
 }
 
 /// A camera's motion in one UTC day, and the sensitivity that found it.
@@ -162,6 +175,48 @@ class MotionInfo {
 
   final MotionSensitivity sensitivity;
   final List<MotionEventInfo> events;
+}
+
+/// A person's box in one frame, in fractions of the frame, from its top left corner.
+@immutable
+class PersonBox {
+  const PersonBox({
+    required this.x,
+    required this.y,
+    required this.width,
+    required this.height,
+  });
+
+  final double x;
+  final double y;
+  final double width;
+  final double height;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PersonBox &&
+      other.x == x &&
+      other.y == y &&
+      other.width == width &&
+      other.height == height;
+
+  @override
+  int get hashCode => Object.hash(x, y, width, height);
+}
+
+/// One second the detect service looked at: [at] seconds into the file, and the people then.
+class PeopleSecond {
+  const PeopleSecond({required this.at, required this.people});
+
+  final double at;
+  final List<PersonBox> people;
+}
+
+/// The people the optional detect service found in one recording file.
+class SegmentPeople {
+  const SegmentPeople({required this.seconds});
+
+  final List<PeopleSecond> seconds;
 }
 
 /// The space all recordings may take together, and the disk around it.

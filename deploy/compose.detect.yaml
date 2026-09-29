@@ -1,0 +1,25 @@
+# Optional. Looks for people in the recordings, in the seconds the motion service marked, and shows
+# them on the timeline. Runs on this machine only, with no network; heavier on the CPU.
+#   docker compose -f compose.yaml -f compose.detect.yaml up -d
+#   docker compose -f compose.bridge.yaml -f compose.detect.yaml up -d   (Docker Desktop)
+# To turn it off: docker compose -f compose.yaml -f compose.detect.yaml rm -sf detect
+name: recam
+
+services:
+  detect:
+    build:
+      context: ../server
+      dockerfile: src/Recam.Detect/Dockerfile
+    image: recam-detect:local
+    depends_on:
+      - server
+    network_mode: none
+    cpus: ${RECAM_DETECT_CPUS:-1}
+    environment:
+      RECAM_DETECT_THREADS: ${RECAM_DETECT_THREADS:-1}
+    volumes:
+      - recam-recordings:/recordings
+    restart: unless-stopped
+
+volumes:
+  recam-recordings:

@@ -16,6 +16,12 @@ public sealed partial class RecordingStore(ServerSettings settings)
     /// <summary>The motion service writes a segment's scores next to it, with this suffix.</summary>
     public const string MotionSuffix = ".motion";
 
+    /// <summary>The optional detect service writes the people it found next to a segment, with this suffix.</summary>
+    public const string PeopleSuffix = ".people";
+
+    /// <summary>The detect service touches this file, at the recordings root, while it runs.</summary>
+    public const string DetectHeartbeatFileName = ".detect";
+
     public string Directory => settings.RecordingsDirectory;
 
     public IReadOnlyList<RecordingSegment> ListSegments()
@@ -62,6 +68,13 @@ public sealed partial class RecordingStore(ServerSettings settings)
         return newest;
     }
 
+    /// <summary>When the detect service last showed it is running, or null when it never ran.</summary>
+    public DateTimeOffset? DetectLastSeen()
+    {
+        var heartbeat = new FileInfo(Path.Combine(Directory, DetectHeartbeatFileName));
+        return heartbeat.Exists ? new DateTimeOffset(heartbeat.LastWriteTimeUtc, TimeSpan.Zero) : null;
+    }
+
     /// <summary>Free space on the disk that holds the recordings.</summary>
     public long FreeBytes()
     {
@@ -73,13 +86,14 @@ public sealed partial class RecordingStore(ServerSettings settings)
     public string? PathOf(Guid cameraId, string fileName) =>
         TryParseStart(fileName) is null ? null : Path.Combine(Directory, CameraFolder(cameraId), fileName);
 
-    /// <summary>Deletes the file and its motion scores.</summary>
+    /// <summary>Deletes the file, its motion scores and the people found in it.</summary>
     public void Delete(RecordingSegment segment)
     {
         if (PathOf(segment.CameraId, segment.FileName) is { } path)
         {
             File.Delete(path);
             File.Delete(path + MotionSuffix);
+            File.Delete(path + PeopleSuffix);
         }
     }
 
@@ -109,8 +123,39 @@ public sealed partial class RecordingStore(ServerSettings settings)
         return samples;
     }
 
-    /// <summary>Removes motion scores whose segment is gone, deleted while it was being scored.</summary>
-    public void DeleteOrphanMotion()
+    /// <summary>
+    /// The people the detect service found in a segment (SPECS.md 2.6): one line per second looked
+    /// at, "seconds" then "confidence x y width height" per person. Null until it analyzed the segment.
+    /// </summary>
+    public IReadOnlyList<PeopleSample>? ReadPeople(RecordingSegment segment)
+    {
+        if (PathOf(segment.CameraId, segment.FileName) is not { } path || !File.Exists(path + PeopleSuffix))
+        {
+            return null;
+        }
+
+        var samples = new List<PeopleSample>();
+        foreach (var line in File.ReadLines(path + PeopleSuffix))
+        {
+            var values = line.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(value => double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) ? number : (double?)null)
+                .ToList();
+            if (values.Count == 0 || values.Any(value => value is null) || (values.Count - 1) % 5 != 0)
+            {
+                continue;
+            }
+
+            var people = values.Skip(1).Chunk(5)
+                .Select(box => new PersonBox(box[0]!.Value, box[1]!.Value, box[2]!.Value, box[3]!.Value, box[4]!.Value))
+                .ToList();
+            samples.Add(new PeopleSample(segment.StartsAt.AddSeconds(values[0]!.Value), people));
+        }
+
+        return samples;
+    }
+
+    /// <summary>Removes motion scores and people files whose segment is gone, deleted while it was being looked at.</summary>
+    public void DeleteOrphanNotes()
     {
         var root = new DirectoryInfo(Directory);
         if (!root.Exists)
@@ -120,11 +165,14 @@ public sealed partial class RecordingStore(ServerSettings settings)
 
         foreach (var cameraDirectory in root.EnumerateDirectories().Where(folder => TryParseCamera(folder.Name) is not null))
         {
-            foreach (var scores in cameraDirectory.EnumerateFiles("*" + MotionSuffix))
+            foreach (var suffix in (string[])[MotionSuffix, PeopleSuffix])
             {
-                if (!File.Exists(scores.FullName[..^MotionSuffix.Length]))
+                foreach (var notes in cameraDirectory.EnumerateFiles("*" + suffix))
                 {
-                    scores.Delete();
+                    if (!File.Exists(notes.FullName[..^suffix.Length]))
+                    {
+                        notes.Delete();
+                    }
                 }
             }
         }

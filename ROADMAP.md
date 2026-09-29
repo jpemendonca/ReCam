@@ -38,6 +38,8 @@ A fila segue a ordem do arquivo, não o número da fase. Desde 2026-09-25 as Fas
 navegador) e 7 (clarear e movimento) ficam antes da Fase 5 (distribuição), porque mudam o primeiro
 uso que a distribuição vai ensinar.
 A Fase 11 (Monitor no iPhone pelo navegador), anotada em 2026-09-27, também fica antes da Fase 5.
+Na branch `claude/person-activity-detection-4pq7pg`, aberta em 2026-09-28, a fila começa na
+Fase 12 (detecção de pessoas). Ela pode não ir para a `main`.
 
 ---
 
@@ -2333,6 +2335,9 @@ o que continua por conta de quem roda o servidor.
     (instalação rápida, primeiro uso e problemas comuns). Ele não é a versão final: depois do
     teste, o que funcionou vai para o `README.md` de verdade e o `README.preview.md` é apagado.
     O app ainda não tem APK publicado (5.4), então no teste ele vem instalado por `adb`.
+    Nesta branch (Fase 12), o `README.preview.md` instala com a detecção de pessoas ligada
+    (`COMPOSE_FILE=compose.yaml:compose.detect.yaml` no `.env`), para ver também quanto ela pesa
+    num processador antigo.
   - A observar: instalação do Docker no Mint, compose em rede `host` achando o IP da rede local
     sozinho, firewall, atraso na rede local, e uso de processador do FFmpeg de movimento e da
     cifra num processador antigo.
@@ -2425,22 +2430,187 @@ o que continua por conta de quem roda o servidor.
   > Validação (2026-09-28): seção "The containers" adicionada ao `README.md` detalhando os três
   > serviços da stack e a nota sobre desativação em hardware de baixo consumo.
 
-## Fase futura: IA local nos eventos de movimento (a discutir)
+## Fase 12: pessoas nas gravações (branch)
 
-Anotado com o autor em 2026-09-28, sem decisão e sem bullets ainda. Nada aqui entra na fila até
-ser discutido e detalhado.
+Decidido com o autor em 2026-09-28, na branch `claude/person-activity-detection-4pq7pg`, que pode
+não ir para a `main`. A meta final é uma linha do tempo que diz "14:02, pessoa no Quarto". Esta
+fase faz só a primeira parte: saber se tinha pessoa em cada evento de movimento que o 7.2 já acha.
 
-- Ideia: um container opcional, instalado à parte, que olha um quadro de cada evento de movimento
-  e devolve uma etiqueta (pessoa, carro, animal) ou uma frase curta que aparece na linha do tempo.
-  Quem não instala segue com o ReCam leve. Tudo roda em casa, sem nuvem.
-- Desenho provável: o servidor só expõe os eventos e um quadro de cada um; o container busca,
-  analisa e devolve o resultado. O núcleo não processa vídeo e a IA fica trocável.
-- Peso: detectar pessoa/carro com modelo pequeno (tipo YOLO nano) é leve em processador comum.
-  Descrever a cena em texto (modelo de visão com linguagem) é pesado: segundos a minutos por
-  imagem em processador; serve para a linha do tempo, não para o ao vivo.
-- A ver: qual modelo e formato, exigência de hardware (processadores sem AVX2, como um i5 de 3ª
-  geração, podem não rodar a descrição), como o resultado entra no banco e na tela, e se começa só
-  pela detecção de pessoas.
+Decisões da conversa:
+- Só detecção de pessoa, com um modelo YOLO nano. Nada de descrever a cena em texto ("mexeu nas
+  gavetas") nesta fase: isso pede modelo de visão com linguagem, pesado demais para o PC alvo.
+- Só nas gravações (câmeras com "Gravar sempre"), nunca no vídeo ao vivo.
+- Tudo local. Nenhuma API externa, nenhuma chamada de rede do container de detecção.
+- Opcional: um compose à parte, `deploy/compose.detect.yaml`, como o de observabilidade. Quem não
+  sobe esse compose não baixa nada a mais, e o ReCam funciona igual a hoje.
+
+- [x] **12.1 Container opcional que acha pessoas nos segmentos com movimento**
+  - Origem: conversa com o autor em 2026-09-28.
+  - Escopo:
+    - Projeto novo `server/src/Recam.Detect`, um worker .NET de console na mesma solução (o gate
+      já o cobre), com imagem própria que traz o FFmpeg. Dependência nova pedida por este bullet:
+      `Microsoft.ML.OnnxRuntime` (CPU). O modelo é o YOLO nano em ONNX (Ultralytics, AGPL-3.0,
+      compatível com o ReCam), baixado no build da imagem com SHA-256 fixo, nunca em tempo de
+      execução. Versão exata do modelo e do pacote no ADR.
+    - Mesmo padrão do `motion`: monta `recam-recordings`, roda em loop, pega cada segmento que já
+      tem o `.motion` pronto e ainda não tem o `.people`. Só olha os segundos em que o `.motion`
+      passou do limite da sensibilidade alta (0,3%), um quadro por segundo, pedido ao FFmpeg por
+      pipe em RGB cru (sem biblioteca de imagem). Grava ao lado do `.mp4` um
+      `<segmento>.people` com uma linha por segundo olhado: `<segundos do início>` seguido de
+      zero ou mais caixas de pessoa, cada uma `<confiança> <x> <y> <largura> <altura>`, com
+      confiança de 0 a 1 e coordenadas de 0 a 1 relativas ao quadro. Segundo sem pessoa fica só
+      com o tempo. As caixas já saem aqui para o 12.4 não precisar reprocessar nada. Arquivo ilegível vira `.people` vazio, como no `motion`.
+    - Só a classe "pessoa" do modelo. Os outros resultados são descartados.
+    - Compose: serviço `detect` só no `compose.detect.yaml`, usuário 1654, `network_mode: none`,
+      sem porta, limite de CPU configurável no `.env` (padrão 1 núcleo) para não roubar o
+      servidor. Comentário no topo com o comando para subir, como no de observabilidade.
+    - "O .NET não processa vídeo" continua valendo para o `Recam.Server`. Revisão do `SPECS.md`
+      (seções 2.4 e 7, regra reescrita para dizer que vale para o servidor principal, e o
+      container opcional descrito) e ADR novo. Seção curta no `README.md` dizendo como ligar e
+      desligar.
+  - Fora: carro, animal, zonas, notificação, vídeo ao vivo, descrição em texto, GPU.
+  - Aceite: teste do pós-processamento (saída do modelo para confiança de pessoa, só a classe
+    pessoa, limites, caixas em coordenadas relativas) com tensor de exemplo, e teste com Testcontainers rodando o worker sobre um
+    segmento feito de uma foto com pessoa e outra sem (fotos de licença livre, CC0, guardadas nos
+    testes): o `.people` do primeiro passa de 0,5 e o do segundo fica abaixo. `docker compose -f
+    compose.yaml -f compose.detect.yaml config` passa.
+  > Validação (2026-09-28): código escrito e cadeia percorrida no Docker deste ambiente, sem
+  > celular. Mudança no modelo, registrada no `SPECS.md` 12 e no ADR 0043: no lugar do YOLO nano da
+  > Ultralytics ficou o YOLOX-Tiny (Megvii, Apache-2.0, ONNX pronto na release oficial, SHA-256
+  > fixo no Dockerfile), porque a Ultralytics só publica os pesos em PyTorch e exportar exigiria
+  > PyTorch no build. `Recam.Detect`: `MotionSeconds` (segundos acima de 0,3%), `SegmentFrames`
+  > (ffprobe e FFmpeg por pipe, um quadro por segundo em 416 px com borda cinza), `PersonDetector`
+  > (ONNX Runtime 1.30.0, telemetria desligada), `YoloxDecoder` (grades 8/16/32, só pessoa, corte
+  > em 0,3, sobreposição acima de 45% vira uma caixa), `PeopleFile` e `SegmentScanner` (pula
+  > segmento cifrado, toca `/recordings/.detect` antes de cada segmento). Imagem sobre a mesma
+  > `linuxserver/ffmpeg` do `motion` (acrescenta cerca de 260 MB), usuário 1654. Mudança fora do
+  > texto do bullet, necessária para ele funcionar: a cifra das gravações (9.13) apagaria a chance
+  > de ler o vídeo, então o `RecordingCipherWorker` espera também o `.people` enquanto o
+  > heartbeat tem menos de 5 minutos, com o mesmo limite de 30 minutos. `compose.detect.yaml` com
+  > `network_mode: none`, `RECAM_DETECT_CPUS` e `RECAM_DETECT_THREADS` no `.env.example`, seção no
+  > README, `SPECS.md` 2.6 e 7, regra do `AGENTS.md` reescrita. As fotos dos testes vieram do
+  > Darknet (domínio público), não de um banco CC0, porque o Wikimedia está bloqueado aqui.
+  > Observado: `docker compose -f compose.yaml -f compose.detect.yaml up -d --build` subiu os quatro
+  > serviços; um segmento cinza em que a foto de um homem aparece no segundo 3 ganhou `.motion`
+  > (0,95 no 3,0), depois `.people` com `3 0.9148 0.2978 0.2385 0.1307 0.6587`, e só então foi
+  > cifrado. Parado, o `detect` usa 0% de CPU e 83 MB. Testes: decodificador (caixa relativa, outras
+  > classes, sobreposição, borda), `MotionSeconds`, `PeopleFile`, cifra esperando e não esperando o
+  > detect, e Testcontainers construindo a imagem pelo Dockerfile: pessoa com 0,91, cachorro sem
+  > ninguém acima de 0,5, segmento cifrado e segmento sem `.motion` pulados. Gate verde (404 no
+  > servidor e no web, 299 no app).
+
+- [x] **12.2 O servidor marca os eventos de movimento com pessoa**
+  - Origem: continuação do 12.1.
+  - Escopo: o domínio junta os `.people` aos eventos que o `MotionEvents` já monta. Um evento tem
+    pessoa quando algum segundo dentro dele (com a mesma folga da emenda) tem confiança de 0,5 ou
+    mais. Três estados por evento: com pessoa, sem pessoa, e não analisado (sem `.people`, que é o
+    caso de quem não instalou o 12.1 ou do segmento ainda na fila). O
+    `GET /api/cameras/{id}/motion?day=` ganha esse campo sem quebrar quem já o usa. A leitura dos
+    `.people` fica no `RecordingStore`, e a limpeza da cota apaga o `.people` junto com o
+    segmento, e os órfãos.
+  - Fora: guardar pessoas no banco. O arquivo ao lado do segmento basta, como no 7.2.
+  - Aceite: teste do domínio (os três estados, pessoa na borda do evento, evento emendado de dois
+    segmentos), teste do store e teste do endpoint. Revisão do `SPECS.md` (seção 5).
+  > Validação (2026-09-28): só código escrito e testes; sem celular e sem navegador. Domínio:
+  > `PersonBox`, `PeopleSample`, `SegmentPeople` e `PeopleInMotion.HasPerson` (confiança 0,5, folga
+  > de 1 s, segmento termina no seguinte ou em 60 s, como na linha do tempo). `RecordingStore`:
+  > `ReadPeople` (null quando não há arquivo, linha quebrada ignorada), `Delete` apaga o `.people`, e
+  > `DeleteOrphanMotion` virou `DeleteOrphanNotes`, que também apaga `.people` órfão. Rota:
+  > `MotionEventResponse` ganhou `Person` (`bool?`), campo novo que clientes antigos ignoram.
+  > Testes: domínio (com pessoa, só caixa fraca, não analisado, borda de 1 s e 2 s, evento em dois
+  > segmentos), store (leitura, arquivo faltando, apagar e órfãos), ida e volta do formato com o
+  > `PeopleFile` do `Recam.Detect` (o projeto de testes do servidor referencia o worker só para
+  > isso) e rota (evento com pessoa e evento não analisado). `SPECS.md` 2.6 e 5. Gate verde (412
+  > no servidor, no web e no detect, 299 no app).
+
+- [x] **12.3 Pessoas na linha do tempo, no navegador e no app**
+  - Origem: continuação do 12.2; é a tela que o autor pediu ("às 14h uma pessoa entrou no
+    quarto").
+  - Escopo: na tela de gravações, os eventos com pessoa ganham uma marca própria na barra das 24 h
+    e uma lista simples do dia, uma linha por evento: hora, "Pessoa" e o nome da câmera. Tocar na
+    linha toca a partir de 5 s antes, como o "Próximo movimento". Filtro "Só pessoas" ao lado do
+    "Só movimento". Marca, lista e filtro só aparecem quando algum evento do dia foi analisado;
+    sem o 12.1, a tela fica igual a hoje. Textos nos ARB e nos `.resx`, em `en` e `pt`.
+  - Fora: frases geradas por modelo de linguagem.
+  - Aceite: widget test no app e teste bUnit no navegador (marca, lista, filtro, e a tela sem
+    nada novo quando nenhum evento foi analisado).
+  > Validação (2026-09-28): código escrito e testes; não percorrido no celular nem no navegador.
+  > Navegador: `MotionEventInfo` e `MotionMark` com `Person`; `TimelineController` com
+  > `PeopleAnalyzed`, `People`, `OnlyPeople`, `ShownMotion` (o que a barra e os botões de movimento
+  > usam) e `PlayMark`; o "Só pessoas" liga o mesmo comportamento do "Só movimento" com só os
+  > eventos com pessoa. Na `TimelineView`, a marca de pessoa é verde (`--person`, claro e escuro), a
+  > seção "Pessoas neste dia" lista "14:02 · Pessoa · Porta" e tocar na linha toca 5 s antes; sem
+  > evento analisado, nada disso aparece. App: o mesmo no `RecordingTimelineController`, marca
+  > `person-mark` verde na barra, `_PeopleList` com `ListTile` por pessoa e chave "Só pessoas"; o
+  > `RecordingsTimelinePane` passou a receber o nome da câmera (tela própria e aba Gravações). O
+  > cliente HTTP lê `person` quando é booleano. Textos novos nos `.resx` e nos ARB, em `en` e `pt`.
+  > Testes: controller (só pessoas no próximo movimento e no fim do arquivo, dia não analisado,
+  > tocar pela lista) e tela (marcas, lista, filtro, dia sem análise, dia analisado sem ninguém), no
+  > bUnit e no widget test. Gate verde (418 no servidor, no web e no detect, 305 no app).
+
+- [x] **12.4 Caixa ao redor da pessoa no player**
+  - Origem: pergunta do autor em 2026-09-28 ("vai aparecer um retângulo verde ao redor da
+    detecção?").
+  - Escopo: no player das gravações, no navegador e no app, um retângulo verde desenhado por cima
+    do vídeo em cada pessoa, lido das caixas do `.people`. Nada é gravado no vídeo, e o servidor
+    só repassa as caixas. Como a análise é de um quadro por segundo, a posição é interpolada entre
+    dois segundos seguidos, para a caixa andar em vez de pular; sem caixa no segundo seguinte, ela
+    some. As caixas acompanham o tamanho do vídeo na tela (tela cheia, giro, "Clarear").
+    Chave "Mostrar pessoas" no player, ligada por padrão e guardada no próprio Monitor, como o
+    ajuste do 7.1. A chave só aparece quando o arquivo tocando foi analisado. O servidor entrega as
+    caixas do segmento numa rota nova, só para Monitores; o formato vai no `SPECS.md` 5. Textos
+    nos ARB e nos `.resx`.
+  - Fora: caixa no vídeo ao vivo, mais quadros por segundo, nome ou rótulo na caixa.
+  - Aceite: teste da interpolação (meio do caminho, caixa que some, duas pessoas), teste da rota
+    e widget test no app e bUnit no navegador (caixas desenhadas, chave liga e desliga, sem chave
+    quando o arquivo não foi analisado).
+  > Validação (2026-09-28): código escrito; no navegador, percorrido no Chromium com a stack real
+  > (servidor, MediaMTX, `motion` e `detect` no compose); no app, só código e testes (sem celular).
+  > Servidor: `GET /api/recordings/{cameraId}/{segmento}/people`, só caixas de 0,5 ou mais, 404
+  > quando não analisado. Navegador: `PersonTrack` em C# (interpolação, cada caixa segue a mais
+  > próxima até 0,25 do quadro, sem par ela fica parada até o fim do segundo e some) exposto ao
+  > `wwwroot/js/people.js` por `[JSInvokable]`; o script só encaixa as caixas na parte do `<video>`
+  > que a imagem ocupa, a cada quadro. Chave **Mostrar pessoas** no `localStorage`
+  > (`JsPeopleBoxesStore`). Mudança além do texto do bullet: o botão de tela cheia do próprio
+  > `<video>` não deixa desenhar por cima, então ele ficou escondido (`controlslist="nofullscreen"`)
+  > e o Monitor ganhou um botão **Tela cheia** que leva o player inteiro. App: `PersonTrack` em
+  > Dart com as mesmas regras, `PeopleBoxes` (`CustomPaint` com `Ticker`, correndo o tempo pelo
+  > relógio entre os avisos de posição do player), desenhado fora do filtro do **Clarear**;
+  > `RecordingPlayer` ganhou `aspectRatio`; chave guardada no `SecurePeopleBoxesStore`. O app não
+  > tem tela cheia, então não há o que acompanhar ali. Observado no Chromium: a câmera "Quarto"
+  > pareada pela API, um segmento de 12 s em que a foto de um homem atravessa a cena ganhou
+  > `.motion`, `.people` (x de 0,17 a 0,33 nos três primeiros segundos) e depois foi cifrado; a tela
+  > de gravações mostrou "17:36 · Pessoa · Quarto" e a marca verde (o 12.3 funcionando);
+  > tocar na linha abriu o vídeo, e aos 3,5 s havia um retângulo verde (`rgb(46, 125, 50)`) em volta
+  > do homem, que um segundo depois tinha andado 56 px para a direita; desligar **Mostrar pessoas**
+  > tirou a caixa e gravou `off`; nenhum erro no console (a CSP não reclamou). Para tocar no
+  > Chromium do Playwright, que não tem H.264, esse segmento foi gravado em VP9; o MediaMTX grava
+  > H.264. A caixa ficou alguns pixels à frente do homem andando (cerca de 0,3 s), aceitável para
+  > a linha do tempo. Testes: `PersonTrack` nos dois lados, rota, controller (pessoas do arquivo
+  > tocando, chave lembrada) e tela (caixas desenhadas, chave desliga, sem caixa e sem chave quando
+  > não analisado, tela cheia) no bUnit e no widget test, e o cliente HTTP do app. `SPECS.md` 2.6 e
+  > 5. Gate verde (427 no servidor, no web e no detect, 314 no app).
+
+- [ ] **12.5 [aparelho] Medir no PC antigo**
+  - Origem: conversa com o autor em 2026-09-28 (i5 de 3ª geração, sem AVX2).
+  - Escopo: subir o `compose.detect.yaml` no PC antigo, gravar um dia com movimento e pessoa, e
+    anotar quanto tempo o `detect` leva por segmento, quanto de CPU e memória usa, e se o vídeo ao
+    vivo continua abaixo de 1 s de atraso com ele rodando. Conferir a lista de pessoas e as caixas
+    no player.
+  - Aceite: nota de validação com os números medidos.
+  > Bloqueado (2026-09-28): aguardando validação no aparelho (PC antigo do autor).
+
+- [ ] **12.6 Lista "Pessoas neste dia": mais recentes primeiro e altura limitada**
+  - Origem: teste do autor em 2026-09-28. Num dia com muitas passagens, a lista cresce sem fim e
+    empurra o player para baixo, e começa pela mais antiga.
+  - Escopo:
+    - No navegador, a lista vai do mais recente para o mais antigo, com altura máxima e rolagem
+      própria, e funciona na largura de celular.
+    - No app, conferir a mesma lista: se também começa pela mais antiga ou cresce sem limite,
+      aplicar a mesma regra.
+    - A ordem de "Próximo movimento" e "Movimento anterior" não muda.
+  - Aceite: bUnit e teste de widget da ordem e do limite; conferido no navegador e no app com um
+    dia de muitas passagens.
 
 ## Fora da fila (anotado, não executar)
 
@@ -2456,12 +2626,10 @@ Itens que dependem de decisão futura. O loop para antes daqui.
 - iOS.
 - Fallback por TCP ou HLS.
 - Publicação nas lojas de apps de servidor caseiro (Umbrel, CasaOS, Unraid, Synology).
-- Detecção de pessoas e carros com IA, marcada na linha do tempo (conversa de 2026-09-25).
-  Opcional na instalação, num compose à parte como o de observabilidade, porque pesa no PC:
-  quem não quiser não sobe. Rodaria no PC (nunca no celular), num container próprio com um modelo
-  pequeno (via ONNX Runtime, possivelmente em .NET), só nos momentos que o 7.2 já marcou como
-  movimento. Precisa revisar a regra "o .NET não processa vídeo" para valer só no servidor
-  principal. Zonas (ignorar rua e calçada) entram junto ou logo depois.
+- Carros e animais com IA, e zonas (ignorar rua e calçada). A detecção de pessoas virou a Fase 12,
+  na branch `claude/person-activity-detection-4pq7pg` (2026-09-28).
+- Descrever a cena em texto ("alguém mexeu nas gavetas") com modelo de visão com linguagem. Pesado
+  demais para o PC alvo; fica para depois da Fase 12 (2026-09-28).
 - Modo noturno (conversa de 2026-09-25): botão no Monitor que manda a câmera aceitar de 5 a 15
   quadros por segundo em vez de 15 fixos, para expor por mais tempo no escuro. Vale para todos os
   Monitores e para a gravação, como a lanterna. Antes do botão, testar no A10 e no 6A se o

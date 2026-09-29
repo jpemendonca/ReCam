@@ -45,6 +45,7 @@ void main() {
               cameraId: 'cam',
               player: player,
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
               utcOffsetOf: (_) => Duration.zero,
             ),
           ),
@@ -116,6 +117,7 @@ void main() {
               cameraId: 'cam',
               player: player,
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
               utcOffsetOf: (_) => Duration.zero,
             ),
           ),
@@ -156,6 +158,164 @@ void main() {
       expect(api.motionSensitivity, MotionSensitivity.low);
       expect(find.byKey(const Key('motion-mark')), findsNothing);
       expect(find.text('No motion on this day.'), findsOneWidget);
+    });
+
+    testWidgets('people_areMarkedListedAndPlayed', (tester) async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      final api = _noonApi(day)
+        ..motionByDay[day] = [
+          MotionEventInfo(
+            start: DateTime.utc(2026, 9, 25, 12, 40),
+            end: DateTime.utc(2026, 9, 25, 12, 41),
+            person: true,
+          ),
+          MotionEventInfo(
+            start: DateTime.utc(2026, 9, 25, 12, 50),
+            end: DateTime.utc(2026, 9, 25, 12, 51),
+            person: false,
+          ),
+        ];
+      final player = FakeRecordingPlayer();
+      await tester.pumpWidget(_screen(api, player));
+      await tester.pumpAndSettle();
+      // The hour window opens on the latest recording, 12:30 to 13:30.
+      await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
+      await tester.pumpAndSettle();
+      final marks = (
+        find.byKey(const Key('motion-mark')).evaluate().length,
+        find.byKey(const Key('person-mark')).evaluate().length,
+      );
+
+      // act
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('person-row')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      final row = find.text('12:40 · Person · Porch');
+      final listed = row.evaluate().length;
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('only-people')));
+      await tester.tap(find.byKey(const Key('only-people')));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(marks, (1, 1));
+      expect(listed, 1);
+      expect(find.text('People on this day'), findsOneWidget);
+      expect(
+        player.plays.single.from,
+        const Duration(minutes: 39, seconds: 55),
+      );
+      expect(find.byKey(const Key('motion-mark')), findsNothing);
+      expect(find.byKey(const Key('person-mark')), findsOneWidget);
+    });
+
+    testWidgets('segmentWithPeople_drawsBoxesThatShowPeopleTurnsOff', (
+      tester,
+    ) async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      final api = _noonApi(day)
+        ..peopleBySegment['/api/recordings/cam/noon.mp4'] = const SegmentPeople(
+          seconds: [
+            PeopleSecond(
+              at: 3,
+              people: [PersonBox(x: 0.1, y: 0.2, width: 0.3, height: 0.4)],
+            ),
+          ],
+        );
+      await tester.pumpWidget(_screen(api, FakeRecordingPlayer()));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
+      await tester.pumpAndSettle();
+      // The hour window is 12:30 to 13:30; a quarter in is 12:45, inside the recording.
+      final hours = tester.getRect(find.byKey(const Key('timeline-hours')));
+      await tester.tapAt(Offset(hours.left + hours.width / 4, hours.center.dy));
+      await tester.pump();
+      await tester.pump();
+      final drawn = find.byKey(const Key('people-boxes')).evaluate().length;
+
+      // act
+      await tester.ensureVisible(find.byKey(const Key('show-people')));
+      await tester.tap(find.byKey(const Key('show-people')));
+      await tester.pump();
+
+      // assert
+      expect(drawn, 1);
+      expect(find.text('Show people'), findsOneWidget);
+      expect(find.byKey(const Key('people-boxes')), findsNothing);
+    });
+
+    testWidgets('segmentNotAnalyzed_hasNoBoxesAndNoSwitch', (tester) async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      final api = _noonApi(day);
+      await tester.pumpWidget(_screen(api, FakeRecordingPlayer()));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
+      await tester.pumpAndSettle();
+
+      // act
+      // The hour window is 12:30 to 13:30; a quarter in is 12:45, inside the recording.
+      final hours = tester.getRect(find.byKey(const Key('timeline-hours')));
+      await tester.tapAt(Offset(hours.left + hours.width / 4, hours.center.dy));
+      await tester.pump();
+      await tester.pump();
+
+      // assert
+      expect(find.byKey(const Key('recording-video')), findsOneWidget);
+      expect(find.byKey(const Key('people-boxes')), findsNothing);
+      expect(find.byKey(const Key('show-people')), findsNothing);
+    });
+
+    testWidgets('notAnalyzed_showsNothingAboutPeople', (tester) async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      final api = _noonApi(day)
+        ..motionByDay[day] = [
+          MotionEventInfo(
+            start: DateTime.utc(2026, 9, 25, 12, 30),
+            end: DateTime.utc(2026, 9, 25, 12, 31),
+          ),
+        ];
+
+      // act
+      await tester.pumpWidget(_screen(api, FakeRecordingPlayer()));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(find.byKey(const Key('only-people')), findsNothing);
+      expect(find.byKey(const Key('person-row')), findsNothing);
+      expect(find.text('People on this day'), findsNothing);
+      expect(find.byKey(const Key('person-mark')), findsNothing);
+    });
+
+    testWidgets('analyzedWithNobody_saysNobody', (tester) async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      final api = _noonApi(day)
+        ..motionByDay[day] = [
+          MotionEventInfo(
+            start: DateTime.utc(2026, 9, 25, 12, 30),
+            end: DateTime.utc(2026, 9, 25, 12, 31),
+            person: false,
+          ),
+        ];
+
+      // act
+      await tester.pumpWidget(_screen(api, FakeRecordingPlayer()));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Nobody on this day.'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+
+      // assert
+      expect(find.text('Nobody on this day.'), findsOneWidget);
     });
 
     testWidgets('zoomDragAndHold_moveTheWindowAndShowTheTime', (tester) async {
@@ -200,6 +360,7 @@ void main() {
               cameraId: 'cam',
               player: player,
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
               utcOffsetOf: (_) => Duration.zero,
             ),
           ),
@@ -285,6 +446,7 @@ void main() {
               cameraId: 'cam',
               player: player,
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
               utcOffsetOf: (_) => Duration.zero,
             ),
           ),
@@ -358,6 +520,7 @@ void main() {
               cameraId: 'cam',
               player: player,
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
               utcOffsetOf: (_) => Duration.zero,
             ),
           ),
@@ -424,6 +587,7 @@ void main() {
               cameraId: 'cam',
               player: player,
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
               utcOffsetOf: (_) => Duration.zero,
             ),
           ),
@@ -478,6 +642,7 @@ void main() {
               cameraId: 'cam',
               player: FakeRecordingPlayer(),
               segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
             ),
           ),
         ),
@@ -492,3 +657,39 @@ void main() {
     });
   });
 }
+
+/// One hour of recording from noon UTC, in one file.
+FakeApiClient _noonApi(DateTime day) => FakeApiClient()
+  ..recordingDaysResult = [day]
+  ..recordingsByDay[day] = [
+    RecordingPieceInfo(
+      start: DateTime.utc(2026, 9, 25, 12),
+      end: DateTime.utc(2026, 9, 25, 13),
+      segments: [
+        RecordingSegmentInfo(
+          start: DateTime.utc(2026, 9, 25, 12),
+          end: DateTime.utc(2026, 9, 25, 13),
+          url: '/api/recordings/cam/noon.mp4',
+        ),
+      ],
+    ),
+  ];
+
+Widget _screen(FakeApiClient api, FakeRecordingPlayer player) => MaterialApp(
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: RecordingsTimelineScreen(
+    brighten: () =>
+        BrightenController(store: FakeAdjustmentStore(), cameraId: 'cam'),
+    cameraName: 'Porch',
+    create: () => RecordingTimelineController(
+      api: api,
+      session: pairedSession(),
+      cameraId: 'cam',
+      player: player,
+      segments: FakeSegmentSource(),
+      peopleBoxes: FakePeopleBoxesStore(),
+      utcOffsetOf: (_) => Duration.zero,
+    ),
+  ),
+);

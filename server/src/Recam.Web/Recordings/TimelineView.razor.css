@@ -100,6 +100,10 @@
   fill: var(--motion);
 }
 
+.motion.person {
+  fill: var(--person);
+}
+
 .slot {
   fill: transparent;
   cursor: pointer;
@@ -177,4 +181,53 @@ video {
 
 .motion-summary {
   color: var(--muted);
+}
+
+.people h2 {
+  font-size: 1rem;
+  margin: 16px 0 8px;
+}
+
+.people ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.person-row {
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--person);
+  font-variant-numeric: tabular-nums;
+}
+
+.people-boxes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.people-boxes ::deep .person-box {
+  fill: none;
+  stroke: var(--person);
+  stroke-width: 3;
+}
+
+.player:fullscreen {
+  display: flex;
+  align-items: center;
+  background: #000;
+}
+
+.player:fullscreen video {
+  width: 100%;
+  height: 100%;
 }

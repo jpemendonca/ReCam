@@ -175,6 +175,61 @@ void main() {
     });
   });
 
+  group('HttpApiClient.segmentPeople', () {
+    test('withPeople_readsSecondsAndBoxesFromTheSegmentPath', () async {
+      // arrange
+      late http.Request sent;
+      final client = HttpApiClient(
+        MockClient((request) async {
+          sent = request;
+          return http.Response(
+            jsonEncode({
+              'seconds': [
+                {'at': 1, 'people': <Object?>[]},
+                {
+                  'at': 2,
+                  'people': [
+                    {'x': 0.1, 'y': 0.2, 'width': 0.3, 'height': 0.4},
+                  ],
+                },
+              ],
+            }),
+            200,
+          );
+        }),
+      );
+
+      // act
+      final result = await client.segmentPeople(
+        baseUrl,
+        'cred',
+        '/api/recordings/cam/a.mp4',
+      );
+
+      // assert
+      expect(sent.url.path, '/api/recordings/cam/a.mp4/people');
+      final people = (result as ApiSuccess<SegmentPeople>).value;
+      expect(people.seconds.map((second) => second.at), [1, 2]);
+      expect(
+        people.seconds[1].people.single,
+        const PersonBox(x: 0.1, y: 0.2, width: 0.3, height: 0.4),
+      );
+    });
+
+    test('notAnalyzed_fails', () async {
+      // arrange
+      final client = HttpApiClient(
+        MockClient((request) async => http.Response('', 404)),
+      );
+
+      // act
+      final result = await client.segmentPeople(baseUrl, 'cred', '/api/x');
+
+      // assert
+      expect(result, isA<ApiFailure<SegmentPeople>>());
+    });
+  });
+
   group('HttpApiClient.recordingQuota', () {
     test('withQuota_readsIt', () async {
       // arrange

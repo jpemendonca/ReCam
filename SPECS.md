@@ -291,6 +291,56 @@ Desenho combinado com o autor em 2026-09-25 (Fase 6 do ROADMAP):
 - **Painel antigo.** O painel só leitura do `/setup` (bullets 1.12.11 e 1.12.16) sai: o Monitor
   web mostra o mesmo e mais. `GET /setup` redireciona para `/`.
 
+### 2.6 Pessoas nas gravações (opcional)
+
+Desenho combinado com o autor em 2026-09-28 (Fase 12 do ROADMAP, na branch
+`claude/person-activity-detection-4pq7pg`):
+
+- **Opcional na instalação.** O serviço `detect` só existe no `deploy/compose.detect.yaml`, somado
+  ao compose escolhido. Quem não sobe esse arquivo não baixa nem constrói nada disso, e o ReCam
+  funciona como antes.
+- **Só nas gravações e só onde teve movimento.** O `detect` (projeto `Recam.Detect`, worker .NET
+  de console) roda a cada 20 s sobre `recam-recordings`. Pega cada segmento que já tem o
+  `.motion` e ainda não tem o `.people`, e olha só os segundos em que o `.motion` passou de 0,3% (o
+  limite da sensibilidade alta; o servidor aplica a da câmera depois). O FFmpeg entrega um quadro
+  por segundo, já reduzido para caber num quadrado de 416 px, no canto de cima à esquerda, com
+  cinza em volta (`0x727272`), em BGR cru por pipe.
+- **Modelo.** YOLOX-Tiny em ONNX (Megvii, Apache-2.0), rodando no `Microsoft.ML.OnnxRuntime` em
+  CPU, com a telemetria do ONNX Runtime desligada. O arquivo é baixado no build da imagem, da
+  release oficial, conferido por SHA-256, e nunca em tempo de execução. Só a classe "pessoa" do
+  COCO fica; candidatos abaixo de 0,3 saem, e caixas que se sobrepõem mais de 45% viram uma.
+- **Arquivo `<segmento>.people`**, ao lado do `.mp4`: uma linha por segundo olhado, `segundos`
+  seguido de cinco números por pessoa, `confiança x y largura altura`, com a confiança de 0 a 1 e a
+  caixa em frações do quadro, a partir do canto de cima à esquerda. Segundo sem ninguém é só o
+  número. Arquivo vazio quer dizer que o segmento não tinha nada para olhar.
+  Exemplo: `3 0.9148 0.2978 0.2385 0.1307 0.6587`.
+- **Cifra das gravações.** O servidor cifra um segmento depois que o `motion` o marcou (seção
+  2.4). Enquanto o `detect` roda, ele espera também o `.people`. O `detect` mostra que roda
+  tocando `/recordings/.detect` antes de cada segmento; sem toque há 5 minutos, o servidor não
+  espera mais. Nos dois casos, depois de 30 minutos o segmento é cifrado de qualquer jeito, e o
+  que o `detect` não leu a tempo fica sem análise. Segmento já cifrado não é lido.
+- **Container.** Imagem própria (`server/src/Recam.Detect/Dockerfile`) sobre a mesma
+  `linuxserver/ffmpeg` do `motion`, com o worker publicado self-contained. Usuário `1654:1654`,
+  `network_mode: none`, sem porta. `cpus` vem de `RECAM_DETECT_CPUS` (padrão 1) e as threads do
+  modelo de `RECAM_DETECT_THREADS` (padrão 1), para não roubar o servidor.
+- **Eventos com pessoa.** O servidor lê os `.people` dos segmentos do dia e marca cada evento de
+  movimento (`PeopleInMotion`): com pessoa quando algum segundo entre 1 s antes do início e 1 s
+  depois do fim tem uma caixa de confiança 0,5 ou mais; sem pessoa quando todos os segmentos que o
+  evento toca foram analisados e ninguém passou disso; não analisado nos outros casos. Não vai
+  para o banco. A limpeza da cota apaga o `.people` junto com o segmento, e os que ficaram sem
+  segmento.
+- **Caixas no player.** Tocando um arquivo, o Monitor (app e navegador) pede as pessoas dele e
+  desenha um retângulo verde em cada uma, por cima do vídeo, sem mexer na gravação. Entre dois
+  segundos a caixa anda de um lugar para o outro (interpolação linear); cada caixa segue a mais
+  próxima do segundo seguinte, até 0,25 do quadro de distância; sem ninguém perto no segundo
+  seguinte, ela fica parada até o fim do segundo e some. No navegador, a conta fica em C#
+  (`PersonTrack`) e o `wwwroot/js/people.js` só encaixa as caixas na parte do `<video>` que a
+  imagem ocupa, a cada quadro; o botão **Tela cheia** do Monitor leva o player inteiro, com as
+  caixas (o do próprio `<video>` fica escondido). No app, o `PeopleBoxes` desenha sobre a imagem,
+  fora do filtro do **Clarear**, e corre o tempo pelo relógio entre os avisos de posição do player.
+  A chave **Mostrar pessoas**, ligada por padrão, só aparece quando o arquivo foi analisado e fica
+  guardada no próprio Monitor (`localStorage` no navegador, armazenamento seguro no app).
+
 ## 3. Modelo de dados
 
 ```
@@ -444,7 +494,8 @@ Estado em 2026-09-26 (conferido no bullet 6.9). As revisões do log 12 contam co
 | `GET /api/cameras/{id}/recording-days` | Monitores | — | `["AAAA-MM-DD"]`, dias UTC, do mais novo ao mais antigo |
 | `GET /api/cameras/{id}/recordings?day=AAAA-MM-DD` | Monitores | — | `[{ start, end, segments: [{ start, end, url }] }]` |
 | `GET /api/recordings/{cameraId}/{segmento}` | Monitores | `Range` | o arquivo `video/mp4` |
-| `GET /api/cameras/{id}/motion?day=AAAA-MM-DD` | Monitores | — | `{ sensitivity, events: [{ start, end, peak }] }` dos segmentos que começam no dia UTC (Fase 7) |
+| `GET /api/cameras/{id}/motion?day=AAAA-MM-DD` | Monitores | — | `{ sensitivity, events: [{ start, end, peak, person }] }` dos segmentos que começam no dia UTC (Fase 7). `person` é `true`/`false` quando o `detect` olhou o evento e `null` quando não (seção 2.6, Fase 12) |
+| `GET /api/recordings/{cameraId}/{segmento}/people` | Monitores | — | `{ seconds: [{ at, people: [{ x, y, width, height }] }] }`: cada segundo olhado pelo `detect`, em segundos desde o início do arquivo, só com as caixas de confiança 0,5 ou mais; `404` quando o `detect` não olhou o arquivo (seção 2.6, Fase 12) |
 | `PUT /api/cameras/{id}/motion-sensitivity` | Monitores | `{ sensitivity: "low" \| "medium" \| "high" }` | `204` (Fase 7) |
 | `GET /api/recordings/quota` | Monitores | — | `{ quotaMb, usedBytes, freeBytes }` |
 | `PUT /api/recordings/quota` | Monitores | `{ quotaMb }` | `204` |
@@ -553,6 +604,9 @@ Servidor → cliente:
 - Serviço `motion` nos dois composes (seção 2.4): `linuxserver/ffmpeg` com tag exata, usuário
   `1654:1654`, `network_mode: none`, `deploy/motion.sh` montado só leitura e o volume
   `recam-recordings`. Não expõe porta.
+- Detecção de pessoas opcional: `deploy/compose.detect.yaml` soma o serviço `detect` (seção 2.6),
+  construído de `server/src/Recam.Detect/Dockerfile`, usuário `1654:1654`, `network_mode: none`,
+  sem porta, com o volume `recam-recordings`.
 - Observabilidade opcional: `deploy/compose.observability.yaml` soma ao compose escolhido o
   Aspire Dashboard (`mcr.microsoft.com/dotnet/aspire-dashboard`, tag exata), com o painel em
   `127.0.0.1:18888` e o OTLP gRPC em `127.0.0.1:4317`, os dois só no loopback. Sem ele, o servidor
@@ -631,7 +685,7 @@ O agente nunca escreve valor real de segredo em arquivo nenhum.
 
 Cada item deste log tem um ADR em `docs/adr/` (índice em [`docs/adr/README.md`](docs/adr/README.md)),
 na ordem em que aparece aqui: as 16 decisões iniciais são os ADRs 0001 a 0016, e as revisões
-datadas, de cima para baixo, os ADRs 0017 a 0041. O ADR traz contexto, decisão e consequências; o
+datadas, de cima para baixo, os ADRs 0017 a 0043. O ADR traz contexto, decisão e consequências; o
 log continua sendo o resumo.
 
 Decisões iniciais (2026-09-24):
@@ -928,6 +982,20 @@ seguinte em `docs/adr/`:
 > um convite já apagado, responde como link desconhecido (404). Não carrega segredo. A tela do
 > convite consulta a cada 2 s, volta para Aparelhos quando ele é usado e, se vencer, pede para
 > gerar outro em vez de trocar sozinha.
+
+> Revisão (2026-09-28): pessoas nas gravações, opcional (bullet 12.1, ADR 0043, só na branch da
+> Fase 12). Serviço `detect` num compose à parte, com YOLOX-Tiny em ONNX Runtime, que grava o
+> `<segmento>.people` ao lado do vídeo (seção 2.6). A regra "o .NET não processa vídeo" passa a
+> dizer que vale para o `Recam.Server`. A cifra das gravações espera o `.people` enquanto o
+> `detect` roda. O ROADMAP pedia YOLO nano da Ultralytics; ficou o YOLOX-Tiny porque a Ultralytics
+> não publica o modelo em ONNX (exportar exige PyTorch no build) e o YOLOX tem licença Apache-2.0.
+
+> Revisão (2026-09-28): eventos de movimento com pessoa (bullet 12.2, só na branch da Fase 12).
+> `GET /api/cameras/{id}/motion` ganha `person` em cada evento: `true`, `false` ou `null` (não
+> analisado). Seções 2.6 e 5.
+
+> Revisão (2026-09-28): caixas ao redor das pessoas no player (bullet 12.4, só na branch da Fase
+> 12). Rota nova `GET /api/recordings/{cameraId}/{segmento}/people`. Seções 2.6 e 5.
 
 > Revisão (2026-09-28): o modo câmera confere a rede antes de começar e dá 30 s à primeira
 > conexão (bullet 11.8). Seção 2.3. O app passa a declarar `ACCESS_NETWORK_STATE`, só para ler o

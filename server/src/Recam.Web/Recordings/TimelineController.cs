@@ -5,9 +5,9 @@ namespace Recam.Web.Recordings;
 /// <summary>
 /// A camera's recordings, day by day, in this computer's time zone, and playback that starts
 /// where the person clicks and moves on to the next file by itself, and the motion the server
-/// found in them. Same behavior as the app.
+/// found in them, with the people the optional detect service saw. Same behavior as the app.
 /// </summary>
-public sealed class TimelineController(IRecamApi api)
+public sealed class TimelineController(IRecamApi api, IPeopleBoxesStore peopleBoxes)
 {
     /// <summary>Motion plays from a little before the event, so the start of it shows.</summary>
     public static readonly TimeSpan MotionLead = TimeSpan.FromSeconds(5);
@@ -36,6 +36,20 @@ public sealed class TimelineController(IRecamApi api)
     /// <summary>The bar shows only motion, and a file that ends goes on to the next motion.</summary>
     public bool OnlyMotion { get; set; }
 
+    /// <summary>Like <see cref="OnlyMotion"/>, with only the motion that had a person in it.</summary>
+    public bool OnlyPeople { get; set; }
+
+    /// <summary>The detect service looked at some motion of the selected day. Without it, nothing about people shows.</summary>
+    public bool PeopleAnalyzed => _motion.Exists(mark => mark.Person is not null);
+
+    /// <summary>Motion of the selected day that had a person in it, in order.</summary>
+    public IReadOnlyList<MotionMark> People => [.. _motion.Where(mark => mark.Person == true)];
+
+    /// <summary>The motion the bar and the motion buttons use: all of it, or only people.</summary>
+    public IReadOnlyList<MotionMark> ShownMotion => Marks;
+
+    private List<MotionMark> Marks => OnlyPeople && PeopleAnalyzed ? [.. _motion.Where(mark => mark.Person == true)] : _motion;
+
     public bool SensitivityFailed { get; private set; }
 
     public bool Loading { get; private set; } = true;
@@ -43,6 +57,12 @@ public sealed class TimelineController(IRecamApi api)
     public bool Failed { get; private set; }
 
     public TimelineSegment? Playing => _playing is { } index ? _timeline[index] : null;
+
+    /// <summary>Where the people are in the file playing; null when the detect service did not look at it.</summary>
+    public PersonTrack? PlayingPeople { get; private set; }
+
+    /// <summary>The boxes around people show over the player. Kept in this browser.</summary>
+    public bool ShowPeople { get; private set; } = true;
 
     /// <summary>Wall-clock time the playback started from.</summary>
     public DateTime? PlayingFrom { get; private set; }
@@ -59,6 +79,7 @@ public sealed class TimelineController(IRecamApi api)
     {
         _cameraId = cameraId;
         SetLoading();
+        ShowPeople = await peopleBoxes.ReadAsync();
         await LoadQuotaAsync();
         try
         {
@@ -113,6 +134,7 @@ public sealed class TimelineController(IRecamApi api)
     {
         SelectedDay = day;
         _playing = null;
+        PlayingPeople = null;
         Source = null;
         PlayingFrom = null;
         SetLoading();
@@ -182,7 +204,7 @@ public sealed class TimelineController(IRecamApi api)
     /// <summary>Plays the first motion after the one playing, or the day's first.</summary>
     public void PlayNextMotion()
     {
-        var next = PlayingFrom is { } from ? _motion.Find(mark => mark.Start - MotionLead > from.AddSeconds(1)) : _motion.FirstOrDefault();
+        var next = PlayingFrom is { } from ? Marks.Find(mark => mark.Start - MotionLead > from.AddSeconds(1)) : Marks.FirstOrDefault();
         if (next is not null)
         {
             PlayAt(next.Start - MotionLead);
@@ -192,12 +214,23 @@ public sealed class TimelineController(IRecamApi api)
     /// <summary>Plays the motion before the one playing, or the day's last.</summary>
     public void PlayPreviousMotion()
     {
-        var previous = PlayingFrom is { } from ? _motion.FindLast(mark => mark.Start - MotionLead < from.AddSeconds(-1)) : _motion.LastOrDefault();
+        var previous = PlayingFrom is { } from ? Marks.FindLast(mark => mark.Start - MotionLead < from.AddSeconds(-1)) : Marks.LastOrDefault();
         if (previous is not null)
         {
             PlayAt(previous.Start - MotionLead);
         }
     }
+
+    /// <summary>Turns the boxes around people on or off, and remembers it in this browser.</summary>
+    public async Task SetShowPeopleAsync(bool show)
+    {
+        ShowPeople = show;
+        Changed?.Invoke();
+        await peopleBoxes.SaveAsync(show);
+    }
+
+    /// <summary>Plays a motion event from a little before it, like the motion buttons.</summary>
+    public void PlayMark(MotionMark mark) => PlayAt(mark.Start - MotionLead);
 
     /// <summary>Plays from a wall-clock time on the selected day. In a gap, starts at the next recording.</summary>
     public void PlayAt(DateTime wallTime)
@@ -220,7 +253,7 @@ public sealed class TimelineController(IRecamApi api)
             return;
         }
 
-        if (!OnlyMotion)
+        if (!OnlyMotion && !(OnlyPeople && PeopleAnalyzed))
         {
             Play(current + 1, TimeSpan.Zero);
             return;
@@ -228,7 +261,7 @@ public sealed class TimelineController(IRecamApi api)
 
         // Motion that goes on past this file continues in the next one; otherwise, skips ahead.
         var ended = _timeline[current].End;
-        if (_motion.Find(mark => mark.End > ended) is { } next)
+        if (Marks.Find(mark => mark.End > ended) is { } next)
         {
             PlayAt(next.Start - MotionLead > ended ? next.Start - MotionLead : ended);
         }
@@ -240,7 +273,29 @@ public sealed class TimelineController(IRecamApi api)
         var segment = _timeline[index];
         PlayingFrom = segment.Start + from;
         Source = $"{segment.Url.TrimStart('/')}#t={(int)from.TotalSeconds}";
+        PlayingPeople = null;
         Changed?.Invoke();
+        _ = LoadPeopleAsync(segment);
+    }
+
+    // The boxes are a detail: without them the recording still plays.
+    private async Task LoadPeopleAsync(TimelineSegment segment)
+    {
+        SegmentPeopleInfo? people;
+        try
+        {
+            people = await api.GetSegmentPeopleAsync(segment.Url, CancellationToken.None);
+        }
+        catch (HttpRequestException)
+        {
+            return;
+        }
+
+        if (people is not null && Playing == segment)
+        {
+            PlayingPeople = new PersonTrack(people);
+            Changed?.Invoke();
+        }
     }
 
     private async Task<List<MotionMark>> LoadMotionAsync(DateOnly day)
@@ -253,7 +308,7 @@ public sealed class TimelineController(IRecamApi api)
             Sensitivity = motion.Sensitivity;
             marks.AddRange(motion.Events
                 .Where(found => found.Start >= windowStart && found.Start < windowEnd)
-                .Select(found => new MotionMark(Wall(found.Start), Wall(found.End))));
+                .Select(found => new MotionMark(Wall(found.Start), Wall(found.End), found.Person)));
         }
 
         return marks;

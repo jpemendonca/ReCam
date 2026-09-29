@@ -26,10 +26,12 @@ RecordingPieceInfo _halfHour() => _piece([
     DateTime.utc(2026, 9, 25, 15, minute),
 ]);
 
-MotionEventInfo _motion(DateTime start, int seconds) => MotionEventInfo(
-  start: start,
-  end: start.add(Duration(seconds: seconds)),
-);
+MotionEventInfo _motion(DateTime start, int seconds, {bool? person}) =>
+    MotionEventInfo(
+      start: start,
+      end: start.add(Duration(seconds: seconds)),
+      person: person,
+    );
 
 void main() {
   late FakeApiClient api;
@@ -47,6 +49,7 @@ void main() {
       cameraId: 'cam',
       player: player,
       segments: segments,
+      peopleBoxes: FakePeopleBoxesStore(),
       utcOffsetOf: _brasilia,
     );
   });
@@ -233,6 +236,118 @@ void main() {
 
       // assert
       expect(controller.playingFrom, DateTime.utc(2026, 9, 25, 12, 19, 55));
+    });
+
+    test('onlyPeople_skipsMotionWithoutAPerson', () async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      api.recordingsByDay[day] = [_halfHour()];
+      api.motionByDay[day] = [
+        _motion(DateTime.utc(2026, 9, 25, 15, 5, 10), 5, person: true),
+        _motion(DateTime.utc(2026, 9, 25, 15, 10), 20, person: false),
+        _motion(DateTime.utc(2026, 9, 25, 15, 20), 40, person: true),
+      ];
+      await controller.selectDay(day);
+      controller.onlyPeople = true;
+
+      // act
+      await controller.playNextMotion();
+      final first = controller.playingFrom;
+      player.finish();
+      await settle();
+
+      // assert
+      expect(controller.peopleAnalyzed, isTrue);
+      expect(controller.people, hasLength(2));
+      expect(controller.shownMotion, hasLength(2));
+      expect(first, DateTime.utc(2026, 9, 25, 12, 5, 5));
+      expect(controller.playingFrom, DateTime.utc(2026, 9, 25, 12, 19, 55));
+    });
+
+    test('onlyPeople_notAnalyzed_keepsAllMotion', () async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      api.recordingsByDay[day] = [_halfHour()];
+      api.motionByDay[day] = [
+        _motion(DateTime.utc(2026, 9, 25, 15, 5), 20),
+        _motion(DateTime.utc(2026, 9, 25, 15, 20), 40),
+      ];
+      await controller.selectDay(day);
+
+      // act
+      controller.onlyPeople = true;
+
+      // assert
+      expect(controller.peopleAnalyzed, isFalse);
+      expect(controller.people, isEmpty);
+      expect(controller.shownMotion, hasLength(2));
+    });
+
+    test('playMark_playsFromFiveSecondsBefore', () async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      api.recordingsByDay[day] = [_halfHour()];
+      api.motionByDay[day] = [
+        _motion(DateTime.utc(2026, 9, 25, 15, 12), 8, person: true),
+      ];
+      await controller.selectDay(day);
+
+      // act
+      await controller.playMark(controller.people.single);
+
+      // assert
+      expect(controller.playingFrom, DateTime.utc(2026, 9, 25, 12, 11, 55));
+    });
+
+    test('play_analyzedSegment_loadsItsPeople', () async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      api.recordingsByDay[day] = [_halfHour()];
+      api.peopleBySegment['/api/recordings/cam/${DateTime.utc(2026, 9, 25, 15, 5).toIso8601String()}.mp4'] =
+          const SegmentPeople(
+            seconds: [
+              PeopleSecond(
+                at: 3,
+                people: [PersonBox(x: 0.1, y: 0.2, width: 0.3, height: 0.4)],
+              ),
+            ],
+          );
+      await controller.selectDay(day);
+
+      // act
+      await controller.playAt(DateTime.utc(2026, 9, 25, 12, 5));
+      await settle();
+      final analyzed = controller.playingPeople;
+      await controller.playAt(DateTime.utc(2026, 9, 25, 12, 6));
+      await settle();
+
+      // assert
+      expect(analyzed?.at(3.5), hasLength(1));
+      expect(controller.playingPeople, isNull);
+    });
+
+    test('setShowPeople_startsFromTheSavedChoiceAndSavesIt', () async {
+      // arrange
+      final store = FakePeopleBoxesStore()..show = false;
+      final other = RecordingTimelineController(
+        api: api,
+        session: pairedSession(),
+        cameraId: 'cam',
+        player: player,
+        segments: segments,
+        peopleBoxes: store,
+        utcOffsetOf: _brasilia,
+      );
+      await other.load();
+      final loaded = other.showPeople;
+
+      // act
+      await other.setShowPeople(true);
+
+      // assert
+      expect(loaded, isFalse);
+      expect(other.showPeople, isTrue);
+      expect(store.show, isTrue);
     });
 
     test('onlyMotion_motionPastTheSegmentEnd_playsTheNextSegment', () async {

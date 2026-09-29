@@ -187,5 +187,10 @@
   "batteryGuideMenu": "Ajustes de bateria",
   "versionApp": "Este celular: {version}",
   "versionServer": "Servidor: {version}",
-  "deviceLastSeen": "Offline · visto por último em {when}"
+  "deviceLastSeen": "Offline · visto por último em {when}",
+  "peopleOnly": "Só pessoas",
+  "peopleTitle": "Pessoas neste dia",
+  "peopleNone": "Ninguém neste dia.",
+  "peopleRow": "{time} · Pessoa · {camera}",
+  "peopleShow": "Mostrar pessoas"
 }

@@ -164,6 +164,18 @@ public sealed class HttpRecamApi(HttpClient http) : IRecamApi
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task<SegmentPeopleInfo?> GetSegmentPeopleAsync(string segmentUrl, CancellationToken cancellationToken)
+    {
+        using var response = await http.GetAsync(new Uri($"{segmentUrl.TrimStart('/')}/people", UriKind.Relative), cancellationToken);
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<SegmentPeopleInfo>(Json, cancellationToken);
+    }
+
     public async Task<QuotaInfo> GetQuotaAsync(CancellationToken cancellationToken) =>
         await http.GetFromJsonAsync<QuotaInfo>(new Uri("api/recordings/quota", UriKind.Relative), Json, cancellationToken)
         ?? throw new HttpRequestException("The server answered an empty quota.");

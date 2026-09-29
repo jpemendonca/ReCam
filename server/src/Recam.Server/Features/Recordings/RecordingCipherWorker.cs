@@ -4,8 +4,9 @@ namespace Recam.Server.Features.Recordings;
 
 /// <summary>
 /// Ciphers recording files once nothing else needs them plain: after the motion service scored
-/// them, or after <see cref="GiveUpOnMotion"/> when it does not run. Old recordings from before
-/// the cipher existed are picked up the same way.
+/// them and, while the optional detect service runs, after it looked for people in them; or after
+/// <see cref="GiveUpOnMotion"/> when they do not keep up. Old recordings from before the cipher
+/// existed are picked up the same way.
 /// </summary>
 public sealed partial class RecordingCipherWorker(
     RecordingStore store,
@@ -18,11 +19,15 @@ public sealed partial class RecordingCipherWorker(
     /// <summary>A file this old is closed for sure; ciphered even without motion scores.</summary>
     public static readonly TimeSpan GiveUpOnMotion = TimeSpan.FromMinutes(30);
 
+    /// <summary>The detect service touches its heartbeat at least this often while it runs.</summary>
+    public static readonly TimeSpan DetectStale = TimeSpan.FromMinutes(5);
+
     private readonly HashSet<string> _ciphered = [];
 
     public void CipherClosed()
     {
         var now = timeProvider.GetUtcNow();
+        var detectRuns = store.DetectLastSeen() is { } seen && now - seen < DetectStale;
         foreach (var segment in store.ListSegments())
         {
             if (store.PathOf(segment.CameraId, segment.FileName) is not { } path || _ciphered.Contains(path))
@@ -30,7 +35,9 @@ public sealed partial class RecordingCipherWorker(
                 continue;
             }
 
-            if (!File.Exists(path + RecordingStore.MotionSuffix) && now - segment.StartsAt < GiveUpOnMotion)
+            var waiting = !File.Exists(path + RecordingStore.MotionSuffix)
+                || (detectRuns && !File.Exists(path + RecordingStore.PeopleSuffix));
+            if (waiting && now - segment.StartsAt < GiveUpOnMotion)
             {
                 continue;
             }
