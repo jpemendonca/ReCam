@@ -2414,6 +2414,8 @@ o que continua por conta de quem roda o servidor.
   > navegador pelo link, documentos internos marcados como em português, e fora a frase do CLA que
   > ainda não existe. `docs/reverse-proxy.md` com `sudo`. Achados de código viraram os bullets 5.10
   > a 5.16.
+  > Revisado (2026-09-30), pedido do autor: o passo 3 do First use também manda baixar o APK da
+  > última release; os dois links apontam para `releases/latest`.
 
 - [ ] **5.10 Link de pareamento pede confirmação**
   - Origem: revisão 5.9. Um link `recam://pair?...` aberto de qualquer página pareia o celular sem

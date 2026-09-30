@@ -13,7 +13,7 @@ You need:
 - A computer that stays on, with Linux (Ubuntu, Debian or similar), or a VPS. Any Intel or AMD
   computer from the last ten years works.
 - An Android phone to film, with Android 9 or newer and the ReCam app. Download the APK from
-  [Releases](https://github.com/jpemendonca/ReCam/releases): `arm64-v8a` for most phones,
+  [Releases](https://github.com/jpemendonca/ReCam/releases/latest): `arm64-v8a` for most phones,
   `armeabi-v7a` for older 32-bit ones. Android asks you to allow installs from this source.
 - The computer and the phone on the same network, or a VPS both can reach.
 
@@ -80,8 +80,9 @@ ports 8443/tcp and 8189/udp in the provider's panel. With Docker Desktop on Wind
    server signs its own certificate. Open the warning's details and continue to the site.
 2. Type the first-time code from the same output. This browser becomes your **Monitor** and shows an **Add camera** QR
    code.
-3. On the phone that will film, open the ReCam app, tap **Scan QR code** and scan the code on the
-   screen. Give the camera a name.
+3. On the phone that will film, open this page, download the APK from
+   [Releases](https://github.com/jpemendonca/ReCam/releases/latest) and install it. Open the ReCam
+   app, tap **Scan QR code** and scan the code on the screen. Give the camera a name.
 4. The live video opens in the browser, and the camera starts recording. Choose how much space the
    recordings may take; ReCam deletes the oldest when it fills up. You can switch the phone's
    flashlight from the live view.
