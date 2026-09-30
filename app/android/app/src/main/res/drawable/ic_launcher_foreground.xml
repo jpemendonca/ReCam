@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Same drawing as docs/brand/icon.svg, scaled down to stay inside the adaptive icon safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.8"
+        android:scaleY="0.8">
+        <path
+            android:pathData="M62.8,21.2 A34,34 0 1,1 22.1,42.4"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="5" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M25.5,33 L15.5,40 L28.7,44.8 Z" />
+        <path
+            android:pathData="M37.5,41.5 H72.5 A5.5,5.5 0 0,1 78,47 V62 A5.5,5.5 0 0,1 72.5,67.5 H37.5 A5.5,5.5 0 0,1 32,62 V47 A5.5,5.5 0 0,1 37.5,41.5 Z"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="4.5" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M40.8,54.5 A8.2,8.2 0 1,0 57.2,54.5 A8.2,8.2 0 1,0 40.8,54.5 Z M45.4,54.5 A3.6,3.6 0 1,0 52.6,54.5 A3.6,3.6 0 1,0 45.4,54.5 Z" />
+    </group>
+</vector>

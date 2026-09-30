@@ -2353,6 +2353,30 @@ o que continua por conta de quem roda o servidor.
     Texto do About e tópicos do repositório (self-hosted, dotnet, flutter, webrtc, android, camera)
     propostos para o autor colar no GitHub. Seguir a regra de textos genéricos e a skill stop-slop.
   - Aceite: README com as imagens renderizando no GitHub; About e tópicos preenchidos pelo autor.
+  > Em andamento (2026-09-30): o `README.md` ganhou a imagem de abertura e a seção Screenshots,
+  > apontando para seis arquivos em `docs/images/` (`monitor-live`, `monitor-cameras`,
+  > `recordings-timeline`, `people-on-this-day`, `app-scan-qr`, `app-camera-mode`, todos `.png`).
+  > About e tópicos entregues ao autor na conversa. Falta: o autor capturar as seis telas nos
+  > aparelhos reais, colar o About no GitHub, e o commit com as imagens.
+
+- [ ] **5.8 Ícone, splash e favicon**
+  - Origem: autor em 2026-09-30. O app usa o ícone padrão do Flutter e abre com a tela branca.
+  - Escopo: ícone escolhido pelo autor (seta circular em volta de um celular deitado, visto de
+    costas, branco sobre `#00695C`). No app: ícone adaptativo em vetor com a camada monocromática,
+    e splash com o fundo `#00695C` e o símbolo, do Android 9 ao 12+. No Monitor: favicon em SVG.
+    Em `docs/brand/`: o SVG, o PNG de 512 px e o gráfico de 1024x500 da Play. Logo no topo do
+    `README.md`. Sem dependência nova: os PNG saem de um navegador renderizando o SVG.
+  - Aceite: no celular, o ícone aparece no launcher e a splash sai verde-azulada com o símbolo; no
+    navegador, a aba mostra o ícone.
+  > Em andamento (2026-09-30): `docs/brand/icon.svg` é a fonte. No app, `ic_launcher_foreground.xml`
+  > em vetor (o desenho reduzido a 80% para caber na zona segura), `mipmap-anydpi-v26/ic_launcher.xml`
+  > adaptativo com fundo `recam_brand` e camada monocromática; os PNG antigos do Flutter saíram
+  > (minSdk 28 só usa o adaptativo). Splash: `launch_background.xml` com o fundo e o símbolo até o
+  > Android 11, e `values-v31`/`values-night-v31` com a splash do sistema no 12+. Monitor:
+  > `favicon.svg` ligado no `index.html`. `docs/brand/` tem o `icon-512.png` e o
+  > `feature-graphic.png` (1024x500), renderizados pelo Edge. Logo no título do `README.md`.
+  > Observado no emulador (Android 16): ícone no launcher e splash verde-azulada com o símbolo.
+  > Falta: conferir no A10 (Android 11) e a aba do navegador.
 
 ---
 

@@ -1,4 +1,4 @@
-# ReCam
+# <img src="docs/brand/icon.svg" width="40" alt=""> ReCam
 
 [![CI](https://github.com/jpemendonca/ReCam/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jpemendonca/ReCam/actions/workflows/ci.yml)
 ![Server coverage](https://github.com/jpemendonca/ReCam/raw/badges/coverage.svg)
