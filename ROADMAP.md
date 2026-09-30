@@ -22,7 +22,7 @@ validação no aparelho` e segue para o próximo.
 Quem executa cada bullet:
 
 - **[junto]**: Claude Opus, com o autor na conversa. São os bullets .NET que fixam o padrão
-  que o autor precisa saber defender em entrevista. Desde 2026-09-25 o autor não acompanha mais:
+  do servidor, que o autor quis entender e decidir de perto. Desde 2026-09-25 o autor não acompanha mais:
   a marcação só registra a história, e o agente implementa direto.
 - **[opus]**: Claude Opus, sem precisar do autor. São bullets difíceis demais para um modelo
   mais barato (integração WebRTC no celular).

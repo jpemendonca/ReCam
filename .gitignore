@@ -51,3 +51,6 @@ app/lib/l10n/generated/
 
 # Local test helper, delete before launch
 scripts/dev.ps1
+
+# Personal launch checklist, never commit
+PRA-LANCAR.md
