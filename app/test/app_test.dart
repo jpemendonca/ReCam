@@ -112,7 +112,9 @@ void main() {
   });
 
   group('RecamApp pairing links', () {
-    testWidgets('withMonitorLink_opensWatchTabAndPairs', (tester) async {
+    testWidgets('withMonitorLink_showsTheServerAndPairsAfterContinue', (
+      tester,
+    ) async {
       // arrange
       api
         ..healthyHosts = {'192.168.0.10'}
@@ -122,8 +124,14 @@ void main() {
       // act
       links.controller.add(Uri.parse(pairingQr(role: 'viewer')));
       await tester.pumpAndSettle();
+      final askedFirst = api.pairCalls.isEmpty;
+      final shown = find.textContaining('192.168.0.10:8443').evaluate().length;
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
 
       // assert
+      expect(askedFirst, isTrue);
+      expect(shown, 1);
       expect(find.text('Paired with ReCam'), findsOneWidget);
       expect(api.pairCalls.single.expectedRoles, {
         DeviceRole.owner,
@@ -131,7 +139,7 @@ void main() {
       });
     });
 
-    testWidgets('withCameraLink_pairsWithDefaultNameAndOpensCameraMode', (
+    testWidgets('withCameraLink_afterContinue_asksTheNameThenPairs', (
       tester,
     ) async {
       // arrange
@@ -143,12 +151,35 @@ void main() {
       // act
       links.controller.add(Uri.parse(pairingQr(role: 'camera')));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      final pairedBeforeName = api.pairCalls.isNotEmpty;
+      await tester.tap(find.text('Confirm'));
+      await tester.pumpAndSettle();
 
       // assert
+      expect(pairedBeforeName, isFalse);
       expect(api.pairCalls.single.name, 'Camera');
       expect(api.pairCalls.single.expectedRoles, {DeviceRole.camera});
       expect(find.byType(CameraModeScreen), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('withCameraLink_cancelled_doesNotPair', (tester) async {
+      // arrange
+      api.healthyHosts = {'192.168.0.10'};
+      await openApp(tester);
+
+      // act
+      links.controller.add(Uri.parse(pairingQr(role: 'camera')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      // assert
+      expect(api.pairCalls, isEmpty);
+      expect(find.text('Welcome to ReCam'), findsOneWidget);
+      expect(find.byType(CameraModeScreen), findsNothing);
     });
 
     testWidgets('withLinkForAlreadyPairedTab_doesNotPairAgain', (tester) async {
@@ -158,6 +189,8 @@ void main() {
 
       // act
       links.controller.add(Uri.parse(pairingQr(role: 'viewer')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
       // assert

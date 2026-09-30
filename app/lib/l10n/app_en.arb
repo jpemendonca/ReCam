@@ -232,6 +232,24 @@
   "switchToCameraTitle": "This phone is a Monitor. Make it a camera?",
   "switchRoleMessage": "It leaves the server in its current role and pairs again with this QR code.",
   "switchRoleConfirm": "Switch",
+  "linkConfirmTitle": "Pair with this server?",
+  "linkConfirmCamera": "This link makes this phone a camera of the server at {server}. It will send video to that server. Continue only if the link came from your own ReCam.",
+  "@linkConfirmCamera": {
+    "placeholders": {
+      "server": {
+        "type": "String"
+      }
+    }
+  },
+  "linkConfirmMonitor": "This link makes this phone a Monitor of the server at {server}. Continue only if the link came from your own ReCam.",
+  "@linkConfirmMonitor": {
+    "placeholders": {
+      "server": {
+        "type": "String"
+      }
+    }
+  },
+  "linkConfirmContinue": "Continue",
   "navCameras": "Cameras",
   "navRecordings": "Recordings",
   "navDevices": "Devices",

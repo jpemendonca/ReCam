@@ -10,6 +10,7 @@ import 'camera/camera_pairing_controller.dart';
 import 'camera/camera_tab.dart';
 import 'core/network/api_client.dart';
 import 'core/pairing/pairing_link.dart';
+import 'core/pairing/qr_payload.dart';
 import 'core/scanner/qr_scanner_screen.dart';
 import 'first_run_screen.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -85,9 +86,47 @@ class _HomeShellState extends State<HomeShell> {
     super.dispose();
   }
 
+  /// A link can come from any web page, so it pairs only after the person sees which server it
+  /// points to and agrees. On a phone with no role, the first-run screen then takes the code,
+  /// and a camera code still asks for the name.
   Future<void> _onLink(Uri uri) async {
     await widget.ready;
-    await _route(uri.toString());
+    final code = uri.toString();
+    final parsed = QrPayload.parse(code);
+    if (parsed is! QrParseOk || !mounted) return;
+    if (!await _confirmLink(parsed.payload) || !mounted) return;
+    if (_role == _Role.none) {
+      setState(() => _pendingCode = code);
+      return;
+    }
+    await _route(code);
+  }
+
+  Future<bool> _confirmLink(QrPayload payload) async {
+    final l10n = AppLocalizations.of(context);
+    final server = payload.serverUrls.map((url) => url.authority).join(', ');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.linkConfirmTitle),
+        content: Text(
+          payload.role == DeviceRole.camera
+              ? l10n.linkConfirmCamera(server)
+              : l10n.linkConfirmMonitor(server),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.cancelButton),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.linkConfirmContinue),
+          ),
+        ],
+      ),
+    );
+    return confirmed == true;
   }
 
   /// Reads a code while this phone already has a role, to switch it.

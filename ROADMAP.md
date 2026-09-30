@@ -2417,13 +2417,21 @@ o que continua por conta de quem roda o servidor.
   > Revisado (2026-09-30), pedido do autor: o passo 3 do First use também manda baixar o APK da
   > última release; os dois links apontam para `releases/latest`.
 
-- [ ] **5.10 Link de pareamento pede confirmação**
+- [x] **5.10 Link de pareamento pede confirmação**
   - Origem: revisão 5.9. Um link `recam://pair?...` aberto de qualquer página pareia o celular sem
     pedir nada, e um celular sem papel vira câmera de um servidor estranho e começa a transmitir.
   - Escopo: pareamento que chega por link abre uma confirmação com o endereço do servidor e o papel
     (e o nome, se for câmera), como a primeira abertura já faz. Ler o QR dentro do app não muda.
   - Aceite: teste de widget em que o link não pareia sem confirmar; no celular, tocar num link não
     pareia sozinho.
+  > Validação (2026-09-30): só código escrito e testes; o caminho no celular fica com o autor. O
+  > `HomeShell._onLink` agora abre "Pair with this server?" com o endereço (host:porta de cada URL do
+  > link) e o papel, antes de qualquer coisa. Cancelar não muda nada. Continuar, num celular sem
+  > papel, entrega o código à tela de primeira abertura, que para câmera ainda pede o nome; num
+  > celular com papel, segue o caminho de antes (troca de papel pergunta de novo; mesmo papel não
+  > pareia). Textos novos em `app_en.arb` e `app_pt.arb`. Testes em `app_test.dart`: Monitor por link
+  > mostra o servidor e só pareia depois de Continue; câmera por link pede o nome antes de parear;
+  > cancelar não pareia; link do papel que já existe não pareia. Gate verde.
 
 - [ ] **5.11 Leitor de QR sem telemetria do Google**
   - Origem: revisão 5.9. O `mobile_scanner` usa o ML Kit, que traz o `datatransport` do Google e
