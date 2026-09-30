@@ -2440,6 +2440,13 @@ o que continua por conta de quem roda o servidor.
     trocar por um leitor sem ML Kit (ZXing) ou tirar o `datatransport` do manifesto final. Troca de
     pacote é dependência nova e fica registrada aqui.
   - Aceite: ler o QR não gera tráfego para fora do servidor pareado, conferido com proxy.
+  > Em andamento (2026-09-30): o manifesto final do release tinha o `datatransport` com o backend
+  > CCT (o canal de métricas do Google usado pelo ML Kit), a descoberta de backend e os dois
+  > agendadores de envio. O `AndroidManifest.xml` do app agora remove os três com
+  > `tools:node="remove"`: sem backend, os eventos não têm para onde ir. Conferido no manifesto
+  > mesclado do release: nenhuma entrada `datatransport`. O leitor continua sendo o `mobile_scanner`,
+  > sem dependência nova. Falta: o autor medir no celular (PCAPdroid, sem root) que abrir o leitor e
+  > ler um QR não gera conexão para fora do servidor pareado, e que o leitor segue lendo.
 
 - [ ] **5.12 Conexões WebRTC liberadas no app**
   - Origem: revisão 5.9. `webrtc_publisher.dart` e `webrtc_viewer.dart` só chamam `close()`, nunca
