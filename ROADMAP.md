@@ -2325,6 +2325,15 @@ o que continua por conta de quem roda o servidor.
   > commits e os APKs anexados. A mesma chave assina o APK do GitHub e o da Play (na Play, enviar a
   > própria chave em vez de deixar a Google gerar uma), para quem instalou por um poder atualizar pelo
   > outro. O autor gera a chave, guarda backup em dois lugares e cadastra os secrets.
+  > Em andamento (2026-09-30): o autor gerou a chave (fora do repositório) e cadastrou os quatro
+  > secrets `ANDROID_*` pelo `gh`. O `build.gradle.kts` assina o release com a chave quando o workflow
+  > passa `RECAM_KEYSTORE_PATH` e as senhas por variável de ambiente; sem elas, cai na chave de
+  > debug (build local continua funcionando, conferido: dois APKs, 31 e 41 MB). O
+  > `.github/workflows/release.yml` roda numa tag `v*`: decodifica a chave só na pasta temporária
+  > do runner, gera os APKs `armeabi-v7a` e `arm64-v8a` com a versão da tag, cria a release com as
+  > notas dos commits e apaga a chave. `.gitignore` ganhou `*.jks`, `*.keystore` e `key.properties`.
+  > Falta: push, a tag `v0.1.0`, e instalar o APK da release no A10 e no 6A (desinstalar antes, a
+  > assinatura muda). A imagem no GHCR do 5.3 ainda não está no workflow.
 
 - [ ] **5.5 Contribuição e CLA** (depende do usuário escolher o texto do CLA e instalar o CLA Assistant)
   - Escopo: `CONTRIBUTING.md` (como rodar, gate, Conventional Commits, CLA obrigatório) e o

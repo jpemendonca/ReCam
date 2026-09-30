@@ -54,3 +54,8 @@ scripts/dev.ps1
 
 # Personal launch checklist, never commit
 PRA-LANCAR.md
+
+# Signing keys, never commit
+*.jks
+*.keystore
+key.properties

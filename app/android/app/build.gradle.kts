@@ -26,10 +26,23 @@ android {
         versionName = flutter.versionName
     }
 
+    // The release workflow passes the upload key through these variables. Without them, a local
+    // release build falls back to the debug key, so `flutter run --release` keeps working.
+    val keystorePath = System.getenv("RECAM_KEYSTORE_PATH")
+    signingConfigs {
+        if (keystorePath != null) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("RECAM_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("RECAM_KEY_ALIAS")
+                keyPassword = System.getenv("RECAM_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // Release signing comes with ROADMAP 4.4; debug keys keep `flutter run --release` working.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (keystorePath != null) "release" else "debug")
         }
     }
 }
