@@ -15,9 +15,6 @@ You need:
 - An Android phone to film, with Android 9 or newer and the ReCam app.
 - The computer and the phone on the same network, or a VPS both can reach.
 
-> Status: pre-alpha. You build the server from source, as below. Follow progress in
-> [ROADMAP.md](ROADMAP.md).
-
 ## Screenshots
 
 | Cameras | Recordings |
