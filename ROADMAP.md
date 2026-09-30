@@ -132,7 +132,7 @@ Fase 12 (detecção de pessoas). Ela pode não ir para a `main`.
     --build` sobe os dois containers. `docker compose ps` mostra o servidor `healthy`.
     `curl -k https://localhost:8443/health` responde `ok`.
   > Validação (2026-09-24): containers rodados nesta máquina. `compose.bridge.yaml` com
-  > `RECAM_HOST=192.168.100.15` subiu os dois serviços, o servidor ficou `healthy` e
+  > `RECAM_HOST=192.168.0.10` subiu os dois serviços, o servidor ficou `healthy` e
   > `curl -k https://localhost:8443/health` respondeu `ok`. MediaMTX 1.21.1 carregou a
   > configuração e só abriu WebRTC (8889 TCP interno, 8189 UDP). `compose.yaml` (host) foi
   > validado com `docker compose config`, mas não rodado: Docker Desktop não tem rede host real.
@@ -158,7 +158,7 @@ Fase 12 (detecção de pessoas). Ela pode não ir para a `main`.
     container, `docker compose logs server` mostra o QR.
   > Validação (2026-09-24): código escrito e container rodado. Gate verde com 22 testes. Com
   > `compose.bridge.yaml`, `docker compose logs server` mostra o QR em ASCII e a URL
-  > `https://192.168.100.15:8443`. `curl -k https://localhost:8443/setup` devolveu a página com o
+  > `https://192.168.0.10:8443`. `curl -k https://localhost:8443/setup` devolveu a página com o
   > QR em SVG. Não lido por um celular ainda (isso é o 1.4). Decisões no caminho: o token vive
   > só em memória e no banco fica o hash; ao renovar, os tokens de dono não usados são apagados;
   > `OwnerSetup` usa `IDbContextFactory` por ser singleton; `DateTimeOffset` gravado como binário
@@ -223,7 +223,7 @@ Fase 12 (detecção de pessoas). Ela pode não ir para a `main`.
   - Aceite: o app mostra "pareado" e `GET /api/me` responde com papel `Owner`. Anotar o modelo
     do celular e o que foi observado.
   > Validação (2026-09-24): caminho percorrido no aparelho. Samsung Galaxy A10 (SM-A105M,
-  > Android 11), APK debug, servidor com `compose.bridge.yaml` no PC (`RECAM_HOST=192.168.100.15`)
+  > Android 11), APK debug, servidor com `compose.bridge.yaml` no PC (`RECAM_HOST=192.168.0.10`)
   > e regras de firewall para 8443/tcp e 8189/udp. O QR de `/setup` foi lido pelo app e a aba
   > Assistir mostrou "Pareado com Recam" e o papel dono, com TLS e pinning funcionando pela rede
   > local. O app não foi fechado e reaberto, e a resposta de `GET /api/me` não foi lida direto (o
@@ -2354,6 +2354,13 @@ o que continua por conta de quem roda o servidor.
   > esse problema de dono, por isso o gate local passa). O script do container agora abre as
   > permissões do que escreveu ao sair (`trap ... EXIT`), no mesmo jeito do teste da imagem de
   > detecção. Falta: push e três runs verdes na `main`.
+  > Revisado (2026-09-30): o run do push seguinte passou o teste do movimento, mas falhou em
+  > `ReportTorch_ThenDisconnect_TorchOff`: o `StartAsync` do cliente volta antes de o servidor pôr o
+  > navegador no grupo que recebe status, e o aviso se perdia em máquina lenta. O `StatusInbox` dos
+  > testes do hub agora faz uma chamada de ida e volta antes de esperar (o hub só roda chamadas
+  > depois do `OnConnectedAsync`). No run seguinte o gate passou inteiro e caiu o passo de
+  > cobertura: ele rodava a solução toda e o `Recam.Web.Tests` saía com "Zero tests ran". O passo
+  > agora roda só o `Recam.Server.Tests`, o único que a cobertura mede (272 testes, conferido local).
 
 - [ ] **5.7 README com imagens e About do repositório**
   - Origem: autor em 2026-09-30.
@@ -2391,10 +2398,82 @@ o que continua por conta de quem roda o servidor.
   > Observado no emulador (Android 16): ícone no launcher e splash verde-azulada com o símbolo.
   > Falta: conferir no A10 (Android 11) e a aba do navegador.
 
+
+- [x] **5.9 Revisão antes de abrir o repositório**
+  - Origem: autor em 2026-09-30, antes de tornar o repositório público.
+  - Escopo: varrer os arquivos atuais atrás de dado pessoal e segredo, conferir o README contra o
+    código, e revisar servidor e app atrás de bugs. O que for correção de código vira bullet próprio.
+  - Aceite: nenhum segredo nem dado pessoal nos arquivos versionados; README fiel ao código.
+  > Validação (2026-09-30): quatro revisões em paralelo. Privacidade: nenhum segredo; tirados os
+  > metadados EXIF das duas fotos do celular (modelo do aparelho e fuso), o IP da rede de casa no
+  > ROADMAP virou `192.168.0.10`, e o relatório de desempenho e o ROADMAP deixaram de citar o
+  > processador exato, a distro e o navegador do autor. README: link das Releases com qual APK
+  > baixar, "Intel ou AMD" (o `detect` só sai para x86-64), a linha "To see this again" na saída do
+  > código, `RECAM_HOST` antes de subir (não do build), aviso de certificado sem nome de botão de
+  > um navegador só, `reset-owner` descrito como é (código novo em até 30 s), Monitor em outro
+  > navegador pelo link, documentos internos marcados como em português, e fora a frase do CLA que
+  > ainda não existe. `docs/reverse-proxy.md` com `sudo`. Achados de código viraram os bullets 5.10
+  > a 5.16.
+
+- [ ] **5.10 Link de pareamento pede confirmação**
+  - Origem: revisão 5.9. Um link `recam://pair?...` aberto de qualquer página pareia o celular sem
+    pedir nada, e um celular sem papel vira câmera de um servidor estranho e começa a transmitir.
+  - Escopo: pareamento que chega por link abre uma confirmação com o endereço do servidor e o papel
+    (e o nome, se for câmera), como a primeira abertura já faz. Ler o QR dentro do app não muda.
+  - Aceite: teste de widget em que o link não pareia sem confirmar; no celular, tocar num link não
+    pareia sozinho.
+
+- [ ] **5.11 Leitor de QR sem telemetria do Google**
+  - Origem: revisão 5.9. O `mobile_scanner` usa o ML Kit, que traz o `datatransport` do Google e
+    pode mandar métricas de uso, contra a regra "só fala com o servidor pareado".
+  - Escopo: medir primeiro (proxy no celular, ler um QR, ver se sai algo para o Google). Se sair,
+    trocar por um leitor sem ML Kit (ZXing) ou tirar o `datatransport` do manifesto final. Troca de
+    pacote é dependência nova e fica registrada aqui.
+  - Aceite: ler o QR não gera tráfego para fora do servidor pareado, conferido com proxy.
+
+- [ ] **5.12 Conexões WebRTC liberadas no app**
+  - Origem: revisão 5.9. `webrtc_publisher.dart` e `webrtc_viewer.dart` só chamam `close()`, nunca
+    `dispose()`: a memória nativa vaza a cada ciclo e o áudio do celular que assiste pode ficar em
+    modo de chamada depois de sair do ao vivo.
+  - Escopo: `dispose()` depois de `close()` nos dois.
+  - Aceite: teste que o fake da conexão recebe `dispose`; no celular, sair do ao vivo devolve o áudio.
+
+- [ ] **5.13 Modo câmera: permissão negada e app fechado**
+  - Origem: revisão 5.9. Câmera negada falha em silêncio (a câmera aparece online e o ao vivo nunca
+    abre). Arrastar o app dos recentes mata a câmera, mas a notificação continua. Uma exceção num
+    passo trava a fila do modo câmera, inclusive o `stop()`.
+  - Escopo: mostrar o problema com botão para as configurações quando a câmera é negada; parar o
+    serviço junto com o app (`stopWithTask`); tratar o erro de cada passo da fila.
+  - Aceite: testes de widget e do controlador para os três casos.
+
+- [ ] **5.14 Servidor não cai por erro em tarefa de fundo**
+  - Origem: revisão 5.9. As tarefas de fundo de gravação e de primeira abertura não tratam exceção;
+    uma corrida ao apagar a pasta vazia de uma câmera, ou um "database is locked", derruba o servidor
+    inteiro. Arquivos `.ciphering` que sobram de uma parada no meio nunca são apagados.
+  - Escopo: try/catch com log em cada ciclo; apagar só pastas de câmeras removidas; limpar
+    `*.ciphering` ao iniciar e na limpeza.
+  - Aceite: testes com a pasta sumindo no meio do ciclo e com o arquivo `.ciphering` sobrando.
+
+- [ ] **5.15 Aparelho removido perde o acesso na hora**
+  - Origem: revisão 5.9. Remover um aparelho não encerra a sessão de vídeo que ele já tem aberta no
+    MediaMTX. O `reset-owner` roda em outro processo e não derruba os Monitors conectados, que
+    continuam podendo ligar a lanterna e assistir.
+  - Escopo: o proxy guarda as sessões WHEP/WHIP de cada aparelho e as encerra na remoção; um filtro
+    do hub confere se quem chama não foi removido; o ciclo de 30 s derruba conexões de removidos.
+  - Aceite: testes de integração para remoção pelo Monitor e pelo `reset-owner`.
+
+- [ ] **5.16 Limites por IP e código de primeira abertura**
+  - Origem: revisão 5.9. Atrás de NAT do Docker Desktop ou de proxy sem `RECAM_TRUSTED_PROXIES`,
+    todos chegam com o mesmo IP e cinco tentativas bloqueiam todo mundo. Cinco erros de qualquer um
+    trocam o código de primeira abertura. Com `RECAM_TLS=off`, a porta sem TLS escuta em todas as
+    interfaces.
+  - Escopo: tirar a troca global do código (o limite por IP basta); documentar
+    `RECAM_TRUSTED_PROXIES` no modo bridge; sem TLS, escutar só no loopback.
+  - Aceite: testes do código com erros de vários clientes e do bind sem TLS.
 ---
 
 - [x] **11.7 [aparelho] Teste no PC antigo com o README paralelo**
-  - Origem: pedido do autor em 2026-09-28. Um PC antigo (i5 de 3ª geração, SSD) com Linux Mint
+  - Origem: pedido do autor em 2026-09-28. Um PC antigo (i5 de 3ª geração, SSD) com Linux
     instalado do zero faz o papel de um usuário novo.
   - Escopo: o autor segue só o `README.preview.md`, escrito como se fosse o README definitivo
     (instalação rápida, primeiro uso e problemas comuns). Ele não é a versão final: depois do
@@ -2403,12 +2482,12 @@ o que continua por conta de quem roda o servidor.
     Nesta branch (Fase 12), o `README.preview.md` instala com a detecção de pessoas ligada
     (`COMPOSE_FILE=compose.yaml:compose.detect.yaml` no `.env`), para ver também quanto ela pesa
     num processador antigo.
-  - A observar: instalação do Docker no Mint, compose em rede `host` achando o IP da rede local
+  - A observar: instalação do Docker no Linux, compose em rede `host` achando o IP da rede local
     sozinho, firewall, atraso na rede local, e uso de processador do FFmpeg de movimento e da
     cifra num processador antigo.
   - Aceite: o autor chega ao ao vivo seguindo só o README paralelo; cada tropeço vira bullet; o
     `README.preview.md` é apagado.
-  > Validação (2026-09-29): o autor instalou no PC antigo (i5-3470, Linux Mint) seguindo o
+  > Validação (2026-09-29): o autor instalou no PC antigo (i5 de 3ª geração, Linux) seguindo o
   > `README.preview.md`, tanto da `main` quanto da branch da detecção, e tudo funcionou. O guia
   > foi para o `README.md` (instalação, primeiro uso, problemas comuns, atualizar, parar e os
   > containers), com a detecção de pessoas como passo opcional, e o `README.preview.md` foi
@@ -2681,7 +2760,7 @@ Decisões da conversa:
     no player.
   - Aceite: nota de validação com os números medidos.
   > Bloqueado (2026-09-28): aguardando validação no aparelho (PC antigo do autor).
-  > Validação (2026-09-29): medido pelo autor no i5-3470 com Linux Mint. Em 5 minutos com servidor, MediaMTX e `detect`: cerca
+  > Validação (2026-09-29): medido pelo autor no i5 de 3ª geração com Linux. Em 5 minutos com servidor, MediaMTX e `detect`: cerca
   > de 410 MB de RAM no total (`detect` 147 MB, estável), CPU média de 3,2% da máquina e pico de
   > 7,5%, temperatura até 66 °C. A lista de pessoas e as caixas no player funcionaram. O tempo por
   > segmento e o atraso do ao vivo não entraram no relatório.

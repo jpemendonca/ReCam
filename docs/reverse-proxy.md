@@ -31,7 +31,7 @@ RECAM_PUBLIC_URLS=https://recam.example.com
   `172.18.0.0/16`) when it runs in a container.
 - `RECAM_PUBLIC_URLS` is the address the pairing QR codes send phones to.
 
-Restart with `docker compose up -d` in `deploy/`.
+Restart with `sudo docker compose up -d` in `deploy/`.
 
 ## 2. Configure Caddy
 

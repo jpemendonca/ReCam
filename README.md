@@ -10,9 +10,11 @@ and you watch live and recorded video in the browser. Open source, no ads, no su
 
 You need:
 
-- A computer that stays on, with Linux (Ubuntu, Debian or similar), or a VPS. Any computer from
-  the last ten years works.
-- An Android phone to film, with Android 9 or newer and the ReCam app.
+- A computer that stays on, with Linux (Ubuntu, Debian or similar), or a VPS. Any Intel or AMD
+  computer from the last ten years works.
+- An Android phone to film, with Android 9 or newer and the ReCam app. Download the APK from
+  [Releases](https://github.com/jpemendonca/ReCam/releases): `arm64-v8a` for most phones,
+  `armeabi-v7a` for older 32-bit ones. Android asks you to allow installs from this source.
 - The computer and the phone on the same network, or a VPS both can reach.
 
 ## Screenshots
@@ -59,13 +61,14 @@ Keep this output at hand. You need the address and the code in the next section:
 No Monitor yet. On a computer:
   1. Open https://192.168.0.10:8443 in the browser and accept the certificate warning.
   2. Type the first-time code RHGJ-JCAU
+To see this again: docker compose exec server ./Recam.Server code
 ===============================================
 ```
 
 The code works once: the first browser that types it becomes your Monitor. If you lose it, run the
 same command again.
 
-On a VPS, add a line `RECAM_HOST=` with the VPS public IP to `.env` before you build, and open
+On a VPS, add a line `RECAM_HOST=` with the VPS public IP to `.env` before you start the containers, and open
 ports 8443/tcp and 8189/udp in the provider's panel. With Docker Desktop on Windows or macOS, set
 `RECAM_HOST` to the computer's network address and add `-f compose.bridge.yaml` to each
 `docker compose` command.
@@ -74,7 +77,7 @@ ports 8443/tcp and 8189/udp in the provider's panel. With Docker Desktop on Wind
 
 1. On a computer or phone in the same network, open the address the last command showed, like
    `https://192.168.0.10:8443`. The browser warns that the connection is not private, because the
-   server signs its own certificate. Choose **Advanced**, then **Proceed**.
+   server signs its own certificate. Open the warning's details and continue to the site.
 2. Type the first-time code from the same output. This browser becomes your **Monitor** and shows an **Add camera** QR
    code.
 3. On the phone that will film, open the ReCam app, tap **Scan QR code** and scan the code on the
@@ -86,7 +89,8 @@ ports 8443/tcp and 8189/udp in the provider's panel. With Docker Desktop on Wind
    this day** a minute or two later, and the player draws a box around each person.
 
 To watch from another phone, install the app there and use **Add Monitor** in the browser. To
-watch from another browser, use **Add Monitor › In a browser** and scan the QR code it shows.
+watch from another browser, use **Add Monitor › In a browser** and open the link it shows in the other browser, or scan
+the QR code with a phone's camera.
 
 To get the padlock without the warning, put a reverse proxy in front:
 [docs/reverse-proxy.md](docs/reverse-proxy.md).
@@ -139,7 +143,8 @@ To get the padlock without the warning, put a reverse proxy in front:
 
 - **You lost the code.** Run the code command again. The code exists until the first Monitor.
 
-- **You lost every Monitor.** This removes them and prints a new first-time code:
+- **You lost every Monitor.** This removes them. Wait 30 seconds and run the code command again
+  for a new first-time code:
 
   ```bash
   sudo docker compose exec server ./Recam.Server reset-owner
@@ -197,9 +202,9 @@ a MediaMTX container, so keep Docker running.
 `bash scripts/build-server.sh` builds the Docker images and `bash scripts/build-apk.sh` builds the
 APK, both stamped with the version from Git. Other builds show the version `dev`.
 
-Architecture, protocol and decisions: [SPECS.md](SPECS.md). Code rules: [CODESTYLE.md](CODESTYLE.md).
-Agent workflow: [AGENTS.md](AGENTS.md).
+In Portuguese: architecture, protocol and decisions in [SPECS.md](SPECS.md), code rules in
+[CODESTYLE.md](CODESTYLE.md), agent workflow in [AGENTS.md](AGENTS.md).
 
 ## License
 
-[AGPL-3.0](LICENSE). Contributors sign a Contributor License Agreement.
+[AGPL-3.0](LICENSE).

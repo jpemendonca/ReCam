@@ -30,7 +30,7 @@ jobs:
 
       - name: Server coverage
         run: >
-          dotnet test --solution server/Recam.slnx --no-build
+          dotnet test --project server/tests/Recam.Server.Tests --no-build
           --coverlet --coverlet-output-format cobertura
           --coverlet-include "[Recam.Server]*"
           --coverlet-exclude "[Recam.Server]Recam.Server.Infrastructure.Persistence.Migrations.*"

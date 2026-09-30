@@ -1,8 +1,7 @@
 # Relatório de Desempenho: Detecção de Pessoas em Hardware de Entrada
 
 - **Data do teste:** 2026-09-28
-- **Branch:** `claude/person-activity-detection-4pq7pg`
-- **Ambiente:** Hardware de referência real (PC doméstico antigo / "pc véio")
+- **Ambiente:** Hardware de referência real (PC doméstico de 2012)
 - **Finalidade:** Fornecer dados empíricos de telemetria e uso de recursos para o Claude e a equipe de desenvolvimento avaliarem a viabilidade do serviço de detecção de pessoas (`Recam.Detect`, [ADR 0043](adr/0043-deteccao-de-pessoas-opcional.md)) operando 24/7.
 
 ---
@@ -11,10 +10,10 @@
 
 | Item | Especificação |
 | :--- | :--- |
-| **Processador** | Intel(R) Core(TM) i5-3470 CPU @ 3.20GHz (4 núcleos / 4 threads, microarquitetura Ivy Bridge, ano 2012) |
-| **Memória RAM Total** | 7,6 GiB DDR3 (sistema com ambiente gráfico ativo: Cinnamon, Brave browser e ferramentas) |
+| **Processador** | Intel Core i5 de 3ª geração (4 núcleos / 4 threads, Ivy Bridge, 2012) |
+| **Memória RAM Total** | 8 GB DDR3 (sistema com ambiente gráfico e navegador abertos) |
 | **Memória Swap** | 2,0 GiB (uso estável em ~237 MB) |
-| **Sistema Operacional** | Linux x86_64 (base Ubuntu / Linux Mint) |
+| **Sistema Operacional** | Linux x86_64 (base Ubuntu) |
 | **Arquitetura de Contêineres** | Docker Compose (`compose.yaml` + `compose.detect.yaml`) |
 | **Serviços em Execução** | `Recam.Server` (.NET 10), `mediamtx` (WebRTC proxy) e `Recam.Detect` (worker ONNX YOLOX-Tiny) |
 
@@ -91,6 +90,6 @@ As métricas foram extraídas diretamente do `/proc` e dos sensores de hardware 
 1. **Aderência ao [ADR 0043](adr/0043-deteccao-de-pessoas-opcional.md):**
    A escolha do YOLOX-Tiny em ONNX Runtime no worker em CPU atingiu o objetivo com folga: um processador de 2012 (i5 3ª geração) rodou a stack completa consumindo menos de 4% de CPU global e ~410 MB de RAM.
 2. **Operação 24/7:**
-   O impacto térmico e de memória é compatível com operação ininterrupta, mesmo em computadores reaproveitados ("pc véio") que também desempenham outras funções ou operam sem refrigeração avançada.
+   O impacto térmico e de memória é compatível com operação ininterrupta, mesmo em computadores reaproveitados que também desempenham outras funções ou operam sem refrigeração avançada.
 3. **Reserva de Capacidade:**
    Não há necessidade de reduzir ainda mais a taxa de amostragem de quadros (1 fps nos trechos de movimento) para esta classe de processador x86_64, pois mais de 90% da CPU permanece livre para o restante do sistema.

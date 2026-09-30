@@ -23,7 +23,7 @@ public sealed class DeviceHubTests
         var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
         var camera = await factory.PairDeviceAsync(DeviceRole.Camera, "Porch");
         await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
-        using var updates = new StatusInbox(viewerConnection);
+        using var updates = await StatusInbox.OpenAsync(viewerConnection);
         await using var cameraConnection = await factory.ConnectAsync(camera.Credential);
         await updates.WaitForAsync(status => status.Online);
 
@@ -49,7 +49,7 @@ public sealed class DeviceHubTests
         var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
         var camera = await factory.PairDeviceAsync(DeviceRole.Camera, "Porch");
         await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
-        using var updates = new StatusInbox(viewerConnection);
+        using var updates = await StatusInbox.OpenAsync(viewerConnection);
         await using var cameraConnection = await factory.ConnectAsync(camera.Credential);
 
         // act
@@ -121,7 +121,7 @@ public sealed class DeviceHubTests
         var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
         var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
         await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
-        using var updates = new StatusInbox(viewerConnection);
+        using var updates = await StatusInbox.OpenAsync(viewerConnection);
         var cameraConnection = await factory.ConnectAsync(camera.Credential);
         await updates.WaitForAsync(status => status.Online);
 
@@ -324,7 +324,7 @@ public sealed class DeviceHubTests
         await cameraConnection.InvokeAsync<HubResult>("ReportPublishing", true, TestContext.Current.CancellationToken);
         await cameraConnection.InvokeAsync<HubResult>("ReportTorch", true, TestContext.Current.CancellationToken);
         await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
-        using var updates = new StatusInbox(viewerConnection);
+        using var updates = await StatusInbox.OpenAsync(viewerConnection);
 
         // act
         await cameraConnection.DisposeAsync();
@@ -392,7 +392,7 @@ public sealed class DeviceHubTests
         var owner = await factory.PairDeviceAsync(DeviceRole.Owner);
         var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
         await using var viewerConnection = await factory.ConnectAsync(owner.Credential);
-        using var updates = new StatusInbox(viewerConnection);
+        using var updates = await StatusInbox.OpenAsync(viewerConnection);
         await using var cameraConnection = await factory.ConnectAsync(camera.Credential);
         var worker = factory.Services.GetRequiredService<RecordingStateWorker>();
         await worker.CheckAsync(TestContext.Current.CancellationToken);
@@ -440,7 +440,7 @@ public sealed class DeviceHubTests
         private readonly List<CameraStatus> _received = [];
         private readonly SemaphoreSlim _signal = new(0);
 
-        public StatusInbox(HubConnection connection) =>
+        private StatusInbox(HubConnection connection) =>
             connection.On<CameraStatus>("CameraStatusChanged", status =>
             {
                 lock (_received)
@@ -450,6 +450,18 @@ public sealed class DeviceHubTests
 
                 _signal.Release();
             });
+
+        /// <summary>
+        /// StartAsync returns before the server runs OnConnectedAsync, which adds the viewer to the
+        /// group that gets status changes. The hub runs invocations only after OnConnectedAsync, so
+        /// one round trip means the viewer is in the group and no change is missed.
+        /// </summary>
+        public static async Task<StatusInbox> OpenAsync(HubConnection connection)
+        {
+            var inbox = new StatusInbox(connection);
+            await connection.InvokeAsync<HubResult>("UnwatchCamera", Guid.Empty, TestContext.Current.CancellationToken);
+            return inbox;
+        }
 
         public void Dispose() => _signal.Dispose();
 
