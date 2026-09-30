@@ -2358,6 +2358,10 @@ o que continua por conta de quem roda o servidor.
   > `recordings-timeline`, `people-on-this-day`, `app-scan-qr`, `app-camera-mode`, todos `.png`).
   > About e tópicos entregues ao autor na conversa. Falta: o autor capturar as seis telas nos
   > aparelhos reais, colar o About no GitHub, e o commit com as imagens.
+  > Revisado (2026-09-30): o autor capturou cinco telas (A10 e navegador, servidor na VPS). A de
+  > pessoas detectadas ficou de fora por privacidade, e a seção mostra câmeras e gravações na grade e
+  > as duas telas do celular embaixo. O vídeo ao vivo atual é provisório; o autor vai trocar a cena.
+  > Falta: ver as imagens renderizando no GitHub e o About colado.
 
 - [ ] **5.8 Ícone, splash e favicon**
   - Origem: autor em 2026-09-30. O app usa o ícone padrão do Flutter e abre com a tela branca.

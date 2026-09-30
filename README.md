@@ -6,6 +6,8 @@
 ReCam turns spare Android phones into security cameras. You run the server on your own computer,
 and you watch live and recorded video in the browser. Open source, no ads, no subscription.
 
+![Live video from a phone camera in the browser Monitor](docs/images/monitor-live.png)
+
 You need:
 
 - A computer that stays on, with Linux (Ubuntu, Debian or similar), or a VPS. Any computer from
@@ -15,6 +17,14 @@ You need:
 
 > Status: pre-alpha. You build the server from source, as below. Follow progress in
 > [ROADMAP.md](ROADMAP.md).
+
+## Screenshots
+
+| Cameras | Recordings |
+|---|---|
+| ![Camera list with battery and status](docs/images/monitor-cameras.png) | ![Recordings with the 24-hour timeline](docs/images/recordings-timeline.png) |
+
+<img src="docs/images/app-scan-qr.jpg" alt="Scan QR code in the app" width="32%"> <img src="docs/images/app-camera-mode.jpg" alt="Phone in camera mode" width="32%">
 
 ## Install
 
