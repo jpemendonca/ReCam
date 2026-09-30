@@ -715,8 +715,8 @@ Decisões iniciais (2026-09-24):
   fronteiras são garantidas por teste de arquitetura, não pela quantidade de projetos.
 - **Domínio rico e `Result<T>`.** Erro esperado (token expirado, nome inválido) não é exceção.
   Exceção fica para bug.
-- **O projeto também é portfólio .NET do autor.** Os primeiros slices do servidor são feitos
-  junto com ele para fixar o padrão. Depois, os bullets podem ir para um modelo mais barato em
+- **Padrão do servidor antes do loop.** Os primeiros slices do servidor são feitos
+  junto com o autor para fixar o padrão. Depois, os bullets podem ir para um modelo mais barato em
   loop.
 - **Gravação e acesso remoto adiados.** Gravação é a parte mais cara do projeto. Acesso remoto
   é responsabilidade do usuário.

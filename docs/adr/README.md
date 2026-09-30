@@ -20,7 +20,7 @@ no log do `SPECS.md` e ganha o próximo número aqui.
 | [0012](0012-agpl-com-cla.md) | AGPL-3.0 com CLA | 2026-09-24 |
 | [0013](0013-vertical-slices.md) | Vertical slices num projeto só | 2026-09-24 |
 | [0014](0014-dominio-rico-e-result.md) | Domínio rico e Result<T> | 2026-09-24 |
-| [0015](0015-projeto-como-portfolio.md) | O projeto também é portfólio .NET | 2026-09-24 |
+| [0015](0015-padrao-do-servidor-antes-do-loop.md) | Padrão do servidor antes do loop | 2026-09-24 |
 | [0016](0016-gravacao-e-acesso-remoto-adiados.md) | Gravação e acesso remoto adiados | 2026-09-24 |
 | [0017](0017-volume-nomeado-para-data.md) | Volume nomeado para /data | 2026-09-24 |
 | [0018](0018-h264-preferido-nao-unico.md) | H.264 preferido, não único | 2026-09-25 |

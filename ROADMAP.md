@@ -2265,7 +2265,7 @@ o que continua por conta de quem roda o servidor.
   > `CI / gate` verde e os dois selos na página do repositório.
 
 - [x] **5.2.1 Observabilidade com OpenTelemetry**
-  - Origem: vitrine de portfólio.
+  - Origem: vitrine do projeto.
   - Escopo: pacotes `OpenTelemetry.Extensions.Hosting` e instrumentações de ASP.NET Core e
     HttpClient. Métricas próprias: câmeras online, câmeras publicando, visualizações ativas.
     Exportação OTLP ligada só com `OTEL_EXPORTER_OTLP_ENDPOINT` definida (chave vazia no
@@ -2290,7 +2290,7 @@ o que continua por conta de quem roda o servidor.
   > servidor, 223 no app).
 
 - [x] **5.2.2 ADRs**
-  - Origem: vitrine de portfólio.
+  - Origem: vitrine do projeto.
   - Escopo: `docs/adr/`, um arquivo por decisão do log do `SPECS.md` 12 (contexto, decisão,
     consequências), em português. O `SPECS.md` 12 passa a apontar para os ADRs.
   - Aceite: todo item do log tem ADR correspondente.
@@ -2304,7 +2304,7 @@ o que continua por conta de quem roda o servidor.
   > `> Revisão` no log, 36 arquivos numerados. Gate verde.
 
 - [ ] **5.2.3 [aparelho] Vitrine do README**
-  - Origem: vitrine de portfólio.
+  - Origem: vitrine do projeto.
   - Escopo: GIF curto do caminho principal (código no navegador, ler o QR com o celular, vídeo
     ao vivo no navegador, lanterna) e diagrama da arquitetura no `README.md`. Revisado em
     2026-09-25 para o caminho novo da Fase 6.
@@ -2314,17 +2314,38 @@ o que continua por conta de quem roda o servidor.
   - Escopo: workflow que publica `ghcr.io/<dono>/recam-server` em tag `v*`. Os composes usam a
     imagem publicada. O README ensina a instalar baixando só a pasta `deploy/`.
   - Aceite: instalação do zero numa máquina Linux seguindo só o README.
+  > Revisado (2026-09-30): o workflow é o mesmo da release do 5.4. Uma tag `v*` publica a imagem e
+  > cria a release no GitHub. Primeira versão: `v0.1.0`.
 
 - [ ] **5.4 APK de release assinado** (depende do usuário gerar o keystore e cadastrar os secrets)
   - Escopo: build de release com `--split-per-abi` (armeabi-v7a e arm64-v8a) publicada no
     GitHub Releases.
   - Aceite: APK de release instalado no A10 e no 6A.
+  > Revisado (2026-09-30): sai no workflow de release por tag do 5.3, com as notas geradas pelos
+  > commits e os APKs anexados. A mesma chave assina o APK do GitHub e o da Play (na Play, enviar a
+  > própria chave em vez de deixar a Google gerar uma), para quem instalou por um poder atualizar pelo
+  > outro. O autor gera a chave, guarda backup em dois lugares e cadastra os secrets.
 
 - [ ] **5.5 Contribuição e CLA** (depende do usuário escolher o texto do CLA e instalar o CLA Assistant)
   - Escopo: `CONTRIBUTING.md` (como rodar, gate, Conventional Commits, CLA obrigatório) e o
     documento do CLA.
   - Aceite: antes do primeiro pull request externo, o CLA Assistant pede o aceite num PR de
     teste.
+
+- [ ] **5.6 CI verde no GitHub**
+  - Origem: autor em 2026-09-30. O job `gate` falha no GitHub com 1 teste do `Recam.Server.Tests`
+    quebrando (394 de 395 passam), e o gate local passa.
+  - Escopo: achar o teste pelo log do run, entender por que só falha no runner e consertar o teste
+    ou o código. Sem retry nem skip.
+  - Aceite: três runs seguidos verdes na `main`.
+
+- [ ] **5.7 README com imagens e About do repositório**
+  - Origem: autor em 2026-09-30.
+  - Escopo: capturas do navegador (lista de câmeras, vídeo ao vivo, gravações com a linha do tempo,
+    pessoas detectadas) e do app (ler QR, modo câmera) no `README.md`, junto com o GIF do 5.2.3.
+    Texto do About e tópicos do repositório (self-hosted, dotnet, flutter, webrtc, android, camera)
+    propostos para o autor colar no GitHub. Seguir a regra de textos genéricos e a skill stop-slop.
+  - Aceite: README com as imagens renderizando no GitHub; About e tópicos preenchidos pelo autor.
 
 ---
 

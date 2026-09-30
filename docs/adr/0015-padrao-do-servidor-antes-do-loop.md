@@ -1,4 +1,4 @@
-# ADR 0015: O projeto também é portfólio .NET
+# ADR 0015: Padrão do servidor antes do loop
 
 - Data: 2026-09-24
 - Estado: aceita
@@ -6,8 +6,8 @@
 
 ## Contexto
 
-O autor usa o ReCam para estudar e mostrar .NET. Deixar todo o servidor para um agente tiraria o
-aprendizado; fazer tudo à mão atrasaria o produto.
+O servidor seria escrito em grande parte por um agente em loop. Sem um padrão firme no começo,
+cada slice poderia sair num estilo diferente.
 
 ## Decisão
 
@@ -17,6 +17,5 @@ bullets podem seguir em loop com um agente.
 ## Consequências
 
 - Os bullets marcados `[junto]` existiram enquanto o padrão se firmava.
-- Desde 2026-09-25 o autor não precisa mais estar na conversa nesses bullets (`AGENTS.md`); o
-  estudo segue pelos resumos de cada bullet.
+- Desde 2026-09-25 o autor não precisa mais estar na conversa nesses bullets (`AGENTS.md`).
 - A Fase 5 tem bullets de vitrine (CI, observabilidade, ADRs, README).

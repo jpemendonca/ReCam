@@ -8,8 +8,7 @@
 
 O Monitor no navegador precisa de lista de câmeras, vídeo ao vivo, lanterna, gravações e gestão.
 Componentes Blazor rodando no servidor chamariam a lógica de várias features ao mesmo tempo, o que
-o teste de arquitetura proíbe, ou duplicariam a lógica dos endpoints. O projeto também é portfólio
-.NET.
+o teste de arquitetura proíbe, ou duplicariam a lógica dos endpoints.
 
 ## Decisão
 
