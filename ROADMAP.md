@@ -2338,6 +2338,13 @@ o que continua por conta de quem roda o servidor.
   - Escopo: achar o teste pelo log do run, entender por que só falha no runner e consertar o teste
     ou o código. Sem retry nem skip.
   - Aceite: três runs seguidos verdes na `main`.
+  > Em andamento (2026-09-30): pelo `gh`, os 10 últimos runs falharam sempre no mesmo teste,
+  > `MotionScriptTests.MotionScript_StillAndWalking_OnlyWalkMoves`. As asserções passam; quebra no
+  > `Dispose` da pasta temporária. O container do teste roda como root e cria arquivos na pasta
+  > montada, que o usuário do runner não consegue apagar (no Windows, com Docker Desktop, não há
+  > esse problema de dono, por isso o gate local passa). O script do container agora abre as
+  > permissões do que escreveu ao sair (`trap ... EXIT`), no mesmo jeito do teste da imagem de
+  > detecção. Falta: push e três runs verdes na `main`.
 
 - [ ] **5.7 README com imagens e About do repositório**
   - Origem: autor em 2026-09-30.

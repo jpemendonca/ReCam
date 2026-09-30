@@ -27,6 +27,8 @@ public sealed class MotionScriptTests
         var encode = "-t 20 -c:v libx264 -g 15 -pix_fmt yuv420p -movflags +frag_keyframe+empty_moov+default_base_moof";
         var script = string.Join(" && ", [
             "set -e",
+            // the container runs as root; open what it writes so the runner user can delete it
+            "trap 'chmod -R a+rwX /recordings' EXIT",
             $"mkdir -p {folder}",
             $"ffmpeg -loglevel error -f lavfi -i \"{scene}\" {encode} {folder}/{Name(Still)}",
             $"ffmpeg -loglevel error -f lavfi -i \"{scene}[bg];color=c=0xd0d0d0:s=50x140:r=15[box];" +
