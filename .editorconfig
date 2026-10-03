@@ -46,6 +46,7 @@ dotnet_naming_rule.static_readonly_pascal.style = pascal
 dotnet_naming_rule.static_readonly_pascal.severity = warning
 dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
 dotnet_naming_symbols.static_readonly_fields.required_modifiers = static, readonly
+dotnet_naming_style.pascal.capitalization = pascal_case
 
 [server/tests/**.cs]
 # Test names follow Method_Scenario_Behavior (CODESTYLE.md 8.1).
@@ -55,14 +56,4 @@ dotnet_diagnostic.CA1707.severity = none
 dotnet_naming_rule.private_fields_underscore.symbols = private_fields
 dotnet_naming_rule.private_fields_underscore.style = underscore_camel
 dotnet_naming_rule.private_fields_underscore.severity = warning
-dotnet_naming_symbols.private_fields.applicable_kinds = field
-dotnet_naming_symbols.private_fields.applicable_accessibilities = private
-dotnet_naming_style.underscore_camel.capitalization = camel_case
-dotnet_naming_style.underscore_camel.required_prefix = _
-
-[server/src/Recam.Server/Infrastructure/Persistence/Migrations/**.cs]
-# Written by dotnet-ef; regenerated, never edited by hand.
-generated_code = true
-
-[*.razor]
-indent_size = 4
+dotnet_naming_symbols.private_fields
