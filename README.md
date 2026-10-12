@@ -1,14 +1,82 @@
-# <img src="docs/brand/icon.svg" width="40" alt=""> ReCam
+<div align="center">
+
+<img src="docs/brand/icon.svg" width="88" alt="ReCam icon">
+
+# ReCam
+
+**Turn a spare Android phone into a security camera.**<br>
+Your own server, your own recordings, live in any browser.
 
 [![CI](https://github.com/jpemendonca/ReCam/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/jpemendonca/ReCam/actions/workflows/ci.yml)
 ![Server coverage](https://github.com/jpemendonca/ReCam/raw/badges/coverage.svg)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-00695C)](LICENSE)
+![Android 9+](https://img.shields.io/badge/Android-9%2B-3DDC84?logo=android&logoColor=white)
+![.NET 10](https://img.shields.io/badge/.NET-10-512BD4?logo=dotnet&logoColor=white)
+![Docker](https://img.shields.io/badge/self--hosted-Docker-2496ED?logo=docker&logoColor=white)
 
-ReCam turns spare Android phones into security cameras. You run the server on your own computer,
-and you watch live and recorded video in the browser. Open source, no ads, no subscription.
+[Install](#install) · [First use](#first-use) · [Download the app](https://github.com/jpemendonca/ReCam/releases/latest) · [Troubleshooting](#if-something-goes-wrong)
 
-![Live video from a phone camera in the browser Monitor](docs/images/monitor-live.png)
+<br>
 
-You need:
+<img src="docs/images/hero.png" alt="A phone in camera mode next to the browser showing its live video">
+
+</div>
+
+<br>
+
+You run one `docker compose up` on a computer at home or on a VPS. You scan a QR code with the
+phone that will film. A few seconds later you watch it live in the browser. It records around
+the clock, and the recordings page tells you when a person walked by. No account, no cloud, no
+ads, no subscription.
+
+## What you get
+
+<table>
+<tr>
+<td width="50%" valign="top">
+<img src="docs/images/mockup-cameras.png" alt="Camera list with battery, temperature and recording status">
+<h3>Live in the browser</h3>
+Video arrives in under a second on your network. Each camera shows its battery and temperature,
+and you can turn its flashlight and sound on from the live view.
+</td>
+<td width="50%" valign="top">
+<img src="docs/images/mockup-recordings.png" alt="Recordings page with the motion timeline and the people found">
+<h3>Recordings with a timeline</h3>
+Tap any hour to watch from that moment. Orange marks motion, green marks people, and
+<b>People on this day</b> lists each person the server spotted. The player draws a box around them.
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+<img src="docs/images/mockup-app.png" alt="The ReCam app: welcome screen and camera mode">
+<h3>Pair with one QR code</h3>
+Install the APK, tap <b>Scan QR code</b> and point it at the browser. The QR decides if the phone
+films or watches. In camera mode the phone saves no video.
+</td>
+<td width="50%" valign="top">
+<h3>Light on the phone</h3>
+Built for phones from 2019 with 2 GB of RAM. Video goes as H.264 at up to 720p and 15 fps, and the
+phone lowers the quality when it gets hot.
+<h3>No third parties</h3>
+The app talks only to the server you paired. No analytics, no third-party crash reports, nothing
+loaded from a CDN. Recordings stay on your disk, and ReCam deletes the oldest when they reach the
+space you chose.
+<h3>Open source</h3>
+AGPL-3.0. Server in .NET 10, browser Monitor in Blazor WebAssembly, app in Flutter.
+</td>
+</tr>
+</table>
+
+## How it works
+
+<img src="docs/images/how-it-works.png" alt="Android phone sends video over WebRTC to your server, and the browser watches it">
+
+The phone sends video over WebRTC to [MediaMTX](https://github.com/bluenviron/mediamtx) on your
+server. The .NET server pairs devices, relays the WebRTC signaling and serves the Monitor page.
+Video never passes through .NET. Two more containers, both without network access, score motion
+in each recorded minute and look for people in the seconds that moved.
+
+## What you need
 
 - A computer that stays on, with Linux (Ubuntu, Debian or similar), or a VPS. Any Intel or AMD
   computer from the last ten years works.
@@ -16,14 +84,6 @@ You need:
   [Releases](https://github.com/jpemendonca/ReCam/releases/latest): `arm64-v8a` for most phones,
   `armeabi-v7a` for older 32-bit ones. Android asks you to allow installs from this source.
 - The computer and the phone on the same network, or a VPS both can reach.
-
-## Screenshots
-
-| Cameras | Recordings |
-|---|---|
-| ![Camera list with battery and status](docs/images/monitor-cameras.png) | ![Recordings with the 24-hour timeline](docs/images/recordings-timeline.png) |
-
-<img src="docs/images/app-scan-qr.jpg" alt="Scan QR code in the app" width="32%"> <img src="docs/images/app-camera-mode.jpg" alt="Phone in camera mode" width="32%">
 
 ## Install
 
@@ -98,6 +158,9 @@ To get the padlock without the warning, put a reverse proxy in front:
 
 ## If something goes wrong
 
+<details>
+<summary>Open the list of common problems and fixes</summary>
+
 - **`docker compose ps` shows `Restarting`, or a line is missing.** Read the log:
 
   ```bash
@@ -156,6 +219,8 @@ To get the padlock without the warning, put a reverse proxy in front:
   ```bash
   sudo docker compose down -v && sudo docker compose up -d
   ```
+
+</details>
 
 ## Update
 

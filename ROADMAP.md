@@ -2794,6 +2794,15 @@ Decisões da conversa:
   - Aceite: bUnit e teste de widget da ordem e do limite; conferido no navegador e no app com um
     dia de muitas passagens.
 
+- [x] **12.7 README com mockups para o lançamento**
+  - Origem: pedido do autor em 2026-10-12, para o README chamar mais atenção na divulgação.
+  - Escopo: topo centralizado com ícone, badges e imagem de capa (navegador e celular com os prints
+    reais); grade de recursos com mockups; diagrama de como funciona; problemas comuns recolhidos
+    num `<details>`. As mockups saem de `docs/images/mockups.html`, renderizado no Chrome headless.
+  - Aceite: README sem aparelho, marca ou máquina do autor; só recursos que existem.
+  > Validação (2026-10-12): README e imagens feitos como descrito. Só documentação; a renderização
+  > no GitHub não foi conferida antes do push.
+
 ## Fora da fila (anotado, não executar)
 
 Itens que dependem de decisão futura. O loop para antes daqui.
