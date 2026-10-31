@@ -19,6 +19,9 @@ public sealed partial class RecordingStore(ServerSettings settings)
     /// <summary>The optional detect service writes the people it found next to a segment, with this suffix.</summary>
     public const string PeopleSuffix = ".people";
 
+    /// <summary>The motion service saves a segment's last frame next to it, with this suffix.</summary>
+    public const string ThumbnailSuffix = ".jpg";
+
     /// <summary>The detect service touches this file, at the recordings root, while it runs.</summary>
     public const string DetectHeartbeatFileName = ".detect";
 
@@ -86,7 +89,7 @@ public sealed partial class RecordingStore(ServerSettings settings)
     public string? PathOf(Guid cameraId, string fileName) =>
         TryParseStart(fileName) is null ? null : Path.Combine(Directory, CameraFolder(cameraId), fileName);
 
-    /// <summary>Deletes the file, its motion scores and the people found in it.</summary>
+    /// <summary>Deletes the file, its motion scores, the people found in it and its last frame.</summary>
     public void Delete(RecordingSegment segment)
     {
         if (PathOf(segment.CameraId, segment.FileName) is { } path)
@@ -94,7 +97,24 @@ public sealed partial class RecordingStore(ServerSettings settings)
             File.Delete(path);
             File.Delete(path + MotionSuffix);
             File.Delete(path + PeopleSuffix);
+            File.Delete(path + ThumbnailSuffix);
         }
+    }
+
+    /// <summary>
+    /// The newest last frame of a camera (deploy/motion.sh), and when its segment was last written,
+    /// which is about when the frame was filmed. Null while no segment has one.
+    /// </summary>
+    public (string Path, DateTimeOffset TakenAt)? LatestThumbnail(Guid cameraId)
+    {
+        var newest = ListSegments()
+            .Where(segment => segment.CameraId == cameraId)
+            .OrderByDescending(segment => segment.StartsAt)
+            .Select(segment => PathOf(segment.CameraId, segment.FileName)!)
+            .FirstOrDefault(path => File.Exists(path + ThumbnailSuffix));
+        return newest is null
+            ? null
+            : (newest + ThumbnailSuffix, new DateTimeOffset(File.GetLastWriteTimeUtc(newest), TimeSpan.Zero));
     }
 
     /// <summary>
@@ -154,7 +174,7 @@ public sealed partial class RecordingStore(ServerSettings settings)
         return samples;
     }
 
-    /// <summary>Removes motion scores and people files whose segment is gone, deleted while it was being looked at.</summary>
+    /// <summary>Removes motion scores, people files and last frames whose segment is gone, deleted while it was being looked at.</summary>
     public void DeleteOrphanNotes()
     {
         var root = new DirectoryInfo(Directory);
@@ -165,7 +185,7 @@ public sealed partial class RecordingStore(ServerSettings settings)
 
         foreach (var cameraDirectory in root.EnumerateDirectories().Where(folder => TryParseCamera(folder.Name) is not null))
         {
-            foreach (var suffix in (string[])[MotionSuffix, PeopleSuffix])
+            foreach (var suffix in (string[])[MotionSuffix, PeopleSuffix, ThumbnailSuffix])
             {
                 foreach (var notes in cameraDirectory.EnumerateFiles("*" + suffix))
                 {

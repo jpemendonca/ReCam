@@ -33,6 +33,25 @@ public sealed class RecordingCipherWorkerTests
         Assert.True(File.Exists(Path.Combine(factory.DataDirectory, RecordingCipher.KeyFileName)));
     }
 
+    [Fact(DisplayName = "A segment's last frame is ciphered together with it")]
+    public async Task CipherClosed_WithPicture_CiphersBoth()
+    {
+        // arrange
+        using var factory = new RecamApiFactory();
+        var camera = await factory.PairDeviceAsync(DeviceRole.Camera);
+        var scored = RecordingFiles.Write(factory.RecordingsDirectory, camera.DeviceId, factory.Time.GetUtcNow().AddMinutes(-3), 100);
+        RecordingFiles.WriteMotion(scored, (0.5, 0.01));
+        File.WriteAllBytes(scored + RecordingStore.ThumbnailSuffix, [0xFF, 0xD8, 0xFF, 0xD9]);
+        var worker = factory.Services.GetRequiredService<RecordingCipherWorker>();
+
+        // act
+        worker.CipherClosed();
+
+        // assert
+        Assert.True(RecordingCipher.IsCiphered(scored));
+        Assert.True(RecordingCipher.IsCiphered(scored + RecordingStore.ThumbnailSuffix));
+    }
+
     [Fact(DisplayName = "While the detect service runs, a file waits for its people too, but not forever")]
     public async Task CipherClosed_DetectRunning_WaitsForPeopleOrAge()
     {

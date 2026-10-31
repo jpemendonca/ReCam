@@ -2827,7 +2827,7 @@ Decisões da conversa:
   `Recam.Server` continua sem processar vídeo.
 - Na barra do tempo, os eventos substituem a lista "Pessoas neste dia" (12.6).
 
-- [ ] **13.1 Última imagem de cada câmera**
+- [x] **13.1 Última imagem de cada câmera**
   - Escopo:
     - O `motion.sh`, ao terminar um segmento, salva o último quadro como `<segmento>.jpg` ao lado
       do `.mp4` (largura de 480 px, qualidade média), antes de escrever o `.motion`.
@@ -2839,6 +2839,15 @@ Decisões da conversa:
   - Aceite: teste do `motion.sh` num segmento de exemplo gerando o `.jpg`; teste de integração da
     rota (imagem mais recente, 404 sem imagem, aparelho que não é Monitor recusado, arquivo
     cifrado em disco).
+  > Validação (2026-10-31): o `motion.sh` salva o último quadro antes do `.motion`, buscando a
+  > partir do fim (`-sseof -3`) e, se o arquivo não disser a duração, lendo o arquivo inteiro e
+  > guardando só o último quadro (`-update 1`). O `RecordingStore` ganhou `ThumbnailSuffix`,
+  > `LatestThumbnail` e apaga o `.jpg` junto (cota e órfãos); o `RecordingCipherWorker` cifra o
+  > `.jpg` junto com o segmento. A rota devolve a imagem decifrada com `Last-Modified` (a última
+  > escrita do segmento, mais ou menos quando o quadro foi filmado). Testes: o `motion.sh` no
+  > container do FFmpeg gera um JPEG para cada um dos dois segmentos fragmentados; store (mais
+  > recente com imagem, apagar e órfãos); cifra do `.jpg`; rota (decifrada, `Last-Modified`, 404
+  > sem imagem e câmera desconhecida, 403 para câmera). Só código e teste.
 
 - [ ] **13.2 Mosaico no navegador**
   - Escopo:

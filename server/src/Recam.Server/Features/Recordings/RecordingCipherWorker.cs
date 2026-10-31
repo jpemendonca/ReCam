@@ -6,7 +6,7 @@ namespace Recam.Server.Features.Recordings;
 /// Ciphers recording files once nothing else needs them plain: after the motion service scored
 /// them and, while the optional detect service runs, after it looked for people in them; or after
 /// <see cref="GiveUpOnMotion"/> when they do not keep up. Old recordings from before the cipher
-/// existed are picked up the same way.
+/// existed are picked up the same way. The segment's last frame (bullet 13.1) is ciphered with it.
 /// </summary>
 public sealed partial class RecordingCipherWorker(
     RecordingStore store,
@@ -45,6 +45,11 @@ public sealed partial class RecordingCipherWorker(
             try
             {
                 cipher.CipherFile(path);
+                if (File.Exists(path + RecordingStore.ThumbnailSuffix))
+                {
+                    cipher.CipherFile(path + RecordingStore.ThumbnailSuffix);
+                }
+
                 _ciphered.Add(path);
             }
             catch (IOException exception)

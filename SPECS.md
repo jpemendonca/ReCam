@@ -1017,3 +1017,8 @@ seguinte em `docs/adr/`:
 > `compose.detect.yaml` foi apagado; onde a seção 2.6 e o ADR 0043 citam esse arquivo, vale o
 > compose principal. Os quatro containers (`server`, `mediamtx`, `motion`, `detect`) sobem sempre;
 > o README não ensina a desligar nenhum. O `scripts/build-server.sh` constrói as duas imagens.
+
+> Revisão (2026-10-31): última imagem de cada câmera (bullet 13.1). O `motion` salva o último quadro
+> de cada segmento como `<segmento>.jpg` (480 px de largura) antes do `.motion`; o servidor cifra o
+> `.jpg` junto com o segmento e o apaga junto (seção 2.4). Rota nova `GET /api/cameras/{id}/thumbnail`,
+> só para Monitores: a imagem mais recente, decifrada, com `Last-Modified`; 404 sem imagem (seção 5.5).

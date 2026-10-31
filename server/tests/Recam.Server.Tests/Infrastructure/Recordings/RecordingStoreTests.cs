@@ -77,6 +77,9 @@ public sealed class RecordingStoreTests
         RecordingFiles.WriteMotion(kept, (0.5, 0.1));
         RecordingFiles.WriteMotion(deleted, (0.5, 0.1));
         File.WriteAllText(deleted + ".people", "0");
+        File.WriteAllBytes(deleted + ".jpg", [0xFF, 0xD8]);
+        var orphanPicture = Path.Combine(Path.GetDirectoryName(kept)!, "2020-01-01_00-00-00-000000.mp4.jpg");
+        File.WriteAllBytes(orphanPicture, [0xFF, 0xD8]);
         var orphan = Path.Combine(Path.GetDirectoryName(kept)!, "2020-01-01_00-00-00-000000.mp4.motion");
         File.WriteAllText(orphan, "0.5 0.1");
         var orphanPeople = Path.Combine(Path.GetDirectoryName(kept)!, "2020-01-01_00-00-00-000000.mp4.people");
@@ -91,7 +94,34 @@ public sealed class RecordingStoreTests
         Assert.False(File.Exists(deleted + ".people"));
         Assert.False(File.Exists(orphan));
         Assert.False(File.Exists(orphanPeople));
+        Assert.False(File.Exists(deleted + ".jpg"));
+        Assert.False(File.Exists(orphanPicture));
         Assert.True(File.Exists(kept + ".motion"));
+    }
+
+    [Fact(DisplayName = "The newest last frame is the one of the newest segment that has one")]
+    public void LatestThumbnail_SkipsSegmentsWithoutPicture()
+    {
+        // arrange
+        using var directory = new TemporaryDirectory();
+        var store = new RecordingStore(new ServerSettings(directory.Path, [], null) { RecordingsDirectory = directory.Path });
+        var cameraId = Guid.NewGuid();
+        var older = RecordingFiles.Write(directory.Path, cameraId, DateTimeOffset.UnixEpoch.AddDays(1), 10);
+        var withPicture = RecordingFiles.Write(directory.Path, cameraId, DateTimeOffset.UnixEpoch.AddDays(2), 10);
+        RecordingFiles.Write(directory.Path, cameraId, DateTimeOffset.UnixEpoch.AddDays(3), 10);
+        File.WriteAllBytes(older + ".jpg", [1]);
+        File.WriteAllBytes(withPicture + ".jpg", [2]);
+        var written = new DateTime(2026, 10, 31, 12, 0, 0, DateTimeKind.Utc);
+        File.SetLastWriteTimeUtc(withPicture, written);
+
+        // act
+        var latest = store.LatestThumbnail(cameraId);
+        var none = store.LatestThumbnail(Guid.NewGuid());
+
+        // assert
+        Assert.Equal(withPicture + ".jpg", latest!.Value.Path);
+        Assert.Equal(new DateTimeOffset(written), latest.Value.TakenAt);
+        Assert.Null(none);
     }
 
     [Fact(DisplayName = "The people file becomes one sample per second, and a missing file means not analyzed")]

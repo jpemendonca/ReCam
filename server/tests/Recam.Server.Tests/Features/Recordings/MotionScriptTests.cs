@@ -62,6 +62,11 @@ public sealed class MotionScriptTests
         var walk = Assert.Single(MotionEvents.Find(walking, MotionSensitivity.Medium, []));
         Assert.InRange((walk.Start - Walking).TotalSeconds, 4.5, 6);
         Assert.InRange((walk.End - Walking).TotalSeconds, 11, 13);
+        foreach (var segment in segments)
+        {
+            var picture = File.ReadAllBytes(store.PathOf(segment.CameraId, segment.FileName) + RecordingStore.ThumbnailSuffix);
+            Assert.Equal([0xFF, 0xD8], picture[..2]);
+        }
     }
 
     private static string Name(DateTimeOffset startsAt) => $"{startsAt.UtcDateTime:yyyy-MM-dd_HH-mm-ss-ffffff}.mp4";

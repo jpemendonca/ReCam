@@ -3,7 +3,8 @@
 # "<segment>.motion" file with one line per half second: "<seconds from the start> <fraction of
 # the picture that changed>". A pixel counts as changed when it moved more than 30 of 255 levels
 # from the previous half second, so sensor noise stays out. The server turns the scores into
-# motion events; no video leaves this container.
+# motion events; no video leaves this container. Before the scores, it also saves the segment's
+# last frame as "<segment>.jpg", 480 px wide, for the Monitors' mosaic (bullet 13.1).
 set -u
 
 root="${RECAM_RECORDINGS_DIR:-/recordings}"
@@ -20,6 +21,18 @@ score() {
          /YAVG/ { split($0, b, "="); printf "%.1f %.4f\n", t - first + 0.5, b[2] / 255 }'
 }
 
+# The last frame of a segment. Seeking from the end is quick, but a file MediaMTX did not finish
+# may not say how long it is; then the whole file is read, keeping only the last frame.
+thumbnail() {
+  local out="$1.jpg.tmp"
+  ffmpeg -nostdin -loglevel error -y -sseof -3 -i "$1" -an -vf scale=480:-2 -update 1 -q:v 5 -c:v mjpeg -f image2 "$out" ||
+    ffmpeg -nostdin -loglevel error -y -i "$1" -an -vf scale=480:-2 -update 1 -q:v 5 -c:v mjpeg -f image2 "$out"
+  if [ -s "$out" ] && [ -e "$1" ]; then
+    mv "$out" "$1.jpg"
+  fi
+  rm -f "$out"
+}
+
 scan() {
   local now dir newest name segment
   now=$(date +%s)
@@ -32,6 +45,8 @@ scan() {
       if [ "$name" = "$newest" ] && [ $((now - $(stat -c %Y "$segment" 2>/dev/null || echo "$now"))) -lt "$closed_after" ]; then
         continue
       fi
+      # First, so the server finds the picture when the scores say the segment is done.
+      thumbnail "$segment"
       if score "$segment" > "$segment.motion.tmp" && [ -e "$segment" ]; then
         mv "$segment.motion.tmp" "$segment.motion"
       elif [ -e "$segment" ]; then

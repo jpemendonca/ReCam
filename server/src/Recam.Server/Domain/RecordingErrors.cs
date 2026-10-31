@@ -14,6 +14,9 @@ public static class RecordingErrors
     public static readonly DomainError PeopleNotAnalyzed =
         new("recording.people_not_analyzed", "The detect service has not looked for people in this recording.", ErrorType.NotFound);
 
+    public static readonly DomainError ThumbnailNotFound =
+        new("recording.thumbnail_not_found", "This camera has no recorded picture yet.", ErrorType.NotFound);
+
     public static readonly DomainError QuotaTooLarge =
         new("recording.quota_too_large", "There is not that much free disk space.", ErrorType.Validation)
         {

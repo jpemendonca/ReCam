@@ -35,6 +35,8 @@ public static class RecordingEndpoints
             .RequireAuthorization(AuthExtensions.ViewerOrOwner);
         endpoints.MapGet("/api/cameras/{cameraId:guid}/recording-days", ListRecordingDaysAsync)
             .RequireAuthorization(AuthExtensions.ViewerOrOwner);
+        endpoints.MapGet("/api/cameras/{cameraId:guid}/thumbnail", GetThumbnailAsync)
+            .RequireAuthorization(AuthExtensions.ViewerOrOwner);
         endpoints.MapGet("/api/recordings/{cameraId:guid}/{segment}", ServeSegment)
             .RequireAuthorization(AuthExtensions.ViewerOrOwner);
         endpoints.MapMotionEndpoints();
@@ -104,6 +106,33 @@ public static class RecordingEndpoints
         }
 
         return TypedResults.Stream(cipher.OpenRead(path), "video/mp4", enableRangeProcessing: true);
+    }
+
+    /// <summary>
+    /// The camera's newest recorded picture, for the mosaic (bullet 13.1), deciphered on the way
+    /// out. <c>Last-Modified</c> says when it was filmed.
+    /// </summary>
+    private static async Task<IResult> GetThumbnailAsync(
+        Guid cameraId,
+        IDbContextFactory<RecamDbContext> databaseFactory,
+        RecordingStore store,
+        RecordingCipher cipher,
+        CancellationToken cancellationToken)
+    {
+        await using var database = await databaseFactory.CreateDbContextAsync(cancellationToken);
+        var exists = await database.Devices.AsNoTracking()
+            .AnyAsync(device => device.Id == cameraId && device.Role == DeviceRole.Camera && device.RevokedAt == null, cancellationToken);
+        if (!exists)
+        {
+            return MediaErrors.CameraNotFound.ToHttpResult();
+        }
+
+        if (store.LatestThumbnail(cameraId) is not { } thumbnail)
+        {
+            return RecordingErrors.ThumbnailNotFound.ToHttpResult();
+        }
+
+        return TypedResults.Stream(cipher.OpenRead(thumbnail.Path), "image/jpeg", lastModified: thumbnail.TakenAt);
     }
 
     private static string SegmentUrl(Guid cameraId, string fileName) =>
