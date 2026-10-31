@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/core/network/api_client.dart';
 import 'package:recam/core/network/hub_client.dart';
@@ -361,6 +363,100 @@ void main() {
 
       // assert
       expect(controller.pairingLost, isFalse);
+    });
+  });
+
+  group('CameraListController pictures', () {
+    final picture = CameraThumbnail(
+      bytes: Uint8List.fromList([0xFF, 0xD8]),
+      takenAt: DateTime.utc(2026, 10, 31, 14, 5),
+    );
+
+    test('onLoad_asksEachCamerasPicture', () async {
+      // arrange
+      api.cameraResults.add(
+        ApiSuccess([_camera('a', 'Porta'), _camera('b', 'Sala')]),
+      );
+      api.thumbnails['a'] = picture;
+
+      // act
+      await controller.refresh();
+      await settle();
+
+      // assert
+      expect(controller.thumbnail('a'), picture);
+      expect(controller.thumbnail('b'), isNull);
+    });
+
+    test('onStatusChange_asksAgainOnlyWhenWhatTheCameraDoesChanges', () async {
+      // arrange
+      // The list loads on start and again when the hub connects.
+      api.cameraResults.addAll([
+        ApiSuccess([_camera('a', 'Porta', online: true)]),
+        ApiSuccess([_camera('a', 'Porta', online: true)]),
+      ]);
+      await controller.start();
+      await settle();
+      final atStart = api.thumbnailsAsked['a'];
+
+      // act
+      hubClient.receive('CameraStatusChanged', [
+        _statusJson('a', 'Porta', battery: 40),
+      ]);
+      await settle();
+      final afterBattery = api.thumbnailsAsked['a'];
+      hubClient.receive('CameraStatusChanged', [
+        {..._statusJson('a', 'Porta'), 'publishing': true},
+      ]);
+      await settle();
+
+      // assert
+      expect(afterBattery, atStart);
+      expect(api.thumbnailsAsked['a'], atStart! + 1);
+    });
+
+    test('whenAskingFails_keepsThePictureShown', () async {
+      // arrange
+      api.cameraResults.add(ApiSuccess([_camera('a', 'Porta')]));
+      api.thumbnails['a'] = picture;
+      await controller.refresh();
+      await settle();
+
+      // act
+      api.thumbnailsFail = true;
+      await controller.refreshThumbnails();
+
+      // assert
+      expect(controller.thumbnail('a'), picture);
+    });
+
+    test('onTimer_asksAgain', () async {
+      // arrange
+      final timed = CameraListController(
+        api: api,
+        session: pairedSession(),
+        hub: HubSession(client: FakeHubClient(), delay: (_) async {}),
+        viewerFactory: (_) => FakeViewer(),
+        timelineFactory: (cameraId) => throw UnimplementedError(),
+        adjustments: FakeAdjustmentStore(),
+        thumbnailInterval: const Duration(milliseconds: 20),
+      );
+      api.cameraResults.addAll([
+        ApiSuccess([_camera('a', 'Porta')]),
+        ApiSuccess([_camera('a', 'Porta')]),
+      ]);
+      await timed.start();
+
+      // act
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      await timed.stop();
+      final atStop = api.thumbnailsAsked['a']!;
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      timed.dispose();
+
+      // assert
+      expect(atStop, greaterThanOrEqualTo(3));
+      expect(api.thumbnailsAsked['a'], atStop);
     });
   });
 }

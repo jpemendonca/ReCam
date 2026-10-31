@@ -109,6 +109,17 @@
   "addMonitorInBrowserHint": "The browser shows a QR code, and this phone scans it.",
   "cameraModeShowImage": "Show image",
   "cameraModeHideImage": "Hide image",
+  "watchAll": "Watch all",
+  "watchLive": "Watch live",
+  "noPictureYet": "No picture yet",
+  "pictureTakenAt": "Picture from {time}",
+  "@pictureTakenAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "temperatureC": "{degrees} °C",
   "@temperatureC": {
     "placeholders": {

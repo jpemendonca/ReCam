@@ -2879,6 +2879,17 @@ Decisões da conversa:
     toque para o ao vivo. "Assistir todas" abre no máximo 4 ao vivo de uma vez. Textos nos ARB, en
     e pt.
   - Aceite: teste de widget da grade; conferido no Redmi 6A com duas câmeras.
+  > Em andamento (2026-10-31): feito o código. Cada câmera da aba Câmeras virou um cartão com a
+  > última imagem em 16:9 (`Image.memory` com os bytes da rota da 13.1), o horário dela, "Ainda sem
+  > imagem" quando não há e um ▶ que abre o ao vivo; o resto do cartão mantém o que existia
+  > (estado, gravar sempre, gravações, bateria). O `CameraListController` pede as imagens ao
+  > carregar a lista, a cada minuto e quando uma câmera entra, sai ou começa/para de transmitir, e
+  > mantém a imagem anterior se o pedido falha. Com duas ou mais câmeras online, o ícone "Assistir
+  > todas" abre o `MultiLiveScreen`: grade 2x2 com no máximo 4 ao vivo, cada um com o próprio
+  > `LiveViewController` (um WatchCamera por câmera, todos fechados ao sair). Uma coluna, como o
+  > resto do app no celular. Testes: controller (pede ao carregar, só pede de novo quando o estado
+  > muda, mantém na falha, timer para no stop), widget (imagem e horário, "sem imagem", "Assistir
+  > todas" abrindo as duas) e a grade com 5 câmeras assistindo só 4. Falta: conferir no Redmi 6A.
 
 - [ ] **13.4 Barra do tempo com centro fixo no navegador**
   - Escopo:

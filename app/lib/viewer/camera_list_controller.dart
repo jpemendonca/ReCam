@@ -30,7 +30,9 @@ final class CameraListFailed extends CameraListState {}
 
 /// The cameras a viewer sees. Loads the list from the API and keeps it current with
 /// `CameraStatusChanged` from the hub. Every (re)connection reloads the list, because
-/// messages sent while offline are lost.
+/// messages sent while offline are lost. It also keeps each camera's newest recorded picture for
+/// the mosaic (bullet 13.3), asked again every [thumbnailInterval] and when a camera comes, goes,
+/// or starts or stops sending.
 class CameraListController extends ChangeNotifier {
   CameraListController({
     required this._api,
@@ -39,6 +41,7 @@ class CameraListController extends ChangeNotifier {
     required this._viewerFactory,
     required this._timelineFactory,
     required this._adjustments,
+    this.thumbnailInterval = const Duration(minutes: 1),
   });
 
   final ApiClient _api;
@@ -46,6 +49,7 @@ class CameraListController extends ChangeNotifier {
   final WebRtcViewerFactory _viewerFactory;
   final RecordingTimelineFactory _timelineFactory;
   final AdjustmentStore _adjustments;
+  final Duration thumbnailInterval;
 
   /// The viewer's hub connection; the live view reuses it for its watch lease.
   final HubSession hub;
@@ -53,6 +57,10 @@ class CameraListController extends ChangeNotifier {
   CameraListState _state = CameraListLoading();
   bool _credentialRefused = false;
   bool _refreshing = false;
+  final Map<String, CameraThumbnail> _thumbnails = {};
+  String _thumbnailsSeen = '';
+  Timer? _thumbnailTimer;
+  bool _stopped = false;
 
   CameraListState get state => _state;
 
@@ -60,6 +68,9 @@ class CameraListController extends ChangeNotifier {
   bool get refreshing => _refreshing;
 
   bool get connected => hub.connected;
+
+  /// The camera's newest recorded picture, or null while it has none.
+  CameraThumbnail? thumbnail(String cameraId) => _thumbnails[cameraId];
 
   /// Ticks when the server says a device paired, left, came online or went offline, so the
   /// Devices tab loads its list again.
@@ -75,8 +86,47 @@ class CameraListController extends ChangeNotifier {
     hub.onConnected = () => unawaited(refresh());
     hub.addListener(notifyListeners);
     hub.start();
+    _thumbnailTimer = Timer.periodic(
+      thumbnailInterval,
+      (_) => unawaited(refreshThumbnails()),
+    );
     await refresh();
   }
+
+  /// Asks again for every camera's picture. A failure keeps the picture already shown.
+  Future<void> refreshThumbnails() async {
+    final state = _state;
+    if (state is! CameraListLoaded) return;
+    _thumbnailsSeen = _fingerprint(state.cameras);
+    for (final camera in state.cameras) {
+      final result = await _api.thumbnail(
+        _session.serverUrl,
+        _session.credential,
+        camera.id,
+      );
+      if (_stopped) return;
+      if (result case ApiSuccess(value: final picture?)) {
+        _thumbnails[camera.id] = picture;
+      }
+    }
+    _thumbnails.removeWhere(
+      (id, _) => state.cameras.every((camera) => camera.id != id),
+    );
+    notifyListeners();
+  }
+
+  void _followThumbnails() {
+    final state = _state;
+    if (state is CameraListLoaded &&
+        _fingerprint(state.cameras) != _thumbnailsSeen) {
+      unawaited(refreshThumbnails());
+    }
+  }
+
+  static String _fingerprint(List<CameraInfo> cameras) => [
+    for (final camera in cameras)
+      '${camera.id}:${camera.online}:${camera.publishing}',
+  ].join(';');
 
   /// Reloads the list from the API. A failure keeps the list already shown.
   Future<void> refresh() async {
@@ -88,6 +138,7 @@ class CameraListController extends ChangeNotifier {
     switch (result) {
       case ApiSuccess(:final value):
         _setState(CameraListLoaded(_sorted(value)));
+        _followThumbnails();
       case ApiFailure(kind: ApiFailureKind.unauthorized):
         _credentialRefused = true;
         notifyListeners();
@@ -144,6 +195,8 @@ class CameraListController extends ChangeNotifier {
   );
 
   Future<void> stop() async {
+    _stopped = true;
+    _thumbnailTimer?.cancel();
     hub.removeListener(notifyListeners);
     await hub.stop();
   }
@@ -154,6 +207,7 @@ class CameraListController extends ChangeNotifier {
     if (camera == null || state is! CameraListLoaded) return;
     final others = state.cameras.where((existing) => existing.id != camera.id);
     _setState(CameraListLoaded(_sorted([...others, camera])));
+    _followThumbnails();
   }
 
   void _onCameraRemoved(List<Object?> args) {
@@ -178,6 +232,8 @@ class CameraListController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _stopped = true;
+    _thumbnailTimer?.cancel();
     hub.removeListener(notifyListeners);
     devicesChanged.dispose();
     super.dispose();

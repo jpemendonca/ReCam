@@ -10,6 +10,7 @@ import 'add_device_screen.dart';
 import 'camera_list_controller.dart';
 import 'devices_view.dart';
 import 'live_view_screen.dart';
+import 'multi_live_screen.dart';
 import 'recording_switch.dart';
 import 'recordings_timeline_screen.dart';
 import 'settings_view.dart';
@@ -80,6 +81,14 @@ class _CameraListViewState extends State<CameraListView> {
           onPressed: () => _openRecordings(camera),
         ),
       ),
+    ),
+  );
+
+  // Opening several cameras makes several phones send video: only when the person asks.
+  void _watchAll(List<CameraInfo> online) => Navigator.of(context).push<void>(
+    MaterialPageRoute(
+      builder: (_) =>
+          MultiLiveScreen(cameras: online, create: _controller.openLive),
     ),
   );
 
@@ -184,84 +193,100 @@ class _CameraListViewState extends State<CameraListView> {
   Widget _cameras(AppLocalizations l10n) {
     return ListenableBuilder(
       listenable: _controller,
-      builder: (context, _) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ListTile(
-            title: Text(l10n.watchPairedTitle(widget.session.serverName)),
-            subtitle: Text(
-              _controller.connected ? l10n.serverOnline : l10n.serverConnecting,
-            ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  tooltip: l10n.refreshButton,
-                  onPressed: _controller.refreshing
-                      ? null
-                      : _controller.refresh,
-                  icon: const Icon(Icons.refresh),
-                ),
-                IconButton(
-                  tooltip: l10n.addCameraButton,
-                  onPressed: _addCamera,
-                  icon: const Icon(Icons.add),
-                ),
-              ],
-            ),
+      builder: (context, _) => _camerasBody(l10n),
+    );
+  }
+
+  Widget _camerasBody(AppLocalizations l10n) {
+    final online = switch (_controller.state) {
+      CameraListLoaded(:final cameras) => [
+        for (final camera in cameras)
+          if (camera.online) camera,
+      ],
+      _ => const <CameraInfo>[],
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ListTile(
+          title: Text(l10n.watchPairedTitle(widget.session.serverName)),
+          subtitle: Text(
+            _controller.connected ? l10n.serverOnline : l10n.serverConnecting,
           ),
-          const Divider(height: 1),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _controller.refresh,
-              child: switch (_controller.state) {
-                CameraListLoading() => const _PullableCenter(
-                  child: CircularProgressIndicator(),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (online.length > 1)
+                IconButton(
+                  tooltip: l10n.watchAll,
+                  onPressed: () => _watchAll(online),
+                  icon: const Icon(Icons.grid_view),
                 ),
-                CameraListFailed() => _PullableCenter(
+              IconButton(
+                tooltip: l10n.refreshButton,
+                onPressed: _controller.refreshing ? null : _controller.refresh,
+                icon: const Icon(Icons.refresh),
+              ),
+              IconButton(
+                tooltip: l10n.addCameraButton,
+                onPressed: _addCamera,
+                icon: const Icon(Icons.add),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _controller.refresh,
+            child: switch (_controller.state) {
+              CameraListLoading() => const _PullableCenter(
+                child: CircularProgressIndicator(),
+              ),
+              CameraListFailed() => _PullableCenter(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(l10n.cameraListError, textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: _controller.refresh,
+                      child: Text(l10n.retryButton),
+                    ),
+                  ],
+                ),
+              ),
+              CameraListLoaded(:final cameras) when cameras.isEmpty =>
+                _PullableCenter(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(l10n.cameraListError, textAlign: TextAlign.center),
+                      Text(l10n.cameraListEmpty, textAlign: TextAlign.center),
                       const SizedBox(height: 16),
-                      FilledButton(
-                        onPressed: _controller.refresh,
-                        child: Text(l10n.retryButton),
+                      FilledButton.icon(
+                        onPressed: _addCamera,
+                        icon: const Icon(Icons.add_a_photo_outlined),
+                        label: Text(l10n.addCameraButton),
                       ),
                     ],
                   ),
                 ),
-                CameraListLoaded(:final cameras) when cameras.isEmpty =>
-                  _PullableCenter(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(l10n.cameraListEmpty, textAlign: TextAlign.center),
-                        const SizedBox(height: 16),
-                        FilledButton.icon(
-                          onPressed: _addCamera,
-                          icon: const Icon(Icons.add_a_photo_outlined),
-                          label: Text(l10n.addCameraButton),
-                        ),
-                      ],
-                    ),
-                  ),
-                CameraListLoaded(:final cameras) => ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: cameras.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, index) => _CameraTile(
-                    camera: cameras[index],
-                    list: _controller,
-                    onRecordings: () => _openRecordings(cameras[index]),
-                    onOpen: () => _openLive(cameras[index]),
-                  ),
+              CameraListLoaded(:final cameras) => ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 12),
+                itemCount: cameras.length,
+                itemBuilder: (context, index) => _CameraTile(
+                  camera: cameras[index],
+                  picture: _controller.thumbnail(cameras[index].id),
+                  list: _controller,
+                  onRecordings: () => _openRecordings(cameras[index]),
+                  onOpen: () => _openLive(cameras[index]),
                 ),
-              },
-            ),
+              ),
+            },
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -364,12 +389,14 @@ class _PullableCenter extends StatelessWidget {
 class _CameraTile extends StatelessWidget {
   const _CameraTile({
     required this.camera,
+    required this.picture,
     required this.list,
     required this.onOpen,
     required this.onRecordings,
   });
 
   final CameraInfo camera;
+  final CameraThumbnail? picture;
   final CameraListController list;
   final VoidCallback onOpen;
   final VoidCallback onRecordings;
@@ -377,12 +404,92 @@ class _CameraTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final takenAt = picture?.takenAt;
+    return Card(
+      margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: camera.online ? onOpen : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  const ColoredBox(color: Color(0xFF1B1B1B)),
+                  if (picture case final shown?)
+                    Image.memory(
+                      shown.bytes,
+                      key: Key('camera-picture-${camera.id}'),
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                    )
+                  else
+                    Center(
+                      child: Text(
+                        l10n.noPictureYet,
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ),
+                  if (takenAt != null)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          child: Text(
+                            l10n.pictureTakenAt(
+                              TimeOfDay.fromDateTime(takenAt.toLocal())
+                                  .format(context),
+                            ),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (camera.online)
+                    Positioned(
+                      left: 12,
+                      bottom: 12,
+                      child: IconButton.filled(
+                        tooltip: l10n.watchLive,
+                        onPressed: onOpen,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.black54,
+                          foregroundColor: Colors.white,
+                        ),
+                        icon: const Icon(Icons.play_arrow),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            _details(context, l10n),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _details(BuildContext context, AppLocalizations l10n) {
     final colors = Theme.of(context).colorScheme;
     final battery = camera.batteryLevel;
     final temperature = camera.temperatureC;
     return ListTile(
       enabled: camera.online,
-      onTap: onOpen,
       leading: Icon(
         camera.online ? Icons.videocam : Icons.videocam_off_outlined,
         color: !camera.online

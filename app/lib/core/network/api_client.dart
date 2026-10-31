@@ -36,6 +36,13 @@ abstract interface class ApiClient {
 
   Future<ApiResult<List<CameraInfo>>> cameras(Uri baseUrl, String credential);
 
+  /// The camera's newest recorded picture (bullet 13.1); success with null while it has none.
+  Future<ApiResult<CameraThumbnail?>> thumbnail(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+  );
+
   Future<ApiResult<RecordingQuota>> recordingQuota(
     Uri baseUrl,
     String credential,
@@ -235,6 +242,14 @@ class RecordingQuota {
 
   /// The largest quota the disk allows: what recordings use plus what is still free.
   int get maxMegabytes => (usedBytes + freeBytes) ~/ bytesPerMegabyte;
+}
+
+/// A camera's newest recorded picture, a JPEG, and about when it was filmed.
+class CameraThumbnail {
+  const CameraThumbnail({required this.bytes, this.takenAt});
+
+  final Uint8List bytes;
+  final DateTime? takenAt;
 }
 
 enum ApiFailureKind {

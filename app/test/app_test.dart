@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:recam/app.dart';
@@ -17,9 +20,17 @@ import 'package:recam/viewer/connect_browser_screen.dart';
 import 'package:recam/viewer/camera_list_controller.dart';
 import 'package:recam/viewer/recording_timeline_controller.dart';
 import 'package:recam/viewer/recordings_timeline_screen.dart';
+import 'package:recam/viewer/multi_live_screen.dart';
 import 'package:recam/viewer/viewer_pairing_controller.dart';
 
 import 'support/fakes.dart';
+
+// The smallest JPEG Flutter decodes: one grey pixel.
+final _onePixelJpeg = Uint8List.fromList(
+  base64Decode(
+    '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAAA//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AN//Z',
+  ),
+);
 
 void main() {
   late FakeApiClient api;
@@ -221,6 +232,72 @@ void main() {
             .map((destination) => destination.label),
         ['Cameras', 'Recordings', 'Devices', 'Settings'],
       );
+    });
+
+    testWidgets('cameras_showTheirPictureAndWatchAllOpensThemTogether', (
+      tester,
+    ) async {
+      // arrange
+      await store.write(PairingSlot.viewer, pairedSession());
+      const garage = CameraInfo(
+        id: 'garage',
+        name: 'Garage',
+        online: true,
+        publishing: false,
+      );
+      const porch = CameraInfo(
+        id: 'porch',
+        name: 'Porch',
+        online: true,
+        publishing: false,
+      );
+      api.cameraResults.addAll([
+        ApiSuccess(const [garage, porch]),
+        ApiSuccess(const [garage, porch]),
+      ]);
+      // Tall enough for both cards: the list only builds what is on screen.
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      api.thumbnails['garage'] = CameraThumbnail(
+        bytes: _onePixelJpeg,
+        takenAt: DateTime(2026, 10, 31, 14, 5),
+      );
+      await openApp(tester);
+      final pictures = find.byKey(const Key('camera-picture-garage'));
+      final noPicture = find.text('No picture yet');
+      final taken = find.text('Picture from 2:05 PM');
+      final pictureCount = pictures.evaluate().length;
+      final noPictureCount = noPicture.evaluate().length;
+      final takenCount = taken.evaluate().length;
+
+      // act
+      await tester.tap(find.byTooltip('Watch all'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // assert
+      expect(pictureCount, 1);
+      expect(noPictureCount, 1);
+      expect(takenCount, 1);
+      expect(find.byType(MultiLiveScreen), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(MultiLiveScreen),
+          matching: find.text('Garage'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(MultiLiveScreen),
+          matching: find.text('Porch'),
+        ),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox());
+      // The live views' retries wait a second each; closed, they stop after the current one.
+      await tester.pump(const Duration(seconds: 2));
     });
 
     testWidgets('recordingsTab_showsTheRecordingCameraAndSwitchesCamera', (

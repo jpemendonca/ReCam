@@ -569,6 +569,49 @@ class HttpApiClient implements ApiClient {
     );
   }
 
+  @override
+  Future<ApiResult<CameraThumbnail?>> thumbnail(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+  ) async {
+    final http.Response response;
+    try {
+      response = await _client
+          .get(
+            baseUrl.resolve('/api/cameras/$cameraId/thumbnail'),
+            headers: {HttpHeaders.authorizationHeader: 'Bearer $credential'},
+          )
+          .timeout(timeout);
+    } on IOException {
+      return ApiFailure(ApiFailureKind.unreachable);
+    } on http.ClientException {
+      return ApiFailure(ApiFailureKind.unreachable);
+    } on TimeoutException {
+      return ApiFailure(ApiFailureKind.unreachable);
+    }
+    return switch (response.statusCode) {
+      HttpStatus.ok => ApiSuccess(
+        CameraThumbnail(
+          bytes: response.bodyBytes,
+          takenAt: _httpDate(response.headers['last-modified']),
+        ),
+      ),
+      HttpStatus.notFound => ApiSuccess(null),
+      HttpStatus.unauthorized => ApiFailure(ApiFailureKind.unauthorized),
+      _ => ApiFailure(ApiFailureKind.unexpected),
+    };
+  }
+
+  static DateTime? _httpDate(String? value) {
+    if (value == null) return null;
+    try {
+      return HttpDate.parse(value);
+    } on HttpException {
+      return null;
+    }
+  }
+
   Future<ApiResult<T>> _send<T>(
     Future<http.Response> Function() request, {
     required int expectedStatus,

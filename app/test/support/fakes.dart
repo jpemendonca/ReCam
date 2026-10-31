@@ -193,6 +193,26 @@ class FakeApiClient implements ApiClient {
     ),
   );
 
+  /// Each camera's newest picture; a camera missing here has none.
+  final Map<String, CameraThumbnail> thumbnails = {};
+
+  /// How many times each camera's picture was asked.
+  final Map<String, int> thumbnailsAsked = {};
+
+  /// When true, asking for a picture fails as if the server were off.
+  bool thumbnailsFail = false;
+
+  @override
+  Future<ApiResult<CameraThumbnail?>> thumbnail(
+    Uri baseUrl,
+    String credential,
+    String cameraId,
+  ) async {
+    thumbnailsAsked[cameraId] = (thumbnailsAsked[cameraId] ?? 0) + 1;
+    if (thumbnailsFail) return ApiFailure(ApiFailureKind.unreachable);
+    return ApiSuccess(thumbnails[cameraId]);
+  }
+
   /// People by recording path; a path missing here was not analyzed (404).
   final Map<String, SegmentPeople> peopleBySegment = {};
 
