@@ -211,7 +211,7 @@ public sealed class RecordingsPagesTests : BunitContext
         Assert.All(labels, label => Assert.EndsWith("%", label.GetAttribute("x"), StringComparison.Ordinal));
     }
 
-    [Fact(DisplayName = "Motion shows on the bar; Next motion plays it and Motion only hides the rest")]
+    [Fact(DisplayName = "Motion shows as a grey event above the bar, and Next motion plays it")]
     public void Timeline_Motion_MarkedAndPlayed()
     {
         // arrange
@@ -222,24 +222,25 @@ public sealed class RecordingsPagesTests : BunitContext
             [new RecordingSegmentInfo(start, start.AddMinutes(20), $"/api/recordings/{_camera.Id}/a.mp4")])];
         _api.Motion[day] = [new MotionEventInfo(start.AddMinutes(10), start.AddMinutes(13), 0.04)];
         var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
-        page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.motion")));
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("g.event")));
 
         // act
         page.Find("button.next-motion").Click();
         var source = page.Find("video").GetAttribute("src");
-        page.Find("input.only-motion").Change(true);
 
         // assert
         Assert.Equal($"api/recordings/{_camera.Id}/a.mp4#t=595", source);
         Assert.Equal("Movimentos neste dia: 1", page.Find(".motion-summary").TextContent);
-        Assert.Empty(page.FindAll("rect.recorded"));
-        var mark = page.Find("rect.motion");
+        Assert.Empty(page.FindAll("g.event.person"));
+        Assert.Empty(page.FindAll("g.event svg.icon"));
+        var pill = page.Find("g.event rect.pill");
         // Playing from 14:09:55 centers the 30 minute window there, 13:54:55 to 14:24:55.
-        Assert.Equal(("502.78", "100", "36"), (mark.GetAttribute("x"), mark.GetAttribute("width"), mark.GetAttribute("height")));
+        Assert.Equal(("50.28%", "10%"), (pill.GetAttribute("x"), pill.GetAttribute("width")));
+        Assert.Equal("14:10:00 · Movimento", page.Find("g.event title").TextContent);
     }
 
-    [Fact(DisplayName = "People get their own mark and a list of the day; a row plays it and People only hides the rest")]
-    public void Timeline_People_ListedAndPlayed()
+    [Fact(DisplayName = "A person shows as a yellow event with the icon; tapping plays it and People only hides the rest")]
+    public void Timeline_People_MarkedAndPlayed()
     {
         // arrange
         using var _ = Culture.Use("pt-BR");
@@ -253,24 +254,26 @@ public sealed class RecordingsPagesTests : BunitContext
             new MotionEventInfo(start.AddMinutes(10), start.AddMinutes(13), 0.04, Person: false),
         ];
         var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
-        page.WaitForAssertion(() => Assert.Single(page.FindAll(".person-row")));
+        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("g.event")));
+        // The hour around 14:20 holds both events.
+        page.FindAll("button.zoom")[3].Click();
 
         // act
-        var row = page.Find(".person-row").TextContent.Trim();
-        page.Find(".person-row").Click();
+        var events = (page.FindAll("g.event").Count, page.FindAll("g.event.person").Count);
+        var title = page.Find("g.event.person title").TextContent;
+        page.Find("g.event.person").Click();
         var source = page.Find("video").GetAttribute("src");
-        // Playing from 14:01:55 centers the bar there, with both events in sight.
-        var marks = page.FindAll("rect.motion").Count;
-        var personMarks = page.FindAll("rect.motion.person").Count;
         page.Find("input.only-people").Change(true);
 
         // assert
-        Assert.Equal((2, 1), (marks, personMarks));
-        Assert.Equal("14:02 · Pessoa · Porta", row);
-        Assert.Equal("Pessoas neste dia", page.Find(".people h2").TextContent);
+        Assert.Equal((2, 1), events);
+        Assert.Equal("14:02:00 · Pessoa", title);
+        Assert.Single(page.FindAll("g.event.person svg.icon"));
         Assert.Equal($"api/recordings/{_camera.Id}/a.mp4#t=115", source);
-        Assert.Single(page.FindAll("rect.motion"));
-        Assert.Empty(page.FindAll("rect.recorded"));
+        Assert.Equal("Movimentos neste dia: 2 · com pessoas: 1", page.Find(".motion-summary").TextContent);
+        Assert.Single(page.FindAll("g.event"));
+        Assert.Single(page.FindAll("rect.recorded"));
+        Assert.Empty(page.FindAll(".people"));
     }
 
     [Fact(DisplayName = "Without the detect service, the timeline shows nothing about people")]
@@ -286,12 +289,12 @@ public sealed class RecordingsPagesTests : BunitContext
 
         // act
         var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
-        page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.motion")));
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("g.event")));
 
         // assert
-        Assert.Empty(page.FindAll(".people"));
         Assert.Empty(page.FindAll("input.only-people"));
-        Assert.Empty(page.FindAll("rect.motion.person"));
+        Assert.Empty(page.FindAll("g.event.person"));
+        Assert.Equal("Movimentos neste dia: 1", page.Find(".motion-summary").TextContent);
     }
 
     [Fact(DisplayName = "An analyzed day with nobody says so")]
@@ -307,10 +310,10 @@ public sealed class RecordingsPagesTests : BunitContext
 
         // act
         var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
-        page.WaitForAssertion(() => Assert.Single(page.FindAll(".people")));
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("g.event")));
 
         // assert
-        Assert.Equal("Ninguém neste dia.", page.Find(".people .note").TextContent);
+        Assert.Equal("Movimentos neste dia: 1 · com pessoas: 0", page.Find(".motion-summary").TextContent);
     }
 
     [Fact(DisplayName = "A file with people gets boxes over the player, which Show people turns off and on")]
@@ -386,7 +389,7 @@ public sealed class RecordingsPagesTests : BunitContext
         // assert
         page.WaitForAssertion(() => Assert.Equal("No motion on this day.", page.Find(".motion-summary").TextContent));
         Assert.Equal("low", _api.MotionSensitivity);
-        Assert.Empty(page.FindAll("rect.motion"));
+        Assert.Empty(page.FindAll("g.event"));
         Assert.True(page.Find("button.next-motion").HasAttribute("disabled"));
     }
 
@@ -519,7 +522,7 @@ public sealed class RecordingsPagesTests : BunitContext
             new MotionEventInfo(start.AddMinutes(15), start.AddMinutes(16), 0.04),
         ];
         var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
-        page.WaitForAssertion(() => Assert.Equal(2, page.FindAll("rect.motion").Count));
+        page.WaitForAssertion(() => Assert.Equal(2, page.FindAll("g.event").Count));
         var navigation = Services.GetRequiredService<NavigationManager>();
         var address = navigation.Uri;
         page.Find("button.next-motion").Click();

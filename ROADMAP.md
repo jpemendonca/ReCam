@@ -2946,6 +2946,19 @@ Decisões da conversa:
     - Navegador e app.
   - Aceite: bUnit e teste de widget (pílula com pessoa tem o ícone, toque pula para o evento, "Só
     pessoas" filtra); conferido nos dois com um dia de movimento e pessoas.
+  > Em andamento (2026-10-31): feito o código. Acima da faixa de gravação, uma fileira de eventos:
+  > amarelo (`#f2b705`) com o ícone de pessoa quando o `detect` viu alguém, cinza para movimento
+  > só; tocar toca o evento (5 s antes, como "Próximo movimento"). No navegador é um SVG à parte,
+  > sem esticar, com posições em %, uma pílula do tamanho do evento e um círculo de 20 px no meio
+  > que mantém o evento curto visível e tocável; o título diz a hora e se é pessoa. No app, cada
+  > evento é uma pílula de no mínimo 22 px centrada no evento. As marcas que ficavam dentro da
+  > barra saíram, e a faixa de gravação não some mais com "Só movimento" (ele segue valendo para o
+  > "Próximo movimento" e a reprodução contínua). "Só pessoas" esconde as cinzas. A lista "Pessoas
+  > neste dia" saiu dos dois; o resumo passou a dizer "Movimentos neste dia: N · com pessoas: M"
+  > quando o `detect` olhou o dia. Testes: bUnit (evento cinza sem ícone e posição, pessoa amarela
+  > com ícone tocando, "Só pessoas", dia sem `detect`, dia sem ninguém) e widget (pílula mínima com
+  > a hora certa acima da barra, pessoa com ícone tocando, filtro, resumos). Falta: conferir no
+  > navegador e no app com um dia de movimento e pessoas.
 
 ## Fora da fila (anotado, não executar)
 

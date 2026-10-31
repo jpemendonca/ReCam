@@ -46,7 +46,6 @@ class RecordingsTimelineScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => RecordingsTimelinePane(
-    cameraName: cameraName,
     create: create,
     brighten: brighten,
     recordingCameras: recordingCameras,
@@ -62,7 +61,6 @@ class RecordingsTimelineScreen extends StatelessWidget {
 /// ([header]) instead.
 class RecordingsTimelinePane extends StatefulWidget {
   const RecordingsTimelinePane({
-    required this.cameraName,
     required this.create,
     required this.brighten,
     this.recordingCameras = 1,
@@ -78,9 +76,6 @@ class RecordingsTimelinePane extends StatefulWidget {
 
   /// Opens the camera's live view; without it there is no "Live" button.
   final VoidCallback? onLive;
-
-  /// Shown in the list of the people the detect service found.
-  final String cameraName;
 
   /// How many cameras record now; the hours the space holds are shared among them.
   final int recordingCameras;
@@ -293,13 +288,6 @@ class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
                 ),
                 const SizedBox(height: 16),
                 _MotionControls(controller: _controller),
-                if (_controller.peopleAnalyzed) ...[
-                  const SizedBox(height: 16),
-                  _PeopleList(
-                    controller: _controller,
-                    cameraName: widget.cameraName,
-                  ),
-                ],
               ],
             ],
           ],
@@ -429,7 +417,14 @@ class _MotionControls extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          motion.isEmpty ? l10n.motionNone : l10n.motionSummary(motion.length),
+          motion.isEmpty
+              ? l10n.motionNone
+              : controller.peopleAnalyzed
+              ? l10n.motionSummaryPeople(
+                  motion.length,
+                  controller.people.length,
+                )
+              : l10n.motionSummary(motion.length),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
@@ -507,42 +502,11 @@ class _MotionControls extends StatelessWidget {
   }
 }
 
-/// The motion of the day that had a person in it, one row each; a row plays it.
-class _PeopleList extends StatelessWidget {
-  const _PeopleList({required this.controller, required this.cameraName});
-
-  final RecordingTimelineController controller;
-  final String cameraName;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final time = DateFormat.Hm(Localizations.localeOf(context).toString());
-    final people = controller.people;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(l10n.peopleTitle, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        if (people.isEmpty)
-          Text(l10n.peopleNone)
-        else
-          for (final mark in people)
-            ListTile(
-              key: const Key('person-row'),
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.person, color: PeopleBoxes.color),
-              title: Text(l10n.peopleRow(time.format(mark.start), cameraName)),
-              onTap: () => unawaited(controller.playMark(mark)),
-            ),
-      ],
-    );
-  }
-}
-
-/// A stretch of the day (1 minute to 3 hours), recorded stretches filled in and motion marked
-/// below them (only the motion with "Motion only"). Tap plays from that time; dragging moves
-/// the stretch; pressing and holding shows the time under the finger and plays it on release.
+/// The recordings around the moment under the fixed middle line (1 minute to a whole day), with
+/// the day's events above them: yellow with a person when the detect service saw one, grey for
+/// motion alone (bullet 13.6). Tapping an event plays it; tapping the bar plays from there;
+/// dragging moves the moment and plays from it on release; pressing and holding shows the time
+/// under the finger and plays it on release.
 class _HourBar extends StatefulWidget {
   const _HourBar({
     super.key,
@@ -563,10 +527,11 @@ class _HourBar extends StatefulWidget {
 
 class _HourBarState extends State<_HourBar> {
   static const _barHeight = 56.0;
-  static const _trackTop = 12.0;
-  static const _motionHeight = 10.0;
-  static const _minimumMark = 3.0;
-  static const _motionColor = Color(0xFFE08600);
+
+  /// An event shorter than this on screen still gets a pill this wide, so the icon always fits.
+  static const _minimumEvent = 22.0;
+  static const _personEventColor = Color(0xFFF2B705);
+  static const _motionEventColor = Color(0xFF9AA0A6);
 
   /// A recording this close to now is still being written, so its stretch grows to now.
   static const _stillRecording = Duration(minutes: 2);
@@ -645,16 +610,46 @@ class _HourBarState extends State<_HourBar> {
   void _playAt(double x, double width) =>
       unawaited(widget.controller.playAt(_window.timeAt(x, width)));
 
+  // An event as a pill over its stretch, never narrower than the icon.
+  Widget _event(MotionMark mark, double width) {
+    final from = _window.xOf(mark.start, width);
+    final to = _window.xOf(mark.end, width);
+    final wide = (to - from).clamp(_minimumEvent, double.infinity);
+    final person = mark.person == true;
+    return Positioned(
+      left: (from + to) / 2 - wide / 2,
+      width: wide,
+      top: 2,
+      height: 22,
+      child: GestureDetector(
+        key: Key(person ? 'event-person' : 'event-motion'),
+        onTap: () => unawaited(widget.controller.playMark(mark)),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: person ? _personEventColor : _motionEventColor,
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: person
+              ? const Center(
+                  child: Icon(
+                    Icons.person,
+                    key: Key('event-person-icon'),
+                    size: 16,
+                    color: Colors.black87,
+                  ),
+                )
+              : const SizedBox.expand(),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
     final colors = Theme.of(context).colorScheme;
     final controller = widget.controller;
-    // The bar shows only the marks, full height, when either filter is on.
-    final onlyMarks =
-        controller.onlyMotion ||
-        (controller.onlyPeople && controller.peopleAnalyzed);
     final withSeconds = _window.zoom == TimelineZoom.minute;
     String clock(DateTime time) => withSeconds
         ? DateFormat.Hms(locale).format(time)
@@ -721,6 +716,21 @@ class _HourBarState extends State<_HourBar> {
         ),
         const SizedBox(height: 4),
         LayoutBuilder(
+          builder: (context, constraints) => SizedBox(
+            height: 26,
+            child: ClipRect(
+              child: Stack(
+                children: [
+                  for (final mark in controller.shownMotion)
+                    if (mark.end.isAfter(_window.start) &&
+                        mark.start.isBefore(_window.end))
+                      _event(mark, constraints.maxWidth),
+                ],
+              ),
+            ),
+          ),
+        ),
+        LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth;
             final pressX = _pressX;
@@ -758,9 +768,7 @@ class _HourBarState extends State<_HourBar> {
                             size: Size(width, _barHeight),
                             painter: _HourBarPainter(
                               window: _window,
-                              segments: onlyMarks
-                                  ? const []
-                                  : controller.timeline,
+                              segments: controller.timeline,
                               playing: controller.playing,
                               growUntil: growingUntil,
                               track: colors.surfaceContainerHighest,
@@ -769,31 +777,6 @@ class _HourBarState extends State<_HourBar> {
                               ticks: colors.outline,
                             ),
                           ),
-                          for (final mark in controller.shownMotion)
-                            if (mark.end.isAfter(_window.start) &&
-                                mark.start.isBefore(_window.end))
-                              Positioned(
-                                left: _window.xOf(mark.start, width),
-                                width:
-                                    (_window.xOf(mark.end, width) -
-                                            _window.xOf(mark.start, width))
-                                        .clamp(_minimumMark, 1e9),
-                                top: onlyMarks
-                                    ? _trackTop
-                                    : _barHeight - _trackTop - _motionHeight,
-                                height: onlyMarks
-                                    ? _barHeight - 2 * _trackTop
-                                    : _motionHeight,
-                                child: mark.person == true
-                                    ? const ColoredBox(
-                                        key: Key('person-mark'),
-                                        color: PeopleBoxes.color,
-                                      )
-                                    : const ColoredBox(
-                                        key: Key('motion-mark'),
-                                        color: _motionColor,
-                                      ),
-                              ),
                           // Fixed: the recordings run under it.
                           Positioned(
                             left: width / 2 - 1,

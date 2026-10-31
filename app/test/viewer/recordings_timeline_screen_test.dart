@@ -133,7 +133,11 @@ void main() {
       await tester.tap(find.text('1 h'));
       await tester.pumpAndSettle();
       final bar = tester.getRect(find.byKey(const Key('timeline-hours')));
-      final mark = tester.getRect(find.byKey(const Key('motion-mark')));
+      final mark = tester.getRect(find.byKey(const Key('event-motion')));
+      final icons = find
+          .byKey(const Key('event-person-icon'))
+          .evaluate()
+          .length;
 
       // act
       await tester.scrollUntilVisible(
@@ -143,28 +147,30 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('next-motion')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('only-motion')));
-      await tester.pumpAndSettle();
-      final onlyMotion = tester.getRect(find.byKey(const Key('motion-mark')));
       await tester.ensureVisible(find.text('Low'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Low'));
       await tester.pumpAndSettle();
 
       // assert
-      // The hour around the latest recording's end, 12:30 to 13:30, starts with the motion.
-      expect(mark.left - bar.left, closeTo(0, 1));
-      expect(mark.height, lessThan(onlyMotion.height));
+      // The hour around the latest recording's end, 12:30 to 13:30, starts with the motion,
+      // a minute: narrower than the icon, so the pill keeps its minimum width around it.
+      expect(mark.center.dx - bar.left, closeTo(bar.width / 120, 1));
+      expect(mark.width, 22);
+      expect(mark.bottom, lessThanOrEqualTo(bar.top));
+      expect(icons, 0);
       expect(
         player.plays.single.from,
         const Duration(minutes: 29, seconds: 55),
       );
       expect(api.motionSensitivity, MotionSensitivity.low);
-      expect(find.byKey(const Key('motion-mark')), findsNothing);
+      expect(find.byKey(const Key('event-motion')), findsNothing);
       expect(find.text('No motion on this day.'), findsOneWidget);
     });
 
-    testWidgets('people_areMarkedListedAndPlayed', (tester) async {
+    testWidgets('people_areYellowEventsWithTheIconAndPlayWhenTapped', (
+      tester,
+    ) async {
       // arrange
       final day = DateTime.utc(2026, 9, 25);
       final api = _noonApi(day)
@@ -183,35 +189,45 @@ void main() {
       final player = FakeRecordingPlayer();
       await tester.pumpWidget(_screen(api, player));
       await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
+      await tester.pumpAndSettle();
+      // The hour around 13:00 holds both events.
+      await tester.tap(find.text('1 h'));
+      await tester.pumpAndSettle();
+      final events = (
+        find.byKey(const Key('event-motion')).evaluate().length,
+        find.byKey(const Key('event-person')).evaluate().length,
+      );
+      final icons = find
+          .byKey(const Key('event-person-icon'))
+          .evaluate()
+          .length;
+
       // act
+      await tester.tap(find.byKey(const Key('event-person')));
+      await tester.pumpAndSettle();
       await tester.scrollUntilVisible(
-        find.byKey(const Key('person-row')),
+        find.byKey(const Key('only-people')),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      final row = find.text('12:40 · Person · Porch');
-      final listed = row.evaluate().length;
-      await tester.tap(row);
-      await tester.pumpAndSettle();
-      // Playing from 12:39:55 centers the bar there, with both events in sight.
-      final marks = (
-        find.byKey(const Key('motion-mark')).evaluate().length,
-        find.byKey(const Key('person-mark')).evaluate().length,
-      );
-      await tester.ensureVisible(find.byKey(const Key('only-people')));
       await tester.tap(find.byKey(const Key('only-people')));
       await tester.pumpAndSettle();
 
       // assert
-      expect(marks, (1, 1));
-      expect(listed, 1);
-      expect(find.text('People on this day'), findsOneWidget);
+      expect(events, (1, 1));
+      expect(icons, 1);
       expect(
         player.plays.single.from,
         const Duration(minutes: 39, seconds: 55),
       );
-      expect(find.byKey(const Key('motion-mark')), findsNothing);
-      expect(find.byKey(const Key('person-mark')), findsOneWidget);
+      expect(
+        find.text('Motion on this day: 2 · with people: 1'),
+        findsOneWidget,
+      );
+      expect(find.text('People on this day'), findsNothing);
+      expect(find.byKey(const Key('event-motion')), findsNothing);
+      expect(find.byKey(const Key('event-person')), findsOneWidget);
     });
 
     testWidgets('segmentWithPeople_drawsBoxesThatShowPeopleTurnsOff', (
@@ -288,13 +304,17 @@ void main() {
       await tester.pumpAndSettle();
 
       // assert
+      expect(find.byKey(const Key('event-person')), findsNothing);
+      await tester.scrollUntilVisible(
+        find.text('Motion on this day: 1'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Motion on this day: 1'), findsOneWidget);
       expect(find.byKey(const Key('only-people')), findsNothing);
-      expect(find.byKey(const Key('person-row')), findsNothing);
-      expect(find.text('People on this day'), findsNothing);
-      expect(find.byKey(const Key('person-mark')), findsNothing);
     });
 
-    testWidgets('analyzedWithNobody_saysNobody', (tester) async {
+    testWidgets('analyzedWithNobody_saysNoneHadPeople', (tester) async {
       // arrange
       final day = DateTime.utc(2026, 9, 25);
       final api = _noonApi(day)
@@ -309,14 +329,15 @@ void main() {
       // act
       await tester.pumpWidget(_screen(api, FakeRecordingPlayer()));
       await tester.pumpAndSettle();
+      final summary = find.text('Motion on this day: 1 · with people: 0');
       await tester.scrollUntilVisible(
-        find.text('Nobody on this day.'),
+        summary,
         200,
         scrollable: find.byType(Scrollable).first,
       );
 
       // assert
-      expect(find.text('Nobody on this day.'), findsOneWidget);
+      expect(summary, findsOneWidget);
     });
 
     testWidgets('zoomDragAndHold_moveTheCenterAndShowTheTime', (tester) async {

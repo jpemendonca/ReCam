@@ -236,6 +236,17 @@
       }
     }
   },
+  "motionSummaryPeople": "Motion on this day: {count} · with people: {people}",
+  "@motionSummaryPeople": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "people": {
+        "type": "int"
+      }
+    }
+  },
   "motionSensitivityFailed": "Could not change the sensitivity. Check the connection to the server.",
   "appTitleCamera": "ReCam · Camera",
   "appTitleMonitor": "ReCam · Monitor",
@@ -355,18 +366,5 @@
     }
   },
   "peopleOnly": "People only",
-  "peopleTitle": "People on this day",
-  "peopleNone": "Nobody on this day.",
-  "peopleRow": "{time} · Person · {camera}",
-  "@peopleRow": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      },
-      "camera": {
-        "type": "String"
-      }
-    }
-  },
   "peopleShow": "Show people"
 }

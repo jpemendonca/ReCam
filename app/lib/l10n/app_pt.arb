@@ -135,6 +135,7 @@
   "motionHigh": "Alta",
   "motionNone": "Sem movimento neste dia.",
   "motionSummary": "Movimentos neste dia: {count}",
+  "motionSummaryPeople": "Movimentos neste dia: {count} · com pessoas: {people}",
   "motionSensitivityFailed": "Não deu para mudar a sensibilidade. Confira a conexão com o servidor.",
   "appTitleCamera": "ReCam · Câmera",
   "appTitleMonitor": "ReCam · Monitor",
@@ -196,8 +197,5 @@
   "versionServer": "Servidor: {version}",
   "deviceLastSeen": "Offline · visto por último em {when}",
   "peopleOnly": "Só pessoas",
-  "peopleTitle": "Pessoas neste dia",
-  "peopleNone": "Ninguém neste dia.",
-  "peopleRow": "{time} · Pessoa · {camera}",
   "peopleShow": "Mostrar pessoas"
 }

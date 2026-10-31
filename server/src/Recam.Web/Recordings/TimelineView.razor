@@ -51,21 +51,40 @@ else
     </div>
     <p class="center-time" aria-live="polite">@CenterText</p>
 
+    @* The day's events above the recordings: yellow with a person when the detect service saw
+       one, grey for motion alone; a tap plays the event. An SVG of its own, not stretched like the
+       bar, so the icons keep their shape; positions are percentages because the CSP refuses inline
+       styles. A circle under each event keeps a short one visible and tappable. *@
+    <svg class="events" role="list" aria-label="@L["TimelineEventsLabel"]">
+        @foreach (var mark in Timeline.ShownMotion.Where(mark => mark.End > Window.Start && mark.Start < Window.End))
+        {
+            var shown = mark;
+            var middle = mark.Start + (mark.End - mark.Start) / 2;
+            <g class="@(mark.Person == true ? "event person" : "event")" role="listitem" @onclick="() => Timeline.PlayMark(shown)">
+                <title>@EventTitle(mark)</title>
+                <rect class="pill" x="@Percent(mark.Start)" y="3" width="@PercentWidth(mark.Start, mark.End)" height="18" rx="9" />
+                <circle cx="@Percent(middle)" cy="12" r="10" />
+                @if (mark.Person == true)
+                {
+                    <svg class="icon" x="@Percent(middle)" y="12" width="14" height="14" overflow="visible" aria-hidden="true">
+                        <g transform="translate(-7 -7)">
+                            <circle cx="7" cy="4" r="3" />
+                            <path d="M1.5 14a5.5 5 0 0 1 11 0z" />
+                        </g>
+                    </svg>
+                }
+            </g>
+        }
+    </svg>
+
     @* The line in the middle stays; the recordings run under it as the video plays, and the
        person drags them to go back or ahead. *@
     <svg class="hours" @ref="bar" viewBox="0 0 @Width 36" preserveAspectRatio="none" role="img" aria-label="@L["TimelineBarLabel"]">
         <rect class="track" x="0" y="0" width="@Width" height="36" rx="6" />
-        @if (!OnlyMarks)
+        @foreach (var (start, end, playing) in RecordedStretches())
         {
-            @foreach (var (start, end, playing) in RecordedStretches())
-            {
-                <rect class="@(playing ? "recorded playing" : "recorded")"
-                      x="@X(start)" y="0" width="@SpanWidth(start, end, 1)" height="36" />
-            }
-        }
-        @foreach (var mark in Timeline.ShownMotion.Where(mark => mark.End > Window.Start && mark.Start < Window.End))
-        {
-            <rect class="@(mark.Person == true ? "motion person" : "motion")" x="@X(mark.Start)" y="@(OnlyMarks ? 0 : 24)" width="@SpanWidth(mark.Start, mark.End, 3)" height="@(OnlyMarks ? 36 : 12)" />
+            <rect class="@(playing ? "recorded playing" : "recorded")"
+                  x="@X(start)" y="0" width="@SpanWidth(start, end, 1)" height="36" />
         }
         <line class="playhead" x1="@F(Width / 2)" x2="@F(Width / 2)" y1="0" y2="36" />
     </svg>
@@ -96,34 +115,10 @@ else
             </select>
         </label>
     </div>
-    <p class="motion-summary">@(Timeline.Motion.Count == 0 ? L["MotionNone"] : L["MotionSummary", Timeline.Motion.Count])</p>
+    <p class="motion-summary">@MotionSummary</p>
     @if (Timeline.SensitivityFailed)
     {
         <p class="error" role="alert">@L["MotionSensitivityFailed"]</p>
-    }
-
-    @if (Timeline.PeopleAnalyzed)
-    {
-        <section class="people">
-            <h2>@L["PeopleTitle"]</h2>
-            @if (Timeline.People.Count == 0)
-            {
-                <p class="note">@L["PeopleNone"]</p>
-            }
-            else
-            {
-                <ul>
-                    @foreach (var mark in Timeline.People)
-                    {
-                        <li>
-                            <button class="person-row" @onclick="() => Timeline.PlayMark(mark)">
-                                @L["PeopleRow", mark.Start.ToString("t", CultureInfo.CurrentCulture), Cameras.Camera(CameraId)?.Name ?? string.Empty]
-                            </button>
-                        </li>
-                    }
-                </ul>
-            }
-        </section>
     }
 
     @if (Timeline.Source is { } source)
@@ -346,8 +341,18 @@ else
         }
     }
 
-    // The bar shows only the marks, full height, when either filter is on.
-    private bool OnlyMarks => Timeline.OnlyMotion || (Timeline.OnlyPeople && Timeline.PeopleAnalyzed);
+    private string MotionSummary => Timeline.Motion.Count == 0 ? L["MotionNone"]
+        : Timeline.PeopleAnalyzed ? L["MotionSummaryPeople", Timeline.Motion.Count, Timeline.People.Count]
+        : L["MotionSummary", Timeline.Motion.Count];
+
+    private string EventTitle(MotionMark mark) =>
+        L[mark.Person == true ? "EventPerson" : "EventMotion", mark.Start.ToString("T", CultureInfo.CurrentCulture)];
+
+    // Where a time falls on the events row, as a percentage of its width, kept on the row.
+    private string Percent(DateTime time) => $"{F(Math.Clamp(Window.FractionOf(time), 0, 1) * 100)}%";
+
+    private string PercentWidth(DateTime start, DateTime end) =>
+        $"{F((Math.Clamp(Window.FractionOf(end), 0, 1) - Math.Clamp(Window.FractionOf(start), 0, 1)) * 100)}%";
 
     private string X(DateTime time) => F(Math.Clamp(Window.FractionOf(time), 0, 1) * Width);
 

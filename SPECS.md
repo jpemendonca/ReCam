@@ -1032,3 +1032,8 @@ seguinte em `docs/adr/`:
 > marca o momento que toca e a faixa corre por baixo; arrastar muda o momento e soltar toca dali;
 > zooms de 1 min, 5 min, 30 min, 1 h e 1 dia; o trecho que a câmera ainda grava cresce até agora;
 > "Ao vivo" leva ao ao vivo. Saem as setas e a janela fixa. Seção 2.5.
+
+> Revisão (2026-10-31): eventos na barra do tempo (bullet 13.6), no navegador e no app. Cada evento
+> de movimento vira uma pílula acima da faixa de gravação: amarela com o ícone de pessoa quando a
+> 2.6 viu alguém, cinza quando foi só movimento; tocar toca o evento. A lista "Pessoas neste dia"
+> sai; o resumo do dia conta os eventos com pessoa. Seções 2.5 e 2.6.

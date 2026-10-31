@@ -201,6 +201,12 @@
   <data name="DiagnosticsSize" xml:space="preserve">
     <value>Imagem recebida</value>
   </data>
+  <data name="EventMotion" xml:space="preserve">
+    <value>{0} · Movimento</value>
+  </data>
+  <data name="EventPerson" xml:space="preserve">
+    <value>{0} · Pessoa</value>
+  </data>
   <data name="FirstCameraTitle" xml:space="preserve">
     <value>Adicione sua primeira câmera</value>
   </data>
@@ -366,17 +372,11 @@
   <data name="MotionSummary" xml:space="preserve">
     <value>Movimentos neste dia: {0}</value>
   </data>
-  <data name="PeopleNone" xml:space="preserve">
-    <value>Ninguém neste dia.</value>
+  <data name="MotionSummaryPeople" xml:space="preserve">
+    <value>Movimentos neste dia: {0} · com pessoas: {1}</value>
   </data>
   <data name="PeopleOnly" xml:space="preserve">
     <value>Só pessoas</value>
-  </data>
-  <data name="PeopleRow" xml:space="preserve">
-    <value>{0} · Pessoa · {1}</value>
-  </data>
-  <data name="PeopleTitle" xml:space="preserve">
-    <value>Pessoas neste dia</value>
   </data>
   <data name="PeopleShow" xml:space="preserve">
     <value>Mostrar pessoas</value>
@@ -527,6 +527,9 @@
   </data>
   <data name="TimelineEmpty" xml:space="preserve">
     <value>Nenhuma gravação ainda. Ligue Gravar sempre nesta câmera.</value>
+  </data>
+  <data name="TimelineEventsLabel" xml:space="preserve">
+    <value>Movimentos e pessoas do dia</value>
   </data>
   <data name="TimelineGoLive" xml:space="preserve">
     <value>Ao vivo</value>
