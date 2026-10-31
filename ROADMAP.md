@@ -2924,6 +2924,17 @@ Decisões da conversa:
   - Escopo: a mesma barra da 13.4 na tela de gravações do app, arrastada com o dedo, com os mesmos
     zooms e o botão "Ao vivo".
   - Aceite: testes de widget do arraste e do zoom; conferido no Redmi 6A.
+  > Em andamento (2026-10-31): feito o código. A `TimelineWindow` do app virou centro mais zoom,
+  > como no navegador (1 min, 5 min, 30 min padrão, 1 h, 1 dia; centro dentro do dia). A linha do
+  > meio é fixa; o player avisa a posição e a barra recentra nela, menos durante o arraste. Arrastar
+  > com o dedo move o centro, e soltar toca do novo centro (num buraco, da próxima gravação); tocar
+  > toca daquele ponto; segurar ainda mostra a hora sob o dedo. Acima da barra, a data e a hora do
+  > centro e o botão "Ao vivo", que abre o ao vivo da câmera (na tela de gravações e na aba
+  > Gravações). Com a câmera gravando, o trecho mais novo cresce até agora quando termina a menos
+  > de 2 min (redesenho a cada 5 s; o controller ganhou `now` para teste). Saíram as setas e a
+  > janela "das–às". Testes: janela (centro, meia-noite, frações em cada zoom, arraste, zoom,
+  > marcas) e widget (toque, zoom e arraste movendo o centro e tocando ao soltar, linha parada no
+  > meio enquanto o vídeo anda, trecho crescendo até agora e "Ao vivo"). Falta: conferir no Redmi 6A.
 
 - [ ] **13.6 Eventos na barra do tempo**
   - Escopo:

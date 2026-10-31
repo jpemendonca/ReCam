@@ -178,7 +178,7 @@
       }
     }
   },
-  "timelineTapToPlay": "Tap the hours below to watch from that moment.",
+  "timelineTapToPlay": "Drag the bar to go back or ahead, or tap a moment to watch from there.",
   "timelinePlaying": "Playing from {time}",
   "@timelinePlaying": {
     "placeholders": {
@@ -285,22 +285,11 @@
   "firstSpaceSave": "Save and continue",
   "firstSpaceSkip": "Skip (keeps 2 GB)",
   "timelineZoomMinute": "1 min",
-  "timelineZoomQuarterHour": "15 min",
+  "timelineZoomFiveMinutes": "5 min",
+  "timelineZoomHalfHour": "30 min",
+  "timelineZoomDay": "1 day",
+  "timelineLive": "Live",
   "timelineZoomHour": "1 h",
-  "timelineZoomThreeHours": "3 h",
-  "timelineEarlier": "Earlier",
-  "timelineLater": "Later",
-  "timelineWindow": "{from} – {to}",
-  "@timelineWindow": {
-    "placeholders": {
-      "from": {
-        "type": "String"
-      },
-      "to": {
-        "type": "String"
-      }
-    }
-  },
   "timelineSpace": "In use: {used} of {total} GB · about {hours} h fit",
   "@timelineSpace": {
     "placeholders": {

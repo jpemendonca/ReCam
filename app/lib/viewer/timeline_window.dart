@@ -1,9 +1,10 @@
-/// How much of the day the timeline bar shows at once, and how far apart its ticks are.
+/// How much time the timeline bar shows at once, and how far apart its ticks are.
 enum TimelineZoom {
   minute(Duration(minutes: 1), Duration(seconds: 10)),
-  quarterHour(Duration(minutes: 15), Duration(minutes: 3)),
+  fiveMinutes(Duration(minutes: 5), Duration(minutes: 1)),
+  halfHour(Duration(minutes: 30), Duration(minutes: 5)),
   hour(Duration(hours: 1), Duration(minutes: 10)),
-  threeHours(Duration(hours: 3), Duration(minutes: 30));
+  day(Duration(days: 1), Duration(hours: 3));
 
   const TimelineZoom(this.span, this.tick);
 
@@ -11,30 +12,30 @@ enum TimelineZoom {
   final Duration tick;
 }
 
-/// The stretch of one day the timeline bar shows, and the conversions between a point on the
-/// bar and a time. Pure: the bar keeps one and replaces it as the person zooms and drags.
+/// What the timeline bar shows: the zoom's span around a center, the moment under the fixed line
+/// in the middle of the bar (bullet 13.5). The center stays within the day; the window may reach
+/// past midnight, where nothing is drawn. Pure: the bar keeps one and replaces it as the video
+/// plays, the person drags and zooms.
 class TimelineWindow {
-  const TimelineWindow._(this.day, this.zoom, this.start);
+  const TimelineWindow._(this.day, this.zoom, this.center);
 
-  /// The window of [zoom] centered on [center], kept inside [day].
+  /// The window of [zoom] centered on [center], kept within [day].
   factory TimelineWindow.around(
     DateTime day,
     TimelineZoom zoom,
     DateTime center,
-  ) => TimelineWindow._(
-    day,
-    zoom,
-    _clamp(day, zoom, center.subtract(zoom.span ~/ 2)),
-  );
+  ) => TimelineWindow._(day, zoom, _clamp(day, center));
 
   /// Local midnight of the day shown.
   final DateTime day;
   final TimelineZoom zoom;
-  final DateTime start;
 
-  DateTime get end => start.add(zoom.span);
+  /// The moment under the line in the middle of the bar.
+  final DateTime center;
 
-  DateTime get center => start.add(zoom.span ~/ 2);
+  DateTime get start => center.subtract(zoom.span ~/ 2);
+
+  DateTime get end => center.add(zoom.span ~/ 2);
 
   /// Where [time] falls on a bar [width] wide; outside the window it is off the bar.
   double xOf(DateTime time, double width) =>
@@ -54,33 +55,24 @@ class TimelineWindow {
     final shift = Duration(
       milliseconds: (-dx / width * zoom.span.inMilliseconds).round(),
     );
-    return TimelineWindow._(day, zoom, _clamp(day, zoom, start.add(shift)));
+    return TimelineWindow.around(day, zoom, center.add(shift));
   }
-
-  /// One whole window earlier (negative) or later (positive).
-  TimelineWindow step(int windows) => TimelineWindow._(
-    day,
-    zoom,
-    _clamp(day, zoom, start.add(zoom.span * windows)),
-  );
 
   /// The same center at another zoom.
   TimelineWindow zoomTo(TimelineZoom other) =>
       TimelineWindow.around(day, other, center);
 
-  bool get atDayStart => !start.isAfter(day);
-
   /// Whether [time] falls inside the window.
   bool contains(DateTime time) => !time.isBefore(start) && time.isBefore(end);
 
-  bool get atDayEnd => !end.isBefore(_dayEnd(day));
-
-  /// The tick times inside the window, on round multiples of the zoom's tick.
+  /// The tick times inside the window and the day, on round multiples of the zoom's tick.
   List<DateTime> get ticks {
     final tick = zoom.tick.inMilliseconds;
-    final fromMidnight = start.difference(day).inMilliseconds;
-    var next = (fromMidnight / tick).ceil() * tick;
-    final last = end.difference(day).inMilliseconds;
+    final dayEnd = _dayEnd(day);
+    final from = start.isBefore(day) ? day : start;
+    final to = end.isAfter(dayEnd) ? dayEnd : end;
+    var next = (from.difference(day).inMilliseconds / tick).ceil() * tick;
+    final last = to.difference(day).inMilliseconds;
     final result = <DateTime>[];
     while (next <= last) {
       result.add(day.add(Duration(milliseconds: next)));
@@ -95,11 +87,11 @@ class TimelineWindow {
       ? DateTime.utc(day.year, day.month, day.day + 1)
       : DateTime(day.year, day.month, day.day + 1);
 
-  static DateTime _clamp(DateTime day, TimelineZoom zoom, DateTime start) {
-    final latest = _dayEnd(day).subtract(zoom.span);
-    if (start.isBefore(day)) return day;
-    if (start.isAfter(latest)) return latest;
-    return start;
+  static DateTime _clamp(DateTime day, DateTime center) {
+    final end = _dayEnd(day);
+    if (center.isBefore(day)) return day;
+    if (center.isAfter(end)) return end;
+    return center;
   }
 
   @override
@@ -107,8 +99,8 @@ class TimelineWindow {
       other is TimelineWindow &&
       other.day == day &&
       other.zoom == zoom &&
-      other.start == start;
+      other.center == center;
 
   @override
-  int get hashCode => Object.hash(day, zoom, start);
+  int get hashCode => Object.hash(day, zoom, center);
 }

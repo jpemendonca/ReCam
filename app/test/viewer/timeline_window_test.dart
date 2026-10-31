@@ -5,61 +5,63 @@ void main() {
   final day = DateTime.utc(2026, 9, 25);
 
   group('TimelineWindow.around', () {
-    test('centersTheWindowOnTheTime', () {
+    test('spreadsTheSpanEvenlyAroundTheCenter', () {
       // arrange
-      final center = DateTime.utc(2026, 9, 25, 14, 30);
+      final center = DateTime.utc(2026, 9, 25, 11, 15);
 
       // act
-      final window = TimelineWindow.around(day, TimelineZoom.hour, center);
+      final window = TimelineWindow.around(day, TimelineZoom.halfHour, center);
 
       // assert
-      expect(window.start, DateTime.utc(2026, 9, 25, 14));
-      expect(window.end, DateTime.utc(2026, 9, 25, 15));
+      expect(window.start, DateTime.utc(2026, 9, 25, 11));
+      expect(window.end, DateTime.utc(2026, 9, 25, 11, 30));
+      expect(window.xOf(center, 400), 200);
     });
 
-    test('nearMidnight_staysInsideTheDay', () {
+    test('nearMidnight_keepsTheCenterInTheDayAndReachesPastIt', () {
       // arrange
-      final early = DateTime.utc(2026, 9, 25, 0, 20);
-      final late = DateTime.utc(2026, 9, 25, 23, 50);
+      final before = DateTime.utc(2026, 9, 24, 23, 40);
+      final late = DateTime.utc(2026, 9, 25, 23, 54);
 
       // act
-      final first = TimelineWindow.around(day, TimelineZoom.threeHours, early);
-      final last = TimelineWindow.around(day, TimelineZoom.threeHours, late);
+      final first = TimelineWindow.around(day, TimelineZoom.hour, before);
+      final last = TimelineWindow.around(day, TimelineZoom.hour, late);
 
       // assert
-      expect(first.start, day);
-      expect(last.end, DateTime.utc(2026, 9, 26));
-      expect(first.atDayStart && last.atDayEnd, isTrue);
+      expect(first.center, day);
+      expect(first.start, DateTime.utc(2026, 9, 24, 23, 30));
+      expect(last.end, DateTime.utc(2026, 9, 26, 0, 24));
     });
   });
 
   group('TimelineWindow.timeAt', () {
     for (final (zoom, expected) in [
       (TimelineZoom.minute, DateTime.utc(2026, 9, 25, 12, 0, 15)),
-      (TimelineZoom.quarterHour, DateTime.utc(2026, 9, 25, 12, 3, 45)),
+      (TimelineZoom.fiveMinutes, DateTime.utc(2026, 9, 25, 12, 1, 15)),
+      (TimelineZoom.halfHour, DateTime.utc(2026, 9, 25, 12, 7, 30)),
       (TimelineZoom.hour, DateTime.utc(2026, 9, 25, 12, 15)),
-      (TimelineZoom.threeHours, DateTime.utc(2026, 9, 25, 12, 45)),
+      (TimelineZoom.day, DateTime.utc(2026, 9, 25, 18)),
     ]) {
-      test('quarterOfTheBar_${zoom.name}_isAQuarterOfTheSpan', () {
+      test('${zoom.name}_threeQuartersIn_isAQuarterSpanAfterTheCenter', () {
         // arrange
         final window = TimelineWindow.around(
           day,
           zoom,
-          DateTime.utc(2026, 9, 25, 12).add(zoom.span ~/ 2),
+          DateTime.utc(2026, 9, 25, 12),
         );
 
         // act
-        final time = window.timeAt(100, 400);
+        final time = window.timeAt(300, 400);
 
         // assert
         expect(time, expected);
-        expect(window.xOf(time, 400), closeTo(100, 0.001));
+        expect(window.xOf(time, 400), closeTo(300, 0.001));
       });
     }
   });
 
   group('TimelineWindow.panBy', () {
-    test('draggingRight_showsEarlierTimes', () {
+    test('draggingRight_showsEarlierTimes_neverBeforeMidnight', () {
       // arrange
       final window = TimelineWindow.around(
         day,
@@ -69,24 +71,11 @@ void main() {
 
       // act
       final dragged = window.panBy(100, 400);
+      final tooFar = window.panBy(40000, 400);
 
       // assert
-      expect(dragged.start, DateTime.utc(2026, 9, 25, 11, 45));
-    });
-
-    test('pastMidnight_stopsAtTheDayStart', () {
-      // arrange
-      final window = TimelineWindow.around(
-        day,
-        TimelineZoom.hour,
-        DateTime.utc(2026, 9, 25, 0, 40),
-      );
-
-      // act
-      final dragged = window.panBy(4000, 400);
-
-      // assert
-      expect(dragged.start, day);
+      expect(dragged.center, DateTime.utc(2026, 9, 25, 12, 15));
+      expect(tooFar.center, day);
     });
   });
 
@@ -108,30 +97,18 @@ void main() {
     });
   });
 
-  group('TimelineWindow.step', () {
-    test('movesOneWholeWindow', () {
-      // arrange
-      final window = TimelineWindow.around(
-        day,
-        TimelineZoom.quarterHour,
-        DateTime.utc(2026, 9, 25, 10, 7, 30),
-      );
-
-      // act
-      final later = window.step(1);
-
-      // assert
-      expect(later.start, DateTime.utc(2026, 9, 25, 10, 15));
-    });
-  });
-
   group('TimelineWindow.ticks', () {
-    test('fallOnRoundTimesInsideTheWindow', () {
+    test('fallOnRoundTimesInsideTheWindowAndTheDay', () {
       // arrange
       final window = TimelineWindow.around(
         day,
         TimelineZoom.hour,
         DateTime.utc(2026, 9, 25, 14, 35),
+      );
+      final late = TimelineWindow.around(
+        day,
+        TimelineZoom.hour,
+        DateTime.utc(2026, 9, 25, 23, 50),
       );
 
       // act
@@ -141,26 +118,7 @@ void main() {
       expect(ticks.first, DateTime.utc(2026, 9, 25, 14, 10));
       expect(ticks.last, DateTime.utc(2026, 9, 25, 15));
       expect(ticks, hasLength(6));
-    });
-  });
-
-  group('TimelineWindow.contains', () {
-    test('includesTheStartAndLeavesOutTheEnd', () {
-      // arrange
-      final day = DateTime.utc(2026, 9, 25);
-      final window = TimelineWindow.around(
-        day,
-        TimelineZoom.hour,
-        DateTime.utc(2026, 9, 25, 12, 30),
-      );
-
-      // act
-      final start = window.contains(window.start);
-      final end = window.contains(window.end);
-
-      // assert
-      expect(start, isTrue);
-      expect(end, isFalse);
+      expect(late.ticks.last, DateTime.utc(2026, 9, 26));
     });
   });
 }

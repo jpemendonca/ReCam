@@ -53,14 +53,18 @@ void main() {
       );
       await tester.pumpAndSettle();
       final waiting = find
-          .text('Tap the hours below to watch from that moment.')
+          .text(
+            'Drag the bar to go back or ahead, or tap a moment to watch from there.',
+          )
           .evaluate()
           .length;
 
       // act
       await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('timeline-hours')));
+      // The window opens centered on the recording's end, midnight; a quarter in is 23:52:30.
+      final hours = tester.getRect(find.byKey(const Key('timeline-hours')));
+      await tester.tapAt(hours.centerLeft + Offset(hours.width / 4, 0));
       await tester.pumpAndSettle();
 
       // assert
@@ -126,7 +130,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('3 h'));
+      await tester.tap(find.text('1 h'));
       await tester.pumpAndSettle();
       final bar = tester.getRect(find.byKey(const Key('timeline-hours')));
       final mark = tester.getRect(find.byKey(const Key('motion-mark')));
@@ -148,8 +152,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // assert
-      // The 3-hour window opens on the latest recording, 11:30 to 14:30.
-      expect(mark.left - bar.left, closeTo(bar.width / 3, 1));
+      // The hour around the latest recording's end, 12:30 to 13:30, starts with the motion.
+      expect(mark.left - bar.left, closeTo(0, 1));
       expect(mark.height, lessThan(onlyMotion.height));
       expect(
         player.plays.single.from,
@@ -179,14 +183,6 @@ void main() {
       final player = FakeRecordingPlayer();
       await tester.pumpWidget(_screen(api, player));
       await tester.pumpAndSettle();
-      // The hour window opens on the latest recording, 12:30 to 13:30.
-      await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
-      await tester.pumpAndSettle();
-      final marks = (
-        find.byKey(const Key('motion-mark')).evaluate().length,
-        find.byKey(const Key('person-mark')).evaluate().length,
-      );
-
       // act
       await tester.scrollUntilVisible(
         find.byKey(const Key('person-row')),
@@ -197,6 +193,11 @@ void main() {
       final listed = row.evaluate().length;
       await tester.tap(row);
       await tester.pumpAndSettle();
+      // Playing from 12:39:55 centers the bar there, with both events in sight.
+      final marks = (
+        find.byKey(const Key('motion-mark')).evaluate().length,
+        find.byKey(const Key('person-mark')).evaluate().length,
+      );
       await tester.ensureVisible(find.byKey(const Key('only-people')));
       await tester.tap(find.byKey(const Key('only-people')));
       await tester.pumpAndSettle();
@@ -231,7 +232,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
       await tester.pumpAndSettle();
-      // The hour window is 12:30 to 13:30; a quarter in is 12:45, inside the recording.
+      // The 30 minute window is 12:45 to 13:15; a quarter in is 12:52:30, inside the recording.
       final hours = tester.getRect(find.byKey(const Key('timeline-hours')));
       await tester.tapAt(Offset(hours.left + hours.width / 4, hours.center.dy));
       await tester.pump();
@@ -259,7 +260,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // act
-      // The hour window is 12:30 to 13:30; a quarter in is 12:45, inside the recording.
+      // The 30 minute window is 12:45 to 13:15; a quarter in is 12:52:30, inside the recording.
       final hours = tester.getRect(find.byKey(const Key('timeline-hours')));
       await tester.tapAt(Offset(hours.left + hours.width / 4, hours.center.dy));
       await tester.pump();
@@ -318,7 +319,7 @@ void main() {
       expect(find.text('Nobody on this day.'), findsOneWidget);
     });
 
-    testWidgets('zoomDragAndHold_moveTheWindowAndShowTheTime', (tester) async {
+    testWidgets('zoomDragAndHold_moveTheCenterAndShowTheTime', (tester) async {
       // arrange
       final day = DateTime.utc(2026, 9, 25);
       final api = FakeApiClient()
@@ -373,26 +374,27 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      final opened = tester
-          .widget<Text>(find.byKey(const Key('timeline-window')))
-          .data;
-      await tester.tap(find.text('15 min'));
+      String center() =>
+          tester.widget<Text>(find.byKey(const Key('timeline-center'))).data!;
+      final opened = center();
+      await tester.tap(find.text('5 min'));
       await tester.pumpAndSettle();
-      final zoomed = tester
-          .widget<Text>(find.byKey(const Key('timeline-window')))
-          .data;
+      final zoomed = center();
       final bar = tester.getRect(find.byKey(const Key('timeline-hours')));
 
       // act
+      // A fifth of the bar to the right is a minute earlier; letting go plays from there.
       await tester.drag(
         find.byKey(const Key('timeline-hours')),
-        Offset(bar.width / 3, 0),
+        Offset(bar.width / 5, 0),
       );
       await tester.pumpAndSettle();
-      final dragged = tester
-          .widget<Text>(find.byKey(const Key('timeline-window')))
-          .data;
-      final gesture = await tester.startGesture(bar.center);
+      final dragged = center();
+      // The player opened above the bar, so it moved.
+      await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
+      await tester.pumpAndSettle();
+      final moved = tester.getRect(find.byKey(const Key('timeline-hours')));
+      final gesture = await tester.startGesture(moved.center);
       await tester.pump(const Duration(seconds: 1));
       final held = find.byKey(const Key('timeline-pointer-time'));
       final shown = held.evaluate().length;
@@ -400,15 +402,20 @@ void main() {
       await tester.pumpAndSettle();
 
       // assert
-      expect(opened, '12:30 – 13:30');
-      expect(zoomed, '12:52 – 13:07');
-      expect(dragged, '12:47 – 13:02');
+      expect(opened, '9/25/2026 13:00:00');
+      expect(zoomed, '9/25/2026 13:00:00');
+      // The drag starts after the touch slop, so it lands a few seconds after 12:59.
+      expect(dragged, matches(RegExp(r'^9/25/2026 12:59:\d\d$')));
+      expect(
+        player.plays.first.from.inSeconds,
+        inInclusiveRange(59 * 60, 59 * 60 + 15),
+      );
       expect(
         find.text('In use: 0.3 of 2 GB · about 6.8 h fit'),
         findsOneWidget,
       );
       expect(shown, 1);
-      expect(player.plays, hasLength(1));
+      expect(player.plays, hasLength(2));
     });
 
     testWidgets('playerControls_pauseAndJumpTenSeconds', (tester) async {
@@ -461,7 +468,7 @@ void main() {
       await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
       await tester.pumpAndSettle();
       final bar = tester.getRect(find.byKey(const Key('timeline-hours')));
-      // The window opens at 13:30 to 14:30; a quarter in is 13:45, inside the recording.
+      // The window opens at 13:45 to 14:15; a quarter in is 13:52:30, inside the recording.
       await tester.tapAt(bar.centerLeft + Offset(bar.width / 4, 0));
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const Key('player-toggle')));
@@ -530,8 +537,8 @@ void main() {
       await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
       await tester.pumpAndSettle();
       final bar = tester.getRect(find.byKey(const Key('timeline-hours')));
-      // The window opens at 13:16 to 14:16; 28.5 minutes in is 13:44:30.
-      await tester.tapAt(bar.centerLeft + Offset(bar.width * 28.5 / 60, 0));
+      // The window opens at 13:31 to 14:01; 13.5 minutes in is 13:44:30.
+      await tester.tapAt(bar.centerLeft + Offset(bar.width * 13.5 / 30, 0));
       await tester.pumpAndSettle();
       final opened = tester.widget<VideoClock>(find.byType(VideoClock)).time;
 
@@ -549,7 +556,7 @@ void main() {
       expect(find.text('13:45:00'), findsOneWidget);
     });
 
-    testWidgets('playhead_followsTheVideoAndTakesTheWindowAlong', (
+    testWidgets('playhead_staysInTheMiddleAndTheBarRunsUnderIt', (
       tester,
     ) async {
       // arrange
@@ -596,29 +603,91 @@ void main() {
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byKey(const Key('timeline-hours')));
       await tester.pumpAndSettle();
-      // One minute around the latest recording: 13:46:30 to 13:47:30.
+      // One minute around the latest recording's end: 13:46:30 to 13:47:30.
       await tester.tap(find.text('1 min'));
       await tester.pumpAndSettle();
       final bar = tester.getRect(find.byKey(const Key('timeline-hours')));
       // 10 seconds in is 13:46:40.
       await tester.tapAt(bar.centerLeft + Offset(bar.width / 6, 0));
       await tester.pumpAndSettle();
-      final opened = tester.getRect(find.byKey(const Key('timeline-playhead')));
+      String center() =>
+          tester.widget<Text>(find.byKey(const Key('timeline-center'))).data!;
+      final opened = center();
 
       // act
-      await player.seekTo(const Duration(minutes: 2, seconds: 20));
-      await tester.pump();
-      final moved = tester.getRect(find.byKey(const Key('timeline-playhead')));
-      await player.seekTo(const Duration(minutes: 2, seconds: 55));
+      await player.seekTo(const Duration(minutes: 1, seconds: 20));
       await tester.pump();
 
       // assert
       // Playing did not reset the zoom the person chose.
-      expect(opened.center.dx, closeTo(bar.left + bar.width / 6, 1));
-      expect(moved.center.dx, closeTo(bar.left + bar.width * 5 / 6, 1));
-      // 13:47:55 ran past the edge, so the window went along with it.
-      expect(find.text('13:47:25 – 13:48:25'), findsOneWidget);
-      expect(find.byKey(const Key('timeline-playhead')), findsOneWidget);
+      expect(opened, '25/09/2026 13:46:40');
+      expect(center(), '25/09/2026 13:46:20');
+      expect(
+        tester.getRect(find.byKey(const Key('timeline-playhead'))).center.dx,
+        closeTo(bar.center.dx, 1),
+      );
+    });
+
+    testWidgets('recordingCamera_growsToNowAndLiveOpensIt', (tester) async {
+      // arrange
+      final day = DateTime.utc(2026, 9, 25);
+      final api = FakeApiClient()
+        ..recordingDaysResult = [day]
+        ..recordingsByDay[day] = [
+          RecordingPieceInfo(
+            start: DateTime.utc(2026, 9, 25, 13),
+            end: DateTime.utc(2026, 9, 25, 13, 5),
+            segments: [
+              RecordingSegmentInfo(
+                start: DateTime.utc(2026, 9, 25, 13),
+                end: DateTime.utc(2026, 9, 25, 13, 5),
+                url: '/api/recordings/cam/a.mp4',
+              ),
+            ],
+          ),
+        ];
+      var lives = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: RecordingsTimelineScreen(
+            brighten: () => BrightenController(
+              store: FakeAdjustmentStore(),
+              cameraId: 'cam',
+            ),
+            cameraName: 'Porch',
+            recording: true,
+            onLive: () => lives++,
+            create: () => RecordingTimelineController(
+              api: api,
+              session: pairedSession(),
+              cameraId: 'cam',
+              player: FakeRecordingPlayer(),
+              segments: FakeSegmentSource(),
+              peopleBoxes: FakePeopleBoxesStore(),
+              utcOffsetOf: (_) => Duration.zero,
+              now: () => DateTime.utc(2026, 9, 25, 13, 6),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('timeline-live')));
+      await tester.pumpAndSettle();
+
+      // act
+      await tester.tap(find.byKey(const Key('timeline-live')));
+      await tester.pump();
+
+      // assert
+      // The newest stretch still records, so the bar opens on now, not on its last file's end.
+      expect(
+        tester.widget<Text>(find.byKey(const Key('timeline-center'))).data,
+        '9/25/2026 13:06:00',
+      );
+      expect(lives, 1);
+      await tester.pumpWidget(const SizedBox());
     });
 
     testWidgets('withoutRecordings_saysHowToStart', (tester) async {

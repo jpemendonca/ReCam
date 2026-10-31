@@ -22,10 +22,18 @@ class RecordingsTimelineScreen extends StatelessWidget {
     required this.create,
     required this.brighten,
     this.recordingCameras = 1,
+    this.recording = false,
+    this.onLive,
     super.key,
   });
 
   final String cameraName;
+
+  /// The camera records now: its newest stretch grows to now on the bar.
+  final bool recording;
+
+  /// Opens the camera's live view; without it there is no "Live" button.
+  final VoidCallback? onLive;
 
   /// How many cameras record now; they share the recording space.
   final int recordingCameras;
@@ -42,6 +50,8 @@ class RecordingsTimelineScreen extends StatelessWidget {
     create: create,
     brighten: brighten,
     recordingCameras: recordingCameras,
+    recording: recording,
+    onLive: onLive,
     title: AppLocalizations.of(context).timelineTitle(cameraName),
   );
 }
@@ -56,10 +66,18 @@ class RecordingsTimelinePane extends StatefulWidget {
     required this.create,
     required this.brighten,
     this.recordingCameras = 1,
+    this.recording = false,
+    this.onLive,
     this.title,
     this.header,
     super.key,
   });
+
+  /// The camera records now: its newest stretch grows to now on the bar.
+  final bool recording;
+
+  /// Opens the camera's live view; without it there is no "Live" button.
+  final VoidCallback? onLive;
 
   /// Shown in the list of the people the detect service found.
   final String cameraName;
@@ -270,6 +288,8 @@ class _RecordingsTimelinePaneState extends State<RecordingsTimelinePane> {
                   key: const Key('timeline-bar'),
                   controller: _controller,
                   day: day,
+                  recording: widget.recording,
+                  onLive: widget.onLive,
                 ),
                 const SizedBox(height: 16),
                 _MotionControls(controller: _controller),
@@ -524,10 +544,18 @@ class _PeopleList extends StatelessWidget {
 /// below them (only the motion with "Motion only"). Tap plays from that time; dragging moves
 /// the stretch; pressing and holding shows the time under the finger and plays it on release.
 class _HourBar extends StatefulWidget {
-  const _HourBar({super.key, required this.controller, required this.day});
+  const _HourBar({
+    super.key,
+    required this.controller,
+    required this.day,
+    required this.recording,
+    required this.onLive,
+  });
 
   final RecordingTimelineController controller;
   final DateTime day;
+  final bool recording;
+  final VoidCallback? onLive;
 
   @override
   State<_HourBar> createState() => _HourBarState();
@@ -540,43 +568,60 @@ class _HourBarState extends State<_HourBar> {
   static const _minimumMark = 3.0;
   static const _motionColor = Color(0xFFE08600);
 
-  late TimelineWindow _window = _initialWindow(TimelineZoom.hour);
+  /// A recording this close to now is still being written, so its stretch grows to now.
+  static const _stillRecording = Duration(minutes: 2);
+
+  late TimelineWindow _window = _initialWindow(TimelineZoom.halfHour);
+
+  /// While the person drags, playback does not move the bar under their finger.
+  bool _dragging = false;
+
+  /// Redraws now and then while the camera records, so the newest stretch grows.
+  Timer? _grow;
 
   /// The x of the finger while it is held down, to show the time under it.
   double? _pressX;
-
-  /// Where the video is on the bar: the playing file's start plus the player's position.
-  DateTime? _head;
-  DateTime? _headFrom;
 
   @override
   void initState() {
     super.initState();
     widget.controller.player.position.addListener(_follow);
+    if (widget.recording) {
+      _grow = Timer.periodic(const Duration(seconds: 5), (_) {
+        if (_growingUntil() != null) setState(() {});
+      });
+    }
   }
 
   @override
   void dispose() {
+    _grow?.cancel();
     widget.controller.player.position.removeListener(_follow);
     super.dispose();
   }
 
-  // Moves the line with the video. The window goes along when playback jumps elsewhere (a tap,
-  // the next motion) or runs past its edge, but not while the person looks at another stretch.
+  // The recordings run under the middle line as the video plays; not while the person drags.
   void _follow() {
     final controller = widget.controller;
-    final playing = controller.playing;
-    final head = playing?.start.add(controller.player.position.value.position);
-    final previous = _head;
-    final jumped = controller.playingFrom != _headFrom;
+    final head = controller.playing?.start.add(
+      controller.player.position.value.position,
+    );
     setState(() {
-      _head = head;
-      _headFrom = controller.playingFrom;
-      if (head == null || _window.contains(head)) return;
-      if (jumped || (previous != null && _window.contains(previous))) {
+      if (head != null && !_dragging) {
         _window = TimelineWindow.around(widget.day, _window.zoom, head);
       }
     });
+  }
+
+  // While the camera records, the newest stretch grows to now.
+  DateTime? _growingUntil() {
+    final timeline = widget.controller.timeline;
+    if (!widget.recording || timeline.isEmpty) return null;
+    final now = widget.controller.wallNow;
+    final last = timeline.last.end;
+    return now.isAfter(last) && now.difference(last) < _stillRecording
+        ? now
+        : null;
   }
 
   // Opens on what is playing, or else on the day's latest recording.
@@ -584,6 +629,7 @@ class _HourBarState extends State<_HourBar> {
     final controller = widget.controller;
     final focus =
         controller.playingFrom ??
+        _growingUntil() ??
         (controller.timeline.isEmpty
             ? widget.day
             : controller.timeline.last.end);
@@ -613,6 +659,11 @@ class _HourBarState extends State<_HourBar> {
     String clock(DateTime time) => withSeconds
         ? DateFormat.Hms(locale).format(time)
         : DateFormat.Hm(locale).format(time);
+    final center = _window.center;
+    final centerText =
+        '${DateFormat.yMd(locale).format(center)} '
+        '${_window.zoom == TimelineZoom.day ? DateFormat.Hm(locale).format(center) : DateFormat.Hms(locale).format(center)}';
+    final growingUntil = _growingUntil();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -625,16 +676,20 @@ class _HourBarState extends State<_HourBar> {
               label: Text(l10n.timelineZoomMinute),
             ),
             ButtonSegment(
-              value: TimelineZoom.quarterHour,
-              label: Text(l10n.timelineZoomQuarterHour),
+              value: TimelineZoom.fiveMinutes,
+              label: Text(l10n.timelineZoomFiveMinutes),
+            ),
+            ButtonSegment(
+              value: TimelineZoom.halfHour,
+              label: Text(l10n.timelineZoomHalfHour),
             ),
             ButtonSegment(
               value: TimelineZoom.hour,
               label: Text(l10n.timelineZoomHour),
             ),
             ButtonSegment(
-              value: TimelineZoom.threeHours,
-              label: Text(l10n.timelineZoomThreeHours),
+              value: TimelineZoom.day,
+              label: Text(l10n.timelineZoomDay),
             ),
           ],
           selected: {_window.zoom},
@@ -644,31 +699,27 @@ class _HourBarState extends State<_HourBar> {
         const SizedBox(height: 8),
         Row(
           children: [
-            IconButton(
-              key: const Key('timeline-earlier'),
-              tooltip: l10n.timelineEarlier,
-              onPressed: _window.atDayStart
-                  ? null
-                  : () => setState(() => _window = _window.step(-1)),
-              icon: const Icon(Icons.chevron_left),
-            ),
             Expanded(
               child: Text(
-                l10n.timelineWindow(clock(_window.start), clock(_window.end)),
-                key: const Key('timeline-window'),
+                centerText,
+                key: const Key('timeline-center'),
                 textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
               ),
             ),
-            IconButton(
-              key: const Key('timeline-later'),
-              tooltip: l10n.timelineLater,
-              onPressed: _window.atDayEnd
-                  ? null
-                  : () => setState(() => _window = _window.step(1)),
-              icon: const Icon(Icons.chevron_right),
-            ),
+            if (widget.onLive case final onLive?)
+              OutlinedButton.icon(
+                key: const Key('timeline-live'),
+                onPressed: onLive,
+                icon: const Icon(Icons.fiber_manual_record, size: 12),
+                label: Text(l10n.timelineLive),
+              ),
           ],
         ),
+        const SizedBox(height: 4),
         LayoutBuilder(
           builder: (context, constraints) {
             final width = constraints.maxWidth;
@@ -676,9 +727,16 @@ class _HourBarState extends State<_HourBar> {
             return GestureDetector(
               key: const Key('timeline-hours'),
               onTapUp: (details) => _playAt(details.localPosition.dx, width),
+              onHorizontalDragStart: (_) => _dragging = true,
               onHorizontalDragUpdate: (details) => setState(
                 () => _window = _window.panBy(details.delta.dx, width),
               ),
+              // Letting go plays from the moment under the middle line.
+              onHorizontalDragEnd: (_) {
+                _dragging = false;
+                unawaited(widget.controller.playAt(_window.center));
+              },
+              onHorizontalDragCancel: () => _dragging = false,
               onLongPressStart: (details) =>
                   setState(() => _pressX = details.localPosition.dx),
               onLongPressMoveUpdate: (details) =>
@@ -704,6 +762,7 @@ class _HourBarState extends State<_HourBar> {
                                   ? const []
                                   : controller.timeline,
                               playing: controller.playing,
+                              growUntil: growingUntil,
                               track: colors.surfaceContainerHighest,
                               recorded: colors.primary,
                               current: colors.error,
@@ -735,19 +794,17 @@ class _HourBarState extends State<_HourBar> {
                                         color: _motionColor,
                                       ),
                               ),
-                          if (controller.playing != null &&
-                              _head != null &&
-                              _window.contains(_head!))
-                            Positioned(
-                              left: _window.xOf(_head!, width) - 1,
-                              width: 2,
-                              top: 0,
-                              height: _barHeight,
-                              child: ColoredBox(
-                                key: const Key('timeline-playhead'),
-                                color: colors.error,
-                              ),
+                          // Fixed: the recordings run under it.
+                          Positioned(
+                            left: width / 2 - 1,
+                            width: 2,
+                            top: 0,
+                            height: _barHeight,
+                            child: ColoredBox(
+                              key: const Key('timeline-playhead'),
+                              color: colors.error,
                             ),
+                          ),
                         ],
                       ),
                     ),
@@ -810,6 +867,7 @@ class _HourBarPainter extends CustomPainter {
     required this.window,
     required this.segments,
     required this.playing,
+    required this.growUntil,
     required this.track,
     required this.recorded,
     required this.current,
@@ -819,6 +877,9 @@ class _HourBarPainter extends CustomPainter {
   final TimelineWindow window;
   final List<TimelineSegment> segments;
   final TimelineSegment? playing;
+
+  /// The newest stretch, still recording, is drawn up to here.
+  final DateTime? growUntil;
   final Color track;
   final Color recorded;
   final Color current;
@@ -830,8 +891,10 @@ class _HourBarPainter extends CustomPainter {
     final bar = Rect.fromLTWH(0, 12, size.width, size.height - 24);
     canvas.drawRect(bar, Paint()..color = track);
     for (final segment in segments) {
-      if (!segment.end.isAfter(window.start) ||
-          !segment.start.isBefore(window.end)) {
+      final end = segment == segments.last && growUntil != null
+          ? growUntil!
+          : segment.end;
+      if (!end.isAfter(window.start) || !segment.start.isBefore(window.end)) {
         continue;
       }
       final paint = Paint()..color = segment == playing ? current : recorded;
@@ -841,7 +904,7 @@ class _HourBarPainter extends CustomPainter {
           left,
           bar.top,
           // At least a pixel, so a short stretch is still visible.
-          x(segment.end).clamp(left + 1, size.width),
+          x(end).clamp(left + 1, size.width),
           bar.bottom,
         ),
         paint,
@@ -860,5 +923,6 @@ class _HourBarPainter extends CustomPainter {
   bool shouldRepaint(_HourBarPainter oldDelegate) =>
       oldDelegate.segments != segments ||
       oldDelegate.playing != playing ||
+      oldDelegate.growUntil != growUntil ||
       oldDelegate.window != window;
 }

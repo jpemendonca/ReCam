@@ -97,6 +97,8 @@ class _CameraListViewState extends State<CameraListView> {
       builder: (_) => RecordingsTimelineScreen(
         cameraName: camera.name,
         recordingCameras: _controller.recordingCameras,
+        recording: camera.recordingState == RecordingState.recording,
+        onLive: () => _openLive(camera),
         create: () => _controller.openRecordings(camera.id),
         brighten: () => _controller.openBrighten(camera.id),
       ),
@@ -144,7 +146,8 @@ class _CameraListViewState extends State<CameraListView> {
       body: switch (_tab) {
         1 => ListenableBuilder(
           listenable: _controller,
-          builder: (context, _) => _RecordingsTab(list: _controller),
+          builder: (context, _) =>
+              _RecordingsTab(list: _controller, onLive: _openLive),
         ),
         2 => DevicesView(
           api: widget.api,
@@ -293,9 +296,12 @@ class _CameraListViewState extends State<CameraListView> {
 
 /// The Recordings tab: a camera picker above that camera's timeline.
 class _RecordingsTab extends StatefulWidget {
-  const _RecordingsTab({required this.list});
+  const _RecordingsTab({required this.list, required this.onLive});
 
   final CameraListController list;
+
+  /// Opens a camera's live view from its timeline.
+  final void Function(CameraInfo camera) onLive;
 
   @override
   State<_RecordingsTab> createState() => _RecordingsTabState();
@@ -344,6 +350,8 @@ class _RecordingsTabState extends State<_RecordingsTab> {
     key: ValueKey(selected.id),
     cameraName: selected.name,
     recordingCameras: widget.list.recordingCameras,
+    recording: selected.recordingState == RecordingState.recording,
+    onLive: () => widget.onLive(selected),
     create: () => widget.list.openRecordings(selected.id),
     brighten: () => widget.list.openBrighten(selected.id),
     header: DropdownButton<String>(

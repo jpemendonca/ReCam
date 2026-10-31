@@ -53,7 +53,9 @@ class RecordingTimelineController extends ChangeNotifier {
     required this._segments,
     required this._peopleBoxes,
     Duration Function(DateTime utc)? utcOffsetOf,
-  }) : _utcOffsetOf = utcOffsetOf ?? ((utc) => utc.toLocal().timeZoneOffset) {
+    DateTime Function()? now,
+  }) : _utcOffsetOf = utcOffsetOf ?? ((utc) => utc.toLocal().timeZoneOffset),
+       _now = now ?? DateTime.now {
     player.onFinished = () => unawaited(_playNext());
   }
 
@@ -66,6 +68,10 @@ class RecordingTimelineController extends ChangeNotifier {
   bool _showPeople = true;
   final SegmentSource _segments;
   final Duration Function(DateTime utc) _utcOffsetOf;
+  final DateTime Function() _now;
+
+  /// Now, as the timeline shows times: on this phone's wall clock.
+  DateTime get wallNow => _wall(_now().toUtc());
 
   /// Motion plays from a little before the event, so the start of it shows.
   static const motionLead = Duration(seconds: 5);
