@@ -2487,6 +2487,15 @@ o que continua por conta de quem roda o servidor.
   - Escopo: tirar a troca global do código (o limite por IP basta); documentar
     `RECAM_TRUSTED_PROXIES` no modo bridge; sem TLS, escutar só no loopback.
   - Aceite: testes do código com erros de vários clientes e do bind sem TLS.
+
+- [x] **5.17 Pacotes do ASP.NET com correção de segurança**
+  - Origem: em 2026-10-31 o restore passou a falhar (NU1903 como erro) com alertas altos nos
+    pacotes 10.0.12 (`Microsoft.AspNetCore.Components.WebAssembly.Server`,
+    `Microsoft.AspNetCore.SignalR.Common`), e o gate travou qualquer commit.
+  - Escopo: todos os pacotes 10.0.12 do servidor, do Monitor web e dos testes vão para 10.0.14.
+  - Aceite: restore sem alerta e gate verde.
+  > Validação (2026-10-31): versões trocadas nos três `.csproj`; o restore passou sem alerta e o
+  > gate ficou verde. Só código.
 ---
 
 - [x] **11.7 [aparelho] Teste no PC antigo com o README paralelo**
