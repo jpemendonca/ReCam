@@ -1027,3 +1027,8 @@ seguinte em `docs/adr/`:
 > mostra a última imagem (13.1) com o horário, um ▶ que abre o ao vivo no próprio cartão e o
 > restante do cartão abrindo a tela do ao vivo. "Assistir todas" abre o ao vivo das câmeras online
 > na grade; nunca abre sozinho, porque cada ao vivo faz o celular transmitir. Seção 2.5.
+
+> Revisão (2026-10-31): barra do tempo com centro fixo no Monitor web (bullet 13.4). A linha do meio
+> marca o momento que toca e a faixa corre por baixo; arrastar muda o momento e soltar toca dali;
+> zooms de 1 min, 5 min, 30 min, 1 h e 1 dia; o trecho que a câmera ainda grava cresce até agora;
+> "Ao vivo" leva ao ao vivo. Saem as setas e a janela fixa. Seção 2.5.

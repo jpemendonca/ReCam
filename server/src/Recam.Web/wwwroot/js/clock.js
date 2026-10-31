@@ -1,6 +1,6 @@
 // Follows a recording as it plays, drawn on the page only (the recording stays as it is): the
-// clock over the video, and the line on the timeline bar. Runs on every "timeupdate", with no
-// round trip to .NET, which only hears when the video runs out of the bar's window.
+// clock over the video, on every "timeupdate" with no round trip to .NET. .NET hears each new
+// second, so the timeline bar keeps the moment under its middle line (bullet 13.4).
 
 const format = (seconds) => {
   const s = Math.floor(seconds) % 86400;
@@ -9,53 +9,36 @@ const format = (seconds) => {
 };
 
 // Times are seconds after the day's midnight, on the wall clock.
-const state = { video: null, show: null, window: null, wasInside: false };
+const state = { video: null, show: null, lastSecond: null };
 
 function place() {
-  const { video, window: shown } = state;
-  if (!video || !shown) {
+  const { video } = state;
+  if (!video) {
     return;
   }
   const head = state.fileStart + video.currentTime;
   state.label.textContent = format(head);
-  const inside = head >= shown.start && head < shown.end;
-  if (inside) {
-    const x = ((head - shown.start) / (shown.end - shown.start)) * shown.width;
-    state.line.setAttribute('x1', x);
-    state.line.setAttribute('x2', x);
-    state.line.style.visibility = 'visible';
-  } else {
-    state.line.style.visibility = 'hidden';
-    if (state.wasInside) {
-      shown.listener.invokeMethodAsync('OnHeadLeft', head);
-    }
+  const second = Math.floor(head);
+  if (second !== state.lastSecond) {
+    state.lastSecond = second;
+    state.listener.invokeMethodAsync('OnHead', head);
   }
-  state.wasInside = inside;
 }
 
 // A new file started: fileStart is where it begins.
-export function follow(video, label, line, fileStart) {
+export function follow(video, label, fileStart, listener) {
   if (state.video && state.show) {
     state.video.removeEventListener('timeupdate', state.show);
   }
-  Object.assign(state, { video, label, line, fileStart, show: place, wasInside: true });
+  Object.assign(state, { video, label, fileStart, listener, show: place, lastSecond: null });
   video.addEventListener('timeupdate', place);
   place();
 }
 
-// Nothing plays any more: the line goes away.
+// Nothing plays any more.
 export function stop() {
   if (state.video && state.show) {
     state.video.removeEventListener('timeupdate', state.show);
   }
-  if (state.line) {
-    state.line.style.visibility = 'hidden';
-  }
-  Object.assign(state, { video: null, show: null });
-}
-
-// The bar now shows start to end, drawn width units wide.
-export function showWindow(start, end, width, listener) {
-  state.window = { start, end, width, listener };
-  place();
+  Object.assign(state, { video: null, show: null, lastSecond: null });
 }

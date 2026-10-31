@@ -2904,6 +2904,21 @@ Decisões da conversa:
   - Aceite: testes do cálculo (posição de cada instante, arraste convertido em tempo, faixa
     crescendo) e bUnit do zoom e do "Ao vivo"; conferido no navegador, com mouse e na largura de
     celular.
+  > Em andamento (2026-10-31): feito o código. A `TimelineWindow` agora é um centro (o momento sob
+  > a linha do meio) mais o zoom; o centro fica dentro do dia, e a janela pode passar da meia-noite,
+  > onde nada é desenhado. Zooms 1 min, 5 min, 30 min (padrão), 1 h e 1 dia. A linha do meio é fixa
+  > (x=500 de 1000); o `clock.js` avisa o .NET a cada segundo novo do vídeo e a barra recentra ali,
+  > menos durante um arraste. O `timeline.js` captura o ponteiro na barra (mouse e dedo,
+  > `touch-action: none`) e manda frações da largura: toque (toca daquele ponto), arraste (um aviso
+  > por quadro, a barra acompanha) e soltar (toca do novo centro; num buraco, da próxima gravação).
+  > Com a câmera gravando, o trecho mais novo cresce até agora quando termina a menos de 2 min
+  > (`TimeProvider`, redesenho a cada 5 s). Acima da barra, a data e a hora do centro; ao lado dos
+  > zooms, "Ao vivo" leva ao ao vivo. Saíram as setas, a janela "das–às", as 60 fatias e a hora do
+  > mouse. Testes: janela (centro, meia-noite, frações em cada zoom, arraste, zoom, marcas), bUnit
+  > (toque tocando, barra correndo com o vídeo, arraste e soltar, faixa crescendo, zooms e "Ao
+  > vivo") e o `timeline.js` rodado no Node com uma barra falsa (toque trêmulo continua toque;
+  > arraste vira um aviso por quadro e um soltar). Falta: conferir no navegador, com mouse e com o
+  > dedo na largura de celular.
 
 - [ ] **13.5 [aparelho] Barra do tempo com centro fixo no app**
   - Escopo: a mesma barra da 13.4 na tela de gravações do app, arrastada com o dedo, com os mesmos

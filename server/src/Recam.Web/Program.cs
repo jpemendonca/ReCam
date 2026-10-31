@@ -42,6 +42,8 @@ builder.Services.AddTransient<InviteBrowserController>();
 builder.Services.AddTransient<JoinController>();
 builder.Services.AddTransient<TimelineController>();
 builder.Services.AddScoped<IVideoClock, JsVideoClock>();
+builder.Services.AddScoped<ITimelineGestures, JsTimelineGestures>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IPeopleOverlay, JsPeopleOverlay>();
 builder.Services.AddScoped<IPeopleBoxesStore, JsPeopleBoxesStore>();
 builder.Services.AddTransient<QuotaController>();

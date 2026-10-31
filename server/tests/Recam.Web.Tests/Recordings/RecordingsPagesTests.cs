@@ -18,6 +18,10 @@ public sealed class RecordingsPagesTests : BunitContext
     private readonly FakeVideoClock _clock = new();
     private readonly FakePeopleOverlay _overlay = new();
     private readonly FakePeopleBoxesStore _peopleBoxes = new();
+    private readonly FakeTimelineGestures _gestures = new();
+
+    // Far from the recordings below, so no stretch is still growing unless a test says so.
+    private readonly FixedTimeProvider _time = new(new DateTimeOffset(2026, 10, 31, 12, 0, 0, TimeSpan.Zero));
 
     public RecordingsPagesTests()
     {
@@ -31,13 +35,15 @@ public sealed class RecordingsPagesTests : BunitContext
         Services.AddSingleton<IPeopleOverlay>(_overlay);
         Services.AddTransient<QuotaController>();
         Services.AddSingleton<IVideoClock>(_clock);
+        Services.AddSingleton<ITimelineGestures>(_gestures);
+        Services.AddSingleton<TimeProvider>(_time);
         Services.AddSingleton<ILanguageStore>(new FakeLanguageStore());
         Services.AddSingleton<IBrightenSurface>(new FakeBrightenSurface());
         Services.AddTransient<BrightenController>();
     }
 
-    [Fact(DisplayName = "The timeline draws the recorded stretch, and clicking the hours plays it")]
-    public void Timeline_ClickHours_PlaysVideo()
+    [Fact(DisplayName = "The timeline draws the recorded stretch, and tapping the bar plays from there")]
+    public void Timeline_TapBar_PlaysVideo()
     {
         // arrange
         using var _ = Culture.Use("pt-BR");
@@ -49,13 +55,15 @@ public sealed class RecordingsPagesTests : BunitContext
         page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.recorded")));
 
         // act
-        // The hour window opens on the latest recording, 13:36 to 14:36; slot 29 is 14:05:30.
-        page.FindAll("rect.slot")[29].Click();
+        // The 30 minute window opens centered on the latest recording's end, 13:51 to 14:21.
+        _gestures.Tap(14.51 / 30);
 
         // assert
-        Assert.Equal("483.33", page.Find("rect.recorded").GetAttribute("x"));
-        Assert.Equal($"api/recordings/{_camera.Id}/a.mp4#t=30", page.Find("video").GetAttribute("src"));
+        Assert.Equal(1, _gestures.Attached);
+        page.WaitForAssertion(() => Assert.Equal($"api/recordings/{_camera.Id}/a.mp4#t=30", page.Find("video").GetAttribute("src")));
         Assert.Equal("Tocando a partir das 14:05", page.Find(".playing-from").TextContent);
+        // Playback moved the center to 14:05:30, so the stretch starts just left of the middle.
+        Assert.Equal("483", page.Find("rect.recorded").GetAttribute("x"));
         Assert.Equal("Gravações · Porta", page.Find("h1").TextContent);
     }
 
@@ -96,8 +104,8 @@ public sealed class RecordingsPagesTests : BunitContext
         ])];
         var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
         page.WaitForAssertion(() => Assert.Equal(2, page.FindAll("rect.recorded").Count));
-        // The hour window opens on the latest recording, 13:37 to 14:37; slot 28 is 14:05:30.
-        page.FindAll("rect.slot")[28].Click();
+        // The 30 minute window opens centered on 14:07, 13:52 to 14:22; 13.5 minutes in is 14:05:30.
+        _gestures.Tap(13.51 / 30);
 
         // act
         page.Find("video").TriggerEvent("onended", EventArgs.Empty);
@@ -108,8 +116,8 @@ public sealed class RecordingsPagesTests : BunitContext
         Assert.NotNull(page.Find(".player .video-clock"));
     }
 
-    [Fact(DisplayName = "The line on the bar follows the window shown, and the window goes along when the video runs past it")]
-    public void Timeline_Playhead_WindowFollowsVideo()
+    [Fact(DisplayName = "The recordings run under the fixed middle line as the video plays")]
+    public void Timeline_Playing_RecordingsRunUnderTheMiddleLine()
     {
         // arrange
         using var _ = Culture.Use("pt-BR");
@@ -119,18 +127,67 @@ public sealed class RecordingsPagesTests : BunitContext
             [new RecordingSegmentInfo(start, start.AddMinutes(1), $"/api/recordings/{_camera.Id}/a.mp4")])];
         var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
         page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.recorded")));
-        page.FindAll("button.zoom")[0].Click();
-        page.FindAll("rect.slot")[10].Click();
-        var shown = _clock.Windows[^1];
+        // 5 minutes around 14:06; a quarter in is 14:04:45, a gap, so the recording plays from 14:05.
+        page.FindAll("button.zoom")[1].Click();
+        _gestures.Tap(0.25);
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("video")));
+        var x = page.Find("rect.recorded").GetAttribute("x");
 
         // act
-        _clock.RunPast(new DateTime(2026, 9, 25, 14, 6, 10));
+        _clock.PlayTo(new DateTime(2026, 9, 25, 14, 5, 40));
 
         // assert
-        Assert.Equal((new DateTime(2026, 9, 25, 14, 5, 30), new DateTime(2026, 9, 25, 14, 6, 30)), (shown.Start, shown.End));
-        page.WaitForAssertion(() => Assert.Equal("14:05:40 – 14:06:40", page.Find(".window").TextContent));
-        Assert.Equal(new DateTime(2026, 9, 25, 14, 5, 40), _clock.Windows[^1].Start);
-        Assert.NotNull(page.Find("svg line.playhead"));
+        page.WaitForAssertion(() => Assert.Equal("25/09/2026 14:05:40", page.Find(".center-time").TextContent));
+        Assert.Equal("500", x);
+        Assert.Equal("366.67", page.Find("rect.recorded").GetAttribute("x"));
+        Assert.Equal("500", page.Find("line.playhead").GetAttribute("x1"));
+    }
+
+    [Fact(DisplayName = "Dragging moves the moment under the middle line, and letting go plays from it")]
+    public void Timeline_DragAndDrop_PlaysFromTheCenter()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(30),
+            [new RecordingSegmentInfo(start, start.AddMinutes(30), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Equal("25/09/2026 14:30:00", page.Find(".center-time").TextContent));
+        page.FindAll("button.zoom")[1].Click();
+
+        // act
+        _gestures.Drag(0.2);
+        page.WaitForAssertion(() => Assert.Equal("25/09/2026 14:29:00", page.Find(".center-time").TextContent));
+        _clock.PlayTo(new DateTime(2026, 9, 25, 14, 0, 5));
+        var whileDragging = page.Find(".center-time").TextContent;
+        _gestures.Drop(0.4);
+
+        // assert
+        Assert.Equal("25/09/2026 14:29:00", whileDragging);
+        page.WaitForAssertion(() => Assert.Equal($"api/recordings/{_camera.Id}/a.mp4#t=1680", page.Find("video").GetAttribute("src")));
+        Assert.Equal("25/09/2026 14:28:00", page.Find(".center-time").TextContent);
+    }
+
+    [Fact(DisplayName = "While the camera records, the newest stretch grows to now, and Live opens the live view")]
+    public void Timeline_Recording_GrowsToNow()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(5),
+            [new RecordingSegmentInfo(start, start.AddMinutes(5), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        _time.Now = start.AddMinutes(6);
+
+        // act
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+
+        // assert
+        // Centered on now, 14:06: the stretch runs from 14:00 (one fifth of the bar) to the middle.
+        page.WaitForAssertion(() => Assert.Equal("200", page.Find("rect.recorded").GetAttribute("width")));
+        Assert.Equal("300", page.Find("rect.recorded").GetAttribute("x"));
+        Assert.Equal($"cameras/{_camera.Id}", page.Find("a.go-live").GetAttribute("href"));
     }
 
     [Fact(DisplayName = "The timeline places its hour labels with attributes, since the CSP refuses inline styles")]
@@ -152,7 +209,6 @@ public sealed class RecordingsPagesTests : BunitContext
         var labels = page.FindAll("svg.ticks text");
         Assert.NotEmpty(labels);
         Assert.All(labels, label => Assert.EndsWith("%", label.GetAttribute("x"), StringComparison.Ordinal));
-        Assert.Equal("hidden", page.Find("line.playhead").GetAttribute("visibility"));
     }
 
     [Fact(DisplayName = "Motion shows on the bar; Next motion plays it and Motion only hides the rest")]
@@ -178,8 +234,8 @@ public sealed class RecordingsPagesTests : BunitContext
         Assert.Equal("Movimentos neste dia: 1", page.Find(".motion-summary").TextContent);
         Assert.Empty(page.FindAll("rect.recorded"));
         var mark = page.Find("rect.motion");
-        // The hour window opens on the latest recording, 13:50 to 14:50.
-        Assert.Equal(("333.33", "50", "36"), (mark.GetAttribute("x"), mark.GetAttribute("width"), mark.GetAttribute("height")));
+        // Playing from 14:09:55 centers the 30 minute window there, 13:54:55 to 14:24:55.
+        Assert.Equal(("502.78", "100", "36"), (mark.GetAttribute("x"), mark.GetAttribute("width"), mark.GetAttribute("height")));
     }
 
     [Fact(DisplayName = "People get their own mark and a list of the day; a row plays it and People only hides the rest")]
@@ -200,11 +256,12 @@ public sealed class RecordingsPagesTests : BunitContext
         page.WaitForAssertion(() => Assert.Single(page.FindAll(".person-row")));
 
         // act
-        var marks = page.FindAll("rect.motion").Count;
-        var personMarks = page.FindAll("rect.motion.person").Count;
         var row = page.Find(".person-row").TextContent.Trim();
         page.Find(".person-row").Click();
         var source = page.Find("video").GetAttribute("src");
+        // Playing from 14:01:55 centers the bar there, with both events in sight.
+        var marks = page.FindAll("rect.motion").Count;
+        var personMarks = page.FindAll("rect.motion.person").Count;
         page.Find("input.only-people").Change(true);
 
         // assert
@@ -267,11 +324,11 @@ public sealed class RecordingsPagesTests : BunitContext
         _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20), [new RecordingSegmentInfo(start, start.AddMinutes(20), url)])];
         _api.SegmentPeople[url] = new SegmentPeopleInfo([new PeopleSecondInfo(3, [new PersonBoxInfo(0.1, 0.2, 0.3, 0.4)])]);
         var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
-        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("rect.slot")));
+        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("rect.recorded")));
 
         // act
-        // The hour window opens on the latest recording, 13:50 to 14:50; slot 20 is 14:10:30.
-        page.FindAll("rect.slot")[20].Click();
+        // The 30 minute window opens centered on 14:20, 14:05 to 14:35; 5.5 minutes in is 14:10:30.
+        _gestures.Tap(5.51 / 30);
         page.WaitForAssertion(() => Assert.Single(_overlay.Followed));
         var label = page.Find("input.show-people").ParentElement!.TextContent.Trim();
         page.Find("input.show-people").Change(false);
@@ -297,11 +354,11 @@ public sealed class RecordingsPagesTests : BunitContext
         _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20),
             [new RecordingSegmentInfo(start, start.AddMinutes(20), $"/api/recordings/{_camera.Id}/a.mp4")])];
         var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
-        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("rect.slot")));
+        page.WaitForAssertion(() => Assert.NotEmpty(page.FindAll("rect.recorded")));
 
         // act
-        // The hour window opens on the latest recording, 13:50 to 14:50; slot 20 is 14:10:30.
-        page.FindAll("rect.slot")[20].Click();
+        // The 30 minute window opens centered on 14:20, 14:05 to 14:35; 5.5 minutes in is 14:10:30.
+        _gestures.Tap(5.51 / 30);
         page.WaitForAssertion(() => Assert.Single(page.FindAll("video")));
 
         // assert
@@ -421,8 +478,8 @@ public sealed class RecordingsPagesTests : BunitContext
         Assert.StartsWith("A câmera já está gravando.", page.Find("section > p").TextContent, StringComparison.Ordinal);
     }
 
-    [Fact(DisplayName = "Zoom, the arrows and dragging move the window; the space in use shows on top")]
-    public void Timeline_ZoomArrowsAndDrag_MoveTheWindow()
+    [Fact(DisplayName = "Each zoom fits its span in the bar around the same center; the space in use shows on top")]
+    public void Timeline_Zoom_KeepsTheCenter()
     {
         // arrange
         using var _ = Culture.Use("pt-BR");
@@ -431,23 +488,19 @@ public sealed class RecordingsPagesTests : BunitContext
         _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(30),
             [new RecordingSegmentInfo(start, start.AddMinutes(30), $"/api/recordings/{_camera.Id}/a.mp4")])];
         var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
-        page.WaitForAssertion(() => Assert.Equal("14:00 – 15:00", page.Find(".window").TextContent));
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.recorded")));
 
         // act
-        page.FindAll("button.zoom")[1].Click();
-        var zoomed = page.Find(".window").TextContent;
-        page.Find("button.earlier").Click();
-        var earlier = page.Find(".window").TextContent;
-        page.FindAll("rect.slot")[10].MouseDown();
-        page.FindAll("rect.slot")[30].MouseUp();
-        var dragged = page.Find(".window").TextContent;
-        page.FindAll("rect.slot")[0].MouseOver();
+        var labels = page.FindAll("button.zoom").Select(button => button.TextContent).ToList();
+        page.FindAll("button.zoom")[3].Click();
+        var hourWidth = page.Find("rect.recorded").GetAttribute("width");
+        page.FindAll("button.zoom")[4].Click();
 
         // assert
-        Assert.Equal("14:22 – 14:37", zoomed);
-        Assert.Equal("14:07 – 14:22", earlier);
-        Assert.Equal("14:02 – 14:17", dragged);
-        Assert.Equal("14:02", page.Find(".hover-time").TextContent);
+        Assert.Equal(["1 min", "5 min", "30 min", "1 h", "1 dia"], labels);
+        Assert.Equal("500", hourWidth);
+        Assert.Equal("20.83", page.Find("rect.recorded").GetAttribute("width"));
+        Assert.Equal("25/09/2026 14:30", page.Find(".center-time").TextContent);
         Assert.Equal("Em uso: 0,3 de 2 GB · cabem cerca de 6,8 h", page.Find(".space").TextContent);
     }
 

@@ -10,24 +10,20 @@ public sealed class JsVideoClock(IJSRuntime js) : IVideoClock, IAsyncDisposable
     private DotNetObjectReference<JsVideoClock>? _listener;
     private DateTime _day;
 
-    public event Action<DateTime>? HeadLeftWindow;
+    public event Action<DateTime>? HeadMoved;
 
-    public async Task FollowAsync(ElementReference video, ElementReference clock, ElementReference line, DateTime fileStart) =>
-        await (await ModuleAsync()).InvokeVoidAsync("follow", video, clock, line, (fileStart - _day).TotalSeconds);
+    // Times go to the script as seconds after the file's midnight.
+    public async Task FollowAsync(ElementReference video, ElementReference clock, DateTime fileStart)
+    {
+        _day = fileStart.Date;
+        _listener ??= DotNetObjectReference.Create(this);
+        await (await ModuleAsync()).InvokeVoidAsync("follow", video, clock, (fileStart - _day).TotalSeconds, _listener);
+    }
 
     public async Task StopAsync() => await (await ModuleAsync()).InvokeVoidAsync("stop");
 
-    // Times go to the script as seconds after the day's midnight.
-    public async Task ShowWindowAsync(TimelineWindow window, double width)
-    {
-        _day = window.Day;
-        _listener ??= DotNetObjectReference.Create(this);
-        await (await ModuleAsync()).InvokeVoidAsync(
-            "showWindow", (window.Start - _day).TotalSeconds, (window.End - _day).TotalSeconds, width, _listener);
-    }
-
     [JSInvokable]
-    public void OnHeadLeft(double secondsOfDay) => HeadLeftWindow?.Invoke(_day.AddSeconds(secondsOfDay));
+    public void OnHead(double secondsOfDay) => HeadMoved?.Invoke(_day.AddSeconds(secondsOfDay));
 
     public async ValueTask DisposeAsync()
     {

@@ -337,7 +337,8 @@ public sealed class TimelineController(IRecamApi api, IPeopleBoxesStore peopleBo
         return [.. days.Reverse()];
     }
 
-    private DateTime Wall(DateTimeOffset utc) => (utc + UtcOffsetOf(utc)).UtcDateTime;
+    /// <summary>A moment as the timeline shows it, on this browser's wall clock.</summary>
+    public DateTime Wall(DateTimeOffset utc) => (utc + UtcOffsetOf(utc)).UtcDateTime;
 
     private void SetLoading()
     {

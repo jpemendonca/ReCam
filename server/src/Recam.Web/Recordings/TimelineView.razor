@@ -7,6 +7,8 @@
 @inject CameraListController Cameras
 @inject IVideoClock VideoClock
 @inject IPeopleOverlay PeopleOverlay
+@inject ITimelineGestures Gestures
+@inject TimeProvider Time
 
 @if (Timeline.Failed)
 {
@@ -44,46 +46,32 @@ else
         {
             <button class="@(zoom == Window.Zoom ? "zoom selected" : "zoom")" @onclick="() => ZoomTo(zoom)">@ZoomLabel(zoom)</button>
         }
+        <span class="spacer"></span>
+        <a class="button secondary go-live" href="cameras/@CameraId">@L["TimelineGoLive"]</a>
     </div>
-    <div class="window-row">
-        <button class="secondary earlier" title="@L["TimelineEarlier"]" aria-label="@L["TimelineEarlier"]"
-                @onclick="() => Move(-1)" disabled="@Window.AtDayStart">‹</button>
-        <span class="window">@Clock(Window.Start) – @Clock(Window.End)</span>
-        <button class="secondary later" title="@L["TimelineLater"]" aria-label="@L["TimelineLater"]"
-                @onclick="() => Move(1)" disabled="@Window.AtDayEnd">›</button>
-    </div>
+    <p class="center-time" aria-live="polite">@CenterText</p>
 
-    <svg class="hours" viewBox="0 0 @Width 36" preserveAspectRatio="none" role="img" aria-label="@L["TimelineBarLabel"]"
-         @onmouseleave="() => hovered = null">
+    @* The line in the middle stays; the recordings run under it as the video plays, and the
+       person drags them to go back or ahead. *@
+    <svg class="hours" @ref="bar" viewBox="0 0 @Width 36" preserveAspectRatio="none" role="img" aria-label="@L["TimelineBarLabel"]">
         <rect class="track" x="0" y="0" width="@Width" height="36" rx="6" />
         @if (!OnlyMarks)
         {
-            @foreach (var segment in Timeline.Timeline.Where(Shows))
+            @foreach (var (start, end, playing) in RecordedStretches())
             {
-                <rect class="@(segment == Timeline.Playing ? "recorded playing" : "recorded")"
-                      x="@X(segment.Start)" y="0" width="@SpanWidth(segment.Start, segment.End, 1)" height="36" />
+                <rect class="@(playing ? "recorded playing" : "recorded")"
+                      x="@X(start)" y="0" width="@SpanWidth(start, end, 1)" height="36" />
             }
         }
         @foreach (var mark in Timeline.ShownMotion.Where(mark => mark.End > Window.Start && mark.Start < Window.End))
         {
             <rect class="@(mark.Person == true ? "motion person" : "motion")" x="@X(mark.Start)" y="@(OnlyMarks ? 0 : 24)" width="@SpanWidth(mark.Start, mark.End, 3)" height="@(OnlyMarks ? 36 : 12)" />
         }
-        @for (var slot = 0; slot < Slots; slot++)
-        {
-            var index = slot;
-            <rect class="slot" x="@F(index * SlotWidth)" y="0" width="@F(SlotWidth)" height="36"
-                  @onclick="() => PlaySlot(index)" @onmousedown="() => pressed = index" @onmouseup="() => Release(index)"
-                  @onmouseover="() => hovered = index">
-                <title>@Clock(SlotTime(index))</title>
-            </rect>
-        }
-        @* Moved by clock.js as the video plays. *@
-        <line class="playhead" @ref="playhead" x1="0" x2="0" y1="0" y2="36" visibility="hidden" />
+        <line class="playhead" x1="@F(Width / 2)" x2="@F(Width / 2)" y1="0" y2="36" />
     </svg>
     @* An SVG of its own, not stretched like the bar, so the labels keep their shape; positions
        are attributes because the CSP refuses inline styles. *@
     <svg class="ticks" aria-hidden="true">@((MarkupString)TickLabels())</svg>
-    <p class="hover-time" aria-live="polite">@(hovered is { } over ? Clock(SlotTime(over)) : string.Empty)</p>
 
     <div class="motion-row">
         <button class="secondary previous-motion" @onclick="Timeline.PlayPreviousMotion" disabled="@(Timeline.ShownMotion.Count == 0)">@L["MotionPrevious"]</button>
@@ -166,20 +154,24 @@ else
 }
 
 @code {
-    // The bar has this many clickable slots, whatever the zoom: one per second at 1 minute, one per
-    // three minutes at 3 hours.
-    private const int Slots = 60;
     private const double Width = 1000;
-    private const double SlotWidth = Width / Slots;
+
+    /// <summary>A recording this close to now is still being written, so its stretch grows to now.</summary>
+    public static readonly TimeSpan StillRecording = TimeSpan.FromMinutes(2);
+
+    /// <summary>How often a stretch still being recorded grows on screen.</summary>
+    public static readonly TimeSpan GrowEvery = TimeSpan.FromSeconds(5);
 
     private TimelineWindow? window;
     private bool windowHasData;
     private DateTime? windowFollows;
-    private int? pressed;
-    private int? hovered;
+    private TimelineWindow? dragStart;
+    private ElementReference bar;
+    private bool barAttached;
+    private readonly CancellationTokenSource leaving = new();
 
-    // The window opens on what plays, or else on the day's latest recording, and follows playback
-    // that jumps out of it (the next motion, the next file).
+    // The window opens on what plays, or else on the day's latest recording, and moves to wherever
+    // playback starts (a tap, the next motion, a drop).
     private TimelineWindow Window
     {
         get
@@ -187,20 +179,55 @@ else
             var day = Timeline.SelectedDay!.Value.ToDateTime(TimeOnly.MinValue);
             var hasData = Timeline.Timeline.Count > 0;
             var playing = Timeline.PlayingFrom;
-            var zoom = window?.Zoom ?? TimelineZoom.Hour;
+            var zoom = window?.Zoom ?? TimelineZoom.HalfHour;
             if (window is null || window.Day != day || (hasData && !windowHasData))
             {
-                window = TimelineWindow.Around(day, zoom, playing ?? (hasData ? Timeline.Timeline[^1].End : day));
+                window = TimelineWindow.Around(day, zoom, playing ?? LatestRecorded() ?? day);
                 windowHasData = hasData;
                 windowFollows = playing;
             }
-            else if (playing is { } from && from != windowFollows && (from < window.Start || from >= window.End))
+            else if (playing is { } from && from != windowFollows && dragStart is null)
             {
                 window = TimelineWindow.Around(day, zoom, from);
                 windowFollows = from;
             }
 
             return window;
+        }
+    }
+
+    private DateTime Now => Timeline.Wall(Time.GetUtcNow());
+
+    // The newest stretch grows to now while the camera records into it.
+    private DateTime? GrowingUntil
+    {
+        get
+        {
+            if (Timeline.Timeline.Count == 0
+                || Cameras.Camera(CameraId)?.ShownRecordingState != CameraRecordingState.Recording)
+            {
+                return null;
+            }
+
+            var now = Now;
+            var last = Timeline.Timeline[^1];
+            return now > last.End && now - last.End < StillRecording ? now : null;
+        }
+    }
+
+    private DateTime? LatestRecorded() => GrowingUntil ?? (Timeline.Timeline.Count > 0 ? Timeline.Timeline[^1].End : null);
+
+    private IEnumerable<(DateTime Start, DateTime End, bool Playing)> RecordedStretches()
+    {
+        var growing = GrowingUntil;
+        for (var index = 0; index < Timeline.Timeline.Count; index++)
+        {
+            var segment = Timeline.Timeline[index];
+            var end = growing is { } until && index == Timeline.Timeline.Count - 1 ? until : segment.End;
+            if (end > Window.Start && segment.Start < Window.End)
+            {
+                yield return (segment.Start, end, segment == Timeline.Playing);
+            }
         }
     }
 
@@ -211,8 +238,6 @@ else
     private PersonTrack? boxesFollow;
     private ElementReference clock;
     private TimelineSegment? clockFollows;
-    private ElementReference playhead;
-    private TimelineWindow? windowShown;
 
     /// <summary>The camera whose recordings show; changing it loads the other camera.</summary>
     [Parameter, EditorRequired]
@@ -223,7 +248,11 @@ else
         Timeline.Changed += OnChanged;
         Brighten.Changed += OnChanged;
         Cameras.Changed += OnChanged;
-        VideoClock.HeadLeftWindow += OnHeadLeftWindow;
+        VideoClock.HeadMoved += OnHeadMoved;
+        Gestures.Tapped += OnTapped;
+        Gestures.Dragging += OnDragging;
+        Gestures.Dropped += OnDropped;
+        _ = GrowAsync();
     }
 
     protected override async Task OnParametersSetAsync()
@@ -243,7 +272,33 @@ else
         Timeline.Changed -= OnChanged;
         Brighten.Changed -= OnChanged;
         Cameras.Changed -= OnChanged;
-        VideoClock.HeadLeftWindow -= OnHeadLeftWindow;
+        VideoClock.HeadMoved -= OnHeadMoved;
+        Gestures.Tapped -= OnTapped;
+        Gestures.Dragging -= OnDragging;
+        Gestures.Dropped -= OnDropped;
+        leaving.Cancel();
+        leaving.Dispose();
+    }
+
+    // Redraws now and then, so a stretch still being recorded grows to now.
+    private async Task GrowAsync()
+    {
+        var token = leaving.Token;
+        try
+        {
+            using var timer = new PeriodicTimer(GrowEvery, Time);
+            while (await timer.WaitForNextTickAsync(token))
+            {
+                if (Timeline.SelectedDay is not null && GrowingUntil is not null)
+                {
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // The page closed.
+        }
     }
 
     // The filter goes on again after every render: the file, and the <video>, may have changed.
@@ -269,14 +324,13 @@ else
             }
         }
 
-        if (window is { } shown && shown != windowShown)
+        if (!barAttached && window is not null)
         {
-            windowShown = shown;
-            await VideoClock.ShowWindowAsync(shown, Width);
+            barAttached = true;
+            await Gestures.AttachAsync(bar);
         }
 
-        // The clock and the line restart from each file's start, so they keep going when the next
-        // file plays.
+        // The clock restarts from each file's start, so it keeps going when the next file plays.
         if (Timeline.Playing is not { } playing)
         {
             if (clockFollows is not null)
@@ -288,14 +342,12 @@ else
         else if (playing != clockFollows)
         {
             clockFollows = playing;
-            await VideoClock.FollowAsync(video, clock, playhead, playing.Start);
+            await VideoClock.FollowAsync(video, clock, playing.Start);
         }
     }
 
     // The bar shows only the marks, full height, when either filter is on.
     private bool OnlyMarks => Timeline.OnlyMotion || (Timeline.OnlyPeople && Timeline.PeopleAnalyzed);
-
-    private bool Shows(TimelineSegment segment) => segment.End > Window.Start && segment.Start < Window.End;
 
     private string X(DateTime time) => F(Math.Clamp(Window.FractionOf(time), 0, 1) * Width);
 
@@ -313,15 +365,14 @@ else
     private string TickLabels() => string.Concat(Window.Ticks.Select(tick =>
         $"<text x=\"{F(Window.FractionOf(tick) * 100)}%\" y=\"12\" text-anchor=\"middle\">{WebUtility.HtmlEncode(Clock(tick))}</text>"));
 
-    private DateTime SlotTime(int slot) => Window.TimeAt((slot + 0.5) / Slots);
-
     private string Clock(DateTime time) =>
         time.ToString(Window.Zoom == TimelineZoom.Minute ? "T" : "t", CultureInfo.CurrentCulture);
 
     private string ZoomLabel(TimelineZoom zoom) => L[zoom == TimelineZoom.Minute ? "TimelineZoomMinute"
-        : zoom == TimelineZoom.QuarterHour ? "TimelineZoomQuarterHour"
+        : zoom == TimelineZoom.FiveMinutes ? "TimelineZoomFiveMinutes"
+        : zoom == TimelineZoom.HalfHour ? "TimelineZoomHalfHour"
         : zoom == TimelineZoom.Hour ? "TimelineZoomHour"
-        : "TimelineZoomThreeHours"];
+        : "TimelineZoomDay"];
 
     // The space is shared, so the hours it holds shrink with every camera that records.
     private string SpaceText(QuotaInfo quota)
@@ -333,32 +384,56 @@ else
             QuotaController.HoursFor(quota.QuotaMb, recording).ToString("0.#", CultureInfo.CurrentCulture)];
     }
 
+    // The date and the moment under the middle line; seconds matter except on the whole day.
+    private string CenterText =>
+        $"{Window.Center.ToString("d", CultureInfo.CurrentCulture)} {Window.Center.ToString(Window.Zoom == TimelineZoom.Day ? "t" : "T", CultureInfo.CurrentCulture)}";
+
     private void ZoomTo(TimelineZoom zoom) => window = Window.ZoomTo(zoom);
-
-    private void Move(int windows) => window = Window.Step(windows);
-
-    private void PlaySlot(int slot) => Timeline.PlayAt(SlotTime(slot));
-
-    // Pressing on one slot and letting go on another drags the window.
-    private void Release(int slot)
-    {
-        if (pressed is { } from && from != slot)
-        {
-            window = Window.PanBy((double)(slot - from) / Slots);
-        }
-
-        pressed = null;
-    }
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
 
-    // The video ran past the edge of the window: the window goes along.
-    private void OnHeadLeftWindow(DateTime head) => InvokeAsync(() =>
+    // The recordings run under the middle line as the video plays; not while the person drags.
+    private void OnHeadMoved(DateTime head) => InvokeAsync(() =>
     {
-        if (window is { } shown)
+        if (window is { } shown && dragStart is null)
         {
             window = TimelineWindow.Around(shown.Day, shown.Zoom, head);
             StateHasChanged();
         }
+    });
+
+    // A tap plays from the moment under the finger.
+    private void OnTapped(double fraction) => InvokeAsync(() =>
+    {
+        if (window is not null)
+        {
+            Timeline.PlayAt(Window.TimeAt(fraction));
+        }
+    });
+
+    private void OnDragging(double fraction) => InvokeAsync(() =>
+    {
+        if (window is null)
+        {
+            return;
+        }
+
+        dragStart ??= Window;
+        window = dragStart.PanBy(fraction);
+        StateHasChanged();
+    });
+
+    // Letting go plays from the moment under the middle line.
+    private void OnDropped(double fraction) => InvokeAsync(() =>
+    {
+        if (window is null)
+        {
+            return;
+        }
+
+        window = (dragStart ?? Window).PanBy(fraction);
+        dragStart = null;
+        Timeline.PlayAt(window.Center);
+        StateHasChanged();
     });
 }
