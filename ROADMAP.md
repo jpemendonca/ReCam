@@ -2791,7 +2791,7 @@ Decisões da conversa:
   > 7,5%, temperatura até 66 °C. A lista de pessoas e as caixas no player funcionaram. O tempo por
   > segmento e o atraso do ao vivo não entraram no relatório.
 
-- [ ] **12.6 Lista "Pessoas neste dia": mais recentes primeiro e altura limitada**
+- [ ] **12.6 Lista "Pessoas neste dia": mais recentes primeiro e altura limitada** (substituído pelo 13.6 em 2026-10-31; não executar)
   - Origem: teste do autor em 2026-09-28. Num dia com muitas passagens, a lista cresce sem fim e
     empurra o player para baixo, e começa pela mais antiga.
   - Escopo:
@@ -2811,6 +2811,83 @@ Decisões da conversa:
   - Aceite: README sem aparelho, marca ou máquina do autor; só recursos que existem.
   > Validação (2026-10-12): README e imagens feitos como descrito. Só documentação; a renderização
   > no GitHub não foi conferida antes do push.
+
+## Fase 13: cara de app de câmera
+
+Pedido do autor em 2026-10-31, com prints de um app comercial de câmeras como referência. Duas
+frentes: um painel com todas as câmeras (mosaico) e uma barra do tempo que corre sob uma linha fixa
+no meio, com os eventos em cima. Cada tela vale para o navegador e para o app.
+
+Decisões da conversa:
+
+- O mosaico mostra a última imagem de cada câmera, não o ao vivo de todas. Abrir todas ao vivo
+  faria todos os celulares transmitirem (calor, bateria) e um Monitor fraco decodificar vários
+  vídeos ao mesmo tempo. Tocar num quadrado abre o ao vivo dela; "Assistir todas" fica como opção.
+- A última imagem sai das gravações, pelo FFmpeg do serviço `motion`, que já abre cada segmento. O
+  `Recam.Server` continua sem processar vídeo.
+- Na barra do tempo, os eventos substituem a lista "Pessoas neste dia" (12.6).
+
+- [ ] **13.1 Última imagem de cada câmera**
+  - Escopo:
+    - O `motion.sh`, ao terminar um segmento, salva o último quadro como `<segmento>.jpg` ao lado
+      do `.mp4` (largura de 480 px, qualidade média), antes de escrever o `.motion`.
+    - O servidor cifra o `.jpg` junto com o segmento (9.13) e a limpeza da cota o apaga junto.
+    - `GET /api/cameras/{id}/thumbnail` devolve a imagem do segmento mais recente que tenha uma,
+      decifrada, com o horário dela num cabeçalho; 404 quando não há nenhuma. Só Monitores ativos.
+      A leitura passa pelo `RecordingStore`.
+    - Revisão no `SPECS.md` (2.4 e 5.5).
+  - Aceite: teste do `motion.sh` num segmento de exemplo gerando o `.jpg`; teste de integração da
+    rota (imagem mais recente, 404 sem imagem, aparelho que não é Monitor recusado, arquivo
+    cifrado em disco).
+
+- [ ] **13.2 Mosaico no navegador**
+  - Escopo:
+    - A tela inicial do Monitor web vira uma grade com uma célula por câmera: a última imagem
+      (13.1), o nome, a bateria, o estado (online, gravando) e o horário da imagem. Duas colunas no
+      computador, uma no celular.
+    - Câmera sem imagem mostra um ícone no lugar.
+    - A imagem se atualiza sozinha a cada minuto e quando a câmera muda de estado.
+    - Tocar numa célula abre o ao vivo dela. Um botão "Assistir todas" abre o ao vivo de todas na
+      mesma grade, cada uma com o próprio botão de fechar.
+    - Textos nos `.resx`, en e pt.
+  - Aceite: bUnit da grade (célula com imagem, sem imagem, toque abrindo o ao vivo, "Assistir
+    todas"); conferido no navegador com duas câmeras.
+
+- [ ] **13.3 [aparelho] Mosaico no app**
+  - Escopo: a aba Monitor do app ganha a mesma grade da 13.2, com a mesma atualização e o mesmo
+    toque para o ao vivo. "Assistir todas" abre no máximo 4 ao vivo de uma vez. Textos nos ARB, en
+    e pt.
+  - Aceite: teste de widget da grade; conferido no Redmi 6A com duas câmeras.
+
+- [ ] **13.4 Barra do tempo com centro fixo no navegador**
+  - Escopo:
+    - Uma linha fixa no meio da barra marca o momento que toca. Enquanto o vídeo anda, a faixa corre
+      por baixo dela; arrastar a faixa (mouse ou dedo) muda o momento e, ao soltar, o vídeo toca dali.
+    - O zoom escolhe quanto tempo cabe na barra: 1 min, 5 min, 30 min, 1 h e 1 dia. Ex.: 30 min às
+      11:15 mostra das 10:30 às 12:00. As marcas de hora se ajustam ao zoom.
+    - A gravação aparece como uma faixa contínua com buracos onde não gravou, e cresce sozinha até o
+      agora enquanto a câmera grava.
+    - Um botão "Ao vivo" leva ao agora e abre o ao vivo.
+    - Substitui as setas, os botões de janela e as fatias clicáveis de hoje.
+  - Aceite: testes do cálculo (posição de cada instante, arraste convertido em tempo, faixa
+    crescendo) e bUnit do zoom e do "Ao vivo"; conferido no navegador, com mouse e na largura de
+    celular.
+
+- [ ] **13.5 [aparelho] Barra do tempo com centro fixo no app**
+  - Escopo: a mesma barra da 13.4 na tela de gravações do app, arrastada com o dedo, com os mesmos
+    zooms e o botão "Ao vivo".
+  - Aceite: testes de widget do arraste e do zoom; conferido no Redmi 6A.
+
+- [ ] **13.6 Eventos na barra do tempo**
+  - Escopo:
+    - Acima da faixa de gravação, cada evento de movimento vira uma pílula do tamanho do evento:
+      amarela com o ícone de pessoa quando teve pessoa (12.2), cinza quando foi só movimento.
+      Evento curto demais para o zoom ganha largura mínima, e o ícone aparece sempre.
+    - Tocar numa pílula pula para o começo do evento.
+    - "Só pessoas" esconde as pílulas cinzas. A lista "Pessoas neste dia" sai do navegador e do app.
+    - Navegador e app.
+  - Aceite: bUnit e teste de widget (pílula com pessoa tem o ícone, toque pula para o evento, "Só
+    pessoas" filtra); conferido nos dois com um dia de movimento e pessoas.
 
 ## Fora da fila (anotado, não executar)
 
