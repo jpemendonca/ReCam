@@ -22,6 +22,7 @@ public sealed class LiveViewTests : BunitContext
         Services.AddSingleton<IDeviceHub>(_hub);
         Services.AddSingleton<ILiveVideo>(_video);
         Services.AddSingleton<CameraListController>();
+        Services.AddSingleton<ThumbnailController>();
         Services.AddSingleton<SoundChoice>();
         Services.AddTransient<LiveController>();
         Services.AddSingleton<IBrightenSurface>(new FakeBrightenSurface());

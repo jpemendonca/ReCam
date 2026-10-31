@@ -22,6 +22,7 @@ public sealed class AddDevicePanelTests : BunitContext
         Services.AddSingleton<IRecamApi>(_api);
         Services.AddSingleton<IDeviceHub>(new FakeDeviceHub());
         Services.AddSingleton<CameraListController>();
+        Services.AddSingleton<ThumbnailController>();
         Services.AddTransient<StartController>();
         Services.AddSingleton(_add);
     }

@@ -20,6 +20,7 @@ public sealed class CameraListTests : BunitContext
         Services.AddSingleton<IRecamApi>(_api);
         Services.AddSingleton<IDeviceHub>(_hub);
         Services.AddSingleton<CameraListController>();
+        Services.AddSingleton<ThumbnailController>();
         Services.AddSingleton(_video);
         Services.AddTransient<ILiveVideo>(provider => provider.GetRequiredService<FakeLiveVideo>());
         Services.AddSingleton<SoundChoice>();
@@ -161,8 +162,8 @@ public sealed class CameraListTests : BunitContext
         Assert.EndsWith($"/cameras/{camera.Id}", navigation.Uri, StringComparison.Ordinal);
     }
 
-    [Fact(DisplayName = "Show picture opens a live preview in the card, which closes by itself and stops watching")]
-    public void Preview_Open_ClosesByItself()
+    [Fact(DisplayName = "Play opens the live video in the card, which closes by itself and stops watching")]
+    public void Play_OpensLive_ClosesByItself()
     {
         // arrange
         using var _ = Culture.Use("pt-BR");
@@ -172,14 +173,81 @@ public sealed class CameraListTests : BunitContext
         Assert.Empty(list.FindAll(".preview"));
 
         // act
-        list.Find("button.preview-toggle").Click();
+        list.Find("button.play").Click();
 
         // assert
         list.WaitForAssertion(() => Assert.Contains($"WatchCamera {camera.Id}", _hub.Calls));
-        Assert.Equal("Esconder imagem", list.Find("button.preview-toggle").TextContent.Trim());
+        Assert.Single(list.FindAll("button.close-live"));
         list.WaitForAssertion(() => Assert.Empty(list.FindAll(".preview")), TimeSpan.FromSeconds(5));
         list.WaitForAssertion(() => Assert.Contains($"UnwatchCamera {camera.Id}", _hub.Calls));
-        Assert.Equal("Ver imagem", list.Find("button.preview-toggle").TextContent.Trim());
+        Assert.Single(list.FindAll("button.play"));
+    }
+
+    [Fact(DisplayName = "Each card shows the camera's newest picture and when it was filmed, or says it has none")]
+    public void Render_Pictures_ShowsPictureOrNote()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var porta = Support.Cameras.Make("Porta");
+        var sala = Support.Cameras.Make("Sala");
+        _api.Cameras.AddRange([porta, sala]);
+        var takenAt = new DateTimeOffset(2026, 10, 31, 14, 5, 0, TimeSpan.Zero);
+        _api.Thumbnails[porta.Id] = new ThumbnailInfo("data:image/jpeg;base64,AAAA", takenAt);
+
+        // act
+        var list = Render<CameraList>();
+
+        // assert
+        list.WaitForAssertion(() => Assert.Single(list.FindAll("img.picture")));
+        Assert.Equal("data:image/jpeg;base64,AAAA", list.Find("img.picture").GetAttribute("src"));
+        Assert.Equal($"Imagem das {takenAt.ToLocalTime():HH:mm}", list.Find(".taken").TextContent);
+        Assert.Equal("Ainda sem imagem", list.Find(".no-picture").TextContent);
+    }
+
+    [Fact(DisplayName = "Pictures are asked again on a timer, and no more once the page closes")]
+    public async Task Pictures_Timer_AskAgainUntilLeaving()
+    {
+        // arrange
+        var camera = Support.Cameras.Make("Porta");
+        _api.Cameras.Add(camera);
+        var list = Render<CameraList>(parameters => parameters.Add(cameras => cameras.PicturesEvery, TimeSpan.FromMilliseconds(100)));
+
+        // act
+        list.WaitForAssertion(() => Assert.True(_api.ThumbnailsAsked.GetValueOrDefault(camera.Id) >= 3), TimeSpan.FromSeconds(5));
+        var whileOpen = _api.ThumbnailsAsked[camera.Id];
+        await DisposeComponentsAsync();
+        var afterLeaving = _api.ThumbnailsAsked[camera.Id];
+        await Task.Delay(300, Xunit.TestContext.Current.CancellationToken);
+
+        // assert
+        Assert.True(whileOpen >= 3);
+        Assert.Equal(afterLeaving, _api.ThumbnailsAsked[camera.Id]);
+    }
+
+    [Fact(DisplayName = "Watch all opens every online camera live, and Close all closes them")]
+    public void WatchAll_OpensAndClosesEveryOnlineCamera()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var porta = Support.Cameras.Make("Porta");
+        var sala = Support.Cameras.Make("Sala");
+        var quintal = Support.Cameras.Make("Quintal", online: false);
+        _api.Cameras.AddRange([porta, sala, quintal]);
+        var list = Render<CameraList>();
+
+        // act
+        list.Find("button.watch-all").Click();
+        var opened = list.FindAll(".preview").Count;
+        var label = list.Find("button.watch-all").TextContent.Trim();
+        list.Find("button.watch-all").Click();
+
+        // assert
+        Assert.Equal(2, opened);
+        Assert.Equal("Fechar todas", label);
+        Assert.Empty(list.FindAll(".preview"));
+        Assert.Equal("Assistir todas", list.Find("button.watch-all").TextContent.Trim());
+        list.WaitForAssertion(() => Assert.Contains($"UnwatchCamera {sala.Id}", _hub.Calls));
+        Assert.DoesNotContain($"WatchCamera {quintal.Id}", _hub.Calls);
     }
 
     [Fact(DisplayName = "A card shows the flashlight while it is on, and follows the camera's reports")]

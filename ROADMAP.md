@@ -2861,6 +2861,18 @@ Decisões da conversa:
     - Textos nos `.resx`, en e pt.
   - Aceite: bUnit da grade (célula com imagem, sem imagem, toque abrindo o ao vivo, "Assistir
     todas"); conferido no navegador com duas câmeras.
+  > Em andamento (2026-10-31): feito o código. A lista de câmeras virou o mosaico: cada cartão
+  > abre com a última imagem (16:9, buscada pela API como `data:` URL, que a CSP já aceita), o
+  > horário dela, "Ainda sem imagem" quando não há, e um botão ▶ que abre o ao vivo dentro do
+  > próprio cartão, com ✕ para fechar (o mesmo `CameraPreview` de antes, que fecha sozinho em 2
+  > min). Tocar no resto do cartão abre a tela do ao vivo, como antes. "Assistir todas" / "Fechar
+  > todas" aparece com duas ou mais câmeras e só abre as online. O `ThumbnailController` pede as
+  > imagens ao abrir, a cada minuto e quando uma câmera entra, sai ou começa/para de transmitir;
+  > se o pedido falha, a imagem anterior fica. Duas colunas no computador, uma abaixo de 700 px. O
+  > botão "Ver imagem" saiu (o ▶ faz o papel dele). Testes: bUnit (imagem e horário, sem imagem,
+  > ▶ abrindo e fechando sozinho, "Assistir todas" sem a câmera offline, timer parando ao sair) e
+  > controller (só pede de novo quando algo muda; mantém a imagem na falha). Falta: conferir no
+  > navegador com duas câmeras.
 
 - [ ] **13.3 [aparelho] Mosaico no app**
   - Escopo: a aba Monitor do app ganha a mesma grade da 13.2, com a mesma atualização e o mesmo

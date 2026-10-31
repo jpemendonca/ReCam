@@ -50,6 +50,9 @@ public interface IRecamApi
     /// </summary>
     Task<SegmentPeopleInfo?> GetSegmentPeopleAsync(string segmentUrl, CancellationToken cancellationToken);
 
+    /// <summary>The camera's newest recorded picture; null while it has none.</summary>
+    Task<ThumbnailInfo?> GetThumbnailAsync(Guid cameraId, CancellationToken cancellationToken);
+
     Task<QuotaInfo> GetQuotaAsync(CancellationToken cancellationToken);
 
     Task SetQuotaAsync(int megabytes, CancellationToken cancellationToken);

@@ -33,6 +33,7 @@ builder.Services.AddTransient<ILiveVideo, JsLiveVideo>();
 builder.Services.AddScoped<StartController>();
 builder.Services.AddTransient<ConnectController>();
 builder.Services.AddScoped<CameraListController>();
+builder.Services.AddScoped<ThumbnailController>();
 builder.Services.AddScoped<SoundChoice>();
 builder.Services.AddTransient<LiveController>();
 builder.Services.AddTransient<AddDeviceController>();

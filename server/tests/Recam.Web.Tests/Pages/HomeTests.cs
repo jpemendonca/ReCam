@@ -20,6 +20,7 @@ public sealed class HomeTests : BunitContext
         Services.AddTransient<StartController>();
         Services.AddSingleton<IDeviceHub>(new FakeDeviceHub());
         Services.AddSingleton<CameraListController>();
+        Services.AddSingleton<ThumbnailController>();
         Services.AddTransient<AddDeviceController>();
         Services.AddSingleton<ConnectController>();
     }

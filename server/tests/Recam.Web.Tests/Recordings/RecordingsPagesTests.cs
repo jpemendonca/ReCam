@@ -26,6 +26,7 @@ public sealed class RecordingsPagesTests : BunitContext
         Services.AddSingleton<IRecamApi>(_api);
         Services.AddSingleton<IDeviceHub>(new FakeDeviceHub());
         Services.AddSingleton<CameraListController>();
+        Services.AddSingleton<ThumbnailController>();
         Services.AddTransient(_ => new TimelineController(_api, _peopleBoxes) { UtcOffsetOf = _ => TimeSpan.Zero });
         Services.AddSingleton<IPeopleOverlay>(_overlay);
         Services.AddTransient<QuotaController>();

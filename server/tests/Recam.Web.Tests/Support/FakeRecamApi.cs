@@ -231,6 +231,19 @@ public sealed class FakeRecamApi : IRecamApi
         return Task.CompletedTask;
     }
 
+    /// <summary>Each camera's newest picture; a camera missing here has none.</summary>
+    public Dictionary<Guid, ThumbnailInfo> Thumbnails { get; } = [];
+
+    /// <summary>How many times each camera's picture was asked.</summary>
+    public Dictionary<Guid, int> ThumbnailsAsked { get; } = [];
+
+    public Task<ThumbnailInfo?> GetThumbnailAsync(Guid cameraId, CancellationToken cancellationToken)
+    {
+        ThrowIfOffline();
+        ThumbnailsAsked[cameraId] = ThumbnailsAsked.GetValueOrDefault(cameraId) + 1;
+        return Task.FromResult(Thumbnails.GetValueOrDefault(cameraId));
+    }
+
     public Task<QuotaInfo> GetQuotaAsync(CancellationToken cancellationToken)
     {
         ThrowIfOffline();

@@ -21,6 +21,7 @@ public sealed class MainLayoutTests : BunitContext
         Services.AddSingleton<StartController>();
         Services.AddSingleton<IDeviceHub>(_hub);
         Services.AddSingleton<CameraListController>();
+        Services.AddSingleton<ThumbnailController>();
     }
 
     [Fact(DisplayName = "A Monitor sees the navigation and Sign out in the top bar")]

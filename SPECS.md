@@ -1022,3 +1022,8 @@ seguinte em `docs/adr/`:
 > de cada segmento como `<segmento>.jpg` (480 px de largura) antes do `.motion`; o servidor cifra o
 > `.jpg` junto com o segmento e o apaga junto (seção 2.4). Rota nova `GET /api/cameras/{id}/thumbnail`,
 > só para Monitores: a imagem mais recente, decifrada, com `Last-Modified`; 404 sem imagem (seção 5.5).
+
+> Revisão (2026-10-31): a tela inicial do Monitor web vira um mosaico (bullet 13.2): cada câmera
+> mostra a última imagem (13.1) com o horário, um ▶ que abre o ao vivo no próprio cartão e o
+> restante do cartão abrindo a tela do ao vivo. "Assistir todas" abre o ao vivo das câmeras online
+> na grade; nunca abre sozinho, porque cada ao vivo faz o celular transmitir. Seção 2.5.

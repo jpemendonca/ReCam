@@ -1,6 +1,8 @@
+@using System.Globalization
 @implements IDisposable
 @inject IStringLocalizer<Strings> L
 @inject CameraListController Cameras
+@inject ThumbnailController Thumbnails
 @inject NavigationManager Navigation
 
 <div class="head">
@@ -9,6 +11,12 @@
         @(Cameras.Connected ? L["HubConnected"] : L["HubReconnecting"])
     </span>
     <span class="spacer"></span>
+    @if (Cameras.State == CameraListState.Loaded && Cameras.Cameras.Count > 1)
+    {
+        <button class="secondary watch-all" @onclick="ToggleAll">
+            @(AllWatched ? L["MosaicCloseAll"] : L["MosaicWatchAll"])
+        </button>
+    }
     @HeaderActions
 </div>
 
@@ -33,8 +41,37 @@
             @foreach (var camera in Cameras.Cameras)
             {
                 var shown = camera;
+                var picture = Thumbnails.Of(camera.Id);
                 @* The whole card opens the live video; its buttons and links do their own thing. *@
                 <li class="camera @(camera.Online ? string.Empty : "offline")" @onclick="() => Open(shown)">
+                    <div class="media" @onclick:stopPropagation="true">
+                        @if (previews.Contains(camera.Id))
+                        {
+                            <CameraPreview CameraId="camera.Id" CloseAfter="PreviewCloseAfter" TimedOut="() => ClosePreview(shown.Id)" />
+                            <button class="close-live" title="@L["MosaicClose"]" aria-label="@L["MosaicClose"]"
+                                    @onclick="() => ClosePreview(shown.Id)">✕</button>
+                        }
+                        else
+                        {
+                            @if (picture is not null)
+                            {
+                                <img class="picture" src="@picture.DataUrl" alt="@camera.Name" />
+                                @if (picture.TakenAt is { } takenAt)
+                                {
+                                    <span class="taken">@L["MosaicTakenAt", takenAt.ToLocalTime().ToString("t", CultureInfo.CurrentCulture)]</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="no-picture">@L["MosaicNoPicture"]</span>
+                            }
+                            @if (camera.Online)
+                            {
+                                <button class="play" title="@L["MosaicWatch"]" aria-label="@L["MosaicWatch"]"
+                                        @onclick="() => OpenPreview(shown.Id)">▶</button>
+                            }
+                        }
+                    </div>
                     <a class="open" href="cameras/@camera.Id" @onclick:stopPropagation="true">
                         <span class="dot @(camera.Publishing ? "live" : "off")"
                               title="@(camera.Publishing ? L["CameraStreaming"] : L["CameraNoPicture"])"></span>
@@ -52,16 +89,7 @@
                     <div class="actions" @onclick:stopPropagation="true">
                         <RecordingToggle Camera="camera" />
                         <a class="link" href="cameras/@camera.Id/recordings">@L["RecordingsOpen"]</a>
-                        <button class="secondary preview-toggle" @onclick="() => TogglePreview(shown.Id)">
-                            @(previews.Contains(camera.Id) ? L["PreviewHide"] : L["PreviewShow"])
-                        </button>
                     </div>
-                    @if (previews.Contains(camera.Id))
-                    {
-                        <div @onclick:stopPropagation="true">
-                            <CameraPreview CameraId="camera.Id" CloseAfter="PreviewCloseAfter" TimedOut="() => ClosePreview(shown.Id)" />
-                        </div>
-                    }
                 </li>
             }
         </ul>
@@ -84,37 +112,87 @@
     [Parameter]
     public TimeSpan PreviewCloseAfter { get; set; } = CameraPreview.DefaultCloseAfter;
 
+    /// <summary>How often the pictures are asked again. Shorter in tests.</summary>
+    [Parameter]
+    public TimeSpan PicturesEvery { get; set; } = ThumbnailController.RefreshEvery;
+
     // Closed by default; leaving the page disposes the previews, which stop watching.
     private readonly HashSet<Guid> previews = [];
+    private readonly CancellationTokenSource leaving = new();
+    private bool left;
+
+    private bool AllWatched => Cameras.Cameras.Where(camera => camera.Online).All(camera => previews.Contains(camera.Id));
 
     protected override async Task OnInitializedAsync()
     {
         Cameras.Changed += OnChanged;
+        Thumbnails.Changed += OnPicturesChanged;
         await Cameras.StartAsync(CancellationToken.None);
         await ReportSignedOutAsync();
+        _ = KeepPicturesAsync();
     }
 
-    public void Dispose() => Cameras.Changed -= OnChanged;
+    public void Dispose()
+    {
+        left = true;
+        Cameras.Changed -= OnChanged;
+        Thumbnails.Changed -= OnPicturesChanged;
+        leaving.Cancel();
+        leaving.Dispose();
+    }
+
+    private async Task KeepPicturesAsync()
+    {
+        var token = leaving.Token;
+        try
+        {
+            using var timer = new PeriodicTimer(PicturesEvery);
+            do
+            {
+                await Thumbnails.RefreshAsync(Cameras.Cameras, token);
+            }
+            while (await timer.WaitForNextTickAsync(token));
+        }
+        catch (OperationCanceledException)
+        {
+            // The page closed.
+        }
+    }
 
     private async Task RetryAsync() => await Cameras.RetryAsync(CancellationToken.None);
 
     private void Open(CameraInfo camera) => Navigation.NavigateTo($"cameras/{camera.Id}");
 
-    private void TogglePreview(Guid cameraId)
-    {
-        if (!previews.Remove(cameraId))
-        {
-            previews.Add(cameraId);
-        }
-    }
+    private void OpenPreview(Guid cameraId) => previews.Add(cameraId);
 
     private void ClosePreview(Guid cameraId) => previews.Remove(cameraId);
+
+    // Opening every camera makes every phone send video, so it is the person's choice, never the default.
+    private void ToggleAll()
+    {
+        if (AllWatched)
+        {
+            previews.Clear();
+            return;
+        }
+
+        foreach (var camera in Cameras.Cameras.Where(camera => camera.Online))
+        {
+            previews.Add(camera.Id);
+        }
+    }
 
     private void OnChanged() => InvokeAsync(async () =>
     {
         StateHasChanged();
         await ReportSignedOutAsync();
+        if (Cameras.State == CameraListState.Loaded && !left)
+        {
+            await Thumbnails.FollowAsync(Cameras.Cameras, CancellationToken.None);
+        }
     });
+
+    private void OnPicturesChanged() => InvokeAsync(StateHasChanged);
 
     private Task ReportSignedOutAsync() =>
         Cameras.State == CameraListState.SignedOut ? SignedOut.InvokeAsync() : Task.CompletedTask;

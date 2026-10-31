@@ -318,6 +318,24 @@
   <data name="LiveRetry" xml:space="preserve">
     <value>Tentar de novo</value>
   </data>
+  <data name="MosaicClose" xml:space="preserve">
+    <value>Fechar ao vivo</value>
+  </data>
+  <data name="MosaicCloseAll" xml:space="preserve">
+    <value>Fechar todas</value>
+  </data>
+  <data name="MosaicNoPicture" xml:space="preserve">
+    <value>Ainda sem imagem</value>
+  </data>
+  <data name="MosaicTakenAt" xml:space="preserve">
+    <value>Imagem das {0}</value>
+  </data>
+  <data name="MosaicWatch" xml:space="preserve">
+    <value>Ver ao vivo</value>
+  </data>
+  <data name="MosaicWatchAll" xml:space="preserve">
+    <value>Assistir todas</value>
+  </data>
   <data name="MotionHigh" xml:space="preserve">
     <value>Alta</value>
   </data>
@@ -395,12 +413,6 @@
   </data>
   <data name="PreviewFailed" xml:space="preserve">
     <value>Não deu para mostrar a imagem.</value>
-  </data>
-  <data name="PreviewHide" xml:space="preserve">
-    <value>Esconder imagem</value>
-  </data>
-  <data name="PreviewShow" xml:space="preserve">
-    <value>Ver imagem</value>
   </data>
   <data name="RecordSwitch" xml:space="preserve">
     <value>Gravar</value>
