@@ -769,18 +769,16 @@ class _HourBarState extends State<_HourBar> {
                             painter: _HourBarPainter(
                               window: _window,
                               segments: controller.timeline,
-                              playing: controller.playing,
                               growUntil: growingUntil,
                               track: colors.surfaceContainerHighest,
                               recorded: colors.primary,
-                              current: colors.error,
                               ticks: colors.outline,
                             ),
                           ),
                           // Fixed: the recordings run under it.
                           Positioned(
-                            left: width / 2 - 1,
-                            width: 2,
+                            left: width / 2 - 1.5,
+                            width: 3,
                             top: 0,
                             height: _barHeight,
                             child: ColoredBox(
@@ -849,23 +847,19 @@ class _HourBarPainter extends CustomPainter {
   _HourBarPainter({
     required this.window,
     required this.segments,
-    required this.playing,
     required this.growUntil,
     required this.track,
     required this.recorded,
-    required this.current,
     required this.ticks,
   });
 
   final TimelineWindow window;
   final List<TimelineSegment> segments;
-  final TimelineSegment? playing;
 
   /// The newest stretch, still recording, is drawn up to here.
   final DateTime? growUntil;
   final Color track;
   final Color recorded;
-  final Color current;
   final Color ticks;
 
   @override
@@ -880,7 +874,7 @@ class _HourBarPainter extends CustomPainter {
       if (!end.isAfter(window.start) || !segment.start.isBefore(window.end)) {
         continue;
       }
-      final paint = Paint()..color = segment == playing ? current : recorded;
+      final paint = Paint()..color = recorded;
       final left = x(segment.start).clamp(0.0, size.width);
       canvas.drawRect(
         Rect.fromLTRB(
@@ -905,7 +899,6 @@ class _HourBarPainter extends CustomPainter {
   @override
   bool shouldRepaint(_HourBarPainter oldDelegate) =>
       oldDelegate.segments != segments ||
-      oldDelegate.playing != playing ||
       oldDelegate.growUntil != growUntil ||
       oldDelegate.window != window;
 }

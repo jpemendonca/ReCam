@@ -94,10 +94,6 @@
   fill: var(--accent);
 }
 
-.recorded.playing {
-  fill: var(--danger);
-}
-
 .events {
   display: block;
   width: 100%;
@@ -149,10 +145,36 @@
   pointer-events: none;
 }
 
+.playhead,
+.playhead-outline,
+.hover-line {
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
 .playhead {
   stroke: var(--danger);
-  stroke-width: 2;
-  vector-effect: non-scaling-stroke;
+  stroke-width: 3;
+}
+
+.playhead-outline {
+  stroke: #fff;
+  stroke-width: 6;
+}
+
+.hover-line {
+  stroke: var(--text);
+  stroke-width: 1;
+}
+
+.events ::deep .hover-time {
+  fill: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 4px;
   pointer-events: none;
 }
 

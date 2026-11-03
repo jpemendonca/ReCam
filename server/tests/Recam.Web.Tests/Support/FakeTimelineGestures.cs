@@ -12,6 +12,8 @@ public sealed class FakeTimelineGestures : ITimelineGestures
 
     public event Action<double>? Dropped;
 
+    public event Action<double?>? Hovering;
+
     public int Attached { get; private set; }
 
     public Task AttachAsync(ElementReference bar)
@@ -25,4 +27,6 @@ public sealed class FakeTimelineGestures : ITimelineGestures
     public void Drag(double fraction) => Dragging?.Invoke(fraction);
 
     public void Drop(double fraction) => Dropped?.Invoke(fraction);
+
+    public void Hover(double? fraction) => Hovering?.Invoke(fraction);
 }

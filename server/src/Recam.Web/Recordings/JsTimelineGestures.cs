@@ -15,6 +15,8 @@ public sealed class JsTimelineGestures(IJSRuntime js) : ITimelineGestures, IAsyn
 
     public event Action<double>? Dropped;
 
+    public event Action<double?>? Hovering;
+
     public async Task AttachAsync(ElementReference bar)
     {
         _module ??= await js.InvokeAsync<IJSObjectReference>("import", "./js/timeline.js");
@@ -30,6 +32,12 @@ public sealed class JsTimelineGestures(IJSRuntime js) : ITimelineGestures, IAsyn
 
     [JSInvokable]
     public void OnDrop(double fraction) => Dropped?.Invoke(fraction);
+
+    [JSInvokable]
+    public void OnHover(double fraction) => Hovering?.Invoke(fraction);
+
+    [JSInvokable]
+    public void OnHoverEnd() => Hovering?.Invoke(null);
 
     public async ValueTask DisposeAsync()
     {

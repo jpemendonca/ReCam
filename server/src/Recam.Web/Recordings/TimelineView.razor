@@ -75,17 +75,23 @@ else
                 }
             </g>
         }
+        @((MarkupString)HoverLabel())
     </svg>
 
     @* The line in the middle stays; the recordings run under it as the video plays, and the
        person drags them to go back or ahead. *@
     <svg class="hours" @ref="bar" viewBox="0 0 @Width 36" preserveAspectRatio="none" role="img" aria-label="@L["TimelineBarLabel"]">
         <rect class="track" x="0" y="0" width="@Width" height="36" rx="6" />
-        @foreach (var (start, end, playing) in RecordedStretches())
+        @foreach (var (start, end) in RecordedStretches())
         {
-            <rect class="@(playing ? "recorded playing" : "recorded")"
-                  x="@X(start)" y="0" width="@SpanWidth(start, end, 1)" height="36" />
+            <rect class="recorded" x="@X(start)" y="0" width="@SpanWidth(start, end, 1)" height="36" />
         }
+        @if (hover is { } over)
+        {
+            <line class="hover-line" x1="@F(over * Width)" x2="@F(over * Width)" y1="0" y2="36" />
+        }
+        @* The moment showing in the video. The light line under it keeps it clear on any color. *@
+        <line class="playhead-outline" x1="@F(Width / 2)" x2="@F(Width / 2)" y1="0" y2="36" />
         <line class="playhead" x1="@F(Width / 2)" x2="@F(Width / 2)" y1="0" y2="36" />
     </svg>
     @* An SVG of its own, not stretched like the bar, so the labels keep their shape; positions
@@ -161,6 +167,7 @@ else
     private bool windowHasData;
     private DateTime? windowFollows;
     private TimelineWindow? dragStart;
+    private double? hover;
     private ElementReference bar;
     private bool barAttached;
     private readonly CancellationTokenSource leaving = new();
@@ -210,9 +217,14 @@ else
         }
     }
 
+    // Razor keeps <text> for itself, so the label is written as markup.
+    private string HoverLabel() => hover is { } over
+        ? $"<text class=\"hover-time\" x=\"{F(over * 100)}%\" y=\"12\" text-anchor=\"middle\" dominant-baseline=\"middle\">{WebUtility.HtmlEncode(Window.TimeAt(over).ToString("T", CultureInfo.CurrentCulture))}</text>"
+        : string.Empty;
+
     private DateTime? LatestRecorded() => GrowingUntil ?? (Timeline.Timeline.Count > 0 ? Timeline.Timeline[^1].End : null);
 
-    private IEnumerable<(DateTime Start, DateTime End, bool Playing)> RecordedStretches()
+    private IEnumerable<(DateTime Start, DateTime End)> RecordedStretches()
     {
         var growing = GrowingUntil;
         for (var index = 0; index < Timeline.Timeline.Count; index++)
@@ -221,7 +233,7 @@ else
             var end = growing is { } until && index == Timeline.Timeline.Count - 1 ? until : segment.End;
             if (end > Window.Start && segment.Start < Window.End)
             {
-                yield return (segment.Start, end, segment == Timeline.Playing);
+                yield return (segment.Start, end);
             }
         }
     }
@@ -247,6 +259,7 @@ else
         Gestures.Tapped += OnTapped;
         Gestures.Dragging += OnDragging;
         Gestures.Dropped += OnDropped;
+        Gestures.Hovering += OnHovering;
         _ = GrowAsync();
     }
 
@@ -271,6 +284,7 @@ else
         Gestures.Tapped -= OnTapped;
         Gestures.Dragging -= OnDragging;
         Gestures.Dropped -= OnDropped;
+        Gestures.Hovering -= OnHovering;
         leaving.Cancel();
         leaving.Dispose();
     }
@@ -405,6 +419,13 @@ else
             window = TimelineWindow.Around(shown.Day, shown.Zoom, head);
             StateHasChanged();
         }
+    });
+
+    // The mouse rests on the bar: a thin line and the time there. It stays right as the bar runs.
+    private void OnHovering(double? fraction) => InvokeAsync(() =>
+    {
+        hover = fraction;
+        StateHasChanged();
     });
 
     // A tap plays from the moment under the finger.

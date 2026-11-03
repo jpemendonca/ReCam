@@ -143,6 +143,39 @@ public sealed class RecordingsPagesTests : BunitContext
         Assert.Equal("500", page.Find("line.playhead").GetAttribute("x1"));
     }
 
+    [Fact(DisplayName = "The middle line marks what plays on a stretch of one color, and a thin line follows the mouse with its time")]
+    public void Timeline_Lines_ShowWhatPlaysAndWhereTheMouseIs()
+    {
+        // arrange
+        using var _ = Culture.Use("pt-BR");
+        var day = new DateOnly(2026, 9, 25);
+        var start = new DateTimeOffset(day.ToDateTime(new TimeOnly(14, 0)), TimeSpan.Zero);
+        _api.Recordings[day] = [new RecordingPieceInfo(start, start.AddMinutes(20),
+            [new RecordingSegmentInfo(start, start.AddMinutes(20), $"/api/recordings/{_camera.Id}/a.mp4")])];
+        var page = Render<TimelinePage>(parameters => parameters.Add(timeline => timeline.CameraId, _camera.Id));
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("rect.recorded")));
+        // 14:20 in the middle of the 30 minutes, 14:05 to 14:35; a sixth in is 14:10.
+        _gestures.Tap(0.1667);
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("video")));
+        var before = page.FindAll("line.hover-line").Count;
+
+        // act
+        _gestures.Hover(0.75);
+        page.WaitForAssertion(() => Assert.Single(page.FindAll("line.hover-line")));
+        var line = page.Find("line.hover-line").GetAttribute("x1");
+        var time = page.Find("svg.events text.hover-time").TextContent;
+        _gestures.Hover(null);
+
+        // assert
+        Assert.Equal(0, before);
+        Assert.Equal("750", line);
+        Assert.StartsWith("14:", time, StringComparison.Ordinal);
+        page.WaitForAssertion(() => Assert.Empty(page.FindAll("line.hover-line")));
+        Assert.Empty(page.FindAll("svg.events text.hover-time"));
+        Assert.Equal("recorded", page.Find("rect.recorded").GetAttribute("class"));
+        Assert.Equal("500", page.Find("line.playhead").GetAttribute("x1"));
+    }
+
     [Fact(DisplayName = "Dragging moves the moment under the middle line, and letting go plays from it")]
     public void Timeline_DragAndDrop_PlaysFromTheCenter()
     {

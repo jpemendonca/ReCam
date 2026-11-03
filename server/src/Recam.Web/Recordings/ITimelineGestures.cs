@@ -18,6 +18,9 @@ public interface ITimelineGestures
     /// <summary>The drag ended, this far from where it started.</summary>
     event Action<double>? Dropped;
 
+    /// <summary>The mouse is over the bar, at this fraction from its left edge; null when it left.</summary>
+    event Action<double?>? Hovering;
+
     /// <summary>Starts following the bar's gestures.</summary>
     Task AttachAsync(ElementReference bar);
 }

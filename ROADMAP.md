@@ -2960,6 +2960,28 @@ Decisões da conversa:
   > a hora certa acima da barra, pessoa com ícone tocando, filtro, resumos). Falta: conferir no
   > navegador e no app com um dia de movimento e pessoas.
 
+- [ ] **13.7 Tracinho visível na barra do tempo, e outro seguindo o mouse**
+  - Origem: teste do autor em 2026-11-03. Olhando a barra, não dá para saber em que ponto da
+    gravação o vídeo está nem onde o clique vai cair. A linha do meio é vermelha, e o minuto que toca
+    também é pintado de vermelho, então ela some.
+  - Escopo:
+    - O minuto que toca deixa de ser pintado de outra cor, no navegador e no app. O vermelho fica só
+      para a linha do meio, mais grossa e com contorno claro, que marca o momento exibido; a faixa
+      corre sob ela enquanto o vídeo anda.
+    - No navegador, com o mouse sobre a barra, um segundo tracinho fino segue o ponteiro, com a hora
+      daquele ponto em cima. Some quando o mouse sai ou arrasta a barra. Dedo não tem esse tracinho;
+      no app, segurar a barra continua mostrando a hora.
+  - Aceite: bUnit (a faixa que toca não muda de classe, tracinho e hora aparecem e somem) e o
+    `timeline.js` no Node com uma barra falsa; conferido no navegador com um vídeo tocando.
+  > Em andamento (2026-11-03): feito o código. A faixa que toca não muda mais de cor, no navegador
+  > e no app. A linha do meio ficou com 3 px, vermelha, e no navegador com um contorno branco de 6 px
+  > por baixo. No navegador, o `timeline.js` avisa a posição do mouse (só `pointerType` mouse, um
+  > aviso por quadro) e o fim dela; a barra desenha uma linha fina e, na fileira de cima, a hora
+  > daquele ponto, recalculada a cada redesenho para continuar certa enquanto a faixa corre. Arrastar
+  > esconde a linha fina. Testes: bUnit (linha e hora aparecem e somem, faixa só com a classe
+  > `recorded`) e o `timeline.js` no Node (mouse, saída, dedo sem aviso, arraste escondendo). Não foi
+  > visto num navegador de verdade. Falta: conferir com um vídeo tocando.
+
 ## Fora da fila (anotado, não executar)
 
 Itens que dependem de decisão futura. O loop para antes daqui.
