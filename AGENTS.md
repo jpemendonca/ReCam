@@ -102,8 +102,8 @@ Regras do domínio:
 - O .NET não processa vídeo. Ele repassa só a sinalização WHIP/WHEP (HTTP com SDP). Pacotes
   RTP vão direto entre os celulares e o MediaMTX. Cifrar e decifrar os arquivos gravados, byte a
   byte, não conta como processar vídeo (bullet 9.13). A regra vale para o `Recam.Server`: o
-  serviço opcional `detect` (`Recam.Detect`, bullet 12.1, só na branch da Fase 12) lê quadros das
-  gravações num container à parte, sem rede, e o servidor só lê o resultado.
+  serviço `detect` (`Recam.Detect`, bullet 12.1) lê quadros das gravações num container à parte,
+  sem rede, e o servidor só lê o resultado.
 - O app no modo câmera não grava nem guarda imagem ou vídeo no aparelho.
 - O app só fala com o servidor que o usuário pareou. Sem analytics, sem crash reporting de
   terceiros, sem anúncio, sem chamada de rede para outro destino.
@@ -150,8 +150,10 @@ server/
   Directory.Build.props
   src/Recam.Server/  Program.cs, Domain/, Infrastructure/, Features/<Feature>/
   src/Recam.Web/     Monitor no navegador (Blazor WebAssembly), servido pelo Recam.Server
+  src/Recam.Detect/  serviço que acha pessoas nas gravações (container à parte, sem rede)
   tests/Recam.Server.Tests/
   tests/Recam.Web.Tests/
+  tests/Recam.Detect.Tests/
 app/
   lib/core/          rede, pareamento, armazenamento, abstrações de plugin
   lib/camera/        aba Câmera

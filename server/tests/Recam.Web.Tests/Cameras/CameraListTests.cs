@@ -216,12 +216,20 @@ public sealed class CameraListTests : BunitContext
         list.WaitForAssertion(() => Assert.True(_api.ThumbnailsAsked.GetValueOrDefault(camera.Id) >= 3), TimeSpan.FromSeconds(5));
         var whileOpen = _api.ThumbnailsAsked[camera.Id];
         await DisposeComponentsAsync();
-        var afterLeaving = _api.ThumbnailsAsked[camera.Id];
-        await Task.Delay(300, Xunit.TestContext.Current.CancellationToken);
+
+        // The renderer may close the page a moment later, when it is in the middle of a render; a
+        // loop that leaked would never go quiet.
+        var quiet = false;
+        for (var tries = 0; tries < 20 && !quiet; tries++)
+        {
+            var before = _api.ThumbnailsAsked[camera.Id];
+            await Task.Delay(300, Xunit.TestContext.Current.CancellationToken);
+            quiet = _api.ThumbnailsAsked[camera.Id] == before;
+        }
 
         // assert
         Assert.True(whileOpen >= 3);
-        Assert.Equal(afterLeaving, _api.ThumbnailsAsked[camera.Id]);
+        Assert.True(quiet);
     }
 
     [Fact(DisplayName = "Watch all opens every online camera live, and Close all closes them")]

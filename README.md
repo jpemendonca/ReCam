@@ -26,24 +26,26 @@ Your own server, your own recordings, live in any browser.
 
 You run one `docker compose up` on a computer at home or on a VPS. You scan a QR code with the
 phone that will film. A few seconds later you watch it live in the browser. It records around
-the clock, and the recordings page tells you when a person walked by. No account, no cloud, no
-ads, no subscription.
+the clock and marks on a timeline each time a person walked by. No account, no cloud, no ads, no
+subscription.
 
 ## What you get
 
 <table>
 <tr>
 <td width="50%" valign="top">
-<img src="docs/images/mockup-cameras.png" alt="Camera list with battery, temperature and recording status">
-<h3>Live in the browser</h3>
-Video arrives in under a second on your network. Each camera shows its battery and temperature,
-and you can turn its flashlight and sound on from the live view.
+<img src="docs/images/mockup-cameras.png" alt="Two cameras side by side, each with its last picture, battery and recording status">
+<h3>All your cameras on one page</h3>
+Each camera shows its last picture, battery and temperature. Press play to watch one live, in under
+a second on your network, or <b>Watch all</b> to open them together. The live view has the
+flashlight and the sound.
 </td>
 <td width="50%" valign="top">
-<img src="docs/images/mockup-recordings.png" alt="Recordings page with the motion timeline and the people found">
+<img src="docs/images/mockup-recordings.png" alt="Recordings page with the timeline, a red line at the moment playing, and marks for motion and people">
 <h3>Recordings with a timeline</h3>
-Tap any hour to watch from that moment. Orange marks motion, green marks people, and
-<b>People on this day</b> lists each person the server spotted. The player draws a box around them.
+Drag the bar to go back, or tap a moment to watch from there. The red line marks what you see, and
+zoom goes from 1 minute to a whole day. Yellow marks show people, grey marks show other motion. Tap
+one to jump to it, and the player draws a box around each person.
 </td>
 </tr>
 <tr>
@@ -128,8 +130,8 @@ To see this again: docker compose exec server ./Recam.Server code
 The code works once: the first browser that types it becomes your Monitor. If you lose it, run the
 same command again.
 
-On a VPS, add a line `RECAM_HOST=` with the VPS public IP to `.env` before you start the containers, and open
-ports 8443/tcp and 8189/udp in the provider's panel. With Docker Desktop on Windows or macOS, set
+On a VPS, add a line `RECAM_HOST=` with the VPS public IP to `.env` before you start the containers,
+and open ports 8443/tcp and 8189/udp in the provider's panel. With Docker Desktop on Windows or macOS, set
 `RECAM_HOST` to the computer's network address and add `-f compose.bridge.yaml` to each
 `docker compose` command.
 
@@ -138,20 +140,20 @@ ports 8443/tcp and 8189/udp in the provider's panel. With Docker Desktop on Wind
 1. On a computer or phone in the same network, open the address the last command showed, like
    `https://192.168.0.10:8443`. The browser warns that the connection is not private, because the
    server signs its own certificate. Open the warning's details and continue to the site.
-2. Type the first-time code from the same output. This browser becomes your **Monitor** and shows an **Add camera** QR
-   code.
+2. Type the first-time code from the same output. This browser becomes your **Monitor** and shows
+   an **Add camera** QR code.
 3. On the phone that will film, open this page, download the APK from
    [Releases](https://github.com/jpemendonca/ReCam/releases/latest) and install it. Open the ReCam
    app, tap **Scan QR code** and scan the code on the screen. Give the camera a name.
 4. The live video opens in the browser, and the camera starts recording. Choose how much space the
    recordings may take; ReCam deletes the oldest when it fills up. You can switch the phone's
    flashlight from the live view.
-5. When someone walks in front of the camera, the recordings page lists them under **People on
-   this day** a minute or two later, and the player draws a box around each person.
+5. When someone walks in front of the camera, a yellow mark with a person icon appears above the
+   recordings bar a minute or two later. Tap it to watch; the player draws a box around each person.
 
 To watch from another phone, install the app there and use **Add Monitor** in the browser. To
-watch from another browser, use **Add Monitor › In a browser** and open the link it shows in the other browser, or scan
-the QR code with a phone's camera.
+watch from another browser, use **Add Monitor › In a browser** and open the link it shows there, or
+scan the QR code with a phone's camera.
 
 To get the padlock without the warning, put a reverse proxy in front:
 [docs/reverse-proxy.md](docs/reverse-proxy.md).
@@ -195,8 +197,8 @@ To get the padlock without the warning, put a reverse proxy in front:
   in the firewall (above). The **Diagnostics** button under the video shows what your browser
   receives.
 
-- **Nobody shows up under People on this day.** ReCam looks for people only in cameras that record,
-  and only in the seconds with motion. Check the log:
+- **No yellow marks on the recordings bar.** ReCam looks for people only in cameras that record, and
+  only in the seconds with motion. Check the log:
 
   ```bash
   sudo docker compose logs detect

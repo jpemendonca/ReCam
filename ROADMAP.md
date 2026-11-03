@@ -2873,6 +2873,10 @@ Decisões da conversa:
   > ▶ abrindo e fechando sozinho, "Assistir todas" sem a câmera offline, timer parando ao sair) e
   > controller (só pede de novo quando algo muda; mantém a imagem na falha). Falta: conferir no
   > navegador com duas câmeras.
+  > Nota (2026-11-03): o teste do timer falhou uma vez no gate, lendo o contador logo depois de
+  > fechar a página; o bUnit pode adiar o fechamento durante uma renderização. Não repetiu em 30
+  > rodadas sob carga. O teste agora exige que os pedidos parem depois de fechar, em vez de pararem
+  > no mesmo instante.
 
 - [ ] **13.3 [aparelho] Mosaico no app**
   - Escopo: a aba Monitor do app ganha a mesma grade da 13.2, com a mesma atualização e o mesmo
@@ -2960,7 +2964,7 @@ Decisões da conversa:
   > a hora certa acima da barra, pessoa com ícone tocando, filtro, resumos). Falta: conferir no
   > navegador e no app com um dia de movimento e pessoas.
 
-- [ ] **13.7 Tracinho visível na barra do tempo, e outro seguindo o mouse**
+- [x] **13.7 Tracinho visível na barra do tempo, e outro seguindo o mouse**
   - Origem: teste do autor em 2026-11-03. Olhando a barra, não dá para saber em que ponto da
     gravação o vídeo está nem onde o clique vai cair. A linha do meio é vermelha, e o minuto que toca
     também é pintado de vermelho, então ela some.
@@ -2981,6 +2985,12 @@ Decisões da conversa:
   > esconde a linha fina. Testes: bUnit (linha e hora aparecem e somem, faixa só com a classe
   > `recorded`) e o `timeline.js` no Node (mouse, saída, dedo sem aviso, arraste escondendo). Não foi
   > visto num navegador de verdade. Falta: conferir com um vídeo tocando.
+  > Validação (2026-11-03): rodado no Chrome, com a imagem de produção num container temporário, duas
+  > câmeras de exemplo e um vídeo tocando. O tracinho do mouse apareceu com a hora, a hora acompanhou
+  > a barra por 6 s com o mouse parado e ele sumiu durante o arraste. Um toque a um quarto da barra
+  > voltou 7,5 min e o vídeo tocou dali; arrastar e soltar também. A tela do mosaico abriu com as duas
+  > imagens e horários, e os eventos saíram na posição certa. Falta ver a 13.2 a 13.6 com câmeras de
+  > verdade (ao vivo do ▶ e do "Assistir todas", dedo na largura de celular, app no celular).
 
 ## Fora da fila (anotado, não executar)
 
